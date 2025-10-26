@@ -20,7 +20,6 @@ out/
 # Database
 *.db
 *.db-journal
-prisma/migrations/
 
 # IDE
 .vscode/
