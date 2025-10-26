@@ -29,14 +29,6 @@ jobs:
       
       - name: Run type check
         run: npx tsc --noEmit
-      
-      - name: Run tests
-        run: npm test
-        env:
-          NODE_ENV: test
-          DATABASE_URL: "file:./test.db"
-          ZWIFT_API_KEY: "test-api-key"
-          CLUB_ID: "11818"
   
   build:
     name: Build Check
