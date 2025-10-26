@@ -27,8 +27,19 @@ jobs:
       - name: Generate Prisma Client
         run: npm run db:generate
       
+      - name: Run linter
+        run: npm run lint
+      
       - name: Run type check
         run: npx tsc --noEmit
+      
+      - name: Run tests
+        run: npm test
+        env:
+          DATABASE_URL: "file:./test.db"
+          ZWIFT_API_KEY: ${{ secrets.ZWIFT_API_KEY || 'test-key-for-ci' }}
+          CLUB_ID: "11818"
+          NODE_ENV: "test"
   
   build:
     name: Build Check
