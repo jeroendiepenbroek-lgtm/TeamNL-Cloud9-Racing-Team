@@ -1,0 +1,23 @@
+{
+  "teamName": "TeamNL Cloud9",
+  "riders": [
+    {
+      "zwiftId": 150437,
+      "name": "JRøne | CloudRacer-9 @YouTube",
+      "role": "captain",
+      "notes": "Team captain, strong all-rounder"
+    },
+    {
+      "zwiftId": 123456,
+      "name": "Example Rider 1",
+      "role": "member",
+      "notes": "Sprinter specialist"
+    },
+    {
+      "zwiftId": 789012,
+      "name": "Example Rider 2",
+      "role": "member",
+      "notes": "Climbing specialist"
+    }
+  ]
+}

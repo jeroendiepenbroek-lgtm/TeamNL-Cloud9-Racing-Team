@@ -1,0 +1,134 @@
+name: ✨ Feature Request
+description: Suggereer een nieuwe feature voor de TeamNL Cloud9 Dashboard
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees:
+  - jeroendiepenbroek-lgtm
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bedankt voor je feature suggestie! We waarderen community input.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🎯 Probleem / Use Case
+      description: Beschrijf het probleem dat deze feature oplost
+      placeholder: |
+        Momenteel is het lastig om...
+        Als gebruiker wil ik...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 Voorgestelde Oplossing
+      description: Beschrijf hoe je denkt dat dit opgelost moet worden
+      placeholder: |
+        Ik stel voor om...
+        Dit zou werken door...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternatieven
+      description: Andere oplossingen die je hebt overwogen
+      placeholder: Een alternatieve aanpak zou kunnen zijn...
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: 🧩 Component
+      description: Welk onderdeel betreft deze feature?
+      options:
+        - Frontend (HTML GUI)
+        - Backend API
+        - Database Schema
+        - Sync Service
+        - CLI Tools
+        - Documentation
+        - Infrastructure
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🔥 Priority
+      description: Hoe belangrijk is deze feature?
+      options:
+        - Critical (blocker voor gebruik)
+        - High (belangrijke verbetering)
+        - Medium (nice to have)
+        - Low (kleine enhancement)
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockup
+    attributes:
+      label: 🎨 Mockup/Voorbeeld
+      description: Voeg mockups, wireframes of voorbeelden toe
+      placeholder: Sleep afbeeldingen of voeg links toe...
+
+  - type: textarea
+    id: technical
+    attributes:
+      label: 🔧 Technische Details
+      description: Technische overwegingen of implementatie suggesties
+      placeholder: |
+        - Zou kunnen gebruiken...
+        - Database wijzigingen nodig...
+        - API endpoint: POST /api/...
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: 💥 Breaking Change?
+      description: Zou deze feature bestaande functionaliteit breken?
+      options:
+        - No (backward compatible)
+        - Yes (requires migration)
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: Wanneer is deze feature "done"?
+      placeholder: |
+        - [ ] Gebruiker kan...
+        - [ ] GUI toont...
+        - [ ] API endpoint reageert met...
+
+  - type: checkboxes
+    id: help
+    attributes:
+      label: 🤝 Wil je helpen implementeren?
+      options:
+        - label: Ik wil een PR maken voor deze feature
+          required: false
+        - label: Ik kan helpen met testen
+          required: false
+        - label: Ik kan helpen met documentatie
+          required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✅ Checklist
+      options:
+        - label: Ik heb gezocht of deze feature al bestaat
+          required: true
+        - label: Ik heb vergelijkbare features in andere tools bekeken
+          required: false
+        - label: Deze feature past bij de project doelen
+          required: true

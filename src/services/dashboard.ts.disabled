@@ -1,0 +1,439 @@
+import { prisma } from '../database/client.js';
+import { logger } from '../utils/logger.js';
+
+/**
+ * Dashboard Service - Handles user story queries
+ * 
+ * User Stories:
+ * 1. Recent club results
+ * 2. Favorite riders details
+ * 3. Rider recent events (90 days)
+ */
+export class DashboardService {
+  
+  /**
+   * Story 1: Get recent race results for club members
+   * Shows all recent results from riders in the same club
+   */
+  async getClubRecentResults(riderId: number, limit: number = 50) {
+    logger.info(`📊 Get club recent results for rider ${riderId}`);
+    
+    try {
+      // Find rider's club
+      const rider = await prisma.rider.findUnique({
+        where: { zwiftId: riderId },
+        select: { id: true, clubId: true, name: true },
+      });
+
+      if (!rider) {
+        throw new Error(`Rider ${riderId} not found`);
+      }
+
+      if (!rider.clubId) {
+        throw new Error(`Rider ${riderId} has no club`);
+      }
+
+      // Get recent results from club members
+      const results = await prisma.raceResult.findMany({
+        where: {
+          rider: {
+            clubId: rider.clubId,
+          },
+        },
+        include: {
+          rider: {
+            select: {
+              zwiftId: true,
+              name: true,
+              categoryRacing: true,
+              ftp: true,
+              weight: true,
+            },
+          },
+          event: {
+            select: {
+              id: true,
+              name: true,
+              eventDate: true,
+              routeName: true,
+              distance: true,
+            },
+          },
+        },
+        orderBy: [
+          { createdAt: 'desc' },  // Most recent first
+        ],
+        take: limit,
+      });
+
+      logger.info(`✓ Found ${results.length} recent results for club ${rider.clubId}`);
+
+      return {
+        rider: {
+          zwiftId: riderId,
+          name: rider.name,
+          clubId: rider.clubId,
+        },
+        totalResults: results.length,
+        results: results.map(r => ({
+          // Event info
+          eventId: r.event.id,
+          eventName: r.event.name,
+          eventDate: r.event.eventDate,
+          route: r.event.routeName,
+          distance: r.event.distance,
+          
+          // Rider info
+          riderZwiftId: r.rider.zwiftId,
+          riderName: r.rider.name,
+          riderCategory: r.rider.categoryRacing,
+          riderFtp: r.rider.ftp,
+          riderWeight: r.rider.weight,
+          
+          // Result info
+          position: r.position,
+          positionCategory: r.positionCategory,
+          category: r.category,
+          time: r.time,
+          timeGap: r.timeGap,
+          averagePower: r.averagePower,
+          averageWkg: r.averageWkg,
+          didFinish: r.didFinish,
+          
+          // Metadata
+          resultId: r.id,
+          source: r.source,
+          createdAt: r.createdAt,
+        })),
+      };
+    } catch (error) {
+      logger.error('❌ Error getting club recent results', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Story 2: Get details for favorite riders
+   * Shows comprehensive info about riders the user is following
+   */
+  async getFavoriteRiders(userId: number) {
+    logger.info(`⭐ Get favorite riders for user ${userId}`);
+
+    try {
+      // Get user's database ID
+      const user = await prisma.rider.findUnique({
+        where: { zwiftId: userId },
+        select: { id: true },
+      });
+
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+
+      // Get all favorites with full rider details
+      const favorites = await prisma.userFavorite.findMany({
+        where: { userId: user.id },
+        include: {
+          favoriteRider: {
+            include: {
+              club: {
+                select: { id: true, name: true },
+              },
+              statistics: true,
+              raceResults: {
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                  event: {
+                    select: {
+                      id: true,
+                      name: true,
+                      eventDate: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { addedAt: 'desc' },
+      });
+
+      logger.info(`✓ Found ${favorites.length} favorite riders`);
+
+      return {
+        userId,
+        totalFavorites: favorites.length,
+        favorites: favorites.map(fav => ({
+          // Favorite metadata
+          favoriteId: fav.id,
+          notes: fav.notes,
+          addedAt: fav.addedAt,
+          notificationEnabled: fav.notificationEnabled,
+          
+          // Rider basic info
+          zwiftId: fav.favoriteRider.zwiftId,
+          name: fav.favoriteRider.name,
+          category: fav.favoriteRider.categoryRacing,
+          
+          // Performance metrics
+          ftp: fav.favoriteRider.ftp,
+          ftpWkg: fav.favoriteRider.ftpWkg,
+          weight: fav.favoriteRider.weight,
+          height: fav.favoriteRider.height,
+          
+          // Club
+          club: fav.favoriteRider.club ? {
+            id: fav.favoriteRider.club.id,
+            name: fav.favoriteRider.club.name,
+          } : null,
+          
+          // Statistics
+          statistics: fav.favoriteRider.statistics ? {
+            totalRaces: fav.favoriteRider.statistics.totalRaces,
+            totalWins: fav.favoriteRider.statistics.totalWins,
+            totalPodiums: fav.favoriteRider.statistics.totalPodiums,
+            avgPosition: fav.favoriteRider.statistics.avgPosition,
+            avgPower: fav.favoriteRider.statistics.avgPower,
+            avgWkg: fav.favoriteRider.statistics.avgWkg,
+            recent30dRaces: fav.favoriteRider.statistics.recent30dRaces,
+            recent30dWins: fav.favoriteRider.statistics.recent30dWins,
+          } : null,
+          
+          // Recent results
+          recentResults: fav.favoriteRider.raceResults.map(r => ({
+            eventId: r.event.id,
+            eventName: r.event.name,
+            eventDate: r.event.eventDate,
+            position: r.position,
+            category: r.category,
+            time: r.time,
+          })),
+          
+          // Status
+          isActive: fav.favoriteRider.isActive,
+          lastActive: fav.favoriteRider.lastActive,
+        })),
+      };
+    } catch (error) {
+      logger.error('❌ Error getting favorite riders', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Story 3: Get rider's recent events (last 90 days)
+   * Shows all events and results for a specific rider
+   */
+  async getRiderRecentEvents(riderId: number, days: number = 90) {
+    logger.info(`📅 Get recent events for rider ${riderId} (last ${days} days)`);
+
+    try {
+      // Get rider info
+      const rider = await prisma.rider.findUnique({
+        where: { zwiftId: riderId },
+        select: {
+          id: true,
+          zwiftId: true,
+          name: true,
+          categoryRacing: true,
+        },
+      });
+
+      if (!rider) {
+        throw new Error(`Rider ${riderId} not found`);
+      }
+
+      // Calculate date threshold
+      const dateThreshold = new Date();
+      dateThreshold.setDate(dateThreshold.getDate() - days);
+
+      // Get all race results with events
+      const results = await prisma.raceResult.findMany({
+        where: {
+          riderId: rider.id,
+          // Note: eventDate might be null for many events
+          // We filter by createdAt as fallback
+          OR: [
+            {
+              event: {
+                eventDate: {
+                  gte: dateThreshold,
+                },
+              },
+            },
+            {
+              createdAt: {
+                gte: dateThreshold,
+              },
+            },
+          ],
+        },
+        include: {
+          event: true,
+        },
+        orderBy: [
+          { createdAt: 'desc' },
+        ],
+      });
+
+      logger.info(`✓ Found ${results.length} events for rider ${riderId}`);
+
+      // Calculate statistics
+      const totalEvents = results.length;
+      const finishedEvents = results.filter(r => r.didFinish).length;
+      const dnfs = totalEvents - finishedEvents;
+      const avgPosition = finishedEvents > 0
+        ? results.filter(r => r.didFinish && r.position).reduce((sum, r) => sum + (r.position || 0), 0) / finishedEvents
+        : null;
+
+      return {
+        rider: {
+          zwiftId: rider.zwiftId,
+          name: rider.name,
+          category: rider.categoryRacing,
+        },
+        period: {
+          days,
+          from: dateThreshold,
+          to: new Date(),
+        },
+        summary: {
+          totalEvents,
+          finishedEvents,
+          dnfs,
+          avgPosition: avgPosition ? Math.round(avgPosition * 10) / 10 : null,
+        },
+        events: results.map(r => ({
+          // Event details
+          eventId: r.event.id,
+          eventName: r.event.name,
+          eventDate: r.event.eventDate,
+          eventType: r.event.eventType,
+          routeName: r.event.routeName,
+          distance: r.event.distance,
+          elevation: r.event.elevation,
+          
+          // Result details
+          position: r.position,
+          positionCategory: r.positionCategory,
+          category: r.category,
+          time: r.time,
+          timeGap: r.timeGap,
+          
+          // Performance
+          averagePower: r.averagePower,
+          normalizedPower: r.normalizedPower,
+          maxPower: r.maxPower,
+          averageWkg: r.averageWkg,
+          averageHeartRate: r.averageHeartRate,
+          averageCadence: r.averageCadence,
+          averageSpeed: r.averageSpeed,
+          
+          // Status
+          didFinish: r.didFinish,
+          didNotStart: r.didNotStart,
+          flagged: r.flagged,
+          
+          // Metadata
+          resultId: r.id,
+          source: r.source,
+          createdAt: r.createdAt,
+        })),
+      };
+    } catch (error) {
+      logger.error('❌ Error getting rider recent events', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper: Add a rider to favorites
+   */
+  async addFavorite(userId: number, favoriteRiderId: number, notes?: string) {
+    logger.info(`⭐ Add favorite: user ${userId} → rider ${favoriteRiderId}`);
+
+    try {
+      // Get database IDs
+      const user = await prisma.rider.findUnique({
+        where: { zwiftId: userId },
+        select: { id: true },
+      });
+
+      const favoriteRider = await prisma.rider.findUnique({
+        where: { zwiftId: favoriteRiderId },
+        select: { id: true },
+      });
+
+      if (!user || !favoriteRider) {
+        throw new Error('User or favorite rider not found');
+      }
+
+      // Create favorite
+      const favorite = await prisma.userFavorite.upsert({
+        where: {
+          unique_favorite: {
+            userId: user.id,
+            favoriteRiderId: favoriteRider.id,
+          },
+        },
+        create: {
+          userId: user.id,
+          favoriteRiderId: favoriteRider.id,
+          notes,
+        },
+        update: {
+          notes,
+          updatedAt: new Date(),
+        },
+      });
+
+      logger.info(`✓ Favorite added: ${favorite.id}`);
+      return favorite;
+    } catch (error) {
+      logger.error('❌ Error adding favorite', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper: Remove a favorite
+   */
+  async removeFavorite(userId: number, favoriteRiderId: number) {
+    logger.info(`⭐ Remove favorite: user ${userId} → rider ${favoriteRiderId}`);
+
+    try {
+      // Get database IDs
+      const user = await prisma.rider.findUnique({
+        where: { zwiftId: userId },
+        select: { id: true },
+      });
+
+      const favoriteRider = await prisma.rider.findUnique({
+        where: { zwiftId: favoriteRiderId },
+        select: { id: true },
+      });
+
+      if (!user || !favoriteRider) {
+        throw new Error('User or favorite rider not found');
+      }
+
+      // Delete favorite
+      await prisma.userFavorite.delete({
+        where: {
+          unique_favorite: {
+            userId: user.id,
+            favoriteRiderId: favoriteRider.id,
+          },
+        },
+      });
+
+      logger.info(`✓ Favorite removed`);
+    } catch (error) {
+      logger.error('❌ Error removing favorite', error);
+      throw error;
+    }
+  }
+}
+
+export default DashboardService;
