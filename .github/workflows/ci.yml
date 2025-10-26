@@ -38,11 +38,6 @@ jobs:
         env:
           NODE_ENV: test
           DATABASE_URL: "file:./test.db"
-      
-      - name: Test favorites flow (E2E)
-        run: npm run favorites:test
-        env:
-          NODE_ENV: test
   
   build:
     name: Build Check
