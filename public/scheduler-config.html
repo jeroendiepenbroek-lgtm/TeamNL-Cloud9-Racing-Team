@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scheduler Configuration - TeamNL Cloud9</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <style>
+    .tooltip {
+      position: relative;
+      display: inline-block;
+    }
+    .tooltip .tooltiptext {
+      visibility: hidden;
+      width: 300px;
+      background-color: #1f2937;
+      color: #fff;
+      text-align: left;
+      border-radius: 6px;
+      padding: 10px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -150px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-size: 0.875rem;
+      line-height: 1.5;
+    }
+    .tooltip:hover .tooltiptext {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-purple-600 to-purple-800 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold">⚙️ Scheduler Configuration</h1>
+          <p class="text-purple-200 mt-2">Configureer automatische sync intervallen</p>
+        </div>
+        <a href="/favorites-manager.html" class="bg-white text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-50 transition">
+          ← Terug naar Dashboard
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container mx-auto px-4 py-8 max-w-4xl">
+    
+    <!-- Alert Box -->
+    <div id="alert" class="hidden mb-6"></div>
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-blue-700">
+            <strong>Let op:</strong> Configuratie wijzigingen zijn <strong>runtime only</strong>. 
+            Bij herstart worden de waarden uit <code>.env</code> weer geladen. 
+            Voor permanente wijzigingen, pas de <code>.env</code> file aan.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Favorites Sync Configuration -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">🏁 Favorites Sync</h2>
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" id="favorites-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          <span class="ml-3 text-sm font-medium text-gray-700">Enabled</span>
+        </label>
+      </div>
+      
+      <p class="text-gray-600 text-sm mb-4">Update stats van alle favorite riders (FTP, ranking, power curve)</p>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Sync Interval (minuten)
+          </label>
+          <div class="flex items-center space-x-4">
+            <input type="number" id="favorites-minutes" min="15" max="1440" step="15"
+                   class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                   placeholder="360">
+            <span class="text-gray-600">minuten</span>
+            <span class="text-gray-400">≈</span>
+            <span id="favorites-hours" class="text-gray-600 font-medium">6 uur</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Aanbevolen: 240-360 min (4-6 uur) • Min: 15 min • Max: 1440 min (24 uur)
+          </p>
+          <div class="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
+            <span class="text-xs text-gray-500">Cron expressie:</span>
+            <code id="favorites-cron-preview" class="text-xs font-mono text-blue-600">0 */6 * * *</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Club Sync Configuration -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">🏢 Club Rosters Sync</h2>
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" id="club-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+          <span class="ml-3 text-sm font-medium text-gray-700">Enabled</span>
+        </label>
+      </div>
+      
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+        <p class="text-sm text-yellow-700">
+          <strong>⚠️ API Rate Limit:</strong> 1 call per 60 minuten per club. 
+          Bij 3 clubs duurt 1 cyclus 3+ uur!
+        </p>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Sync Interval (minuten)
+          </label>
+          <div class="flex items-center space-x-4">
+            <input type="number" id="club-minutes" min="60" max="1440" step="60"
+                   class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                   placeholder="720">
+            <span class="text-gray-600">minuten</span>
+            <span class="text-gray-400">≈</span>
+            <span id="club-hours" class="text-gray-600 font-medium">12 uur</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Aanbevolen: 720 min (12 uur) • Min: 60 min (1 uur) • Max: 1440 min (24 uur)
+          </p>
+          <div class="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
+            <span class="text-xs text-gray-500">Cron expressie:</span>
+            <code id="club-cron-preview" class="text-xs font-mono text-green-600">0 */12 * * *</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forward Scan Configuration -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">🔍 Forward Event Scan</h2>
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" id="scan-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-600"></div>
+          <span class="ml-3 text-sm font-medium text-gray-700">Enabled</span>
+        </label>
+      </div>
+      
+      <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+        <p class="text-sm text-blue-700">
+          <strong>💡 Smart Scanning:</strong> Scan draait elk uur met kleine batches. 
+          Bij 10 events/uur = ~10 min per scan, totaal ~4 uur per dag voor 240 events.
+        </p>
+      </div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Scan Interval (minuten)
+          </label>
+          <div class="flex items-center space-x-4">
+            <input type="number" id="scan-minutes" min="15" max="240" step="15"
+                   class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                   placeholder="60">
+            <span class="text-gray-600">minuten</span>
+            <span class="text-gray-400">≈</span>
+            <span id="scan-hours" class="text-gray-600 font-medium">1 uur</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Aanbevolen: 60 min (elk uur) • Min: 15 min • Max: 240 min (4 uur)
+          </p>
+          <div class="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
+            <span class="text-xs text-gray-500">Cron expressie:</span>
+            <code id="scan-cron-preview" class="text-xs font-mono text-orange-600">0 * * * *</code>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Events per Scan (batch size)
+            <span class="tooltip ml-1 cursor-help">
+              <span class="text-blue-500">ℹ️</span>
+              <span class="tooltiptext">
+                <strong>Batch Performance:</strong><br>
+                • 5 events = ~5 min (snel, frequente updates)<br>
+                • 10 events = ~10 min (aanbevolen, balans)<br>
+                • 20 events = ~20 min (minder frequent)<br>
+                • 50 events = ~50 min (langzaam)<br><br>
+                <strong>Voorbeeld (60 min interval):</strong><br>
+                • 10 events/uur = 240 events/dag = ~4 uur totaal
+              </span>
+            </span>
+          </label>
+          <input type="number" id="scan-max-events" 
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                 placeholder="10" min="1" max="100" step="1">
+          <p class="text-xs text-gray-500 mt-1">
+            Aanbevolen: 10 events (balans tussen snelheid en coverage)
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cleanup Configuration -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-2xl font-bold text-gray-800">🗑️ Data Cleanup</h2>
+        <label class="flex items-center cursor-pointer">
+          <input type="checkbox" id="cleanup-enabled" class="sr-only peer">
+          <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-gray-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-600"></div>
+          <span class="ml-3 text-sm font-medium text-gray-700">Enabled</span>
+        </label>
+      </div>
+      
+      <p class="text-gray-600 text-sm mb-4">Archiveer oude events (soft delete + hard delete results)</p>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Cleanup Tijdstip (uur van de dag)
+          </label>
+          <div class="flex items-center space-x-4">
+            <input type="number" id="cleanup-hour" min="0" max="23" step="1"
+                   class="w-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                   placeholder="3">
+            <span class="text-gray-600">:00 uur (24h formaat)</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Aanbevolen: 2-4 uur 's nachts (bijv. 03:00, voor de event scan) • Min: 0 • Max: 23
+          </p>
+          <div class="mt-2 p-2 bg-gray-50 rounded border border-gray-200">
+            <span class="text-xs text-gray-500">Cron expressie (dagelijks):</span>
+            <code id="cleanup-cron-preview" class="text-xs font-mono text-gray-600">0 3 * * *</code>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Retention Days</label>
+          <input type="number" id="cleanup-retention" 
+                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                 placeholder="100" min="7" max="365" step="1">
+          <p class="text-xs text-gray-500 mt-1">Huidige: <span id="cleanup-current-retention" class="font-mono">-</span> dagen</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex gap-4">
+      <button onclick="saveConfiguration()" 
+              class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200">
+        💾 Opslaan (Runtime)
+      </button>
+      <button onclick="loadConfiguration()" 
+              class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-3 px-6 rounded-lg transition duration-200">
+        🔄 Herladen
+      </button>
+    </div>
+
+    <!-- Help Section -->
+    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+      <h3 class="text-lg font-bold text-gray-800 mb-3">📚 Hulp & Documentatie</h3>
+      <ul class="space-y-2 text-sm text-gray-700">
+        <li>• <strong>Cron Validator:</strong> <a href="https://crontab.guru" target="_blank" class="text-blue-600 hover:underline">crontab.guru</a></li>
+        <li>• <strong>Documentatie:</strong> <code>docs/SCHEDULER_CONFIGURATION.md</code></li>
+        <li>• <strong>API:</strong> <code>GET /api/scheduler/config</code> en <code>PUT /api/scheduler/config</code></li>
+        <li>• <strong>Status:</strong> <code>GET /api/scheduler/status</code></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin + '/api';
+
+    // Convert minutes to cron expression
+    function minutesToCron(minutes) {
+      if (minutes < 60) {
+        return `*/${minutes} * * * *`; // Every X minutes
+      }
+      const hours = Math.floor(minutes / 60);
+      return `0 */${hours} * * *`; // Every X hours
+    }
+
+    // Convert hour to daily cron expression
+    function hourToCron(hour) {
+      return `0 ${hour} * * *`; // Daily at hour
+    }
+
+    // Update cron preview on input change
+    document.getElementById('favorites-minutes')?.addEventListener('input', (e) => {
+      const minutes = parseInt(e.target.value) || 360;
+      const hours = (minutes / 60).toFixed(1);
+      document.getElementById('favorites-hours').textContent = `${hours} uur`;
+      document.getElementById('favorites-cron-preview').textContent = minutesToCron(minutes);
+    });
+
+    document.getElementById('club-minutes')?.addEventListener('input', (e) => {
+      const minutes = parseInt(e.target.value) || 720;
+      const hours = (minutes / 60).toFixed(1);
+      document.getElementById('club-hours').textContent = `${hours} uur`;
+      document.getElementById('club-cron-preview').textContent = minutesToCron(minutes);
+    });
+
+    document.getElementById('scan-minutes')?.addEventListener('input', (e) => {
+      const minutes = parseInt(e.target.value) || 60;
+      const hours = (minutes / 60).toFixed(1);
+      document.getElementById('scan-hours').textContent = `${hours} uur`;
+      document.getElementById('scan-cron-preview').textContent = minutesToCron(minutes);
+    });
+
+    document.getElementById('cleanup-hour')?.addEventListener('input', (e) => {
+      const hour = parseInt(e.target.value) || 3;
+      document.getElementById('cleanup-cron-preview').textContent = hourToCron(hour);
+    });
+
+    // Load huidige configuratie bij page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadConfiguration();
+    });
+
+    async function loadConfiguration() {
+      try {
+        const response = await fetch(`${API_BASE}/scheduler/config`);
+        const config = await response.json();
+
+        // Favorites Sync - Parse cron to minutes
+        document.getElementById('favorites-enabled').checked = config.favoritesSync.enabled;
+        const favoritesMinutes = cronToMinutes(config.favoritesSync.cron);
+        document.getElementById('favorites-minutes').value = favoritesMinutes;
+        document.getElementById('favorites-hours').textContent = `${(favoritesMinutes / 60).toFixed(1)} uur`;
+        document.getElementById('favorites-cron-preview').textContent = config.favoritesSync.cron;
+
+        // Club Sync - Parse cron to minutes
+        document.getElementById('club-enabled').checked = config.clubSync.enabled;
+        const clubMinutes = cronToMinutes(config.clubSync.cron);
+        document.getElementById('club-minutes').value = clubMinutes;
+        document.getElementById('club-hours').textContent = `${(clubMinutes / 60).toFixed(1)} uur`;
+        document.getElementById('club-cron-preview').textContent = config.clubSync.cron;
+
+        // Forward Scan - Parse cron to minutes (hourly batches)
+        document.getElementById('scan-enabled').checked = config.forwardScan.enabled;
+        const scanMinutes = cronToMinutes(config.forwardScan.cron);
+        document.getElementById('scan-minutes').value = scanMinutes;
+        document.getElementById('scan-hours').textContent = `${(scanMinutes / 60).toFixed(1)} uur`;
+        document.getElementById('scan-cron-preview').textContent = config.forwardScan.cron;
+        document.getElementById('scan-max-events').value = config.forwardScan.maxEvents;
+
+        // Cleanup
+        document.getElementById('cleanup-enabled').checked = config.cleanup.enabled;
+        const cleanupHour = cronToHour(config.cleanup.cron);
+        document.getElementById('cleanup-hour').value = cleanupHour;
+        document.getElementById('cleanup-cron-preview').textContent = config.cleanup.cron;
+        document.getElementById('cleanup-retention').value = config.cleanup.retentionDays;
+
+        showAlert('Configuratie geladen', 'success');
+      } catch (error) {
+        showAlert('Fout bij laden configuratie: ' + error.message, 'error');
+      }
+    }
+
+    // Parse cron expression to minutes (simple parser)
+    function cronToMinutes(cron) {
+      const parts = cron.split(' ');
+      // Format: "*/X * * * *" or "0 */X * * *"
+      if (parts[0].startsWith('*/')) {
+        return parseInt(parts[0].replace('*/', ''));
+      }
+      if (parts[1].startsWith('*/')) {
+        return parseInt(parts[1].replace('*/', '')) * 60;
+      }
+      return 360; // default 6 hours
+    }
+
+    // Parse cron expression to hour (simple parser)
+    function cronToHour(cron) {
+      const parts = cron.split(' ');
+      // Format: "0 X * * *"
+      if (parts[1] && !parts[1].includes('*')) {
+        return parseInt(parts[1]);
+      }
+      return 4; // default 04:00
+    }
+
+    async function saveConfiguration() {
+      const favoritesMinutes = parseInt(document.getElementById('favorites-minutes').value) || 360;
+      const clubMinutes = parseInt(document.getElementById('club-minutes').value) || 720;
+      const scanMinutes = parseInt(document.getElementById('scan-minutes').value) || 60;
+      const cleanupHour = parseInt(document.getElementById('cleanup-hour').value) || 3;
+
+      const config = {
+        favoritesSync: {
+          enabled: document.getElementById('favorites-enabled').checked,
+          cron: minutesToCron(favoritesMinutes),
+        },
+        clubSync: {
+          enabled: document.getElementById('club-enabled').checked,
+          cron: minutesToCron(clubMinutes),
+        },
+        forwardScan: {
+          enabled: document.getElementById('scan-enabled').checked,
+          cron: minutesToCron(scanMinutes),
+          maxEvents: parseInt(document.getElementById('scan-max-events').value) || 10,
+        },
+        cleanup: {
+          enabled: document.getElementById('cleanup-enabled').checked,
+          cron: hourToCron(cleanupHour),
+          retentionDays: parseInt(document.getElementById('cleanup-retention').value),
+        },
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/scheduler/config`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showAlert('✅ Configuratie opgeslagen! Scheduler herstart met nieuwe instellingen.', 'success');
+          // Reload na 2 seconden
+          setTimeout(() => loadConfiguration(), 2000);
+        } else {
+          showAlert('❌ Fout: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showAlert('❌ Fout bij opslaan: ' + error.message, 'error');
+      }
+    }
+
+    function showAlert(message, type) {
+      const alert = document.getElementById('alert');
+      const bgColor = type === 'success' ? 'bg-green-50 border-green-500 text-green-700' : 'bg-red-50 border-red-500 text-red-700';
+      
+      alert.className = `border-l-4 p-4 ${bgColor}`;
+      alert.innerHTML = `
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm">${message}</p>
+          </div>
+        </div>
+      `;
+      alert.classList.remove('hidden');
+
+      // Auto hide na 5 seconden
+      setTimeout(() => {
+        alert.classList.add('hidden');
+      }, 5000);
+    }
+  </script>
+</body>
+</html>

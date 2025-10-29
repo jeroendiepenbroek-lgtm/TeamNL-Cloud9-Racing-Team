@@ -1,14 +1,12 @@
 import express, { Request, Response, NextFunction } from 'express';
-import cron from 'node-cron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './utils/config.js';
 import { logger } from './utils/logger.js';
 import apiRoutes from './api/routes.js';
-import SyncService from './services/sync.js';
-import { SmartScheduler } from './services/smart-scheduler.js';
-import { getSyncQueue } from './services/sync-queue.js';
-import { RiderRepository } from './database/repositories.js';
+import { getScheduler } from './services/scheduler.js';
+import { basicAuth, corsMiddleware } from './middleware/auth.js';
+import { initializeFirebase, firebaseAuth } from './middleware/firebase-auth.js';
 import prisma from './database/client.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,16 +17,25 @@ const app = express();
 // Middleware
 app.use(express.json());
 
+// CORS middleware (configureerbaar via env)
+app.use(corsMiddleware);
+
+// Authentication middleware (alleen in productie als enabled)
+if (process.env.AUTH_ENABLED === 'true') {
+  const authMethod = process.env.AUTH_METHOD || 'basic';
+  
+  if (authMethod === 'firebase') {
+    logger.info('🔒 Firebase Authentication enabled');
+    initializeFirebase();
+    app.use(firebaseAuth);
+  } else {
+    logger.info('🔒 Basic Authentication enabled');
+    app.use(basicAuth);
+  }
+}
+
 // Serve static files (HTML GUI)
 app.use(express.static(path.join(__dirname, '..', 'public')));
-
-// CORS voor development
-app.use((_req: Request, res: Response, next: NextFunction) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  next();
-});
 
 // Logging middleware
 app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -86,51 +93,16 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   }
 });
 
-// Initialiseer sync service
-const syncService = new SyncService();
-
-// Initialiseer SmartScheduler (indien ingeschakeld via env)
-let smartScheduler: SmartScheduler | null = null;
-if (SmartScheduler.isEnabled()) {
-  const riderRepo = new RiderRepository();
-  const syncQueue = getSyncQueue();
-  smartScheduler = new SmartScheduler(riderRepo, syncQueue);
-  smartScheduler.start();
-  logger.info('✅ SmartScheduler gestart (automatische sync op basis van priority)');
-} else {
-  logger.info('⏸️ SmartScheduler uitgeschakeld (SCHEDULER_ENABLED=false)');
-}
+// Initialiseer nieuwe configureerbare scheduler
+const scheduler = getScheduler();
+await scheduler.start();
 
 // Export functie voor scheduler status (voor API)
 export function getSchedulerStatus() {
-  if (!smartScheduler) {
-    return {
-      enabled: false,
-      message: 'Scheduler niet actief (SCHEDULER_ENABLED=false in .env)'
-    };
-  }
   return {
     enabled: true,
-    ...smartScheduler.getStatus()
+    jobs: scheduler.getStatus(),
   };
-}
-
-// Setup cron job voor automatische sync (indien ingeschakeld)
-if (config.enableAutoSync) {
-  // Elke X minuten sync uitvoeren
-  const cronExpression = `*/${config.syncIntervalMinutes} * * * *`;
-  
-  cron.schedule(cronExpression, async () => {
-    logger.info('🔄 Automatische sync gestart (cron job)');
-    try {
-      await syncService.syncClubMembers();
-      logger.info('✅ Automatische sync voltooid');
-    } catch (error) {
-      logger.error('❌ Automatische sync gefaald', error);
-    }
-  });
-  
-  logger.info(`⏰ Automatische sync ingeschakeld: elke ${config.syncIntervalMinutes} minuten`);
 }
 
 // Start server
@@ -145,9 +117,7 @@ process.on('SIGTERM', async () => {
   logger.info('SIGTERM signaal ontvangen, sluit server af...');
   
   // Stop scheduler
-  if (smartScheduler) {
-    smartScheduler.stop();
-  }
+  scheduler.stop();
   
   server.close(async () => {
     await prisma.$disconnect();
@@ -160,9 +130,7 @@ process.on('SIGINT', async () => {
   logger.info('SIGINT signaal ontvangen (Ctrl+C), sluit server af...');
   
   // Stop scheduler
-  if (smartScheduler) {
-    smartScheduler.stop();
-  }
+  scheduler.stop();
   
   server.close(async () => {
     await prisma.$disconnect();

@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/teamnl_cloud9
+      - PORT=3000
+      - ZWIFT_API_KEY=${ZWIFT_API_KEY}
+      - ZWIFT_API_BASE_URL=${ZWIFT_API_BASE_URL:-https://zwift-ranking.herokuapp.com}
+      - ZWIFT_CLUB_ID=${ZWIFT_CLUB_ID:-2281}
+      - ENABLE_AUTO_SYNC=true
+      - SCHEDULER_ENABLED=true
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=teamnl_cloud9
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

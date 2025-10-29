@@ -22,8 +22,16 @@
   <!-- Header -->
   <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
     <div class="container mx-auto px-4 py-6">
-      <h1 class="text-3xl font-bold">🏁 TeamNL Cloud9 - Favorites Manager</h1>
-      <p class="text-blue-200 mt-2">Beheer je favorite riders - Geen CLI nodig!</p>
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold">🏁 TeamNL Cloud9 - Favorites Manager</h1>
+          <p class="text-blue-200 mt-2">Beheer je favorite riders - Geen CLI nodig!</p>
+        </div>
+        <a href="/scheduler-config.html" class="bg-white text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-50 transition font-semibold flex items-center space-x-2">
+          <span>⚙️</span>
+          <span>Scheduler Config</span>
+        </a>
+      </div>
     </div>
   </header>
 
@@ -187,6 +195,13 @@
           <span id="sync-text">Sync Alle Favorites</span>
         </button>
         <button 
+          id="e2e-test-btn" 
+          class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 font-semibold transition flex items-center gap-2"
+        >
+          <span id="e2e-icon">🧪</span>
+          <span id="e2e-text">End-to-End Test</span>
+        </button>
+        <button 
           id="refresh-btn" 
           class="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 font-semibold transition"
         >
@@ -324,10 +339,11 @@
       try {
         document.getElementById('loading').classList.remove('hidden');
         
-        const response = await fetch(`${API_BASE}/favorites`);
+        const response = await fetch(`${API_BASE}/subteam/riders`);
         if (!response.ok) throw new Error('Kon favorites niet laden');
         
-        favorites = await response.json();
+        const data = await response.json();
+        favorites = data.riders || data;
         renderFavorites();
         updateStatusBar();
         
@@ -341,10 +357,10 @@
 
     async function addFavorite(zwiftId, priority, addedBy = 'gui') {
       try {
-        const response = await fetch(`${API_BASE}/favorites`, {
+        const response = await fetch(`${API_BASE}/subteam/riders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ zwiftId, priority, addedBy })
+          body: JSON.stringify({ zwiftIds: [zwiftId] })
         });
         
         if (!response.ok) {
@@ -375,7 +391,7 @@
       }
       
       try {
-        const response = await fetch(`${API_BASE}/favorites/${zwiftId}`, {
+        const response = await fetch(`${API_BASE}/subteam/riders/${zwiftId}`, {
           method: 'DELETE'
         });
         
@@ -391,6 +407,12 @@
 
     async function updatePriority(zwiftId, newPriority) {
       try {
+        // TODO: Priority update not yet implemented in SubteamService
+        // For now, riders are always added with default priority
+        showToast('Priority updates niet ondersteund (nog niet geïmplementeerd)', 'warning');
+        return;
+        
+        /*
         const response = await fetch(`${API_BASE}/favorites/${zwiftId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -401,6 +423,7 @@
         
         showToast(`Priority bijgewerkt naar ${newPriority}`, 'success');
         await loadFavorites();
+        */
       } catch (error) {
         console.error('Error updating priority:', error);
         showToast('Fout: ' + error.message, 'error');
@@ -417,7 +440,7 @@
       text.textContent = 'Bezig met syncen...';
       
       try {
-        const response = await fetch(`${API_BASE}/sync/favorites`, {
+        const response = await fetch(`${API_BASE}/subteam/sync`, {
           method: 'POST'
         });
         
@@ -426,15 +449,12 @@
         const result = await response.json();
         
         showToast(
-          `✓ Sync gestart! ${result.queued} rider(s) in queue. Check queue status voor voortgang.`, 
+          `✓ Sync voltooid! ${result.synced || 0} riders gesynchroniseerd.`, 
           'success'
         );
         
-        // Immediately fetch queue status to show the new jobs
-        await fetchQueueStatus();
-        
-        // Refresh data na 5 seconden
-        setTimeout(loadFavorites, 5000);
+        // Refresh data na 2 seconden
+        setTimeout(loadFavorites, 2000);
       } catch (error) {
         console.error('Error triggering sync:', error);
         showToast('Fout bij syncen: ' + error.message, 'error');
@@ -753,6 +773,157 @@
     }
 
     // ============================================
+    // END-TO-END TEST
+    // ============================================
+    async function runEndToEndTest() {
+      const btn = document.getElementById('e2e-test-btn');
+      const icon = document.getElementById('e2e-icon');
+      const text = document.getElementById('e2e-text');
+      
+      if (favorites.length === 0) {
+        showToast('⚠️ Upload eerst favorieten voordat je test draait!', 'error');
+        return;
+      }
+      
+      const confirmed = confirm(`🧪 END-TO-END TEST
+
+Dit test de volledige workflow:
+✅ Step 1: Check favorites (${favorites.length} riders)
+✅ Step 2: Sync rider stats
+✅ Step 3: Extract clubs
+✅ Step 4: Sync club rosters
+✅ Step 5: Forward scan (5 events)
+
+Duur: ~10-15 minuten
+Kosten: €0 (gratis API)
+
+Doorgaan?`);
+      
+      if (!confirmed) return;
+      
+      btn.disabled = true;
+      icon.textContent = '⏳';
+      
+      const log = (msg, success = true) => {
+        console.log(msg);
+        showToast(msg, success ? 'info' : 'error');
+      };
+      
+      try {
+        // ===== STEP 1: Verify Favorites =====
+        text.textContent = 'Step 1/5: Verify favorites...';
+        log(`✅ Step 1: ${favorites.length} favorites geladen`);
+        await sleep(1000);
+        
+        // ===== STEP 2: Sync Rider Stats =====
+        text.textContent = 'Step 2/5: Sync rider stats...';
+        log(`🔄 Step 2: Start sync van ${favorites.length} riders (dit duurt ~${favorites.length * 12} sec)`);
+        
+        const syncResponse = await fetch(`${API_BASE}/subteam/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!syncResponse.ok) throw new Error('Rider sync gefaald');
+        
+        const syncResult = await syncResponse.json();
+        log(`✅ Step 2: ${syncResult.synced} riders gesynchroniseerd, ${syncResult.clubsExtracted} clubs geëxtraheerd`, true);
+        await sleep(2000);
+        
+        // Reload to get updated data
+        await loadFavorites();
+        
+        // ===== STEP 3: Verify Club Extraction =====
+        text.textContent = 'Step 3/5: Verify clubs...';
+        
+        const clubsResponse = await fetch(`${API_BASE}/club`);
+        if (!clubsResponse.ok) throw new Error('Kon clubs niet ophalen');
+        
+        const clubData = await clubsResponse.json();
+        log(`✅ Step 3: ${clubData.memberCount || 0} club members in database`);
+        await sleep(1000);
+        
+        // ===== STEP 4: Sync Club Rosters (indien nog niet gedaan) =====
+        text.textContent = 'Step 4/5: Sync club rosters...';
+        log('👥 Step 4: Start club rosters sync');
+        
+        const clubSyncResponse = await fetch(`${API_BASE}/clubs/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!clubSyncResponse.ok) throw new Error('Club roster sync gefaald');
+        
+        const clubSyncResult = await clubSyncResponse.json();
+        log(`✅ Step 4: ${clubSyncResult.synced} clubs gesynchroniseerd, ${clubSyncResult.totalMembers} members`, true);
+        await sleep(1000);
+        
+        // ===== STEP 5: Forward Event Scan (Test met 5 events) =====
+        text.textContent = 'Step 5/5: Forward scan (5 events)...';
+        log('🔍 Step 5: Start forward event scan (5 events, ~5 minuten)');
+        
+        const scanResponse = await fetch(`${API_BASE}/sync/forward`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            maxEvents: 5,
+            retentionDays: 100
+          })
+        });
+        
+        if (!scanResponse.ok) throw new Error('Forward scan gefaald');
+        
+        const scanResult = await scanResponse.json();
+        log(`✅ Step 5: ${scanResult.found} events met tracked riders, ${scanResult.saved} opgeslagen`, true);
+        await sleep(1000);
+        
+        // ===== VERIFICATION =====
+        text.textContent = 'Verificatie...';
+        
+        const eventsResponse = await fetch(`${API_BASE}/events/tracked?limit=10`);
+        if (!eventsResponse.ok) throw new Error('Kon events niet ophalen');
+        
+        const eventsData = await eventsResponse.json();
+        
+        // ===== FINAL REPORT =====
+        const report = `🎉 END-TO-END TEST GESLAAGD!
+
+📊 Resultaten:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Step 1: ${favorites.length} favorites
+✅ Step 2: ${syncResult.synced} riders gesynchroniseerd
+✅ Step 3: ${syncResult.clubsExtracted} clubs geëxtraheerd
+✅ Step 4: ${clubSyncResult.synced} clubs, ${clubSyncResult.totalMembers} members
+✅ Step 5: ${scanResult.scanned} events gescand
+           ${scanResult.found} met tracked riders
+           ${eventsData.total} events in database
+
+⏱️ Totale tijd: ${Math.round(scanResult.duration / 1000 / 60)} minuten
+💾 Database: OK
+🌐 API: OK
+🔄 Workflow: Compleet!
+
+Volgende stap: Check /api/events/tracked`;
+        
+        alert(report);
+        log('🎉 End-to-end test GESLAAGD!', true);
+        
+      } catch (error) {
+        console.error('E2E Test error:', error);
+        log('❌ Test gefaald: ' + error.message, false);
+        alert('❌ Test gefaald!\n\n' + error.message + '\n\nCheck de console voor details.');
+      } finally {
+        btn.disabled = false;
+        icon.textContent = '🧪';
+        text.textContent = 'End-to-End Test';
+      }
+    }
+    
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // ============================================
     // EVENT LISTENERS
     // ============================================
     
@@ -820,23 +991,39 @@
           throw new Error('Geen geldige Zwift IDs gevonden in bestand');
         }
         
-        showToast(`${lines.length} riders gevonden. Bezig met toevoegen...`, 'info');
+        const zwiftIds = lines.map(line => parseInt(line));
+        showToast(`${zwiftIds.length} riders gevonden. Bezig met verwerken...`, 'info');
         
-        const priority = parseInt(document.getElementById('bulk-priority').value);
-        let success = 0;
-        let failed = 0;
+        // Gebruik bulk API endpoint
+        const response = await fetch(`${API_BASE}/subteam/riders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zwiftIds })
+        });
         
-        for (const line of lines) {
-          const zwiftId = parseInt(line);
-          const result = await addFavorite(zwiftId, priority, 'bulk-upload');
-          if (result) success++;
-          else failed++;
-          
-          // Small delay to prevent overwhelming the API
-          await new Promise(r => setTimeout(r, 500));
+        if (!response.ok) {
+          throw new Error('Upload gefaald');
         }
         
-        showToast(`Upload voltooid: ${success} succesvol, ${failed} gefaald`, success > 0 ? 'success' : 'error');
+        const result = await response.json();
+        
+        // Toon gedetailleerd resultaat
+        let message = `Upload voltooid!\n`;
+        if (result.summary?.added > 0) message += `✅ Nieuw toegevoegd: ${result.summary.added}\n`;
+        if (result.summary?.updated > 0) message += `🔄 Bijgewerkt: ${result.summary.updated}\n`;
+        if (result.summary?.alreadyExists > 0) message += `ℹ️  Al favoriet: ${result.summary.alreadyExists}\n`;
+        if (result.summary?.failed > 0) message += `❌ Gefaald: ${result.summary.failed}`;
+        
+        // Toon welke clubs zijn gewijzigd
+        const clubChanged = result.riders?.filter(r => r.clubChanged);
+        if (clubChanged && clubChanged.length > 0) {
+          message += `\n⚠️  Club gewijzigd voor ${clubChanged.length} rider(s)`;
+        }
+        
+        showToast(message, result.summary?.failed === 0 ? 'success' : 'warning');
+        
+        // Reload favorites om updates te tonen
+        await loadFavorites();
         
         // Reset
         fileInput.value = '';
@@ -854,6 +1041,9 @@
 
     // Sync button
     document.getElementById('sync-all-btn').addEventListener('click', triggerSync);
+
+    // End-to-End Test button
+    document.getElementById('e2e-test-btn').addEventListener('click', runEndToEndTest);
 
     // Refresh button
     document.getElementById('refresh-btn').addEventListener('click', loadFavorites);

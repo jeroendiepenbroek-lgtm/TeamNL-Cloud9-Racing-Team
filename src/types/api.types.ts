@@ -93,6 +93,12 @@ export const RiderSchema = z.object({
   zpCategory: z.string().optional(),
   zpFTP: z.number().optional(),
   
+  // Club info (optional, nested in rider endpoint response)
+  club: z.object({
+    id: z.number(),
+    name: z.string().optional(),
+  }).optional(),
+  
   // Power data
   power: PowerSchema.optional(),
   
@@ -124,18 +130,36 @@ export type HandicapsData = z.infer<typeof HandicapsSchema>;
 export const ClubMemberSchema = RiderSchema;
 export type ClubMemberData = z.infer<typeof ClubMemberSchema>;
 
-// Race result schema
+// Race result schema - /public/results/<eventId> response
 export const RaceResultSchema = z.object({
   riderId: z.number(),
-  eventId: z.number(),
-  eventName: z.string().optional(),
-  eventDate: z.string().optional(),
-  position: z.number().optional(),
+  name: z.string(),
   category: z.string().optional(),
+  
+  // Position data
+  position: z.number().optional(),
+  positionInCategory: z.number().optional(),
+  
+  // Time data
+  time: z.number().optional(),               // Race time in seconds
+  gap: z.number().nullable().optional(),     // Gap to winner in seconds
+  
+  // Rating data
+  rating: z.number().optional(),             // Rating after race
+  ratingBefore: z.number().optional(),       // Rating before race
+  ratingDelta: z.number().optional(),        // Rating change
+  ratingMax30: z.number().optional(),        // Max rating last 30 days
+  ratingMax90: z.number().optional(),        // Max rating last 90 days
+  
+  // Power & performance (optional, not always present)
   averagePower: z.number().optional(),
   averageWkg: z.number().optional(),
-  time: z.number().optional(),
   distance: z.number().optional(),
+  
+  // Legacy fields for compatibility
+  eventId: z.number().optional(),
+  eventName: z.string().optional(),
+  eventDate: z.string().optional(),
 });
 
 export type RaceResultData = z.infer<typeof RaceResultSchema>;

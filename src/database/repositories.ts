@@ -441,24 +441,69 @@ export class RiderRepository {
 
   /**
    * Sla historische snapshot op voor trend analyse
+   * Captures: FTP, weight, ranking, race rating, category
    */
-  async saveRiderHistory(riderId: number) {
+  async saveRiderHistory(
+    riderId: number, 
+    options?: {
+      snapshotType?: string;
+      triggeredBy?: string;
+    }
+  ) {
     const rider = await prisma.rider.findUnique({
       where: { id: riderId },
+      include: {
+        raceRating: true,
+      },
     });
 
-    if (!rider) return null;
+    if (!rider) {
+      logger.warn('Rider niet gevonden voor snapshot', { riderId });
+      return null;
+    }
 
-    return await prisma.riderHistory.create({
+    // Check of er al een snapshot vandaag bestaat (voorkom duplicaten)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const existingSnapshot = await prisma.riderHistory.findFirst({
+      where: {
+        riderId,
+        recordedAt: {
+          gte: today,
+        },
+      },
+    });
+
+    if (existingSnapshot && options?.snapshotType === 'daily') {
+      logger.debug('Snapshot voor vandaag bestaat al', { riderId });
+      return existingSnapshot;
+    }
+
+    const snapshot = await prisma.riderHistory.create({
       data: {
         riderId: rider.id,
         ftp: rider.ftp,
-        powerToWeight: rider.powerToWeight,
+        powerToWeight: rider.ftpWkg || rider.powerToWeight,
         ranking: rider.ranking,
         rankingScore: rider.rankingScore,
         weight: rider.weight,
+        categoryRacing: rider.categoryRacing,
+        zPoints: rider.zPoints,
+        snapshotType: options?.snapshotType || 'daily',
+        triggeredBy: options?.triggeredBy || 'manual',
       },
     });
+
+    logger.info('Rider snapshot aangemaakt', { 
+      riderId, 
+      snapshotId: snapshot.id,
+      type: snapshot.snapshotType,
+      ftp: rider.ftp,
+      rating: rider.raceRating?.currentRating,
+    });
+
+    return snapshot;
   }
 
   /**
@@ -478,6 +523,42 @@ export class RiderRepository {
   }
 
   /**
+   * Haal alle favorite riders op (Workflow Step 1)
+   */
+  async getAllFavorites() {
+    return await prisma.rider.findMany({
+      where: { isFavorite: true },
+      include: {
+        club: true,
+        raceRating: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
+  /**
+   * Check of rider al favorite is
+   */
+  async isFavorite(zwiftId: number): Promise<boolean> {
+    const rider = await prisma.rider.findUnique({
+      where: { zwiftId },
+      select: { isFavorite: true },
+    });
+    return rider?.isFavorite ?? false;
+  }
+
+  /**
+   * Haal alle favorite zwiftIds op (voor filtering)
+   */
+  async getFavoriteZwiftIds(): Promise<number[]> {
+    const riders = await prisma.rider.findMany({
+      where: { isFavorite: true },
+      select: { zwiftId: true },
+    });
+    return riders.map(r => r.zwiftId);
+  }
+
+  /**
    * Verwijder rider uit database (cascade delete voor gerelateerde data)
    */
   async deleteRider(zwiftId: number) {
@@ -492,20 +573,39 @@ export class RiderRepository {
  */
 export class ClubRepository {
   /**
-   * Sla club data op of update bestaande club
+   * Sla club data op of update bestaande club (overload for Step 3)
    */
-  async upsertClub(clubId: number, memberCount: number, name?: string) {
+  async upsertClub(data: { id: number; name?: string; memberCount?: number }) {
     return await prisma.club.upsert({
-      where: { id: clubId },
+      where: { id: data.id },
       update: {
-        memberCount,
-        name: name,
+        name: data.name,
+        ...(data.memberCount !== undefined && { memberCount: data.memberCount }),
       },
       create: {
-        id: clubId,
-        name: name || `Club ${clubId}`,
-        memberCount,
+        id: data.id,
+        name: data.name || `Club ${data.id}`,
+        memberCount: data.memberCount || 0,
       },
+    });
+  }
+
+  /**
+   * Update club source (Workflow Step 3)
+   */
+  async updateClubSource(clubId: number, source: 'favorite_rider' | 'manual' | 'api') {
+    return await prisma.club.update({
+      where: { id: clubId },
+      data: { source },
+    });
+  }
+
+  /**
+   * Haal alle clubs op
+   */
+  async getAllClubs() {
+    return await prisma.club.findMany({
+      orderBy: { name: 'asc' },
     });
   }
 
@@ -535,6 +635,10 @@ export class ResultRepository {
    */
   async upsertResult(data: RaceResultData, source: 'zwiftpower' | 'zwiftranking') {
     // First ensure the event exists
+    if (!data.eventId) {
+      throw new Error('eventId is required');
+    }
+
     await prisma.event.upsert({
       where: { id: data.eventId },
       update: {
@@ -846,6 +950,15 @@ export class TeamRepository {
    * Voeg rider toe aan team
    */
   async addTeamMember(teamId: number, riderId: number, role: string = 'member', notes?: string) {
+    // Check if member already exists
+    const existing = await prisma.teamMember.findFirst({
+      where: { teamId, riderId },
+    });
+
+    if (existing) {
+      throw new Error(`Rider ${riderId} is already a member of team ${teamId}`);
+    }
+
     return await prisma.teamMember.create({
       data: {
         teamId,
@@ -1091,8 +1204,7 @@ export class ClubMemberRepository {
       powerWkg20min: data.power.wkg1200,
       criticalPower: data.power.CP,
       anaerobicWork: data.power.AWC,
-      compoundScore: data.power.compoundScore,
-      powerRating: data.power.powerRating,
+      // Note: compoundScore and powerRating are only in Rider table, not ClubMember
     } : {};
 
     // Extract terrain handicaps
@@ -1136,7 +1248,9 @@ export class ClubMemberRepository {
       create: {
         zwiftId: data.riderId,
         name: data.name,
-        clubId: clubId,
+        club: {
+          connect: { id: clubId },
+        },
         categoryRacing: data.zpCategory || data.categoryRacing,
         ftp: effectiveFtp,
         ftpWkg: ftpWkg,
@@ -1256,4 +1370,179 @@ export class ClubMemberRepository {
       avgWkg: avgWkg || null,
     };
   }
+
+  /**
+   * Update isFavorite status voor club members (Workflow Step 4)
+   */
+  async updateFavoriteStatus(clubId: number, favoriteZwiftIds: number[]) {
+    // Set all to false first
+    await prisma.clubMember.updateMany({
+      where: { clubId },
+      data: { isFavorite: false },
+    });
+
+    // Set favorites to true
+    if (favoriteZwiftIds.length > 0) {
+      await prisma.clubMember.updateMany({
+        where: {
+          clubId,
+          zwiftId: { in: favoriteZwiftIds },
+        },
+        data: { isFavorite: true },
+      });
+    }
+  }
+
+  /**
+   * Haal alle tracked riders op (favorites + club members van favorite clubs)
+   */
+  async getAllTrackedRiders(): Promise<number[]> {
+    const members = await prisma.clubMember.findMany({
+      where: {
+        club: { source: 'favorite_rider' },
+      },
+      select: { zwiftId: true },
+    });
+    return [...new Set(members.map(m => m.zwiftId))];
+  }
+
+  /**
+   * Haal alleen favorites uit club members
+   */
+  async getFavoriteClubMembers(clubId?: number) {
+    return await prisma.clubMember.findMany({
+      where: {
+        isFavorite: true,
+        ...(clubId && { clubId }),
+      },
+      include: { club: true },
+      orderBy: { ranking: 'asc' },
+    });
+  }
 }
+
+/**
+ * Database repository voor Event operaties (Workflow Step 5)
+ * Beheert events met soft delete en 100-day retention
+ */
+export class EventRepository {
+  /**
+   * Sla event op of update bestaand
+   */
+  async upsertEvent(data: {
+    id: number;
+    name: string;
+    eventDate: Date;
+    clubId?: number;
+    totalFinishers?: number;
+  }) {
+    return await prisma.event.upsert({
+      where: { id: data.id },
+      create: {
+        id: data.id,
+        name: data.name,
+        eventDate: data.eventDate,
+        clubId: data.clubId,
+        totalFinishers: data.totalFinishers || 0,
+      },
+      update: {
+        name: data.name,
+        totalFinishers: data.totalFinishers || 0,
+      },
+    });
+  }
+
+  /**
+   * Haal laatste bekende event ID op
+   */
+  async getLastEventId(): Promise<number> {
+    const event = await prisma.event.findFirst({
+      orderBy: { id: 'desc' },
+      select: { id: true },
+    });
+    return event?.id || 0;
+  }
+
+  /**
+   * Haal actieve events op (niet gearchiveerd)
+   */
+  async getActiveEvents(limit?: number) {
+    return await prisma.event.findMany({
+      where: { deletedAt: null },
+      orderBy: { eventDate: 'desc' },
+      take: limit,
+      include: {
+        club: true,
+        _count: { select: { results: true } },
+      },
+    });
+  }
+
+  /**
+   * Soft delete oude events (100-day retention)
+   */
+  async softDeleteOldEvents(retentionDays: number = 100) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+    const result = await prisma.event.updateMany({
+      where: {
+        eventDate: { lt: cutoffDate },
+        deletedAt: null,
+      },
+      data: { deletedAt: new Date() },
+    });
+
+    logger.info(`Soft deleted ${result.count} events older than ${retentionDays} days`);
+    return result.count;
+  }
+
+  /**
+   * Hard delete race results van gearchiveerde events
+   */
+  async deleteArchivedResults(graceDays: number = 7) {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - graceDays);
+
+    const result = await prisma.raceResult.deleteMany({
+      where: {
+        event: {
+          deletedAt: {
+            not: null,
+            lt: cutoffDate,
+          },
+        },
+      },
+    });
+
+    logger.info(`Hard deleted ${result.count} race results from archived events`);
+    return result.count;
+  }
+
+  /**
+   * Haal events op met tracked rider deelname
+   */
+  async getEventsWithTrackedRiders(trackedRiderIds: number[], limit?: number) {
+    return await prisma.event.findMany({
+      where: {
+        deletedAt: null,
+        results: {
+          some: {
+            riderId: { in: trackedRiderIds },
+          },
+        },
+      },
+      orderBy: { eventDate: 'desc' },
+      take: limit,
+      include: {
+        club: true,
+        results: {
+          where: {
+            riderId: { in: trackedRiderIds },
+          },
+        },
+      },
+    });
+  }
+}
+

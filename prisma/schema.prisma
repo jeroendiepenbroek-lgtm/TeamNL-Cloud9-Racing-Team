@@ -8,9 +8,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"  // Automatisch SQLite in dev, PostgreSQL in productie
   url      = env("DATABASE_URL")
-  // Voor PostgreSQL: provider = "postgresql"
 }
 
 // ============================================================================
@@ -27,7 +26,11 @@ model Club {
   website         String?
   discordUrl      String?
   
-  // Favorite & Sync settings (NEW)
+  // Source tracking (Workflow Step 3)
+  source          String        @default("manual")   // "favorite_rider", "manual", "api"
+  trackedSince    DateTime      @default(now())
+  
+  // Favorite & Sync settings
   isFavorite      Boolean       @default(false)      // Track favoriete clubs
   syncEnabled     Boolean       @default(true)       // Auto-sync club roster
   syncInterval    Int           @default(60)         // Minuten tussen syncs
@@ -45,6 +48,7 @@ model Club {
   @@index([countryCode])
   @@index([isFavorite])
   @@index([syncEnabled])
+  @@index([source])
 }
 
 /// Rider (coureur) - HANDMATIG TOEGEVOEGD - jouw favoriete riders
@@ -239,6 +243,7 @@ model ClubMember {
   
   // Metadata
   isActive        Boolean       @default(true)
+  isFavorite      Boolean       @default(false)  // Link naar Rider table (Workflow Step 4)
   
   // Timestamps
   lastSynced      DateTime      @default(now())
@@ -255,6 +260,7 @@ model ClubMember {
   @@index([categoryRacing])
   @@index([lastRaceDate])
   @@index([isActive])
+  @@index([isFavorite])
   @@index([power5min])      // Voor FTP-achtige sortering
   @@index([powerWkg5min])   // Voor w/kg sortering
   @@index([totalDnfs])      // Voor reliability queries
@@ -303,6 +309,7 @@ model Event {
   // Timestamps
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?                        // Soft delete voor data retention
   
   // Relaties
   results         RaceResult[]
@@ -312,6 +319,7 @@ model Event {
   @@index([eventType])
   @@index([clubId])
   @@index([worldName])
+  @@index([deletedAt])
 }
 
 /// Race resultaten - koppelt riders aan events

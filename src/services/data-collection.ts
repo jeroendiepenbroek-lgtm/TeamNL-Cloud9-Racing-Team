@@ -223,12 +223,12 @@ export class DataCollectionService {
     try {
       const clubData = await this.apiClient.getClubMembers(clubId);
       
-      // upsertClub verwacht (clubId, memberCount, name?)
-      const club = await this.clubRepo.upsertClub(
-        clubData.clubId,
-        clubData.riders.length,
-        clubData.name
-      );
+      // upsertClub verwacht { id, name?, memberCount? }
+      const club = await this.clubRepo.upsertClub({
+        id: clubData.clubId,
+        name: clubData.name,
+        memberCount: clubData.riders.length,
+      });
       
       logger.info(`✓ Club ${club.name} (${clubId}) opgeslagen. Members: ${club.memberCount}`);
       

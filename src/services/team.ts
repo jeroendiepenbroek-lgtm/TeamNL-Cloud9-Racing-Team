@@ -216,6 +216,7 @@ export class TeamService {
           await this.resultRepo.upsertResult(
             {
               riderId: zwiftId,
+              name: `Rider ${zwiftId}`,
               eventId,
               eventName,
               eventDate: new Date(eventDate * 1000).toISOString(),

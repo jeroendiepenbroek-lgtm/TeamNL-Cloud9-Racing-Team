@@ -17,6 +17,7 @@ export class SmartScheduler {
   private riderRepo: RiderRepository;
   private syncQueue: SyncQueue;
   private jobs: Map<number, cron.ScheduledTask> = new Map();
+  private snapshotJob: cron.ScheduledTask | null = null;
   private isRunning: boolean = false;
   
   // Default intervals (in minutes)
@@ -179,11 +180,80 @@ export class SmartScheduler {
       this.startPriorityScheduler(priority);
     }
     
+    // Start daily snapshot job (elke dag om 03:00)
+    this.startDailySnapshotScheduler();
+    
     this.isRunning = true;
     logger.info('✅ SmartScheduler gestart', {
       priorities: [1, 2, 3, 4],
-      intervals: this.intervals
+      intervals: this.intervals,
+      dailySnapshot: '03:00'
     });
+  }
+  
+  /**
+   * Start daily snapshot scheduler
+   * Maakt elke dag om 03:00 snapshots van alle favorite riders
+   */
+  private startDailySnapshotScheduler(): void {
+    logger.info('Start daily snapshot scheduler (03:00)');
+    
+    this.snapshotJob = cron.schedule('0 3 * * *', async () => {
+      await this.createDailySnapshots();
+    }, {
+      scheduled: true,
+      timezone: 'Europe/Amsterdam'
+    });
+  }
+  
+  /**
+   * Create daily snapshots voor alle favorite riders
+   */
+  private async createDailySnapshots(): Promise<void> {
+    try {
+      logger.info('🎯 Start daily snapshot creation...');
+      
+      const favorites = await this.riderRepo.getFavoriteRiders();
+      
+      if (favorites.length === 0) {
+        logger.info('Geen favorite riders om snapshots van te maken');
+        return;
+      }
+      
+      let success = 0;
+      let skipped = 0;
+      let failed = 0;
+      
+      for (const rider of favorites) {
+        try {
+          const snapshot = await this.riderRepo.saveRiderHistory(rider.id, {
+            snapshotType: 'daily',
+            triggeredBy: 'scheduler',
+          });
+          
+          if (snapshot) {
+            success++;
+            logger.debug(`Snapshot aangemaakt voor rider ${rider.zwiftId}`);
+          } else {
+            skipped++;
+            logger.debug(`Snapshot al aanwezig voor rider ${rider.zwiftId}`);
+          }
+        } catch (error) {
+          failed++;
+          logger.error(`Fout bij snapshot voor rider ${rider.zwiftId}`, error);
+        }
+      }
+      
+      logger.info('✅ Daily snapshots voltooid', {
+        total: favorites.length,
+        success,
+        skipped,
+        failed,
+      });
+      
+    } catch (error) {
+      logger.error('Fout bij daily snapshot creation', error);
+    }
   }
   
   /**
@@ -197,10 +267,17 @@ export class SmartScheduler {
     
     logger.info('⏹️ SmartScheduler wordt gestopt...');
     
-    // Stop alle jobs
+    // Stop alle sync jobs
     for (const [priority, job] of this.jobs.entries()) {
       job.stop();
       logger.debug(`Scheduler voor priority ${priority} gestopt`);
+    }
+    
+    // Stop snapshot job
+    if (this.snapshotJob) {
+      this.snapshotJob.stop();
+      logger.debug('Daily snapshot scheduler gestopt');
+      this.snapshotJob = null;
     }
     
     this.jobs.clear();
@@ -227,6 +304,8 @@ export class SmartScheduler {
       isRunning: this.isRunning,
       intervals: this.intervals,
       activePriorities: Array.from(this.jobs.keys()),
+      dailySnapshotEnabled: this.snapshotJob !== null,
+      dailySnapshotTime: '03:00 (Europe/Amsterdam)',
       nextRuns: this.getNextRuns()
     };
   }

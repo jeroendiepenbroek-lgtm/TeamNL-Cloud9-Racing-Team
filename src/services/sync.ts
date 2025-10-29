@@ -57,7 +57,11 @@ export class SyncService {
       logger.info(`✓ ${clubData.riders.length} club members opgehaald van API voor ${clubData.name}`);
 
       // Update club record with actual name from API
-      await this.clubRepo.upsertClub(clubId, clubData.riders.length, clubData.name);
+      await this.clubRepo.upsertClub({
+        id: clubId,
+        name: clubData.name,
+        memberCount: clubData.riders.length,
+      });
 
       // Sla members op in club_members tabel (batches van 50 voor betere performance)
       const batchSize = 50;

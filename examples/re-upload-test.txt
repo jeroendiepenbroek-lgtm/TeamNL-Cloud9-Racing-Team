@@ -1,0 +1,9 @@
+# Re-upload Test - Mix van nieuwe en bestaande riders
+# Bestaande riders (worden bijgewerkt met verse stats):
+150437
+832234
+377812
+
+# Nieuwe riders (worden toegevoegd):
+123456
+789012
