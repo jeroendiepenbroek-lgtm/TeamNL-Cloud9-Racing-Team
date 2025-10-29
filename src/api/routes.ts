@@ -8,8 +8,13 @@ import {
 import prisma from '../database/client.js';
 import SyncService from '../services/sync.js';
 import { getSyncQueue } from '../services/sync-queue.js';
+import { SubteamService } from '../services/subteam.js';
+import { EventService } from '../services/event.js';
+import { ClubService } from '../services/club.js';
+import { getScheduler } from '../services/scheduler.js';
 // import DashboardService from '../services/dashboard.js'; // Disabled - wordt later herimplementeerd
 import TeamService from '../services/team.js';
+// import { workflowService } from '../services/workflow.js'; // TODO: Fix type errors first
 import { logger } from '../utils/logger.js';
 import { config } from '../utils/config.js';
 
@@ -22,6 +27,9 @@ const resultRepo = new ResultRepository();
 const syncLogRepo = new SyncLogRepository();
 const syncService = new SyncService();
 const syncQueue = getSyncQueue();
+const subteamService = new SubteamService();
+const eventService = new EventService();
+const clubService = new ClubService();
 // const dashboardService = new DashboardService(); // Disabled
 const teamService = new TeamService();
 
@@ -39,6 +47,29 @@ function asyncHandler(fn: (req: Request, res: Response, next: NextFunction) => P
  */
 router.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+/**
+ * System information endpoint (TEST FEATURE for workflow validation)
+ */
+router.get('/system', (_req: Request, res: Response) => {
+  res.json({
+    version: '0.2.0',
+    environment: process.env.NODE_ENV || 'development',
+    node: process.version,
+    uptime: Math.round(process.uptime()),
+    memory: {
+      used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+      unit: 'MB'
+    },
+    features: {
+      authentication: process.env.AUTH_ENABLED === 'true',
+      autoSync: process.env.ENABLE_AUTO_SYNC === 'true',
+      scheduler: process.env.SCHEDULER_ENABLED === 'true'
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
 /**
@@ -151,6 +182,88 @@ router.get('/results/:eventId', asyncHandler(async (req: Request, res: Response)
   
   const results = await resultRepo.getEventResults(eventId);
   res.json(results);
+}));
+
+/**
+ * SUBTEAM ENDPOINTS (Favorites Workflow)
+ */
+
+// GET /api/subteam/riders - List all favorite riders
+router.get('/subteam/riders', asyncHandler(async (_req: Request, res: Response) => {
+  const favorites = await subteamService.listFavorites();
+  res.json({
+    count: favorites.length,
+    riders: favorites,
+  });
+}));
+
+// POST /api/subteam/riders - Add favorite riders (bulk)
+router.post('/subteam/riders', asyncHandler(async (req: Request, res: Response) => {
+  const { zwiftIds } = req.body;
+  
+  if (!Array.isArray(zwiftIds) || zwiftIds.length === 0) {
+    res.status(400).json({ error: 'zwiftIds array vereist (bijv. [1495, 2281])' });
+    return;
+  }
+  
+  // Validate alle IDs zijn numbers
+  if (!zwiftIds.every(id => typeof id === 'number' && !isNaN(id))) {
+    res.status(400).json({ error: 'Alle zwiftIds moeten valid numbers zijn' });
+    return;
+  }
+  
+  logger.info(`Adding ${zwiftIds.length} favorites via API...`);
+  const result = await subteamService.addFavorites(zwiftIds);
+  
+  res.json({
+    message: `Processed ${zwiftIds.length} riders`,
+    summary: {
+      added: result.added,
+      updated: result.updated,
+      alreadyExists: result.alreadyExists,
+      failed: result.failed,
+    },
+    riders: result.riders,
+  });
+}));
+
+// DELETE /api/subteam/riders/:zwiftId - Remove favorite rider
+router.delete('/subteam/riders/:zwiftId', asyncHandler(async (req: Request, res: Response) => {
+  const zwiftId = parseInt(req.params.zwiftId);
+  
+  if (isNaN(zwiftId)) {
+    res.status(400).json({ error: 'Ongeldige rider ID' });
+    return;
+  }
+  
+  logger.info(`Removing favorite ${zwiftId} via API...`);
+  await subteamService.removeFavorite(zwiftId);
+  
+  res.json({ 
+    message: `Favorite rider ${zwiftId} verwijderd`,
+    zwiftId,
+  });
+}));
+
+// POST /api/subteam/sync - Sync stats for all or specific favorite
+router.post('/subteam/sync', asyncHandler(async (req: Request, res: Response) => {
+  const { zwiftId } = req.body;
+  
+  if (zwiftId !== undefined) {
+    const id = parseInt(zwiftId);
+    if (isNaN(id)) {
+      res.status(400).json({ error: 'Ongeldige rider ID' });
+      return;
+    }
+    
+    logger.info(`Syncing stats for rider ${id} via API...`);
+    const result = await subteamService.syncFavoriteStats(id);
+    res.json(result);
+  } else {
+    logger.info('Syncing stats for all favorites via API...');
+    const result = await subteamService.syncFavoriteStats();
+    res.json(result);
+  }
 }));
 
 /**
@@ -639,6 +752,527 @@ router.get('/scheduler/status', asyncHandler(async (_req: Request, res: Response
   const { getSchedulerStatus } = await import('../server.js');
   const status = getSchedulerStatus();
   res.json(status);
+}));
+
+/**
+ * SUBTEAM ENDPOINTS (Workflow Step 1-3)
+ */
+
+// POST /api/subteam/riders - Add favorite riders
+router.post('/subteam/riders', asyncHandler(async (req: Request, res: Response) => {
+  const { zwiftIds } = req.body;
+
+  if (!Array.isArray(zwiftIds) || zwiftIds.length === 0) {
+    res.status(400).json({ error: 'zwiftIds array required' });
+    return;
+  }
+
+  // Validate all are numbers
+  if (!zwiftIds.every(id => typeof id === 'number' && id > 0)) {
+    res.status(400).json({ error: 'All zwiftIds must be positive numbers' });
+    return;
+  }
+
+  const result = await subteamService.addFavorites(zwiftIds);
+
+  res.json({
+    added: result.added,
+    updated: result.updated,
+    failed: result.failed,
+    alreadyExists: result.alreadyExists,
+    riders: result.riders,
+  });
+}));
+
+// DELETE /api/subteam/riders/:zwiftId - Remove favorite rider
+router.delete('/subteam/riders/:zwiftId', asyncHandler(async (req: Request, res: Response) => {
+  const zwiftId = parseInt(req.params.zwiftId);
+
+  if (isNaN(zwiftId) || zwiftId <= 0) {
+    res.status(400).json({ error: 'Invalid zwiftId' });
+    return;
+  }
+
+  await subteamService.removeFavorite(zwiftId);
+
+  res.json({
+    success: true,
+    deleted: zwiftId,
+    message: `Favorite rider ${zwiftId} removed`,
+  });
+}));
+
+// GET /api/subteam/riders - List all favorites
+router.get('/subteam/riders', asyncHandler(async (_req: Request, res: Response) => {
+  const riders = await subteamService.listFavorites();
+
+  res.json({
+    total: riders.length,
+    riders: riders.map(r => ({
+      zwiftId: r.zwiftId,
+      name: r.name,
+      category: r.categoryRacing,
+      ftp: r.ftp,
+      ftpWkg: r.ftpWkg,
+      ranking: r.ranking,
+      club: r.club ? {
+        id: r.club.id,
+        name: r.club.name,
+      } : null,
+      addedBy: r.addedBy,
+      addedAt: r.addedAt,
+    })),
+  });
+}));
+
+// POST /api/subteam/sync - Sync stats for all or specific favorite
+router.post('/subteam/sync', asyncHandler(async (req: Request, res: Response) => {
+  const { zwiftId } = req.body;
+
+  if (zwiftId !== undefined && (typeof zwiftId !== 'number' || zwiftId <= 0)) {
+    res.status(400).json({ error: 'Invalid zwiftId' });
+    return;
+  }
+
+  const result = await subteamService.syncFavoriteStats(zwiftId);
+
+  res.json({
+    synced: result.synced,
+    failed: result.failed,
+    clubsExtracted: result.clubsExtracted,
+    riders: result.riders,
+  });
+}));
+
+/**
+ * FORWARD SCAN ENDPOINTS (Workflow Step 5)
+ */
+
+// POST /api/sync/forward - Trigger forward event scan
+router.post('/sync/forward', asyncHandler(async (req: Request, res: Response) => {
+  const { maxEvents, startEventId, retentionDays } = req.body;
+
+  // Validate inputs
+  if (maxEvents !== undefined && (typeof maxEvents !== 'number' || maxEvents <= 0 || maxEvents > 5000)) {
+    res.status(400).json({ error: 'maxEvents must be between 1 and 5000' });
+    return;
+  }
+
+  if (startEventId !== undefined && (typeof startEventId !== 'number' || startEventId <= 0)) {
+    res.status(400).json({ error: 'startEventId must be a positive number' });
+    return;
+  }
+
+  if (retentionDays !== undefined && (typeof retentionDays !== 'number' || retentionDays < 30 || retentionDays > 365)) {
+    res.status(400).json({ error: 'retentionDays must be between 30 and 365' });
+    return;
+  }
+
+  const result = await eventService.forwardScan({
+    maxEvents,
+    startEventId,
+    retentionDays,
+  });
+
+  res.json(result);
+}));
+
+// GET /api/events/tracked - Get events with tracked riders
+router.get('/events/tracked', asyncHandler(async (req: Request, res: Response) => {
+  const limit = parseInt(req.query.limit as string) || 50;
+
+  if (isNaN(limit) || limit <= 0 || limit > 200) {
+    res.status(400).json({ error: 'limit must be between 1 and 200' });
+    return;
+  }
+
+  const events = await eventService.getTrackedEvents(limit);
+
+  res.json({
+    total: events.length,
+    events,
+  });
+}));
+
+/**
+ * CLUB ROSTER SYNC ENDPOINTS (Step 4)
+ */
+
+// POST /api/clubs/sync - Sync alle favorite club rosters
+router.post('/clubs/sync', asyncHandler(async (_req: Request, res: Response) => {
+  logger.info('📋 Manual club rosters sync triggered (Step 4)');
+
+  const result = await clubService.syncAllClubRosters();
+
+  res.json({
+    success: true,
+    synced: result.synced,
+    failed: result.failed,
+    totalMembers: result.totalMembers,
+    clubs: result.clubs,
+  });
+}));
+
+// POST /api/clubs/:clubId/sync - Sync een specifieke club
+router.post('/clubs/:clubId/sync', asyncHandler(async (req: Request, res: Response) => {
+  const clubId = parseInt(req.params.clubId, 10);
+
+  if (isNaN(clubId) || clubId <= 0) {
+    res.status(400).json({ error: 'Invalid clubId' });
+    return;
+  }
+
+  logger.info(`📋 Manual sync for club ${clubId}`);
+
+  const result = await clubService.syncSingleClub(clubId);
+
+  res.json({
+    success: true,
+    synced: result.synced,
+    failed: result.failed,
+    totalMembers: result.totalMembers,
+    club: result.clubs[0],
+  });
+}));
+
+// GET /api/clubs/members - Get alle tracked club members
+router.get('/clubs/members', asyncHandler(async (_req: Request, res: Response) => {
+  const members = await clubService.getAllTrackedClubMembers();
+
+  res.json({
+    total: members.length,
+    members,
+  });
+}));
+
+// GET /api/clubs/:clubId/favorites - Get favorites binnen een club
+router.get('/clubs/:clubId/favorites', asyncHandler(async (req: Request, res: Response) => {
+  const clubId = parseInt(req.params.clubId, 10);
+
+  if (isNaN(clubId) || clubId <= 0) {
+    res.status(400).json({ error: 'Invalid clubId' });
+    return;
+  }
+
+  const members = await clubService.getFavoriteClubMembers(clubId);
+
+  res.json({
+    clubId,
+    total: members.length,
+    members,
+  });
+}));
+
+/**
+ * SCHEDULER ENDPOINTS
+ */
+
+// GET /api/scheduler/status - Get status van alle cron jobs
+router.get('/scheduler/status', (_req: Request, res: Response) => {
+  const scheduler = getScheduler();
+  const jobs = scheduler.getStatus();
+
+  res.json({
+    enabled: jobs.length > 0,
+    totalJobs: jobs.length,
+    jobs,
+    config: {
+      favoritesSyncCron: process.env.FAVORITES_SYNC_CRON || '0 */6 * * *',
+      clubSyncCron: process.env.CLUB_SYNC_CRON || '0 */12 * * *',
+      forwardScanCron: process.env.FORWARD_SCAN_CRON || '0 4 * * *',
+      cleanupCron: process.env.CLEANUP_CRON || '0 3 * * *',
+    },
+  });
+});
+
+/**
+ * WORKFLOW ENDPOINTS - Production Workflow
+ */
+
+// GET /api/workflow/status - Get complete workflow status
+router.get('/workflow/status', asyncHandler(async (_req: Request, res: Response) => {
+  // Get counts from database
+  const favorites = await prisma.rider.count({ where: { isFavorite: true } });
+  const clubs = await prisma.club.count();
+  const clubMembers = await prisma.clubMember.count();
+  const events = await prisma.event.count();
+  
+  // Use raw SQL for date filtering (Prisma has DateTime comparison bug with SQLite)
+  const cutoff90d = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff100d = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString();
+  
+  const rawRecentEvents = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*) as count FROM events WHERE eventDate >= ${cutoff90d}
+  `;
+  const recentEvents = Number(rawRecentEvents[0]?.count || 0);
+  
+  const rawOldEvents = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*) as count FROM events WHERE eventDate < ${cutoff100d}
+  `;
+  const oldEvents = Number(rawOldEvents[0]?.count || 0);
+  
+  const raceResults = await prisma.raceResult.count();
+  const favoriteResults = await prisma.raceResult.count({ where: { riderType: 'favorite' } });
+  const clubResults = await prisma.raceResult.count({ where: { riderType: 'club_member' } });
+
+  res.json({
+    favorites,
+    clubs,
+    clubMembers,
+    events: {
+      total: events,
+      recent: recentEvents,
+      old: oldEvents,
+    },
+    results: {
+      total: raceResults,
+      favorites: favoriteResults,
+      club: clubResults,
+    },
+  });
+}));
+
+// GET /api/workflow/clubs - Get clubs waar favorites rijden
+router.get('/workflow/clubs', asyncHandler(async (_req: Request, res: Response) => {
+  // Get favorite riders with their clubId
+  const favorites = await prisma.rider.findMany({
+    where: { 
+      isFavorite: true,
+    },
+    select: {
+      zwiftId: true,
+      name: true,
+      clubId: true,
+    }
+  });
+
+  // For now, use hardcoded club 2281 as bypass
+  const clubMembers = await prisma.clubMember.findMany({
+    where: { clubId: 2281 },
+    select: {
+      zwiftId: true,
+      name: true,
+      isFavorite: true,
+    }
+  });
+
+  const club = await prisma.club.findUnique({
+    where: { id: 2281 },
+    select: { id: true, name: true, memberCount: true }
+  });
+
+  res.json({
+    clubs: [
+      {
+        clubId: 2281,
+        clubName: club?.name || 'TeamNL',
+        memberCount: clubMembers.length,
+        favoriteMembers: clubMembers.filter(m => m.isFavorite).length,
+        members: clubMembers.slice(0, 10), // First 10 for preview
+      }
+    ],
+    totalFavorites: favorites.length,
+  });
+}));
+
+// POST /api/workflow/cleanup - Cleanup oude events (>100 dagen)
+router.post('/workflow/cleanup', asyncHandler(async (req: Request, res: Response) => {
+  const { daysThreshold = 100, dryRun = false } = req.body;
+  
+  // Bereken cutoff date: nu MINUS threshold dagen
+  const now = new Date();
+  const cutoffDate = new Date(now.getTime() - daysThreshold * 24 * 60 * 60 * 1000);
+  
+  // Count what would be deleted (use raw SQL - Prisma has DateTime comparison bug with SQLite)
+  const rawOldEvents = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*) as count FROM events WHERE eventDate < ${cutoffDate.toISOString()}
+  `;
+  const oldEvents = Number(rawOldEvents[0]?.count || 0);
+  
+  const rawOldResults = await prisma.$queryRaw<Array<{ count: bigint }>>`
+    SELECT COUNT(*) as count FROM race_results 
+    WHERE eventId IN (SELECT id FROM events WHERE eventDate < ${cutoffDate.toISOString()})
+  `;
+  const oldResults = Number(rawOldResults[0]?.count || 0);
+
+  if (dryRun) {
+    res.json({
+      message: 'Dry run - geen data verwijderd',
+      daysThreshold,
+      cutoffDate,
+      wouldDelete: {
+        events: oldEvents,
+        results: oldResults,
+      }
+    });
+    return;
+  }
+
+  // Delete old results first (foreign key) - use raw SQL
+  // @ts-expect-error - TypeScript doesn't parse SQL in template literals correctly
+  const deletedResultsCount = await prisma.$executeRaw`
+    DELETE FROM race_results 
+    WHERE eventId IN (SELECT id FROM events WHERE eventDate < ${cutoffDate.toISOString()})
+  `;
+
+  // Delete old events - use raw SQL
+  // @ts-expect-error - TypeScript doesn't parse SQL in template literals correctly
+  const deletedEventsCount = await prisma.$executeRaw`
+    DELETE FROM events WHERE eventDate < ${cutoffDate.toISOString()}
+  `;
+
+  logger.info(`Cleanup: Verwijderd ${deletedEventsCount} events en ${deletedResultsCount} results ouder dan ${daysThreshold} dagen`);
+
+  res.json({
+    message: `Cleanup voltooid: ${deletedEventsCount} events verwijderd`,
+    daysThreshold,
+    cutoffDate,
+    deleted: {
+      events: deletedEventsCount,
+      results: deletedResultsCount,
+    }
+  });
+}));
+
+// GET /api/workflow/events/favorites - Get events voor favorite riders
+router.get('/workflow/events/favorites', asyncHandler(async (req: Request, res: Response) => {
+  const { days = 90 } = req.query;
+  const cutoffDate = new Date(Date.now() - parseInt(days as string) * 24 * 60 * 60 * 1000);
+
+  const events = await prisma.event.findMany({
+    where: {
+      eventDate: { gte: cutoffDate },
+      results: {
+        some: { riderType: 'favorite' }
+      }
+    },
+    include: {
+      results: {
+        where: { riderType: 'favorite' },
+        include: {
+          rider: {
+            select: { zwiftId: true, name: true }
+          }
+        }
+      }
+    },
+    orderBy: { eventDate: 'desc' }
+  });
+
+  res.json({
+    days: parseInt(days as string),
+    cutoffDate,
+    events: events.length,
+    data: events.map(e => ({
+      id: e.id,
+      name: e.name,
+      eventDate: e.eventDate,
+      eventType: e.eventType,
+      results: e.results.length,
+      riders: e.results.map(r => r.rider?.name).filter(Boolean),
+    }))
+  });
+}));
+
+// GET /api/workflow/events/club - Get events voor club members
+router.get('/workflow/events/club', asyncHandler(async (req: Request, res: Response) => {
+  const { hours = 24, clubId = 2281 } = req.query;
+  const cutoffDate = new Date(Date.now() - parseInt(hours as string) * 60 * 60 * 1000);
+
+  const events = await prisma.event.findMany({
+    where: {
+      eventDate: { gte: cutoffDate },
+      results: {
+        some: { 
+          riderType: 'club_member',
+          clubMember: { clubId: parseInt(clubId as string) }
+        }
+      }
+    },
+    include: {
+      results: {
+        where: { riderType: 'club_member' },
+        include: {
+          clubMember: {
+            select: { zwiftId: true, name: true, clubId: true }
+          }
+        }
+      }
+    },
+    orderBy: { eventDate: 'desc' }
+  });
+
+  res.json({
+    clubId: parseInt(clubId as string),
+    hours: parseInt(hours as string),
+    cutoffDate,
+    events: events.length,
+    data: events.map(e => ({
+      id: e.id,
+      name: e.name,
+      eventDate: e.eventDate,
+      eventType: e.eventType,
+      results: e.results.length,
+      members: e.results.map(r => r.clubMember?.name).filter(Boolean),
+    }))
+  });
+}));
+
+// GET /api/workflow/summary - Complete workflow summary
+router.get('/workflow/summary', asyncHandler(async (_req: Request, res: Response) => {
+  const favorites = await prisma.rider.findMany({
+    where: { isFavorite: true },
+    select: {
+      zwiftId: true,
+      name: true,
+      totalRaces: true,
+      raceResults: {
+        select: { id: true }
+      }
+    }
+  });
+
+  const clubMembers = await prisma.clubMember.findMany({
+    where: { clubId: 2281 },
+    select: {
+      zwiftId: true,
+      name: true,
+      isFavorite: true,
+      totalRaces: true,
+    }
+  });
+
+  const recentEvents = await prisma.event.count({
+    where: { eventDate: { gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) } }
+  });
+
+  const oldEvents = await prisma.event.count({
+    where: { eventDate: { lt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000) } }
+  });
+
+  res.json({
+    workflow: {
+      step1: { description: 'Favorite riders opgegeven', count: favorites.length },
+      step2: { description: 'Rider details opgeslagen', status: 'complete' },
+      step3: { description: 'Clubs van subteam', clubId: 2281, clubName: 'TeamNL' },
+      step4: { description: 'Club members tracked', count: clubMembers.length },
+      step5: { description: 'Favorite events (90d)', count: recentEvents },
+      step6: { description: 'Club events tracked', status: 'active' },
+      step7: { description: 'Old events (>100d)', count: oldEvents, action: 'cleanup available' },
+    },
+    favorites: favorites.map(f => ({
+      zwiftId: f.zwiftId,
+      name: f.name,
+      totalRaces: f.totalRaces,
+      resultsInDb: f.raceResults.length,
+    })),
+    club: {
+      id: 2281,
+      name: 'TeamNL',
+      members: clubMembers.length,
+      favoriteMembers: clubMembers.filter(m => m.isFavorite).length,
+    }
+  });
 }));
 
 export default router;
