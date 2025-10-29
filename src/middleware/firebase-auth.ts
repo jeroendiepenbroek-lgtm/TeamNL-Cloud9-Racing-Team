@@ -97,14 +97,15 @@ export const firebaseAuth = async (req: Request, res: Response, next: NextFuncti
  * Usage:
  *   router.post('/api/sync/club', requireAdmin, asyncHandler(async (req, res) => {...}));
  */
-export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
   const user = (req as any).user;
 
   if (!user) {
-    return res.status(401).json({
+    res.status(401).json({
       error: 'Unauthorized',
       message: 'Authenticatie vereist',
     });
+    return;
   }
 
   if (!user.isAdmin) {
@@ -114,10 +115,11 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
       path: req.path,
     });
 
-    return res.status(403).json({
+    res.status(403).json({
       error: 'Forbidden',
       message: 'Admin rechten vereist voor deze actie',
     });
+    return;
   }
 
   logger.debug('✅ Admin access granted', { uid: user.uid, path: req.path });
@@ -127,14 +129,15 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
 /**
  * Optional middleware: Require verified email
  */
-export const requireVerifiedEmail = (req: Request, res: Response, next: NextFunction) => {
+export const requireVerifiedEmail = (req: Request, res: Response, next: NextFunction): void => {
   const user = (req as any).user;
 
   if (!user || !user.emailVerified) {
-    return res.status(403).json({
+    res.status(403).json({
       error: 'Forbidden',
       message: 'Email verificatie vereist',
     });
+    return;
   }
 
   next();
