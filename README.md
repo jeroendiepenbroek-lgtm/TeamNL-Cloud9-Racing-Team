@@ -2,6 +2,25 @@
 
 Dashboard voor TeamNL Cloud9 met real-time Zwift racing data integratie.
 
+## 🔍 **Data Bekijken? Start Hier!**
+
+**Vraag**: Kan ik de opgehaalde data zien?
+
+**Antwoord**: Ja! Gebruik Prisma Studio (visuele database browser):
+
+```bash
+npm run db:studio  # Opens http://localhost:5555
+```
+
+**Of** snel overzicht in terminal:
+```bash
+npm run db:view
+```
+
+📖 **Complete handleiding**: [docs/DATA_VIEWING_QUICKSTART.md](docs/DATA_VIEWING_QUICKSTART.md)
+
+---
+
 ## ✨ **NIEUW: Web GUI met Queue Monitoring** (100% gratis!)
 
 **Geen CLI meer nodig!** Beheer je favorite riders via een professionele web interface met **real-time queue status**:
@@ -145,9 +164,6 @@ npm run db:generate
 
 # Run database migrations
 npm run db:migrate
-
-# (Optioneel) Open Prisma Studio voor database inzicht
-npm run db:studio
 ```
 
 ### 3. Eerste Data Sync
@@ -165,6 +181,41 @@ npm run dev
 ```
 
 Server draait op `http://localhost:3000`
+
+### 5. **Bekijk je Data** 🔍
+
+Je hebt **3 eenvoudige manieren** om de opgehaalde data te bekijken:
+
+#### Optie 1: Prisma Studio (Visuele Database Browser) - **Aanbevolen!**
+```bash
+npm run db:studio
+```
+- Opent automatisch op `http://localhost:5555`
+- Gebruiksvriendelijke interface
+- Sorteer, filter, zoek, bewerk data
+- Bekijk relaties tussen tabellen
+
+#### Optie 2: Quick View (Terminal)
+```bash
+npm run db:view
+```
+- Snel overzicht in de terminal
+- Tabel counts, recente riders, top performers
+- Laatste sync status
+- Recente events
+
+#### Optie 3: Via API Endpoints
+```bash
+# Start server (indien nog niet draait)
+npm run dev
+
+# Haal data op
+curl http://localhost:3000/api/riders/150437
+curl http://localhost:3000/api/favorites
+curl http://localhost:3000/api/events
+```
+
+**📖 Volledige handleiding**: Zie [docs/DATA_VIEWING_GUIDE.md](docs/DATA_VIEWING_GUIDE.md)
 
 ## 📡 API Endpoints
 
@@ -290,9 +341,13 @@ npm run favorites:remove <ids>   # Verwijder favorites
 npm run favorites:sync           # Sync favorites data
 npm run favorites:test           # Run E2E test flow
 
+# 🔍 Database & Data Viewing
 npm run db:generate  # Genereer Prisma client
 npm run db:migrate   # Run database migrations
-npm run db:studio    # Open Prisma Studio
+npm run db:studio    # Open Prisma Studio (visuele database browser)
+npm run db:view      # Quick data overzicht in terminal
+npm run db:seed      # Seed database met test data
+
 npm run lint         # Run ESLint
 npm run format       # Format code met Prettier
 npm test             # Run tests

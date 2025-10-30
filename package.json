@@ -18,6 +18,7 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
+    "db:view": "tsx scripts/view-data.ts",
     "db:seed": "tsx src/database/seed.ts",
     "sync": "tsx scripts/sync-cli.ts",
     "sync:favorites": "tsx scripts/sync-favorites.ts",
