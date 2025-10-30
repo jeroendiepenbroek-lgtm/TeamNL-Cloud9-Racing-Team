@@ -7,6 +7,8 @@ import {
 } from '../database/repositories.js';
 import prisma from '../database/client.js';
 import SyncService from '../services/sync.js';
+import RiderSyncService from '../services/rider-sync.js';
+import RiderEventsService from '../services/rider-events.js';
 import { getSyncQueue } from '../services/sync-queue.js';
 import { SubteamService } from '../services/subteam.js';
 import { EventService } from '../services/event.js';
@@ -26,6 +28,7 @@ const clubRepo = new ClubRepository();
 const resultRepo = new ResultRepository();
 const syncLogRepo = new SyncLogRepository();
 const syncService = new SyncService();
+const riderSyncService = new RiderSyncService();
 const syncQueue = getSyncQueue();
 const subteamService = new SubteamService();
 const eventService = new EventService();
@@ -1562,6 +1565,367 @@ router.get('/workflow/summary', asyncHandler(async (_req: Request, res: Response
       name: 'TeamNL',
       members: clubMembers.length,
       favoriteMembers: clubMembers.filter(m => m.isFavorite).length,
+    }
+  });
+}));
+
+/**
+ * RIDER SYNC ENDPOINTS (US1-US6)
+ */
+
+// POST /api/riders/:riderId/sync - US1: Sync actuele rider informatie
+router.post('/riders/:riderId/sync', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+  const { clubId } = req.body;
+
+  logger.info(`📡 US1: Sync request voor rider ${riderId}`);
+
+  const result = await riderSyncService.syncRiderCurrent(riderId, clubId);
+
+  res.json({
+    success: true,
+    message: `Rider ${result.name} gesynchroniseerd`,
+    rider: {
+      id: result.id,
+      zwiftId: result.zwiftId,
+      name: result.name,
+      ftp: result.ftp,
+      ranking: result.ranking,
+      categoryRacing: result.categoryRacing,
+    }
+  });
+}));
+
+// POST /api/riders/:riderId/sync-history - US2: Sync historische data (90d)
+router.post('/riders/:riderId/sync-history', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+  const { days = 90 } = req.body;
+
+  logger.info(`📡 US2: History sync request voor rider ${riderId} (${days} dagen)`);
+
+  const result = await riderSyncService.syncRiderHistory(riderId, days);
+
+  res.json({
+    success: true,
+    message: `${result.successCount} historische snapshots opgeslagen`,
+    stats: {
+      successCount: result.successCount,
+      skipCount: result.skipCount,
+      totalDays: result.totalDays,
+    }
+  });
+}));
+
+// POST /api/riders/:riderId/sync-events - US3: Sync rider events (90d)
+router.post('/riders/:riderId/sync-events', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+
+  logger.info(`📡 US3: Events sync request voor rider ${riderId}`);
+
+  const result = await riderSyncService.syncRiderEvents(riderId);
+
+  res.json({
+    success: true,
+    message: `${result.eventsCount} events, ${result.resultsCount} results opgeslagen`,
+    stats: {
+      eventsCount: result.eventsCount,
+      resultsCount: result.resultsCount,
+    }
+  });
+}));
+
+// POST /api/riders/:riderId/full-sync - Volledige sync (US1 + US2 + US3)
+router.post('/riders/:riderId/full-sync', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+  const { clubId } = req.body;
+
+  logger.info(`📡 Full sync request voor rider ${riderId}`);
+
+  const result = await riderSyncService.fullRiderSync(riderId, clubId);
+
+  res.json({
+    success: true,
+    message: `Volledige sync voltooid voor ${result.rider.name}`,
+    rider: {
+      name: result.rider.name,
+      zwiftId: result.rider.zwiftId,
+      ftp: result.rider.ftp,
+      ranking: result.rider.ranking,
+    },
+    events: result.events,
+    history: result.history,
+    duration: `${(result.totalDuration / 1000 / 60).toFixed(2)} minuten`,
+  });
+}));
+
+// POST /api/riders/scan-events - US4: Hourly scan voor nieuwe events (alle riders)
+router.post('/riders/scan-events', asyncHandler(async (_req: Request, res: Response) => {
+  logger.info('📡 US4: Scan nieuwe events voor alle riders');
+
+  const result = await riderSyncService.scanNewEvents();
+
+  res.json({
+    success: true,
+    message: `${result.scannedCount} riders gescand, ${result.newEventsCount} nieuwe events gevonden`,
+    stats: {
+      scannedCount: result.scannedCount,
+      newEventsCount: result.newEventsCount,
+      errorCount: result.errorCount,
+    }
+  });
+}));
+
+// DELETE /api/riders/:riderId - US5/US6: Verwijder rider met alle data
+router.delete('/riders/:riderId', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+
+  logger.info(`📡 US5/US6: Delete request voor rider ${riderId}`);
+
+  const result = await riderSyncService.deleteRiderComplete(riderId);
+
+  res.json({
+    success: true,
+    message: `Rider ${result.riderName} volledig verwijderd`,
+    stats: {
+      riderId: result.riderId,
+      riderName: result.riderName,
+      deletedHistory: result.deletedHistory,
+      deletedResults: result.deletedResults,
+    }
+  });
+}));
+
+/**
+ * RIDER EVENTS ENDPOINTS (Web Scraping - Real Event Data)
+ */
+
+// POST /api/riders/:riderId/fetch-events - US1: Haal events laatste 90d op via scraping
+router.post('/riders/:riderId/fetch-events', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+
+  logger.info(`🕷️ US1: Fetch events via scraping voor rider ${riderId}`);
+
+  const riderEventsService = new RiderEventsService();
+  const result = await riderEventsService.fetchRiderEvents(riderId);
+
+  res.json({
+    success: true,
+    message: `${result.savedCount}/${result.eventsCount} events opgeslagen voor rider ${riderId}`,
+    stats: {
+      eventIds: result.eventIds,
+      eventsCount: result.eventsCount,
+      savedCount: result.savedCount,
+      dataSource: 'zwiftracing_scrape',
+    }
+  });
+}));
+
+// POST /api/riders/scan-all-events - US2: Hourly scan voor nieuwe events (alle favorite riders)
+router.post('/riders/scan-all-events', asyncHandler(async (_req: Request, res: Response) => {
+  logger.info('🕷️ US2: Scan nieuwe events via scraping voor alle favorite riders');
+
+  const riderEventsService = new RiderEventsService();
+  const result = await riderEventsService.scanNewEventsForAllRiders();
+
+  res.json({
+    success: true,
+    message: `${result.ridersScanned} riders gescand, ${result.newEventsFound} nieuwe events gevonden`,
+    stats: {
+      ridersScanned: result.ridersScanned,
+      newEventsFound: result.newEventsFound,
+      errors: result.errors,
+    }
+  });
+}));
+
+// DELETE /api/events/cleanup - US3: Verwijder events >90d
+router.delete('/events/cleanup', asyncHandler(async (_req: Request, res: Response) => {
+  logger.info('🕷️ US3: Cleanup oude events (>90d)');
+
+  const riderEventsService = new RiderEventsService();
+  const result = await riderEventsService.cleanupOldEvents();
+
+  res.json({
+    success: true,
+    message: `${result.eventsDeleted} events verwijderd (${result.resultsDeleted} results)`,
+    stats: {
+      eventsDeleted: result.eventsDeleted,
+      resultsDeleted: result.resultsDeleted,
+      cutoffDate: result.cutoffDate,
+    }
+  });
+}));
+
+/**
+ * BRONDATATABELLEN (SOURCE DATA) ENDPOINTS - US6, US7, US8
+ */
+
+// POST /api/source-data/collect/events/:riderId - US6: Fetch 90-day event data (scraping + enrichment)
+router.post('/source-data/collect/events/:riderId', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+  const { days = 90 } = req.body;
+
+  if (isNaN(riderId)) {
+    res.status(400).json({ error: 'Ongeldige rider ID' });
+    return;
+  }
+
+  logger.info(`🔍 US6: Start event data collection voor rider ${riderId} (${days} dagen)`);
+
+  // Import service
+  const { sourceDataCollectorService } = await import('../services/source-data-collector.js');
+  const result = await sourceDataCollectorService.fetchRecentEvents(riderId, days);
+
+  res.json({
+    success: true,
+    message: `US6 voltooid: ${result.eventsProcessed} events verwerkt`,
+    riderId,
+    days,
+    stats: {
+      eventsProcessed: result.eventsProcessed,
+      resultsDataSaved: result.resultsDataSaved,
+      zpDataSaved: result.zpDataSaved,
+      errors: result.errors.length,
+      errorDetails: result.errors,
+    }
+  });
+}));
+
+// POST /api/source-data/scan/events - US7: Hourly scanner for all tracked riders
+router.post('/source-data/scan/events', asyncHandler(async (req: Request, res: Response) => {
+  const { riderIds } = req.body;
+
+  if (!Array.isArray(riderIds) || riderIds.length === 0) {
+    res.status(400).json({ error: 'riderIds array is verplicht (bijv. [150437, 123456])' });
+    return;
+  }
+
+  // Validate all IDs are numbers
+  if (!riderIds.every(id => typeof id === 'number' && !isNaN(id))) {
+    res.status(400).json({ error: 'Alle riderIds moeten geldige nummers zijn' });
+    return;
+  }
+
+  logger.info(`🔄 US7: Start hourly scan voor ${riderIds.length} riders`);
+
+  // Import service
+  const { sourceDataCollectorService } = await import('../services/source-data-collector.js');
+  const result = await sourceDataCollectorService.scanForNewEvents(riderIds);
+
+  res.json({
+    success: true,
+    message: `US7 voltooid: ${result.ridersScanned} riders gescand`,
+    stats: {
+      ridersScanned: result.ridersScanned,
+      newEventsFound: result.newEventsFound,
+      newResultsData: result.newResultsData,
+      newZpData: result.newZpData,
+      errors: result.errors.length,
+      errorDetails: result.errors,
+    }
+  });
+}));
+
+// POST /api/source-data/onboard/rider/:riderId - US8: Onboard new rider (90 days)
+router.post('/source-data/onboard/rider/:riderId', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+
+  if (isNaN(riderId)) {
+    res.status(400).json({ error: 'Ongeldige rider ID' });
+    return;
+  }
+
+  logger.info(`🚀 US8: Start onboarding voor rider ${riderId}`);
+
+  // Import service
+  const { eventDiscoveryService } = await import('../services/event-discovery.service.js');
+  const result = await eventDiscoveryService.onboardNewRider(riderId);
+
+  res.json({
+    success: true,
+    message: `US8: Rider ${result.riderName} onboarded met ${result.eventsDiscovered} events`,
+    riderId: result.riderId,
+    riderName: result.riderName,
+    stats: {
+      eventsDiscovered: result.eventsDiscovered,
+      eventIdsNeedingData: result.eventIdsNeedingData.length,
+    },
+    next: {
+      action: 'Voer US6 uit om event data op te halen',
+      endpoint: `/api/source-data/collect/events/${riderId}`,
+      method: 'POST',
+      eventIds: result.eventIdsNeedingData.slice(0, 5), // Eerste 5 voor preview
+    }
+  });
+}));
+
+// GET /api/source-data/stats/:riderId - Get brondatatabellen stats for rider
+router.get('/source-data/stats/:riderId', asyncHandler(async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+
+  if (isNaN(riderId)) {
+    res.status(400).json({ error: 'Ongeldige rider ID' });
+    return;
+  }
+
+  // Query database voor stats
+  const rider = await riderRepo.getRider(riderId);
+  if (!rider) {
+    res.status(404).json({ error: 'Rider niet gevonden' });
+    return;
+  }
+
+  // Count events, results, brondatatabellen
+  const events = await prisma.event.count({
+    where: {
+      results: {
+        some: {
+          riderId: rider.id,
+        }
+      }
+    }
+  });
+
+  const raceResults = await prisma.raceResult.count({
+    where: { riderId: rider.id }
+  });
+
+  const resultsData = await prisma.eventResultsSourceData.count({
+    where: {
+      event: {
+        results: {
+          some: {
+            riderId: rider.id,
+          }
+        }
+      }
+    }
+  });
+
+  const zpData = await prisma.eventZpSourceData.count({
+    where: {
+      event: {
+        results: {
+          some: {
+            riderId: rider.id,
+          }
+        }
+      }
+    }
+  });
+
+  res.json({
+    riderId,
+    riderName: rider.name,
+    stats: {
+      events,
+      raceResults,
+      resultsData,
+      zpData,
+      coverage: {
+        resultsData: events > 0 ? ((resultsData / events) * 100).toFixed(1) + '%' : '0%',
+        zpData: events > 0 ? ((zpData / events) * 100).toFixed(1) + '%' : '0%',
+      }
     }
   });
 }));

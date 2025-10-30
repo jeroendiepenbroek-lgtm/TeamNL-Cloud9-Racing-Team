@@ -6,20 +6,27 @@
 
 import cron from 'node-cron';
 import { logger } from '../utils/logger.js';
+import prisma from '../database/client.js';
 import { SubteamService } from './subteam.js';
 import { EventService } from './event.js';
 import { ClubService } from './club.js';
+import RiderSyncService from './rider-sync.js';
+import { RiderEventsService } from './rider-events.js';
 
 export class SchedulerService {
   private jobs: Map<string, cron.ScheduledTask> = new Map();
   private subteamService: SubteamService;
   private eventService: EventService;
   private clubService: ClubService;
+  private riderSyncService: RiderSyncService;
+  private riderEventsService: RiderEventsService;
 
   constructor() {
     this.subteamService = new SubteamService();
     this.eventService = new EventService();
     this.clubService = new ClubService();
+    this.riderSyncService = new RiderSyncService();
+    this.riderEventsService = new RiderEventsService();
   }
 
   /**
@@ -128,6 +135,65 @@ export class SchedulerService {
           logger.error('❌ Cleanup gefaald', error);
         }
       });
+    }
+
+    // 5. Rider Events Scan (US4) - Hourly check voor nieuwe events
+    if (this.getEnvBoolean('RIDER_EVENTS_SCAN_ENABLED')) {
+      const cronExp = process.env.RIDER_EVENTS_SCAN_CRON || '0 * * * *'; // Elk uur
+      this.scheduleJob('rider-events-scan', cronExp, async () => {
+        logger.info('⏰ US4: Start scheduled rider events scan');
+        try {
+          // Scan voor alle favorite riders
+          const riders = await prisma.rider.findMany({
+            where: { 
+              isFavorite: true,
+              isActive: true 
+            },
+            select: { zwiftId: true, name: true }
+          });
+
+          logger.info(`📊 Scanning ${riders.length} favorite riders for new events`);
+
+          let totalNewEvents = 0;
+          for (const rider of riders) {
+            try {
+              const result = await this.riderEventsService.fetchRiderEvents(rider.zwiftId);
+              totalNewEvents += result.savedCount;
+              logger.debug(`✓ ${rider.name}: ${result.savedCount} new events`);
+            } catch (error) {
+              logger.warn(`⚠️  Failed to scan rider ${rider.zwiftId}`, error);
+            }
+          }
+
+          logger.info('✅ US4: Rider events scan voltooid', {
+            ridersScanned: riders.length,
+            totalNewEvents,
+          });
+        } catch (error) {
+          logger.error('❌ US4: Rider events scan gefaald', error);
+        }
+      });
+
+      // Optioneel: scan bij startup
+      if (this.getEnvBoolean('RIDER_EVENTS_SCAN_ON_STARTUP')) {
+        logger.info('🚀 Startup scan: rider events (US4)');
+        // We voeren de scan uit maar loggen alleen errors (niet blocking)
+        setTimeout(async () => {
+          try {
+            const riders = await prisma.rider.findMany({
+              where: { isFavorite: true, isActive: true },
+              select: { zwiftId: true }
+            });
+            for (const rider of riders) {
+              await this.riderEventsService.fetchRiderEvents(rider.zwiftId).catch((err) => {
+                logger.warn(`Startup scan failed for rider ${rider.zwiftId}`, err);
+              });
+            }
+          } catch (error) {
+            logger.error('Startup rider events scan gefaald', error);
+          }
+        }, 5000); // 5 seconden delay
+      }
     }
 
     const activeJobs = Array.from(this.jobs.keys());

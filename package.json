@@ -24,7 +24,7 @@
     "sync:events:club": "tsx scripts/sync-club-events.ts",
     "sync:events:favorites": "tsx scripts/sync-favorite-events.ts",
     "sync:forward": "tsx scripts/forward-tracking.ts",
-  "backfill:rider": "tsx scripts/backfill-rider-events.ts",
+    "backfill:rider": "tsx scripts/backfill-rider-events.ts",
     "test:e2e": "tsx scripts/e2e-test.ts",
     "favorites:add": "tsx scripts/add-favorites.ts",
     "favorites:list": "tsx scripts/list-favorites.ts",
@@ -47,11 +47,13 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "@types/multer": "^2.0.0",
     "axios": "^1.7.7",
     "axios-rate-limit": "^1.4.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "firebase-admin": "^13.5.0",
+    "multer": "^2.0.2",
     "node-cron": "^3.0.3",
     "zod": "^3.23.8"
   },

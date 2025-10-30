@@ -546,6 +546,309 @@ model RiderStatistics {
 }
 
 // ============================================================================
+// BRONDATATABELLEN (RAW API DATA)
+// ============================================================================
+// Bron-data van alle API endpoints - immutable snapshots met rate limit tracking
+// Principe: Elke API response wordt opgeslagen in zijn eigen tabel
+
+/// Club data van /public/clubs/:id
+model ClubSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  clubId          Int
+  endpoint        String        @default("/public/clubs/:id")
+  
+  // Raw API response (JSON)
+  rawData         String        // Complete JSON response
+  
+  // Parsed key fields (voor indexing)
+  name            String?
+  memberCount     Int?
+  countryCode     String?
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  apiVersion      String        @default("v1")
+  responseStatus  Int           @default(200)
+  responseTime    Int?          // milliseconden
+  
+  // Timestamps
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("club_source_data")
+  @@index([clubId, fetchedAt])
+  @@index([fetchedAt])
+}
+
+/// Club roster data van /public/clubs/:id/:riderId
+model ClubRosterSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  clubId          Int
+  fromRiderId     Int
+  endpoint        String        @default("/public/clubs/:id/:riderId")
+  
+  // Raw API response (JSON array)
+  rawData         String        // Complete JSON array van riders
+  
+  // Parsed metrics
+  ridersCount     Int           @default(0)
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  responseStatus  Int           @default(200)
+  responseTime    Int?
+  
+  // Timestamps
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("club_roster_source_data")
+  @@index([clubId, fetchedAt])
+  @@index([fetchedAt])
+}
+
+/// Event results van /public/results/:eventId
+model EventResultsSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  eventId         Int
+  endpoint        String        @default("/public/results/:eventId")
+  
+  // Raw API response (JSON array)
+  rawData         String        // Complete JSON array van results
+  
+  // Parsed metrics
+  participantsCount Int         @default(0)
+  finishersCount  Int           @default(0)
+  
+  // Event key fields (voor indexing)
+  eventName       String?
+  eventDate       DateTime?
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  responseStatus  Int           @default(200)
+  responseTime    Int?
+  
+  // Timestamps
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("event_results_source_data")
+  @@index([eventId, fetchedAt])
+  @@index([eventDate])
+  @@index([fetchedAt])
+}
+
+/// Event results van /public/zp/:eventId/results (ZwiftPower format)
+model EventZpSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  eventId         Int
+  endpoint        String        @default("/public/zp/:eventId/results")
+  
+  // Raw API response (JSON array)
+  rawData         String        // Complete ZwiftPower JSON array
+  
+  // Parsed metrics
+  participantsCount Int         @default(0)
+  
+  // Event key fields
+  eventName       String?
+  eventDate       DateTime?
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  responseStatus  Int           @default(200)
+  responseTime    Int?
+  
+  // Timestamps
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("event_zp_source_data")
+  @@index([eventId, fetchedAt])
+  @@index([eventDate])
+  @@index([fetchedAt])
+}
+
+/// Rider data van /public/riders/:riderId
+model RiderSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  riderId         Int
+  endpoint        String        @default("/public/riders/:riderId")
+  
+  // Raw API response (JSON)
+  rawData         String        // Complete JSON response
+  
+  // Parsed key fields (voor indexing)
+  name            String?
+  ranking         Int?
+  categoryRacing  String?
+  ftp             Float?
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  responseStatus  Int           @default(200)
+  responseTime    Int?
+  
+  // Timestamps
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("rider_source_data")
+  @@index([riderId, fetchedAt])
+  @@index([fetchedAt])
+}
+
+/// Rider data op specifiek tijdstip van /public/riders/:riderId/:time
+model RiderHistorySourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  riderId         Int
+  epochTime       Int           // Unix timestamp van snapshot
+  endpoint        String        @default("/public/riders/:riderId/:time")
+  
+  // Raw API response (JSON)
+  rawData         String        // Complete JSON response
+  
+  // Parsed key fields
+  name            String?
+  ranking         Int?
+  ftp             Float?
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  responseStatus  Int           @default(200)
+  responseTime    Int?
+  
+  // Timestamps
+  snapshotDate    DateTime      // Datum van de snapshot (van epochTime)
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("rider_history_source_data")
+  @@index([riderId, snapshotDate])
+  @@index([riderId, fetchedAt])
+  @@index([fetchedAt])
+}
+
+/// Bulk rider data van POST /public/riders
+model RiderBulkSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  endpoint        String        @default("POST /public/riders")
+  riderIds        String        // JSON array van opgevraagde rider IDs
+  
+  // Raw API response (JSON array)
+  rawData         String        // Complete JSON array van riders
+  
+  // Parsed metrics
+  requestedCount  Int           @default(0)
+  returnedCount   Int           @default(0)
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  responseStatus  Int           @default(200)
+  responseTime    Int?
+  
+  // Timestamps
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("rider_bulk_source_data")
+  @@index([fetchedAt])
+}
+
+/// Bulk rider history data van POST /public/riders/:time
+model RiderBulkHistorySourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  epochTime       Int           // Unix timestamp van snapshot
+  endpoint        String        @default("POST /public/riders/:time")
+  riderIds        String        // JSON array van opgevraagde rider IDs
+  
+  // Raw API response (JSON array)
+  rawData         String        // Complete JSON array van riders
+  
+  // Parsed metrics
+  requestedCount  Int           @default(0)
+  returnedCount   Int           @default(0)
+  
+  // Rate limit tracking
+  rateLimitRemaining Int?
+  rateLimitReset  DateTime?
+  
+  // Metadata
+  responseStatus  Int           @default(200)
+  responseTime    Int?
+  
+  // Timestamps
+  snapshotDate    DateTime      // Datum van de snapshot
+  fetchedAt       DateTime      @default(now())
+  
+  @@map("rider_bulk_history_source_data")
+  @@index([snapshotDate])
+  @@index([fetchedAt])
+}
+
+// ============================================================================
+// RATE LIMIT TRACKING
+// ============================================================================
+
+/// Rate limit tracking per endpoint (voor monitoring en scheduling)
+model RateLimitLog {
+  id              String        @id @default(cuid())
+  
+  // Endpoint identificatie
+  endpoint        String        // "/public/clubs/:id", etc.
+  method          String        @default("GET")  // GET, POST
+  
+  // Rate limit status
+  limitMax        Int           // Max requests per periode
+  limitRemaining  Int           // Requests over
+  limitResetAt    DateTime      // Wanneer reset
+  
+  // Request details
+  requestUrl      String?       // Volledige URL
+  responseStatus  Int?
+  responseTime    Int?          // milliseconden
+  
+  // Timestamps
+  recordedAt      DateTime      @default(now())
+  
+  @@map("rate_limit_logs")
+  @@index([endpoint, recordedAt])
+  @@index([limitResetAt])
+  @@index([recordedAt])
+}
+
+// ============================================================================
 // SYSTEM & MONITORING
 // ============================================================================
 

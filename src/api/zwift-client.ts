@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 import rateLimit from 'axios-rate-limit';
 import {
   RiderData,
@@ -8,11 +8,19 @@ import {
   RaceResultSchema,
 } from '../types/api.types.js';
 import { ZwiftApiError, RateLimitError, ValidationError } from '../types/errors.js';
+import { rateLimitRepo } from '../database/source-repositories.js';
+import { logger } from '../utils/logger.js';
 
 export interface ZwiftApiConfig {
   apiKey: string;
   baseUrl: string;
   timeout?: number;
+}
+
+export interface RateLimitInfo {
+  remaining: number;
+  reset: Date;
+  max: number;
 }
 
 /**
@@ -24,11 +32,14 @@ export interface ZwiftApiConfig {
  * - Data validatie met Zod
  * - Type-safe responses
  * - Error handling
+ * - Rate limit tracking in database
  */
 export class ZwiftApiClient {
   private client: AxiosInstance;
+  private trackRateLimits: boolean;
 
-  constructor(config: ZwiftApiConfig) {
+  constructor(config: ZwiftApiConfig, trackRateLimits: boolean = true) {
+    this.trackRateLimits = trackRateLimits;
 
     // Basis axios client met rate limiting
     const baseClient = axios.create({
@@ -47,9 +58,15 @@ export class ZwiftApiClient {
       perMilliseconds: 60000, // 5 requests per minuut als algemene limiet
     });
 
-    // Response interceptor voor error handling
+    // Response interceptor voor error handling en rate limit tracking
     this.client.interceptors.response.use(
-      (response) => response,
+      async (response) => {
+        // Track rate limit info
+        if (this.trackRateLimits) {
+          await this.trackRateLimitFromResponse(response);
+        }
+        return response;
+      },
       (error: AxiosError) => {
         if (error.response?.status === 429) {
           throw new RateLimitError(error.config?.url || 'unknown');
@@ -61,6 +78,62 @@ export class ZwiftApiClient {
         );
       },
     );
+  }
+
+  /**
+   * Extract en log rate limit info uit response headers
+   */
+  private async trackRateLimitFromResponse(response: AxiosResponse): Promise<void> {
+    try {
+      const headers = response.headers;
+      const config = response.config;
+      
+      // Parse rate limit headers (common formats)
+      const remaining = parseInt(headers['x-ratelimit-remaining'] || headers['ratelimit-remaining'] || '999');
+      const limit = parseInt(headers['x-ratelimit-limit'] || headers['ratelimit-limit'] || '1000');
+      const resetSeconds = parseInt(headers['x-ratelimit-reset'] || headers['ratelimit-reset'] || '0');
+      
+      // Alleen loggen als we daadwerkelijk rate limit headers hebben
+      if (headers['x-ratelimit-remaining'] || headers['ratelimit-remaining']) {
+        const resetDate = resetSeconds > 0 
+          ? new Date(resetSeconds * 1000) 
+          : new Date(Date.now() + 60000); // Default: 1 min vanaf nu
+
+        const endpoint = this.normalizeEndpoint(config.url || 'unknown');
+        const method = (config.method || 'GET').toUpperCase();
+
+        await rateLimitRepo.logRateLimit({
+          endpoint,
+          method,
+          limitMax: limit,
+          limitRemaining: remaining,
+          limitResetAt: resetDate,
+          requestUrl: config.url,
+          responseStatus: response.status,
+        });
+
+        // Waarschuwing als rate limit bijna bereikt
+        if (remaining < 2) {
+          logger.warn(`⚠️  Rate limit bijna bereikt voor ${endpoint}: ${remaining}/${limit} remaining, reset op ${resetDate.toLocaleTimeString()}`);
+        }
+      }
+    } catch (error) {
+      logger.debug('Kon rate limit info niet tracken:', error);
+    }
+  }
+
+  /**
+   * Normalize endpoint URL voor consistente tracking
+   */
+  private normalizeEndpoint(url: string): string {
+    // Vervang specifieke IDs door placeholders
+    return url
+      .replace(/\/\d+/g, '/:id')
+      .replace(/\/public\/clubs\/[^\/]+\/[^\/]+/, '/public/clubs/:id/:riderId')
+      .replace(/\/public\/riders\/[^\/]+\/results/, '/public/riders/:id/results')
+      .replace(/\/public\/riders\/[^\/]+\/[^\/]+/, '/public/riders/:id/:time')
+      .replace(/\/public\/results\/[^\/]+/, '/public/results/:eventId')
+      .replace(/\/public\/zp\/[^\/]+/, '/public/zp/:eventId/results');
   }
 
   /**
@@ -235,23 +308,29 @@ export class ZwiftApiClient {
   /**
    * Riders API - Haal race results van rider op
    * Rate limit: 1 call per minuut
+   * 
+   * Returns: { riderId, name, race: { finishes: [...], dnfs: [...], ... }, ... }
    */
   async getRiderResults(riderId: number): Promise<RaceResultData[]> {
     try {
       const response = await this.client.get(`/public/riders/${riderId}/results`);
       
-      if (!Array.isArray(response.data)) {
+      // API retourneert een rider object met race property
+      if (!response.data || !response.data.race || !Array.isArray(response.data.race.finishes)) {
         throw new ValidationError('Onverwacht response formaat voor rider results');
       }
 
-      const results = response.data.map((result) => {
+      // Extract finishes array (completed races)
+      const finishes = response.data.race.finishes;
+
+      const results = finishes.map((result: any) => {
         try {
           return RaceResultSchema.parse(result);
         } catch (error) {
           console.warn('Validatie fout voor rider result:', error);
           return null;
         }
-      }).filter((result): result is RaceResultData => result !== null);
+      }).filter((result: RaceResultData | null): result is RaceResultData => result !== null);
 
       return results;
     } catch (error) {
