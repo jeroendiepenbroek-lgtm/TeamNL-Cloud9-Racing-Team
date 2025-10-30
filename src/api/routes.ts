@@ -167,6 +167,176 @@ router.get('/riders/:zwiftId/results', asyncHandler(async (req: Request, res: Re
   res.json(results);
 }));
 
+// GET /api/riders/:zwiftId/dashboard - Dashboard data (US1)
+router.get('/riders/:zwiftId/dashboard', asyncHandler(async (req: Request, res: Response) => {
+  const zwiftId = parseInt(req.params.zwiftId);
+  
+  if (isNaN(zwiftId)) {
+    res.status(400).json({ error: 'Ongeldige rider ID' });
+    return;
+  }
+  
+  const rider = await riderRepo.getRider(zwiftId);
+  if (!rider) {
+    res.status(404).json({ error: 'Rider niet gevonden' });
+    return;
+  }
+  
+  // Aggregeer totalen
+  const totals = {
+    finishes: rider.totalRaces || 0,
+    wins: rider.totalWins || 0,
+    dnfs: rider.totalDnfs || 0,
+    podiums: rider.totalPodiums || 0,
+  };
+  
+  res.json({
+    rider: {
+      zwiftId: rider.zwiftId,
+      name: rider.name,
+      ftp: rider.ftp,
+      ftpWkg: rider.ftpWkg,
+      weight: rider.weight,
+      categoryRacing: rider.categoryRacing,
+      countryCode: rider.countryCode,
+      gender: rider.gender,
+      age: rider.age,
+    },
+    club: rider.club ? {
+      id: rider.club.id,
+      name: rider.club.name,
+      memberCount: rider.club.memberCount,
+    } : null,
+    phenotype: rider.phenotype ? {
+      primaryType: rider.phenotype.primaryType,
+      sprinter: rider.phenotype.sprinter,
+      timeTrialist: rider.phenotype.tt,
+      climber: rider.phenotype.climber,
+      allRounder: rider.phenotype.pursuiter,
+      bias: rider.phenotype.bias,
+    } : null,
+    rating: rider.raceRating ? {
+      current: rider.raceRating.currentRating,
+      max30: rider.raceRating.max30Rating,
+      max90: rider.raceRating.max90Rating,
+    } : null,
+    totals,
+  });
+}));
+
+// GET /api/riders/:zwiftId/events - Event geschiedenis (US2)
+router.get('/riders/:zwiftId/events', asyncHandler(async (req: Request, res: Response) => {
+  const zwiftId = parseInt(req.params.zwiftId);
+  const days = parseInt(req.query.days as string) || 90;
+  const limit = parseInt(req.query.limit as string) || 50;
+  
+  if (isNaN(zwiftId)) {
+    res.status(400).json({ error: 'Ongeldige rider ID' });
+    return;
+  }
+  
+  const rider = await riderRepo.getRider(zwiftId);
+  if (!rider) {
+    res.status(404).json({ error: 'Rider niet gevonden' });
+    return;
+  }
+  
+  // Get events met results voor deze rider
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  
+  const results = await prisma.raceResult.findMany({
+    where: {
+      riderId: rider.id,
+      event: {
+        eventDate: {
+          gte: cutoffDate,
+        },
+      },
+    },
+    include: {
+      event: true,
+    },
+    orderBy: {
+      event: {
+        eventDate: 'desc',
+      },
+    },
+    take: limit,
+  });
+  
+  const events = results.map(result => ({
+    eventId: result.event.id,
+    eventName: result.event.name,
+    eventDate: result.event.eventDate,
+    route: result.event.routeName,
+    distance: result.event.distance ? result.event.distance / 1000 : null,
+    position: result.position,
+    totalRiders: result.event.totalFinishers,
+    ratingChange: null, // TODO: Calculate from snapshots
+    avgPower: result.averagePower,
+    avgSpeed: result.averageSpeed,
+    normalizedPower: result.normalizedPower,
+    time: result.time,
+  }));
+  
+  res.json(events);
+}));
+
+// GET /api/riders/:zwiftId/rating-history - Rating trend data (US2)
+router.get('/riders/:zwiftId/rating-history', asyncHandler(async (req: Request, res: Response) => {
+  const zwiftId = parseInt(req.params.zwiftId);
+  const days = parseInt(req.query.days as string) || 90;
+  
+  if (isNaN(zwiftId)) {
+    res.status(400).json({ error: 'Ongeldige rider ID' });
+    return;
+  }
+  
+  const rider = await riderRepo.getRider(zwiftId);
+  if (!rider) {
+    res.status(404).json({ error: 'Rider niet gevonden' });
+    return;
+  }
+  
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  
+  // Get historical data from RiderHistory snapshots
+  const snapshots = await prisma.riderHistory.findMany({
+    where: {
+      riderId: rider.id,
+      recordedAt: {
+        gte: cutoffDate,
+      },
+    },
+    orderBy: {
+      recordedAt: 'asc',
+    },
+    select: {
+      recordedAt: true,
+      ranking: true,
+      rankingScore: true,
+    },
+  });
+  
+  // For now, return ranking score as "rating" (TODO: Add actual rating to RiderHistory)
+  const history = snapshots.map(snapshot => ({
+    date: snapshot.recordedAt.toISOString().split('T')[0],
+    rating: snapshot.rankingScore || snapshot.ranking,
+  }));
+  
+  // If no historical data, return current rating as single data point
+  if (history.length === 0 && rider.raceRating) {
+    history.push({
+      date: new Date().toISOString().split('T')[0],
+      rating: rider.raceRating.currentRating,
+    });
+  }
+  
+  res.json(history);
+}));
+
 /**
  * RESULTS ENDPOINTS
  */
@@ -182,6 +352,129 @@ router.get('/results/:eventId', asyncHandler(async (req: Request, res: Response)
   
   const results = await resultRepo.getEventResults(eventId);
   res.json(results);
+}));
+
+// GET /api/events/:eventId - Event details met results (US3)
+router.get('/events/:eventId', asyncHandler(async (req: Request, res: Response) => {
+  const eventId = parseInt(req.params.eventId);
+  
+  if (isNaN(eventId)) {
+    res.status(400).json({ error: 'Ongeldige event ID' });
+    return;
+  }
+  
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    include: {
+      results: {
+        include: {
+          rider: {
+            select: {
+              zwiftId: true,
+              name: true,
+              club: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          position: 'asc',
+        },
+      },
+    },
+  });
+  
+  if (!event) {
+    res.status(404).json({ error: 'Event niet gevonden' });
+    return;
+  }
+  
+  res.json({
+    event: {
+      id: event.id,
+      name: event.name,
+      date: event.eventDate,
+      route: event.routeName,
+      distance: event.distance ? event.distance / 1000 : null,
+      totalRiders: event.totalFinishers,
+      category: event.categories,
+    },
+    results: event.results.map(result => ({
+      position: result.position,
+      riderId: result.rider?.zwiftId || null,
+      riderName: result.rider?.name || 'Unknown',
+      team: result.rider?.club?.name || null,
+      time: result.time,
+      avgPower: result.averagePower,
+      avgSpeed: result.averageSpeed,
+      normalizedPower: result.normalizedPower,
+    })),
+  });
+}));
+
+// GET /api/events/:eventId/rider/:zwiftId - Rider specifieke event data (US3)
+router.get('/events/:eventId/rider/:zwiftId', asyncHandler(async (req: Request, res: Response) => {
+  const eventId = parseInt(req.params.eventId);
+  const zwiftId = parseInt(req.params.zwiftId);
+  
+  if (isNaN(eventId) || isNaN(zwiftId)) {
+    res.status(400).json({ error: 'Ongeldige event of rider ID' });
+    return;
+  }
+  
+  const rider = await riderRepo.getRider(zwiftId);
+  if (!rider) {
+    res.status(404).json({ error: 'Rider niet gevonden' });
+    return;
+  }
+  
+  const result = await prisma.raceResult.findFirst({
+    where: {
+      eventId: eventId,
+      riderId: rider.id,
+    },
+    include: {
+      event: true,
+      rider: {
+        include: {
+          club: true,
+        },
+      },
+    },
+  });
+  
+  if (!result || !result.rider) {
+    res.status(404).json({ error: 'Geen resultaat gevonden voor deze rider in dit event' });
+    return;
+  }
+  
+  res.json({
+    event: {
+      id: result.event.id,
+      name: result.event.name,
+      date: result.event.eventDate,
+      route: result.event.routeName,
+      distance: result.event.distance ? result.event.distance / 1000 : null,
+      totalRiders: result.event.totalFinishers,
+    },
+    riderResult: {
+      position: result.position,
+      time: result.time,
+      avgPower: result.averagePower,
+      avgSpeed: result.averageSpeed,
+      normalizedPower: result.normalizedPower,
+      maxPower: result.maxPower,
+      avgHeartRate: result.averageHeartRate,
+    },
+    rider: {
+      zwiftId: result.rider.zwiftId,
+      name: result.rider.name,
+      club: result.rider.club?.name || null,
+    },
+  });
 }));
 
 /**
@@ -1109,14 +1402,12 @@ router.post('/workflow/cleanup', asyncHandler(async (req: Request, res: Response
   }
 
   // Delete old results first (foreign key) - use raw SQL
-  // @ts-expect-error - TypeScript doesn't parse SQL in template literals correctly
   const deletedResultsCount = await prisma.$executeRaw`
     DELETE FROM race_results 
     WHERE eventId IN (SELECT id FROM events WHERE eventDate < ${cutoffDate.toISOString()})
   `;
 
   // Delete old events - use raw SQL
-  // @ts-expect-error - TypeScript doesn't parse SQL in template literals correctly
   const deletedEventsCount = await prisma.$executeRaw`
     DELETE FROM events WHERE eventDate < ${cutoffDate.toISOString()}
   `;

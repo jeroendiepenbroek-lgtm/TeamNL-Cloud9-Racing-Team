@@ -1,3 +1,24 @@
+/**
+ * PM2 ecosystem for persistent dev server
+ */
+module.exports = {
+  apps: [
+    {
+      name: 'teamnl-cloud9-dashboard',
+      script: 'node',
+      args: ['--enable-source-maps', 'src/server.ts'],
+      interpreter: 'node',
+      env: {
+        NODE_ENV: 'development',
+        PORT: process.env.PORT || 3000,
+      },
+      watch: false,
+      autorestart: true,
+      max_restarts: 10,
+      restart_delay: 2000,
+    },
+  ],
+};
 module.exports = {
   apps: [{
     name: 'teamnl-cloud9-dashboard',

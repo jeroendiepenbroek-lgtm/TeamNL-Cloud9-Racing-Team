@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rijdersdashboard - JRøne (150437)</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <main style="max-width:1000px;margin:24px auto;padding:12px;font-family:system-ui,Arial">
+    <header>
+      <h1 id="rider-name">Rijdersdashboard</h1>
+      <p id="rider-sub" style="color:#666"></p>
+    </header>
+
+    <section id="stats" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px"></section>
+
+    <section style="margin-top:20px">
+      <h2>Rating trend (90 dagen)</h2>
+      <canvas id="ratingChart" width="900" height="240"></canvas>
+    </section>
+
+    <section style="margin-top:20px">
+      <h2>Recente races</h2>
+      <table id="results-table" border="0" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="text-align:left;border-bottom:1px solid #ddd"><th>Date</th><th>Event</th><th>Pos</th><th>Δ Rating</th><th>Details</th></tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <script>
+    const riderId = new URLSearchParams(location.search).get('riderId') || '150437';
+
+    async function fetchProfile() {
+      const res = await fetch(`/api/riders/${riderId}/dashboard`);
+      if (!res.ok) throw new Error('Profile fetch failed');
+      return await res.json();
+    }
+
+    async function fetchEvents() {
+      const res = await fetch(`/api/riders/${riderId}/events?days=90&limit=50`);
+      if (!res.ok) return [];
+      return await res.json();
+    }
+
+    function renderStats(data) {
+      const stats = document.getElementById('stats');
+      stats.innerHTML = '';
+      const cards = [
+        { title: 'Rating', value: data.rating ? data.rating.current : '—' },
+        { title: 'FTP', value: data.rider.ftp || '—' },
+        { title: 'w/kg', value: data.rider.ftpWkg || '—' },
+        { title: 'Category', value: data.rider.categoryRacing || '—' },
+        { title: 'Club', value: data.club ? data.club.name : '—' },
+      ];
+
+      cards.forEach(c => {
+        const el = document.createElement('div');
+        el.style.flex = '1 1 180px';
+        el.style.padding = '12px';
+        el.style.border = '1px solid #eee';
+        el.style.borderRadius = '6px';
+        el.innerHTML = `<strong style="display:block;font-size:20px">${c.value}</strong><small style="color:#666">${c.title}</small>`;
+        stats.appendChild(el);
+      });
+    }
+
+    let chart;
+    function renderChart(history) {
+      const ctx = document.getElementById('ratingChart').getContext('2d');
+      const labels = history.map(h => h.date);
+      const data = history.map(h => h.rating);
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Rating', data, borderColor: '#ff6b35', backgroundColor: 'rgba(255,107,53,0.1)' }] },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function renderResults(rows) {
+      const tbody = document.getElementById('results-body');
+      tbody.innerHTML = '';
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${new Date(r.eventDate).toLocaleDateString()}</td><td>${r.eventName}</td><td>${r.position || '—'}</td><td>${r.ratingChange || '—'}</td><td><a href="/public/event-detail.html?eventId=${r.eventId}">View</a></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    (async function init(){
+      try {
+        const profile = await fetchProfile();
+        document.getElementById('rider-name').innerText = profile.rider.name;
+        document.getElementById('rider-sub').innerText = `${profile.rider.ftp || '-'}w • ${profile.rider.ftpWkg || '-'} w/kg • ${profile.rider.categoryRacing || '-'} `;
+        renderStats(profile);
+
+        const history = await fetch(`/api/riders/${riderId}/rating-history?days=90`).then(r => r.json()).catch(()=>[]);
+        renderChart(history);
+
+        const events = await fetchEvents();
+        renderResults(events);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rijdersdashboard - TeamNL Cloud9 Racing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Section */
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .header-info {
+            flex: 1;
+        }
+
+        .rider-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #1a1f36;
+        }
+
+        .rider-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .category-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        .stat-icon.rating { background: #fef3c7; }
+        .stat-icon.power { background: #fecaca; }
+        .stat-icon.racing { background: #dbeafe; }
+        .stat-icon.phenotype { background: #e9d5ff; }
+        .stat-icon.club { background: #d1fae5; }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1f36;
+            margin-bottom: 4px;
+        }
+
+        .stat-secondary {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .stat-trend {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .stat-trend.up {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .stat-trend.down {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        /* Progress Bars */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error State */
+        .error {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            border-radius: 12px;
+            padding: 24px;
+            color: #991b1b;
+            text-align: center;
+        }
+
+        .error-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Dashboard laden...</p>
+        </div>
+
+        <div id="error" class="error" style="display: none;">
+            <div class="error-title">❌ Fout bij laden</div>
+            <p id="error-message"></p>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <!-- Header -->
+            <div class="header">
+                <div class="avatar" id="avatar">
+                    JR
+                </div>
+                <div class="header-info">
+                    <h1 class="rider-name" id="rider-name">...</h1>
+                    <div class="rider-meta">
+                        <span id="flag">🇳🇱</span>
+                        <span class="category-badge" id="category">Category B</span>
+                        <span id="club-name">TeamNL</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <!-- Rating Card -->
+                <div class="stat-card">
+                    <div class="stat-icon rating">🏆</div>
+                    <div class="stat-label">Race Rating</div>
+                    <div class="stat-value" id="current-rating">1377</div>
+                    <div class="stat-secondary">
+                        Max 90d: <span id="max90-rating">1472.8</span>
+                        <span class="stat-trend down" id="rating-trend">-95.8</span>
+                    </div>
+                </div>
+
+                <!-- Power Card -->
+                <div class="stat-card">
+                    <div class="stat-icon power">⚡</div>
+                    <div class="stat-label">Vermogen (FTP)</div>
+                    <div class="stat-value" id="ftp">270w</div>
+                    <div class="stat-secondary">
+                        <span id="wkg">3.65</span> w/kg
+                    </div>
+                </div>
+
+                <!-- Racing Stats Card -->
+                <div class="stat-card">
+                    <div class="stat-icon racing">🏁</div>
+                    <div class="stat-label">Racing Stats</div>
+                    <div class="stat-value" id="total-races">25</div>
+                    <div class="stat-secondary">
+                        <span id="wins">?</span> wins · 
+                        <span id="podiums">?</span> podiums · 
+                        <span id="dnfs">2</span> DNFs
+                    </div>
+                </div>
+
+                <!-- Phenotype Card -->
+                <div class="stat-card">
+                    <div class="stat-icon phenotype">🎯</div>
+                    <div class="stat-label">Phenotype</div>
+                    <div class="stat-value" id="phenotype-primary">Sprinter</div>
+                    <div class="stat-secondary">
+                        Score: <span id="phenotype-score">96.5</span>/100
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="phenotype-progress" style="width: 96.5%"></div>
+                    </div>
+                </div>
+
+                <!-- Club Card -->
+                <div class="stat-card">
+                    <div class="stat-icon club">👥</div>
+                    <div class="stat-label">Club</div>
+                    <div class="stat-value" style="font-size: 20px;" id="club-name-card">TeamNL</div>
+                    <div class="stat-secondary">
+                        <span id="club-members">422</span> members
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            TeamNL Cloud9 Racing Team · Dashboard v1.0
+        </div>
+    </div>
+
+    <script>
+        // Get rider ID from URL or use default
+        const urlParams = new URLSearchParams(window.location.search);
+        const riderId = urlParams.get('riderId') || '150437';
+        const API_BASE = window.location.origin;
+
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_BASE}/api/riders/${riderId}/dashboard`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Dashboard data:', data);
+
+                // Update header
+                document.getElementById('rider-name').textContent = data.rider.name;
+                document.getElementById('category').textContent = `Category ${data.rider.categoryRacing || 'B'}`;
+                
+                // Avatar initials
+                const initials = data.rider.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('avatar').textContent = initials;
+
+                // Update stats cards
+                // Rating
+                document.getElementById('current-rating').textContent = data.rating.currentRating.toFixed(1);
+                document.getElementById('max90-rating').textContent = data.rating.max90Rating.toFixed(1);
+                
+                const ratingDelta = data.rating.currentRating - data.rating.max90Rating;
+                const trendEl = document.getElementById('rating-trend');
+                trendEl.textContent = (ratingDelta > 0 ? '+' : '') + ratingDelta.toFixed(1);
+                trendEl.className = 'stat-trend ' + (ratingDelta >= 0 ? 'up' : 'down');
+
+                // Power
+                document.getElementById('ftp').textContent = `${data.rider.ftp}w`;
+                const wkg = (data.rider.ftp / data.rider.weightKg).toFixed(2);
+                document.getElementById('wkg').textContent = wkg;
+
+                // Racing stats
+                document.getElementById('total-races').textContent = data.totals.totalRaces || 0;
+                document.getElementById('wins').textContent = data.totals.wins || '?';
+                document.getElementById('podiums').textContent = data.totals.podiums || '?';
+                document.getElementById('dnfs').textContent = data.totals.dnfs || 0;
+
+                // Phenotype
+                if (data.phenotype) {
+                    document.getElementById('phenotype-primary').textContent = data.phenotype.primaryType || 'Unknown';
+                    const score = data.phenotype[data.phenotype.primaryType.toLowerCase()] || 0;
+                    document.getElementById('phenotype-score').textContent = score.toFixed(1);
+                    document.getElementById('phenotype-progress').style.width = score + '%';
+                }
+
+                // Club
+                if (data.club) {
+                    document.getElementById('club-name').textContent = data.club.name;
+                    document.getElementById('club-name-card').textContent = data.club.name;
+                    document.getElementById('club-members').textContent = data.club.memberCount || '?';
+                }
+
+                // Show dashboard
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+
+            } catch (error) {
+                console.error('Failed to load dashboard:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+
+        // Load on page ready
+        loadDashboard();
+    </script>
+</body>
+</html>
