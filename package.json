@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "npx pm2 start ecosystem.config.cjs",
     "dev:watch": "tsx watch src/server.ts",
+    "dev:standalone": "tsx watch src/standalone-server.ts",
     "dev:keepalive": "node scripts/keepalive.js",
     "stop": "npx pm2 stop all",
     "restart": "npx pm2 restart all",
@@ -14,7 +15,8 @@
     "status": "npx pm2 status",
     "build": "tsc && tsc-alias",
     "start": "node dist/server.js",
-    "start:prod": "NODE_ENV=production node dist/server.js",
+    "start:standalone": "node dist/standalone-server.js",
+    "start:prod": "NODE_ENV=production node dist/standalone-server.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
@@ -48,6 +50,7 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "@supabase/supabase-js": "^2.78.0",
     "@types/multer": "^2.0.0",
     "axios": "^1.7.7",
     "axios-rate-limit": "^1.4.0",

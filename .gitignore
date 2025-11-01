@@ -17,6 +17,10 @@ out/
 .env
 .env*.local
 
+# Firebase service account (SECURITY - never commit!)
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
 # Database
 *.db
 *.db-journal

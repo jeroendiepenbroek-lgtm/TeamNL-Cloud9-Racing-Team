@@ -1,0 +1,43 @@
+# Render.com Blueprint - Zero Cost Deployment
+# Free tier: 512MB RAM, Sleeps after 15min inactivity
+# https://render.com/docs/blueprint-spec
+
+services:
+  # Backend Web Service (Free Tier)
+  - type: web
+    name: teamnl-backend
+    runtime: node
+    plan: free
+    region: frankfurt # EU region
+    branch: main
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm run start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false # Set in Render dashboard
+      - key: SUPABASE_SERVICE_KEY
+        sync: false # Set in Render dashboard (secret)
+      - key: SUPABASE_ANON_KEY
+        sync: false # Set in Render dashboard
+      - key: ZWIFT_API_KEY
+        sync: false # Set in Render dashboard (secret)
+      - key: ZWIFT_CLUB_ID
+        value: 11818
+      - key: ZWIFT_API_BASE_URL
+        value: https://zwift-ranking.herokuapp.com
+      - key: SYNC_INTERVAL_HOURS
+        value: 1 # Hourly sync (configureerbaar)
+      - key: SYNC_CRON_SCHEDULE
+        value: "0 * * * *" # Every hour at :00 (configureerbaar)
+      - key: EVENT_SCRAPING_ENABLED
+        value: true # Enable event scraping
+      - key: EVENT_SCRAPING_DAYS
+        value: 90 # Scrape events from last 90 days
+
+# Database is Supabase PostgreSQL (separate, external)
+# No additional database service needed on Render

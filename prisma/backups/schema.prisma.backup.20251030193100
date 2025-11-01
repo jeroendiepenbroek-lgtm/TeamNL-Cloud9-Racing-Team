@@ -1,0 +1,213 @@
+// TeamNL Cloud9 Racing Team - MVP Database Schema
+// Clean schema met alleen essentiële MVP tabellen
+// Versie: MVP 1.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"  // SQLite in dev, PostgreSQL in productie
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// MVP CORE ENTITIES
+// ============================================================================
+
+/// Club informatie (geëxtraheerd uit rider data)
+model Club {
+  id              Int           @id
+  name            String?
+  memberCount     Int           @default(0)
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  lastUpdated     DateTime      @updatedAt
+  
+  // Relaties
+  riders          Rider[]
+  events          Event[]
+  
+  @@map("clubs")
+}
+
+/// Rider (coureur) - Geüploade riders
+model Rider {
+  // Identifiers
+  id              Int           @id @default(autoincrement())
+  zwiftId         Int           @unique              // Zwift platform ID
+  name            String
+  clubId          Int?
+  club            Club?         @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  
+  // Racing info
+  categoryRacing  String?       // A, B, C, D, E
+  
+  // Power metrics
+  ftp             Float?        // Functional Threshold Power (watts)
+  weight          Float?        // Rider weight (kg)
+  
+  // Ranking
+  ranking         Int?          // ZwiftRacing ranking position
+  rankingScore    Float?        // ZwiftRacing ranking score
+  
+  // Personal info
+  countryCode     String?
+  gender          String?
+  age             Int?
+  
+  // Stats
+  totalRaces      Int?
+  totalWins       Int?
+  totalPodiums    Int?
+  totalDnfs       Int?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  lastSynced      DateTime      @updatedAt
+  
+  // Relaties
+  raceResults     RaceResult[]
+  
+  @@map("riders")
+  @@index([clubId])
+  @@index([ranking])
+}
+
+/// Event (race event)
+model Event {
+  // Identifiers
+  id              Int           @id                  // Event ID from API
+  name            String
+  eventDate       DateTime
+  
+  // Event details
+  eventType       String?       // "Race", "Group Ride", etc.
+  routeName       String?       // Route name
+  world           String?       // Watopia, Makuri, etc.
+  
+  // Metrics
+  distance        Float?        // Meters
+  elevation       Float?        // Meters
+  laps            Int?
+  totalFinishers  Int?
+  
+  // Organizer
+  clubId          Int?
+  club            Club?         @relation(fields: [clubId], references: [id], onDelete: SetNull)
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  // Relaties
+  results         RaceResult[]
+  resultsSourceData EventResultsSourceData?
+  zpSourceData      EventZpSourceData?
+  
+  @@map("events")
+  @@index([eventDate])
+  @@index([clubId])
+}
+
+/// Race Result (rider result in event)
+model RaceResult {
+  id              Int           @id @default(autoincrement())
+  
+  // Foreign keys
+  eventId         Int
+  event           Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  riderId         Int
+  rider           Rider         @relation(fields: [riderId], references: [id], onDelete: Cascade)
+  
+  // Result details
+  position        Int?          // Overall position
+  positionCategory Int?         // Position in category
+  time            Int?          // Finish time (seconds)
+  
+  // Power metrics
+  averagePower    Float?
+  normalizedPower Float?
+  maxPower        Float?
+  
+  // Other metrics
+  averageSpeed    Float?        // km/h
+  averageHeartRate Int?
+  
+  // Timestamps
+  createdAt       DateTime      @default(now())
+  
+  @@map("race_results")
+  @@unique([eventId, riderId])
+  @@index([riderId])
+  @@index([eventId])
+}
+
+// ============================================================================
+// BRONDATATABELLEN (Source Data from API)
+// ============================================================================
+
+/// Event Results Source Data - GET /public/results/:eventId
+model EventResultsSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  eventId         Int           @unique
+  event           Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Metadata
+  eventName       String?
+  eventDate       DateTime?
+  
+  // Raw JSON data from API (immutable)
+  rawData         String        // JSON string
+  
+  // Request metadata
+  fetchedAt       DateTime      @default(now())
+  responseTime    Int?          // milliseconds
+  
+  @@map("event_results_source_data")
+  @@index([eventId])
+  @@index([fetchedAt])
+}
+
+/// Event ZwiftPower Source Data - GET /public/zp/:eventId/results
+model EventZpSourceData {
+  id              String        @id @default(cuid())
+  
+  // API identifiers
+  eventId         Int           @unique
+  event           Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  
+  // Metadata
+  eventName       String?
+  eventDate       DateTime?
+  
+  // Raw JSON data from API (immutable)
+  rawData         String        // JSON string (power curves, etc.)
+  
+  // Request metadata
+  fetchedAt       DateTime      @default(now())
+  responseTime    Int?          // milliseconds
+  
+  @@map("event_zp_source_data")
+  @@index([eventId])
+  @@index([fetchedAt])
+}
+
+// ============================================================================
+// RATE LIMITING
+// ============================================================================
+
+/// Rate Limit Log (tracking API calls)
+model RateLimitLog {
+  id              Int           @id @default(autoincrement())
+  endpoint        String        // API endpoint
+  method          String        @default("GET")
+  statusCode      Int?
+  timestamp       DateTime      @default(now())
+  
+  @@map("rate_limit_logs")
+  @@index([endpoint])
+  @@index([timestamp])
+}

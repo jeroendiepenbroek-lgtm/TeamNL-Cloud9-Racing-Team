@@ -8,7 +8,7 @@ import {
   RaceResultSchema,
 } from '../types/api.types.js';
 import { ZwiftApiError, RateLimitError, ValidationError } from '../types/errors.js';
-import { rateLimitRepo } from '../database/source-repositories.js';
+// import { rateLimitRepo } from '../database/source-repositories.js'; // OLD - not used in MVP
 import { logger } from '../utils/logger.js';
 
 export interface ZwiftApiConfig {
@@ -102,15 +102,16 @@ export class ZwiftApiClient {
         const endpoint = this.normalizeEndpoint(config.url || 'unknown');
         const method = (config.method || 'GET').toUpperCase();
 
-        await rateLimitRepo.logRateLimit({
-          endpoint,
-          method,
-          limitMax: limit,
-          limitRemaining: remaining,
-          limitResetAt: resetDate,
-          requestUrl: config.url,
-          responseStatus: response.status,
-        });
+        // TODO: Re-enable rate limit logging when source-repositories is fixed
+        // await rateLimitRepo.logRateLimit({
+        //   endpoint,
+        //   method,
+        //   limitMax: limit,
+        //   limitRemaining: remaining,
+        //   limitResetAt: resetDate,
+        //   requestUrl: config.url,
+        //   responseStatus: response.status,
+        // });
 
         // Waarschuwing als rate limit bijna bereikt
         if (remaining < 2) {

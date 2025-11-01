@@ -14,6 +14,7 @@
 import { ZwiftApiClient } from '../api/zwift-client.js';
 import prisma from '../database/client.js';
 import { logger } from '../utils/logger.js';
+import { firebaseSyncService } from './firebase-sync.service.js';
 
 interface RiderUploadResult {
   riderId: number;
@@ -180,6 +181,41 @@ export class RiderUploadService {
         age: riderData.age ? parseInt(riderData.age.toString()) : null,
       },
     });
+
+    // 5. Sync to Firebase (US7: Cloud integration)
+    if (firebaseSyncService.isAvailable()) {
+      try {
+        // Sync rider to Firestore
+        await firebaseSyncService.syncRider({
+          zwiftId: riderId,
+          name: riderData.name,
+          clubId,
+          club: riderData.club,
+          categoryRacing: riderData.categoryRacing,
+          ftp: riderData.ftp,
+          weight: riderData.weight,
+          ranking: riderData.ranking,
+          rankingScore: riderData.rankingScore,
+          countryCode: riderData.countryCode,
+          gender: riderData.gender,
+          age: riderData.age,
+        });
+
+        // Sync club to Firestore (US3: ClubID extraction)
+        if (clubId && clubName) {
+          await firebaseSyncService.syncClub({
+            id: clubId,
+            name: clubName,
+            memberCount: 0, // Will be updated by club sync
+          });
+        }
+
+        logger.debug(`  🔥 Firebase sync: rider ${riderId} + club ${clubId || 'none'}`);
+      } catch (firebaseError: any) {
+        logger.warn(`  ⚠️  Firebase sync failed (continuing): ${firebaseError.message}`);
+        // Continue even if Firebase fails - local DB is primary
+      }
+    }
 
     return {
       riderId,

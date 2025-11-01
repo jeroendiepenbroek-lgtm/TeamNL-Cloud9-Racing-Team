@@ -51,6 +51,30 @@ echo ""
 echo "✅ Events enriched"
 echo ""
 
+# Step 4.5: Test nieuwe source data sync endpoints (STUB)
+echo "🔄 Step 4.5: Test source data sync endpoints"
+echo "-----------------------------------"
+
+echo "  📋 Sync rider data to source_data..."
+curl -s -X POST "${BASE_URL}/riders/${RIDER_ID}/sync" | jq '.'
+echo ""
+
+echo "  📋 Get rider history from source_data..."
+curl -s "${BASE_URL}/riders/${RIDER_ID}/history?limit=5" | jq '.'
+echo ""
+
+echo "  📋 Sync club data to source_data..."
+CLUB_ID=$(curl -s "${BASE_URL}/riders/${RIDER_ID}" | jq -r '.club.id // 2281')
+curl -s -X POST "${BASE_URL}/clubs/${CLUB_ID}/sync" | jq '.'
+echo ""
+
+echo "  📋 Sync club roster to source_data..."
+curl -s -X POST "${BASE_URL}/clubs/${CLUB_ID}/roster" | jq '.'
+echo ""
+
+echo "✅ Source data sync endpoints tested (STUB)"
+echo ""
+
 # Step 5: Verify data
 echo "✅ Step 5: Verify complete flow"
 echo "-----------------------------------"

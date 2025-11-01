@@ -3,8 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './utils/config.js';
 import { logger } from './utils/logger.js';
-import mvpRoutes from './api/mvp-routes.js';
-import { schedulerService } from './services/mvp-scheduler.service.js';
+// import mvpRoutes from './api/mvp-routes.js'; // Temporarily disabled - use Supabase
+// import { schedulerService } from './services/mvp-scheduler.service.js'; // Temporarily disabled
+import { firebaseSyncService } from './services/firebase-sync.service.js';
 import { basicAuth, corsMiddleware } from './middleware/auth.js';
 import prisma from './database/client.js';
 
@@ -34,8 +35,58 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   next();
 });
 
-// MVP API routes
-app.use('/api', mvpRoutes);
+// MVP API routes - TEMPORARILY DISABLED, using Supabase instead
+// app.use('/api', mvpRoutes);
+
+// Simple Supabase test endpoints
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok', message: 'Supabase backend ready', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/config', (_req: Request, res: Response) => {
+  res.json({ 
+    clubId: config.zwiftClubId,
+    clubName: 'TeamNL Cloud9',
+    apiBaseUrl: config.zwiftApiBaseUrl
+  });
+});
+
+app.get('/api/clubs', async (_req: Request, res: Response) => {
+  try {
+    const { multiClubSyncService } = await import('./services/multi-club-sync.service.js');
+    const clubs = await multiClubSyncService.getAllTrackedClubs();
+    res.json({ success: true, clubs, count: clubs.length });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/sync/riders-with-clubs', async (req: Request, res: Response) => {
+  try {
+    const { riderIds } = req.body;
+    
+    if (!Array.isArray(riderIds) || riderIds.length === 0) {
+      return res.status(400).json({ success: false, error: 'riderIds array required' });
+    }
+
+    const { multiClubSyncService } = await import('./services/multi-club-sync.service.js');
+    const result = await multiClubSyncService.syncRidersWithClubs(riderIds);
+    
+    res.json(result);
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/supabase/stats', async (_req: Request, res: Response) => {
+  try {
+    const { supabaseSyncService } = await import('./services/supabase-sync.service.js');
+    const stats = await supabaseSyncService.getSupabaseStats();
+    res.json({ success: true, stats });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Root endpoint - redirect to GUI
 app.get('/', (_req: Request, res: Response) => {
@@ -84,13 +135,24 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   }
 });
 
-// Start MVP scheduler
-logger.info('🕐 Starting MVP Scheduler...');
-await schedulerService.start();
+// Start scheduler (if enabled) - TEMPORARILY DISABLED
+logger.info('⏰ Scheduler disabled during Supabase migration');
+// await schedulerService.start();
+
+// Initialize Firebase (optional - falls back to local-only if not configured)
+logger.info('🔥 Initializing Firebase sync');
+const firebaseInitialized = firebaseSyncService.initialize();
+if (firebaseInitialized) {
+  const stats = await firebaseSyncService.getStats();
+  logger.info('🔥 Firebase stats:', stats);
+} else {
+  logger.info('   Using local database only');
+}
 
 // Export functie voor scheduler status (voor API)
 export function getSchedulerStatus() {
-  return schedulerService.getStatus();
+  return { status: 'disabled', message: 'Scheduler temporarily disabled during Supabase migration' };
+  // return schedulerService.getStatus();
 }
 
 // Start server
@@ -105,8 +167,11 @@ const server = app.listen(config.port, () => {
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM signaal ontvangen, sluit server af...');
   
-  // Stop scheduler
-  schedulerService.stop();
+  // Stop scheduler - DISABLED
+  // schedulerService.stop();
+  
+  // Close Firebase
+  await firebaseSyncService.close();
   
   server.close(async () => {
     await prisma.$disconnect();
@@ -118,8 +183,8 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   logger.info('SIGINT signaal ontvangen (Ctrl+C), sluit server af...');
   
-  // Stop scheduler
-  schedulerService.stop();
+  // Stop scheduler - DISABLED
+  // schedulerService.stop();
   
   server.close(async () => {
     await prisma.$disconnect();

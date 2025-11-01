@@ -78,7 +78,7 @@ export class EventScraperService {
 
     // 2. Extract JSON from <script id="__NEXT_DATA__">
     const html = response.data;
-    const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
+    const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/);
     
     if (!match) {
       throw new Error('Could not find __NEXT_DATA__ in HTML');

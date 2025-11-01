@@ -1,948 +1,328 @@
-// TeamNL Cloud9 Racing Team - Geoptimaliseerd Database Schema
-// Versie: 2.0 - Uitgebreide data model met alle API velden
-// Documentatie: docs/DATA_MODEL.md
+// TeamNL Cloud9 Racing Team - MVP Database Schema
+// Clean schema met alleen essentiële MVP tabellen
+// Versie: MVP 1.0
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["fullTextSearch", "fullTextIndex"]
 }
 
 datasource db {
-  provider = "sqlite"  // SQLite in dev, PostgreSQL in productie (zie schema)
+  provider = "sqlite"  // SQLite in dev, PostgreSQL in productie
   url      = env("DATABASE_URL")
 }
 
 // ============================================================================
-// CORE ENTITIES
+// MVP CORE ENTITIES
 // ============================================================================
 
-/// Club/Team informatie
+/// Club informatie (geëxtraheerd uit rider data)
 model Club {
   id              Int           @id
   name            String?
-  description     String?
   memberCount     Int           @default(0)
-  countryCode     String?       // Primaire land van club
-  website         String?
-  discordUrl      String?
-  
-  // Source tracking (Workflow Step 3)
-  source          String        @default("manual")   // "favorite_rider", "manual", "api"
-  trackedSince    DateTime      @default(now())
-  
-  // Favorite & Sync settings
-  isFavorite      Boolean       @default(false)      // Track favoriete clubs
-  syncEnabled     Boolean       @default(true)       // Auto-sync club roster
-  syncInterval    Int           @default(60)         // Minuten tussen syncs
   
   // Timestamps
-  lastSync        DateTime      @updatedAt
   createdAt       DateTime      @default(now())
+  lastUpdated     DateTime      @updatedAt
   
   // Relaties
-  members         Rider[]       // Handmatig toegevoegde riders (kunnen van deze club zijn)
-  clubMembers     ClubMember[]  // Automatisch binnengehaalde club roster
-  events          Event[]       // Events georganiseerd door club
+  riders          Rider[]
+  events          Event[]
+  sourceData      ClubSourceData[]
   
   @@map("clubs")
-  @@index([countryCode])
-  @@index([isFavorite])
-  @@index([syncEnabled])
-  @@index([source])
 }
 
-/// Rider (coureur) - HANDMATIG TOEGEVOEGD - jouw favoriete riders
-/// Deze riders krijgen volledige data sync (Prio 1-4)
+/// Rider (coureur) - Geüploade riders
 model Rider {
   // Identifiers
   id              Int           @id @default(autoincrement())
-  zwiftId         Int           @unique              // Zwift platform ID (PK in API)
+  zwiftId         Int           @unique              // Zwift platform ID
   name            String
   clubId          Int?
   club            Club?         @relation(fields: [clubId], references: [id], onDelete: SetNull)
   
-  // Favorite tracking (NEW)
-  isFavorite      Boolean       @default(true)       // Always true for Rider table
-  addedBy         String        @default("manual")   // "manual", "bulk", "api"
-  addedAt         DateTime      @default(now())
-  syncPriority    Int           @default(1)          // 1-4 (1=highest priority)
-  
-  // Racing categorieën & classificatie
+  // Racing info
   categoryRacing  String?       // A, B, C, D, E
-  categoryEnforced Boolean      @default(false)
   
-  // Power metrics (actueel)
+  // Power metrics
   ftp             Float?        // Functional Threshold Power (watts)
-  ftpWkg          Float?        // FTP per kg (calculated)
-  powerToWeight   Float?        // W/kg ratio (actueel)
-  zFtp            Float?        // Zwift calculated FTP
+  weight          Float?        // Rider weight (kg)
   
-  // Power curve - absolute watts (van ZwiftRacing API)
-  power5s         Float?        // 5 seconden max power
-  power15s        Float?        // 15 seconden max power
-  power30s        Float?        // 30 seconden max power
-  power1min       Float?        // 1 minuut max power
-  power2min       Float?        // 2 minuten max power
-  power5min       Float?        // 5 minuten max power
-  power20min      Float?        // 20 minuten max power
+  // Ranking
+  ranking         Int?          // ZwiftRacing ranking position
+  rankingScore    Float?        // ZwiftRacing ranking score
   
-  // Power curve - w/kg (relatief)
-  powerWkg5s      Float?        // 5 seconden w/kg
-  powerWkg15s     Float?        // 15 seconden w/kg
-  powerWkg30s     Float?        // 30 seconden w/kg
-  powerWkg1min    Float?        // 1 minuut w/kg
-  powerWkg2min    Float?        // 2 minuten w/kg
-  powerWkg5min    Float?        // 5 minuten w/kg
-  powerWkg20min   Float?        // 20 minuten w/kg
-  
-  // Advanced power metrics
-  criticalPower   Float?        // CP (Critical Power)
-  anaerobicWork   Float?        // AWC (Anaerobic Work Capacity)
-  compoundScore   Float?        // Overall power rating from API
-  powerRating     Float?        // Power rating score
-  
-  // Ranking & scores
-  ranking         Int?          // Global ranking positie
-  rankingScore    Float?        // Ranking score (0-1000+)
-  zPoints         Int?          // Zwift racing points
-  
-  // Profiel gegevens
+  // Personal info
+  countryCode     String?
+  gender          String?
   age             Int?
-  gender          String?       // M, F, Other
-  countryCode     String?       // ISO 3166-1 alpha-2
-  flagCode        String?       // Voor speciale flags
-  weight          Float?        // kg
-  height          Float?        // cm
   
-  // Avatar & visuals
-  profileImageUrl String?
-  
-  // Activity metrics
-  totalEvents     Int           @default(0)
-  totalRaces      Int           @default(0)
-  totalWins       Int           @default(0)
-  totalPodiums    Int           @default(0)
-  totalDnfs       Int           @default(0)        // Did Not Finish count
-  avgPosition     Float?
-  lastActive      DateTime?
-  
-  // Terrain handicaps (route suitability)
-  handicapFlat        Float?    // Handicap on flat routes
-  handicapRolling     Float?    // Handicap on rolling routes
-  handicapHilly       Float?    // Handicap on hilly routes
-  handicapMountainous Float?    // Handicap on mountainous routes
-  
-  // Account status
-  isActive        Boolean       @default(true)
-  isPremium       Boolean       @default(false)
-  isBanned        Boolean       @default(false)
-  
-  // Favorite settings
-  notes           String?       // Persoonlijke notities over deze rider
-  tags            String?       // Tags voor categoriseren (JSON array)
-  syncEnabled     Boolean       @default(true)       // Auto-sync ingeschakeld
+  // Stats
+  totalRaces      Int?
+  totalWins       Int?
+  totalPodiums    Int?
+  totalDnfs       Int?
   
   // Timestamps
-  lastUpdated     DateTime      @updatedAt
   createdAt       DateTime      @default(now())
+  lastSynced      DateTime      @updatedAt
   
   // Relaties
   raceResults     RaceResult[]
-  historicalData  RiderHistory[]
-  statistics      RiderStatistics?
-  raceRating      RiderRaceRating?
-  phenotype       RiderPhenotype?
-  
-  // Team memberships
-  teamMemberships TeamMember[]
+  sourceData      RiderSourceData[]
   
   @@map("riders")
-  @@index([clubId, ranking])
-  @@index([ranking])
-  @@index([categoryRacing])
-  @@index([countryCode])
-  @@index([ftp])
-  @@index([powerToWeight])
-  @@index([isActive])
-  @@index([lastActive])
-  @@index([syncEnabled])
-  @@index([syncPriority])   // Voor priority-based sync
-  @@index([isFavorite])     // Voor favorite filtering
-  @@index([addedBy])        // Voor source tracking
-  @@index([power5s])        // Voor top sprinters
-  @@index([power1min])      // Voor top 1min power
-  @@index([power5min])      // Voor FTP-achtige efforts
-  @@index([power20min])     // Voor klimwerk
-  @@index([powerWkg5min])   // Voor w/kg sortering
-  @@index([totalDnfs])      // Voor reliability queries
-}
-
-/// ClubMember - AUTOMATISCH BINNENGEHAALD VIA CLUBID
-/// Read-only snapshot van club roster, geen volledige sync
-model ClubMember {
-  // Identifiers
-  id              Int           @id @default(autoincrement())
-  zwiftId         Int                                // Zwift ID (niet unique - kan in meerdere clubs zitten)
-  name            String
-  clubId          Int
-  club            Club?         @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  
-  // Racing categorieën & classificatie
-  categoryRacing  String?       // A, B, C, D, E
-  
-  // Power metrics (snapshot)
-  ftp             Float?
-  ftpWkg          Float?
-  powerToWeight   Float?
-  
-  // Power curve - absolute watts
-  power5s         Float?
-  power15s        Float?
-  power30s        Float?
-  power1min       Float?
-  power2min       Float?
-  power5min       Float?
-  power20min      Float?
-  
-  // Power curve - w/kg
-  powerWkg5s      Float?
-  powerWkg15s     Float?
-  powerWkg30s     Float?
-  powerWkg1min    Float?
-  powerWkg2min    Float?
-  powerWkg5min    Float?
-  powerWkg20min   Float?
-  
-  // Advanced metrics
-  criticalPower   Float?
-  anaerobicWork   Float?
-  
-  // Ranking (snapshot)
-  ranking         Int?
-  rankingScore    Float?
-  
-  // Profiel (snapshot)
-  age             Int?
-  gender          String?
-  countryCode     String?
-  weight          Float?
-  height          Float?
-  
-  // Race statistics (snapshot)
-  totalWins       Int?
-  totalPodiums    Int?
-  totalRaces      Int?
-  totalDnfs       Int?          // Did Not Finish count
-  lastRaceDate    DateTime?     // Laatste race datum (voor activity filtering)
-  
-  // Terrain handicaps (snapshot)
-  handicapFlat        Float?
-  handicapRolling     Float?
-  handicapHilly       Float?
-  handicapMountainous Float?
-  
-  // Metadata
-  isActive        Boolean       @default(true)
-  isFavorite      Boolean       @default(false)  // Link naar Rider table (Workflow Step 4)
-  
-  // Timestamps
-  lastSynced      DateTime      @default(now())
-  createdAt       DateTime      @default(now())
-  
-  // Relaties (NEW)
-  raceResults     RaceResult[]  // 24h race activity
-  
-  @@unique([zwiftId, clubId], name: "unique_club_member")
-  @@map("club_members")
   @@index([clubId])
-  @@index([zwiftId])
   @@index([ranking])
-  @@index([categoryRacing])
-  @@index([lastRaceDate])
-  @@index([isActive])
-  @@index([isFavorite])
-  @@index([power5min])      // Voor FTP-achtige sortering
-  @@index([powerWkg5min])   // Voor w/kg sortering
-  @@index([totalDnfs])      // Voor reliability queries
 }
 
-/// Event/Race informatie
+/// Event (race event)
 model Event {
   // Identifiers
-  id              Int           @id                  // Event ID van Zwift
+  id              Int           @id                  // Event ID from API
   name            String
-  description     String?
+  eventDate       DateTime
+  
+  // Event details
+  eventType       String?       // "Race", "Group Ride", etc.
+  routeName       String?       // Route name
+  world           String?       // Watopia, Makuri, etc.
+  
+  // Metrics
+  distance        Float?        // Meters
+  elevation       Float?        // Meters
+  laps            Int?
+  totalFinishers  Int?
+  
+  // Organizer
   clubId          Int?
   club            Club?         @relation(fields: [clubId], references: [id], onDelete: SetNull)
   
-  // Event details
-  eventType       String        @default("race")     // race, group_ride, workout, meetup
-  eventDate       DateTime
-  startTime       DateTime?
-  duration        Int?          // seconden
-  
-  // Sync metadata (NEW)
-  fetchedAt       DateTime      @default(now())      // Wanneer event data is opgehaald
-  dataSource      String        @default("club")     // "club_recent" (24h) | "favorite_historical" (90d)
-  
-  // Route informatie
-  routeName       String?
-  worldName       String?       // Watopia, Richmond, London, etc.
-  distance        Float?        // meters
-  elevation       Float?        // meters
-  laps            Int?
-  
-  // Categorie & regels
-  categories      String?       // JSON array of categories ["A","B","C"]
-  requiresEntry   Boolean       @default(false)
-  isPrivate       Boolean       @default(false)
-  
-  // Metadata
-  seriesName      String?       // Voor event series
-  eventUrl        String?
-  imageUrl        String?
-  
-  // Stats
-  totalParticipants Int         @default(0)
-  totalFinishers    Int         @default(0)
-  
   // Timestamps
   createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  deletedAt       DateTime?                        // Soft delete voor data retention
   
   // Relaties
   results         RaceResult[]
+  resultsSourceData EventResultsSourceData?
+  zpSourceData      EventZpSourceData?
   
   @@map("events")
   @@index([eventDate])
-  @@index([eventType])
   @@index([clubId])
-  @@index([worldName])
-  @@index([deletedAt])
 }
 
-/// Race resultaten - koppelt riders aan events
-/// Polymorphic: kan linken naar Rider (favorite) OF ClubMember (roster)
+/// Race Result (rider result in event)
 model RaceResult {
-  // Identifiers
-  id              String        @id @default(cuid())
+  id              Int           @id @default(autoincrement())
+  
+  // Foreign keys
   eventId         Int
   event           Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  
-  // Polymorphic relation (NEW): Link to EITHER Rider OR ClubMember
-  riderType       String        @default("favorite") // "favorite" | "club_member"
-  riderId         Int?          // Link to Rider (for favorites, 90d history)
-  rider           Rider?        @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  clubMemberId    Int?          // Link to ClubMember (for roster, 24h activity)
-  clubMember      ClubMember?   @relation(fields: [clubMemberId], references: [id], onDelete: Cascade)
+  riderId         Int
+  rider           Rider         @relation(fields: [riderId], references: [id], onDelete: Cascade)
   
   // Result details
-  position        Int?          // Overall finish positie
-  positionCategory Int?         // Positie binnen categorie
-  category        String?       // Categorie waarin gereden
-  
-  // Time & distance
-  time            Int?          // Finish tijd in seconden
-  timeGap         Int?          // Gap to winner in seconden
-  distance        Float?        // meters
+  position        Int?          // Overall position
+  positionCategory Int?         // Position in category
+  time            Int?          // Finish time (seconds)
   
   // Power metrics
-  averagePower    Float?        // watts
-  normalizedPower Float?        // watts
-  maxPower        Float?        // watts
-  averageWkg      Float?        // W/kg
-  zPower          Float?        // Zwift calculated power
+  averagePower    Float?
+  normalizedPower Float?
+  maxPower        Float?
   
-  // Heart rate
-  averageHeartRate Int?         // bpm
-  maxHeartRate    Int?          // bpm
-  
-  // Cadence
-  averageCadence  Int?          // rpm
-  maxCadence      Int?          // rpm
-  
-  // Speed
+  // Other metrics
   averageSpeed    Float?        // km/h
-  maxSpeed        Float?        // km/h
-  
-  // Points & achievements
-  points          Int           @default(0)
-  primePoints     Int           @default(0)    // Sprint/KOM points
-  
-  // Status & flags
-  didFinish       Boolean       @default(true)
-  didNotStart     Boolean       @default(false)
-  flagged         Boolean       @default(false)
-  disqualified    Boolean       @default(false)
-  flagReason      String?
-  
-  // Equipment
-  bikeFrame       String?
-  bikeWheels      String?
-  
-  // Metadata
-  source          String        @default("zwiftranking") // zwiftranking, zwiftpower
-  
-  dataQuality     String        @default("complete")     // complete, partial, minimal
-  notes           String?
+  averageHeartRate Int?
   
   // Timestamps
   createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
   
   @@map("race_results")
-  @@index([riderId, eventId])
-  @@index([clubMemberId, eventId])
-  @@index([eventId, position])
-  @@index([position])
-  @@index([category])
-  @@index([flagged])
-  @@index([source])
-  @@index([riderType])
+  @@unique([eventId, riderId])
+  @@index([riderId])
+  @@index([eventId])
 }
 
 // ============================================================================
-// HISTORICAL & ANALYTICS
+// BRONDATATABELLEN (Source Data from API)
 // ============================================================================
 
-/// Race rating tracking - current form & historical peaks
-model RiderRaceRating {
-  id              Int           @id @default(autoincrement())
-  riderId         Int           @unique
-  rider           Rider         @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  
-  // Current rating
-  currentRating   Float?
-  currentDate     DateTime?
-  currentExpires  DateTime?
-  
-  // Last race rating
-  lastRating      Float?
-  lastDate        DateTime?
-  lastExpires     DateTime?
-  lastMixedCat    String?       // Mixed category (A/B/C/D)
-  lastMixedNum    Float?        // Mixed category number
-  
-  // Peak ratings (form indicators)
-  max30Rating     Float?        // Best rating last 30 days
-  max30Date       DateTime?
-  max30Expires    DateTime?
-  max90Rating     Float?        // Best rating last 90 days
-  max90Date       DateTime?
-  max90Expires    DateTime?
-  
-  // Timestamps
-  updatedAt       DateTime      @updatedAt
-  createdAt       DateTime      @default(now())
-  
-  @@map("rider_race_ratings")
-  @@index([currentRating])
-  @@index([max30Rating])
-  @@index([max90Rating])
-}
-
-/// Rider phenotype classification (rider type based on power profile)
-model RiderPhenotype {
-  id              Int           @id @default(autoincrement())
-  riderId         Int           @unique
-  rider           Rider         @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  
-  // Phenotype scores (0-100)
-  sprinter        Float?        // Sprint ability
-  puncheur        Float?        // Short explosive efforts
-  pursuiter       Float?        // Sustained high power (pursuit)
-  climber         Float?        // Climbing ability (w/kg)
-  tt              Float?        // Time trial ability
-  
-  // Classification
-  primaryType     String?       // "Sprinter", "Climber", "All-rounder", etc.
-  bias            Float?        // Confidence in classification (0-1)
-  
-  // Timestamps
-  updatedAt       DateTime      @updatedAt
-  createdAt       DateTime      @default(now())
-  
-  @@map("rider_phenotypes")
-  @@index([primaryType])
-  @@index([sprinter])
-  @@index([climber])
-}
-
-/// Historische snapshots van rider data voor trend analyse
-model RiderHistory {
-  id              String        @id @default(cuid())
-  riderId         Int
-  rider           Rider         @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  
-  // Snapshot data (wat er op dat moment was)
-  ftp             Float?
-  powerToWeight   Float?
-  ranking         Int?
-  rankingScore    Float?
-  weight          Float?
-  categoryRacing  String?
-  zPoints         Int?
-  
-  // Context
-  snapshotType    String        @default("daily")    // daily, weekly, post_race
-  triggeredBy     String?       // sync, race_finish, manual
-  
-  // Timestamp
-  recordedAt      DateTime      @default(now())
-  
-  @@map("rider_history")
-  @@index([riderId, recordedAt])
-  @@index([recordedAt])
-}
-
-/// Geaggregeerde statistieken per rider (pre-calculated voor performance)
-model RiderStatistics {
-  id              String        @id @default(cuid())
-  riderId         Int           @unique
-  rider           Rider         @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  
-  // Race statistics (all time)
-  totalRaces      Int           @default(0)
-  totalWins       Int           @default(0)
-  totalPodiums    Int           @default(0)
-  totalTop10      Int           @default(0)
-  totalDNF        Int           @default(0)
-  
-  // Performance averages
-  avgPosition     Float?
-  avgPower        Float?
-  avgWkg          Float?
-  avgHeartRate    Float?
-  
-  // Best results
-  bestPosition    Int?
-  bestPower       Float?
-  bestWkg         Float?
-  bestTime        Int?          // Fastest race time
-  
-  // Recent form (last 30 days)
-  recent30dRaces  Int           @default(0)
-  recent30dWins   Int           @default(0)
-  recent30dAvgPos Float?
-  
-  // By category
-  racesPerCategory String?      // JSON: {"A": 10, "B": 5}
-  winsPerCategory String?       // JSON: {"A": 2, "B": 1}
-  
-  // Distance & time
-  totalDistance   Float         @default(0)  // km
-  totalRaceTime   Int           @default(0)  // seconds
-  
-  // Longest streaks
-  longestWinStreak Int          @default(0)
-  currentWinStreak Int          @default(0)
-  
-  // Timestamps
-  lastCalculated  DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
-  @@map("rider_statistics")
-}
-
-// ============================================================================
-// BRONDATATABELLEN (RAW API DATA)
-// ============================================================================
-// Bron-data van alle API endpoints - immutable snapshots met rate limit tracking
-// Principe: Elke API response wordt opgeslagen in zijn eigen tabel
-
-/// Club data van /public/clubs/:id
-model ClubSourceData {
-  id              String        @id @default(cuid())
-  
-  // API identifiers
-  clubId          Int
-  endpoint        String        @default("/public/clubs/:id")
-  
-  // Raw API response (JSON)
-  rawData         String        // Complete JSON response
-  
-  // Parsed key fields (voor indexing)
-  name            String?
-  memberCount     Int?
-  countryCode     String?
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
-  
-  // Metadata
-  apiVersion      String        @default("v1")
-  responseStatus  Int           @default(200)
-  responseTime    Int?          // milliseconden
-  
-  // Timestamps
-  fetchedAt       DateTime      @default(now())
-  
-  @@map("club_source_data")
-  @@index([clubId, fetchedAt])
-  @@index([fetchedAt])
-}
-
-/// Club roster data van /public/clubs/:id/:riderId
-model ClubRosterSourceData {
-  id              String        @id @default(cuid())
-  
-  // API identifiers
-  clubId          Int
-  fromRiderId     Int
-  endpoint        String        @default("/public/clubs/:id/:riderId")
-  
-  // Raw API response (JSON array)
-  rawData         String        // Complete JSON array van riders
-  
-  // Parsed metrics
-  ridersCount     Int           @default(0)
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
-  
-  // Metadata
-  responseStatus  Int           @default(200)
-  responseTime    Int?
-  
-  // Timestamps
-  fetchedAt       DateTime      @default(now())
-  
-  @@map("club_roster_source_data")
-  @@index([clubId, fetchedAt])
-  @@index([fetchedAt])
-}
-
-/// Event results van /public/results/:eventId
+/// Event Results Source Data - GET /public/results/:eventId
 model EventResultsSourceData {
-  id              String        @id @default(cuid())
+  id                String        @id @default(cuid())
   
   // API identifiers
-  eventId         Int
-  endpoint        String        @default("/public/results/:eventId")
-  
-  // Raw API response (JSON array)
-  rawData         String        // Complete JSON array van results
-  
-  // Parsed metrics
-  participantsCount Int         @default(0)
-  finishersCount  Int           @default(0)
-  
-  // Event key fields (voor indexing)
-  eventName       String?
-  eventDate       DateTime?
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
+  eventId           Int           @unique
+  event             Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   
   // Metadata
-  responseStatus  Int           @default(200)
-  responseTime    Int?
+  eventName         String?
+  eventDate         DateTime?
+  participantsCount Int?          // Total participants
+  finishersCount    Int?          // Participants who finished
   
-  // Timestamps
-  fetchedAt       DateTime      @default(now())
+  // Raw JSON data from API (immutable)
+  rawData           String        // JSON string
+  
+  // Request metadata
+  fetchedAt         DateTime      @default(now())
+  responseTime      Int?          // milliseconds
+  rateLimitRemaining Int?         // Rate limit info
+  rateLimitReset    DateTime?     // Rate limit reset time
   
   @@map("event_results_source_data")
-  @@index([eventId, fetchedAt])
-  @@index([eventDate])
+  @@index([eventId])
   @@index([fetchedAt])
 }
 
-/// Event results van /public/zp/:eventId/results (ZwiftPower format)
+/// Event ZwiftPower Source Data - GET /public/zp/:eventId/results
 model EventZpSourceData {
-  id              String        @id @default(cuid())
+  id                String        @id @default(cuid())
   
   // API identifiers
-  eventId         Int
-  endpoint        String        @default("/public/zp/:eventId/results")
-  
-  // Raw API response (JSON array)
-  rawData         String        // Complete ZwiftPower JSON array
-  
-  // Parsed metrics
-  participantsCount Int         @default(0)
-  
-  // Event key fields
-  eventName       String?
-  eventDate       DateTime?
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
+  eventId           Int           @unique
+  event             Event         @relation(fields: [eventId], references: [id], onDelete: Cascade)
   
   // Metadata
-  responseStatus  Int           @default(200)
-  responseTime    Int?
+  eventName         String?
+  eventDate         DateTime?
+  participantsCount Int?          // Total participants
+  finishersCount    Int?          // Participants who finished
   
-  // Timestamps
-  fetchedAt       DateTime      @default(now())
+  // Raw JSON data from API (immutable)
+  rawData           String        // JSON string (power curves, etc.)
+  
+  // Request metadata
+  fetchedAt         DateTime      @default(now())
+  responseTime      Int?          // milliseconds
+  rateLimitRemaining Int?         // Rate limit info
+  rateLimitReset    DateTime?     // Rate limit reset time
   
   @@map("event_zp_source_data")
-  @@index([eventId, fetchedAt])
-  @@index([eventDate])
+  @@index([eventId])
   @@index([fetchedAt])
 }
 
-/// Rider data van /public/riders/:riderId
+/// Rider Source Data - GET /public/riders/:riderId
 model RiderSourceData {
-  id              String        @id @default(cuid())
+  id                String        @id @default(cuid())
   
   // API identifiers
-  riderId         Int
-  endpoint        String        @default("/public/riders/:riderId")
-  
-  // Raw API response (JSON)
-  rawData         String        // Complete JSON response
-  
-  // Parsed key fields (voor indexing)
-  name            String?
-  ranking         Int?
-  categoryRacing  String?
-  ftp             Float?
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
+  riderId           Int
+  rider             Rider         @relation(fields: [riderId], references: [zwiftId], onDelete: Cascade)
   
   // Metadata
-  responseStatus  Int           @default(200)
-  responseTime    Int?
+  riderName         String?
+  snapshotDate      DateTime?     // Date of data snapshot
   
-  // Timestamps
-  fetchedAt       DateTime      @default(now())
+  // Raw JSON data from API (immutable)
+  rawData           String        // JSON string
+  
+  // Request metadata
+  fetchedAt         DateTime      @default(now())
+  responseTime      Int?          // milliseconds
+  rateLimitRemaining Int?
+  rateLimitReset    DateTime?
   
   @@map("rider_source_data")
   @@index([riderId, fetchedAt])
   @@index([fetchedAt])
 }
 
-/// Rider data op specifiek tijdstip van /public/riders/:riderId/:time
+/// Rider History Source Data - GET /public/riders/:riderId/:time
 model RiderHistorySourceData {
-  id              String        @id @default(cuid())
+  id                String        @id @default(cuid())
   
   // API identifiers
-  riderId         Int
-  epochTime       Int           // Unix timestamp van snapshot
-  endpoint        String        @default("/public/riders/:riderId/:time")
-  
-  // Raw API response (JSON)
-  rawData         String        // Complete JSON response
-  
-  // Parsed key fields
-  name            String?
-  ranking         Int?
-  ftp             Float?
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
+  riderId           Int
+  snapshotDate      DateTime      // Historical timestamp
   
   // Metadata
-  responseStatus  Int           @default(200)
-  responseTime    Int?
+  riderName         String?
   
-  // Timestamps
-  snapshotDate    DateTime      // Datum van de snapshot (van epochTime)
-  fetchedAt       DateTime      @default(now())
+  // Raw JSON data from API (immutable)
+  rawData           String        // JSON string
+  
+  // Request metadata
+  fetchedAt         DateTime      @default(now())
+  responseTime      Int?
+  rateLimitRemaining Int?
+  rateLimitReset    DateTime?
   
   @@map("rider_history_source_data")
+  @@unique([riderId, snapshotDate])
   @@index([riderId, snapshotDate])
-  @@index([riderId, fetchedAt])
   @@index([fetchedAt])
 }
 
-/// Bulk rider data van POST /public/riders
-model RiderBulkSourceData {
-  id              String        @id @default(cuid())
+/// Club Source Data - GET /public/clubs/:clubId
+model ClubSourceData {
+  id                String        @id @default(cuid())
   
   // API identifiers
-  endpoint        String        @default("POST /public/riders")
-  riderIds        String        // JSON array van opgevraagde rider IDs
-  
-  // Raw API response (JSON array)
-  rawData         String        // Complete JSON array van riders
-  
-  // Parsed metrics
-  requestedCount  Int           @default(0)
-  returnedCount   Int           @default(0)
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
+  clubId            Int
+  club              Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
   
   // Metadata
-  responseStatus  Int           @default(200)
-  responseTime    Int?
+  clubName          String?
+  memberCount       Int?
   
-  // Timestamps
-  fetchedAt       DateTime      @default(now())
+  // Raw JSON data from API (immutable)
+  rawData           String        // JSON string
   
-  @@map("rider_bulk_source_data")
+  // Request metadata
+  fetchedAt         DateTime      @default(now())
+  responseTime      Int?
+  rateLimitRemaining Int?
+  rateLimitReset    DateTime?
+  
+  @@map("club_source_data")
+  @@index([clubId, fetchedAt])
   @@index([fetchedAt])
 }
 
-/// Bulk rider history data van POST /public/riders/:time
-model RiderBulkHistorySourceData {
-  id              String        @id @default(cuid())
+/// Club Roster Source Data - GET /public/clubs/:clubId/:riderId
+model ClubRosterSourceData {
+  id                String        @id @default(cuid())
   
   // API identifiers
-  epochTime       Int           // Unix timestamp van snapshot
-  endpoint        String        @default("POST /public/riders/:time")
-  riderIds        String        // JSON array van opgevraagde rider IDs
-  
-  // Raw API response (JSON array)
-  rawData         String        // Complete JSON array van riders
-  
-  // Parsed metrics
-  requestedCount  Int           @default(0)
-  returnedCount   Int           @default(0)
-  
-  // Rate limit tracking
-  rateLimitRemaining Int?
-  rateLimitReset  DateTime?
+  clubId            Int
+  riderId           Int?          // Optional: specific rider in club
   
   // Metadata
-  responseStatus  Int           @default(200)
-  responseTime    Int?
+  clubName          String?
+  memberCount       Int?
+  snapshotDate      DateTime?
   
-  // Timestamps
-  snapshotDate    DateTime      // Datum van de snapshot
-  fetchedAt       DateTime      @default(now())
+  // Raw JSON data from API (immutable)
+  rawData           String        // JSON string (all members or specific rider)
   
-  @@map("rider_bulk_history_source_data")
-  @@index([snapshotDate])
+  // Request metadata
+  fetchedAt         DateTime      @default(now())
+  responseTime      Int?
+  rateLimitRemaining Int?
+  rateLimitReset    DateTime?
+  
+  @@map("club_roster_source_data")
+  @@index([clubId, fetchedAt])
   @@index([fetchedAt])
 }
 
 // ============================================================================
-// RATE LIMIT TRACKING
+// RATE LIMITING
 // ============================================================================
 
-/// Rate limit tracking per endpoint (voor monitoring en scheduling)
+/// Rate Limit Log (tracking API calls)
 model RateLimitLog {
-  id              String        @id @default(cuid())
-  
-  // Endpoint identificatie
-  endpoint        String        // "/public/clubs/:id", etc.
-  method          String        @default("GET")  // GET, POST
-  
-  // Rate limit status
-  limitMax        Int           // Max requests per periode
-  limitRemaining  Int           // Requests over
-  limitResetAt    DateTime      // Wanneer reset
-  
-  // Request details
-  requestUrl      String?       // Volledige URL
-  responseStatus  Int?
-  responseTime    Int?          // milliseconden
-  
-  // Timestamps
-  recordedAt      DateTime      @default(now())
+  id              Int           @id @default(autoincrement())
+  endpoint        String        // API endpoint
+  method          String        @default("GET")
+  statusCode      Int?
+  timestamp       DateTime      @default(now())
   
   @@map("rate_limit_logs")
-  @@index([endpoint, recordedAt])
-  @@index([limitResetAt])
-  @@index([recordedAt])
-}
-
-// ============================================================================
-// SYSTEM & MONITORING
-// ============================================================================
-
-/// Sync log voor monitoring en debugging
-model SyncLog {
-  id              String        @id @default(cuid())
-  
-  // Sync details
-  syncType        String        // club, riders, riders_bulk, results, event
-  targetId        String?       // Club ID, Event ID, etc.
-  status          String        // success, error, partial, rate_limited
-  
-  // Stats
-  recordsProcessed Int          @default(0)
-  recordsCreated  Int           @default(0)
-  recordsUpdated  Int           @default(0)
-  recordsFailed   Int           @default(0)
-  
-  // Performance
-  duration        Int?          // milliseconden
-  apiCalls        Int           @default(1)
-  
-  // Error handling
-  errorMessage    String?
-  errorStack      String?
-  retryCount      Int           @default(0)
-  
-  // Context
-  triggeredBy     String        @default("manual")   // manual, cron, api
-  metadata        String?       // JSON met extra context
-  
-  // Timestamps
-  startedAt       DateTime      @default(now())
-  completedAt     DateTime?
-  createdAt       DateTime      @default(now())
-  
-  @@map("sync_logs")
-  @@index([syncType, createdAt])
-  @@index([status])
-  @@index([createdAt])
-}
-
-// ============================================================================
-// TEAM MANAGEMENT
-// ============================================================================
-
-/// Teams - Groepen riders voor team management
-model Team {
-  id              Int           @id @default(autoincrement())
-  name            String
-  description     String?
-  
-  // Metadata
-  isActive        Boolean       @default(true)
-  autoSyncEnabled Boolean       @default(true)  // Auto-sync riders, clubs, events
-  syncIntervalMinutes Int       @default(60)    // Hoe vaak auto-sync
-  
-  // Timestamps
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  lastSyncedAt    DateTime?
-  
-  // Relaties
-  members         TeamMember[]
-  
-  @@map("teams")
-}
-
-/// TeamMember - Many-to-many tussen Team en Rider
-model TeamMember {
-  id              Int           @id @default(autoincrement())
-  
-  // Relaties
-  teamId          Int
-  team            Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  riderId         Int
-  rider           Rider         @relation(fields: [riderId], references: [id], onDelete: Cascade)
-  
-  // Member metadata
-  role            String        @default("member")  // captain, member, reserve
-  notes           String?       // Notities over deze rider in dit team
-  
-  // Sync status
-  lastSyncedAt    DateTime?
-  syncStatus      String        @default("pending") // pending, syncing, synced, error
-  syncError       String?
-  
-  // Timestamps
-  addedAt         DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  
-  @@unique([teamId, riderId], name: "unique_team_member")
-  @@map("team_members")
-  @@index([teamId])
-  @@index([riderId])
-  @@index([syncStatus])
+  @@index([endpoint])
+  @@index([timestamp])
 }

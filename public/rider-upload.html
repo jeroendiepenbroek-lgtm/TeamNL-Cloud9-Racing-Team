@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeamNL Cloud9 - Rider Upload</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #333;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .section {
+      margin-bottom: 30px;
+      padding-bottom: 30px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .section h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+      color: #667eea;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #555;
+      font-size: 14px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    .file-input {
+      position: relative;
+      display: inline-block;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .file-input input[type="file"] {
+      cursor: pointer;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .info-box {
+      background: #f0f4ff;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .info-box ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+
+    .info-box li {
+      margin-bottom: 5px;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .result.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      display: block;
+    }
+
+    .result.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      display: block;
+    }
+
+    .result h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .result pre {
+      background: rgba(0,0,0,0.05);
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .nav-links {
+      padding: 20px 30px;
+      background: #f8f9fa;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #764ba2;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      color: #667eea;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 10px auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚴 TeamNL Cloud9 Racing Team</h1>
+      <p>Rider Upload & Management</p>
+    </div>
+
+    <div class="content">
+      <!-- Single Rider ID Upload -->
+      <div class="section">
+        <h2>📋 Enkele Rider Toevoegen (RiderID)</h2>
+        <div class="info-box">
+          <strong>ℹ️ Hoe werkt het?</strong>
+          <p>Voer een Zwift Rider ID in (bijv. 150437) om de rider toe te voegen en direct te syncen.</p>
+        </div>
+        <form id="singleRiderForm">
+          <div class="form-group">
+            <label for="riderId">Zwift Rider ID</label>
+            <input type="number" id="riderId" name="riderId" placeholder="150437" required>
+          </div>
+          <button type="submit">Rider Toevoegen & Syncen</button>
+        </form>
+        <div class="loading" id="singleLoading">
+          <div class="spinner"></div>
+          <p>Rider wordt gesynchroniseerd...</p>
+        </div>
+        <div class="result" id="singleResult"></div>
+      </div>
+
+      <!-- Bulk Rider IDs Upload -->
+      <div class="section">
+        <h2>📦 Bulk Riders Toevoegen (RiderIDs)</h2>
+        <div class="info-box">
+          <strong>ℹ️ Hoe werkt het?</strong>
+          <p>Voer meerdere Rider IDs in, één per regel of gescheiden door komma's.</p>
+          <ul>
+            <li>Per regel: <code>150437</code></li>
+            <li>Gescheiden: <code>150437, 223344, 556677</code></li>
+          </ul>
+        </div>
+        <form id="bulkRiderForm">
+          <div class="form-group">
+            <label for="riderIds">Zwift Rider IDs (meerdere)</label>
+            <textarea id="riderIds" name="riderIds" placeholder="150437&#10;223344&#10;556677" required></textarea>
+          </div>
+          <button type="submit">Bulk Riders Toevoegen & Syncen</button>
+        </form>
+        <div class="loading" id="bulkLoading">
+          <div class="spinner"></div>
+          <p>Bulk sync gestart (draait op achtergrond)...</p>
+        </div>
+        <div class="result" id="bulkResult"></div>
+      </div>
+
+      <!-- File Upload -->
+      <div class="section">
+        <h2>📄 Bestand Uploaden (TXT/CSV)</h2>
+        <div class="info-box">
+          <strong>ℹ️ Ondersteunde formaten:</strong>
+          <ul>
+            <li><strong>TXT:</strong> Rider IDs, één per regel</li>
+            <li><strong>CSV:</strong> Kolommen met rider data (id, naam, club, etc.)</li>
+          </ul>
+        </div>
+        <form id="fileUploadForm">
+          <div class="form-group">
+            <label for="file">Selecteer bestand</label>
+            <div class="file-input">
+              <input type="file" id="file" name="file" accept=".txt,.csv" required>
+            </div>
+          </div>
+          <button type="submit">Bestand Uploaden</button>
+        </form>
+        <div class="loading" id="fileLoading">
+          <div class="spinner"></div>
+          <p>Bestand wordt verwerkt...</p>
+        </div>
+        <div class="result" id="fileResult"></div>
+      </div>
+    </div>
+
+    <div class="nav-links">
+      <a href="/">🏠 Home</a>
+      <a href="/scheduler-config.html">⚙️ Scheduler</a>
+      <a href="/rider-dashboard.html">📊 Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+
+    // Single Rider Form
+    document.getElementById('singleRiderForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const riderId = document.getElementById('riderId').value;
+      const loadingEl = document.getElementById('singleLoading');
+      const resultEl = document.getElementById('singleResult');
+      const submitBtn = e.target.querySelector('button');
+
+      loadingEl.classList.add('show');
+      resultEl.style.display = 'none';
+      submitBtn.disabled = true;
+
+      try {
+        // First add rider, then sync
+        const syncResponse = await fetch(`${API_BASE}/riders/${riderId}/sync`, {
+          method: 'POST',
+        });
+
+        const syncData = await syncResponse.json();
+
+        loadingEl.classList.remove('show');
+        submitBtn.disabled = false;
+
+        if (syncResponse.ok && syncData.result.success) {
+          resultEl.className = 'result success';
+          resultEl.innerHTML = `
+            <h3>✅ Rider succesvol toegevoegd!</h3>
+            <p><strong>Rider ID:</strong> ${syncData.riderId}</p>
+            <p><strong>Status:</strong> ${syncData.result.message}</p>
+            <p><strong>Data opgeslagen:</strong> ${syncData.result.dataStored ? 'Ja' : 'Nee'}</p>
+          `;
+        } else {
+          throw new Error(syncData.error || 'Sync failed');
+        }
+      } catch (error) {
+        loadingEl.classList.remove('show');
+        submitBtn.disabled = false;
+        resultEl.className = 'result error';
+        resultEl.innerHTML = `
+          <h3>❌ Fout bij toevoegen rider</h3>
+          <p>${error.message}</p>
+        `;
+      }
+    });
+
+    // Bulk Rider IDs Form
+    document.getElementById('bulkRiderForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const riderIdsText = document.getElementById('riderIds').value;
+      const loadingEl = document.getElementById('bulkLoading');
+      const resultEl = document.getElementById('bulkResult');
+      const submitBtn = e.target.querySelector('button');
+
+      // Parse rider IDs (newline or comma separated)
+      const riderIds = riderIdsText
+        .split(/[\n,]+/)
+        .map(id => id.trim())
+        .filter(id => id && !isNaN(id))
+        .map(id => parseInt(id));
+
+      if (riderIds.length === 0) {
+        resultEl.className = 'result error';
+        resultEl.innerHTML = `<h3>❌ Geen geldige Rider IDs gevonden</h3>`;
+        return;
+      }
+
+      loadingEl.classList.add('show');
+      resultEl.style.display = 'none';
+      submitBtn.disabled = true;
+
+      try {
+        // Use upload-json endpoint for bulk
+        const uploadResponse = await fetch(`${API_BASE}/riders/upload-json`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ riderIds }),
+        });
+
+        const uploadData = await uploadResponse.json();
+
+        loadingEl.classList.remove('show');
+        submitBtn.disabled = false;
+
+        if (uploadResponse.ok) {
+          resultEl.className = 'result success';
+          resultEl.innerHTML = `
+            <h3>✅ Bulk upload gestart!</h3>
+            <p><strong>Aantal riders:</strong> ${riderIds.length}</p>
+            <p><strong>Status:</strong> ${uploadData.message}</p>
+            <p>💡 Riders worden op de achtergrond gesynchroniseerd (5 riders/min rate limit)</p>
+          `;
+        } else {
+          throw new Error(uploadData.error || 'Upload failed');
+        }
+      } catch (error) {
+        loadingEl.classList.remove('show');
+        submitBtn.disabled = false;
+        resultEl.className = 'result error';
+        resultEl.innerHTML = `
+          <h3>❌ Fout bij bulk upload</h3>
+          <p>${error.message}</p>
+        `;
+      }
+    });
+
+    // File Upload Form
+    document.getElementById('fileUploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const fileInput = document.getElementById('file');
+      const file = fileInput.files[0];
+      const loadingEl = document.getElementById('fileLoading');
+      const resultEl = document.getElementById('fileResult');
+      const submitBtn = e.target.querySelector('button');
+
+      if (!file) {
+        resultEl.className = 'result error';
+        resultEl.innerHTML = `<h3>❌ Geen bestand geselecteerd</h3>`;
+        return;
+      }
+
+      loadingEl.classList.add('show');
+      resultEl.style.display = 'none';
+      submitBtn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const uploadResponse = await fetch(`${API_BASE}/riders/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json();
+
+        loadingEl.classList.remove('show');
+        submitBtn.disabled = false;
+
+        if (uploadResponse.ok) {
+          resultEl.className = 'result success';
+          resultEl.innerHTML = `
+            <h3>✅ Bestand succesvol verwerkt!</h3>
+            <p><strong>Bestand:</strong> ${file.name}</p>
+            <p><strong>Riders toegevoegd:</strong> ${uploadData.ridersAdded || 0}</p>
+            <p><strong>Riders geüpdatet:</strong> ${uploadData.ridersUpdated || 0}</p>
+            ${uploadData.details ? `<pre>${JSON.stringify(uploadData.details, null, 2)}</pre>` : ''}
+          `;
+          fileInput.value = '';
+        } else {
+          throw new Error(uploadData.error || 'Upload failed');
+        }
+      } catch (error) {
+        loadingEl.classList.remove('show');
+        submitBtn.disabled = false;
+        resultEl.className = 'result error';
+        resultEl.innerHTML = `
+          <h3>❌ Fout bij bestand upload</h3>
+          <p>${error.message}</p>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

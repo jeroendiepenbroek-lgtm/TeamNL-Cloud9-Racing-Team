@@ -9,19 +9,46 @@
  * Configuratie opslaan in database voor GUI control
  */
 
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import prisma from '../database/client.js';
 import { eventScraperService } from './mvp-event-scraper.service.js';
-import { eventEnricherService } from './mvp-event-enricher.service.js';
+import { mvpRiderSyncService } from './mvp-rider-sync.service.js';
+import { mvpClubSyncService } from './mvp-club-sync.service.js';
+import { unifiedSyncService } from './unified-sync.service.js';
 import { ZwiftApiClient } from '../api/zwift-client.js';
 import { logger } from '../utils/logger.js';
+
+// Dummy enricher voor backwards compatibility
+const eventEnricherService = {
+  async enrichEvent(eventId: number) {
+    return await unifiedSyncService.syncEvent(eventId);
+  },
+  async enrichEvents(eventIds: number[]) {
+    const results = await Promise.allSettled(
+      eventIds.map(id => unifiedSyncService.syncEvent(id))
+    );
+    const enriched = results.filter(r => r.status === 'fulfilled').length;
+    return { 
+      total: results.length, 
+      enriched, 
+      failed: results.length - enriched,
+      skipped: 0 
+    };
+  },
+  async getUnenrichedEvents(limit: number) {
+    // Return empty array - manual sync via unified service instead
+    return [];
+  }
+};
 
 interface SchedulerConfig {
   enabled: boolean;
   scrapeEventsEnabled: boolean;
   scrapeEventsCron: string; // default: '0 * * * *' (every hour)
   syncRidersEnabled: boolean;
-  syncRidersCron: string; // default: '0 * * * *' (every hour)
+  syncRidersCron: string; // default: '15 * * * *' (every hour at :15)
+  syncClubsEnabled: boolean;
+  syncClubsCron: string; // default: '45 * * * *' (every hour at :45)
   enrichEventsEnabled: boolean;
   enrichEventsCron: string; // default: '30 * * * *' (every hour at :30)
   maxEventsPerRun: number; // default: 50
@@ -61,6 +88,10 @@ export class MVPSchedulerService {
 
     if (this.config.syncRidersEnabled) {
       this.scheduleRiderSync();
+    }
+
+    if (this.config.syncClubsEnabled) {
+      this.scheduleClubSync();
     }
 
     if (this.config.enrichEventsEnabled) {
@@ -139,6 +170,15 @@ export class MVPSchedulerService {
       });
     }
 
+    if (this.config.syncClubsEnabled) {
+      jobs.push({
+        name: 'sync-clubs',
+        enabled: true,
+        cron: this.config.syncClubsCron,
+        nextRun: this.getNextRunTime(this.config.syncClubsCron),
+      });
+    }
+
     if (this.config.enrichEventsEnabled) {
       jobs.push({
         name: 'enrich-events',
@@ -196,48 +236,13 @@ export class MVPSchedulerService {
 
   private scheduleRiderSync(): void {
     const job = cron.schedule(this.config.syncRidersCron, async () => {
-      logger.info('🕐 [CRON] Rider sync started');
+      logger.info('🕐 [CRON] Rider sync (source data) started');
 
       try {
-        // Get all riders from database
-        const riders = await prisma.rider.findMany({
-          select: { zwiftId: true, clubId: true },
-        });
+        // Use new MVP rider sync service
+        const result = await mvpRiderSyncService.syncAllRiders({ limit: 50 });
 
-        logger.info(`  📋 Syncing ${riders.length} riders`);
-
-        let synced = 0;
-        let failed = 0;
-
-        for (const rider of riders) {
-          try {
-            // Fetch rider data from API
-            const riderData = await this.apiClient.getRider(rider.zwiftId);
-
-            // Update in database
-            await prisma.rider.update({
-              where: { zwiftId: rider.zwiftId },
-              data: {
-                name: riderData.name,
-                ftp: riderData.ftp,
-                weight: riderData.weight,
-                ranking: riderData.ranking,
-                rankingScore: riderData.rankingScore,
-                categoryRacing: riderData.categoryRacing,
-              },
-            });
-
-            synced++;
-          } catch (error: any) {
-            logger.error(`  ❌ Error syncing rider ${rider.zwiftId}:`, error.message);
-            failed++;
-          }
-
-          // Rate limit delay
-          await this.delay(12000); // 5 riders per minute
-        }
-
-        logger.info(`✅ [CRON] Rider sync complete: ${synced} synced, ${failed} failed`);
+        logger.info(`✅ [CRON] Rider sync complete: ${result.successful}/${result.total} synced`);
       } catch (error: any) {
         logger.error('❌ [CRON] Rider sync failed:', error);
       }
@@ -245,6 +250,24 @@ export class MVPSchedulerService {
 
     this.jobs.set('sync-riders', job);
     logger.info(`  ✓ Scheduled: Rider sync (${this.config.syncRidersCron})`);
+  }
+
+  private scheduleClubSync(): void {
+    const job = cron.schedule(this.config.syncClubsCron, async () => {
+      logger.info('🕐 [CRON] Club sync (source data) started');
+
+      try {
+        // Use new MVP club sync service
+        const result = await mvpClubSyncService.syncAllClubs({ includeRoster: true });
+
+        logger.info(`✅ [CRON] Club sync complete: ${result.successful}/${result.total} synced`);
+      } catch (error: any) {
+        logger.error('❌ [CRON] Club sync failed:', error);
+      }
+    });
+
+    this.jobs.set('sync-clubs', job);
+    logger.info(`  ✓ Scheduled: Club sync (${this.config.syncClubsCron})`);
   }
 
   private scheduleEventEnrichment(): void {
@@ -287,6 +310,8 @@ export class MVPSchedulerService {
       scrapeEventsCron: '0 * * * *', // Every hour at :00
       syncRidersEnabled: true,
       syncRidersCron: '15 * * * *', // Every hour at :15
+      syncClubsEnabled: true,
+      syncClubsCron: '45 * * * *', // Every hour at :45
       enrichEventsEnabled: true,
       enrichEventsCron: '30 * * * *', // Every hour at :30
       maxEventsPerRun: 50,

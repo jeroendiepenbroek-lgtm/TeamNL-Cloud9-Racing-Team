@@ -8,14 +8,26 @@
  * 4. Scheduler configuratie
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+import * as express from 'express';
+import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import prisma from '../database/client.js';
 import { riderUploadService } from '../services/mvp-rider-upload.service.js';
 import { eventScraperService } from '../services/mvp-event-scraper.service.js';
-import { eventEnricherService } from '../services/mvp-event-enricher.service.js';
 import { schedulerService } from '../services/mvp-scheduler.service.js';
+import { mvpRiderSyncService } from '../services/mvp-rider-sync.service.js';
+import { mvpClubSyncService } from '../services/mvp-club-sync.service.js';
 import { logger } from '../utils/logger.js';
+import { firebaseSyncService } from '../services/firebase-sync.service.js';
+import { unifiedSyncService } from '../services/unified-sync.service.js';
+
+// Dummy enricher service for legacy routes
+const eventEnricherService = {
+  async getEnrichmentStats() { return { enriched: 0, unenriched: 0 }; },
+  async enrichEvent(eventId: number) { return { eventId, success: false, message: 'Use unified sync instead' }; },
+  async getUnenrichedEvents(limit: number) { return []; },
+  async enrichEvents(eventIds: number[]) { return { total: 0, enriched: 0, failed: 0 }; },
+};
 
 const router = express.Router();
 
@@ -73,6 +85,38 @@ router.get('/status', asyncHandler(async (_req: Request, res: Response) => {
     enrichment: enrichmentStats,
     scheduler: schedulerStatus,
   });
+}));
+
+/**
+ * POST /api/firebase/cleanup
+ * Cleanup specified Firestore collections. Requires FIREBASE_CLEAN_TOKEN env var and matching token in body.
+ * Body: { token: string, collections?: string[] }
+ */
+router.post('/firebase/cleanup', asyncHandler(async (req: Request, res: Response) => {
+  const { token, collections } = req.body || {};
+  const expected = process.env.FIREBASE_CLEAN_TOKEN;
+
+  if (!expected) {
+    return res.status(400).json({ error: 'FIREBASE_CLEAN_TOKEN is not configured on the server' });
+  }
+
+  if (!token || token !== expected) {
+    return res.status(403).json({ error: 'Invalid cleanup token' });
+  }
+
+  if (!firebaseSyncService.isAvailable()) {
+    return res.status(503).json({ error: 'Firebase not initialized' });
+  }
+
+  const toClean = Array.isArray(collections) && collections.length > 0
+    ? collections
+    : [
+      'riders','clubs','events','raceResults','riderHistory','clubRoster','syncLogs'
+    ];
+
+  const results = await firebaseSyncService.cleanup(toClean);
+
+  res.json({ message: 'Cleanup executed', results });
 }));
 
 // ============================================================================
@@ -686,6 +730,319 @@ router.get('/clubs/:clubId', asyncHandler(async (req: Request, res: Response) =>
     ...club,
     riders,
   });
+}));
+
+// ============================================================================
+// MVP SOURCE DATA SYNC ROUTES
+// ============================================================================
+
+/**
+ * POST /riders/:zwiftId/sync
+ * Sync actuele rider data naar rider_source_data
+ */
+router.post('/riders/:zwiftId/sync', asyncHandler(async (req, res) => {
+  const riderId = parseInt(req.params.zwiftId);
+
+  if (isNaN(riderId)) {
+    return res.status(400).json({ error: 'Invalid rider ID' });
+  }
+
+  logger.info(`🔄 API: Start rider sync voor ${riderId}`);
+
+  const result = await mvpRiderSyncService.syncRider(riderId);
+
+  if (result.success) {
+    res.status(202).json({
+      message: 'Rider sync queued',
+      riderId,
+      result,
+    });
+  } else {
+    res.status(500).json({
+      error: 'Rider sync failed',
+      riderId,
+      result,
+    });
+  }
+}));
+
+/**
+ * POST /sync-all-riders
+ * Sync alle tracked riders
+ */
+router.post('/sync-all-riders', asyncHandler(async (req, res) => {
+  const { limit, clubId } = req.body;
+
+  logger.info('🔄 API: Start bulk rider sync', { limit, clubId });
+
+  // Start async in background
+  mvpRiderSyncService.syncAllRiders({ limit, clubId })
+    .then(result => {
+      logger.info(`✅ Bulk rider sync voltooid: ${result.successful}/${result.total}`);
+    })
+    .catch(error => {
+      logger.error('❌ Bulk rider sync failed:', error);
+    });
+
+  res.status(202).json({
+    message: 'Bulk rider sync started in background',
+    options: { limit, clubId },
+  });
+}));
+
+/**
+ * GET /riders/:zwiftId/history
+ * Haal rider history op uit rider_history_source_data
+ */
+router.get('/riders/:zwiftId/history', asyncHandler(async (req, res) => {
+  const riderId = parseInt(req.params.zwiftId);
+  const limit = parseInt(req.query.limit as string) || 30;
+
+  if (isNaN(riderId)) {
+    return res.status(400).json({ error: 'Invalid rider ID' });
+  }
+
+  logger.info(`📊 API: Get rider history voor ${riderId} (limit: ${limit})`);
+
+  const history = await mvpRiderSyncService.getRiderHistory(riderId, limit);
+
+  res.json({
+    riderId,
+    limit,
+    count: history.length,
+    history,
+  });
+}));
+
+/**
+ * POST /clubs/:clubId/sync
+ * Sync club data naar club_source_data
+ */
+router.post('/clubs/:clubId/sync', asyncHandler(async (req, res) => {
+  const clubId = parseInt(req.params.clubId);
+
+  if (isNaN(clubId)) {
+    return res.status(400).json({ error: 'Invalid club ID' });
+  }
+
+  logger.info(`🔄 API: Start club sync voor ${clubId}`);
+
+  const result = await mvpClubSyncService.syncClub(clubId);
+
+  if (result.success) {
+    res.status(202).json({
+      message: 'Club sync queued',
+      clubId,
+      result,
+    });
+  } else {
+    res.status(500).json({
+      error: 'Club sync failed',
+      clubId,
+      result,
+    });
+  }
+}));
+
+/**
+ * POST /clubs/:clubId/roster
+ * Sync club roster naar club_roster_source_data
+ */
+router.post('/clubs/:clubId/roster', asyncHandler(async (req, res) => {
+  const clubId = parseInt(req.params.clubId);
+
+  if (isNaN(clubId)) {
+    return res.status(400).json({ error: 'Invalid club ID' });
+  }
+
+  logger.info(`🔄 API: Start roster sync voor club ${clubId}`);
+
+  // Start async in background
+  mvpClubSyncService.syncClubRoster(clubId)
+    .then(result => {
+      logger.info(`✅ Roster sync voltooid voor club ${clubId}: ${result.memberCount} members`);
+    })
+    .catch(error => {
+      logger.error(`❌ Roster sync failed voor club ${clubId}:`, error);
+    });
+
+  res.status(202).json({
+    message: 'Club roster sync started in background',
+    clubId,
+  });
+}));
+
+/**
+ * GET /clubs/:clubId/history
+ * Haal club history op uit club_source_data
+ */
+router.get('/clubs/:clubId/history', asyncHandler(async (req, res) => {
+  const clubId = parseInt(req.params.clubId);
+
+  if (isNaN(clubId)) {
+    return res.status(400).json({ error: 'Invalid club ID' });
+  }
+
+  logger.info(`📊 API: Get club history voor ${clubId}`);
+
+  const latestData = await mvpClubSyncService.getLatestClubData(clubId);
+
+  res.json({
+    clubId,
+    latestData,
+  });
+}));
+
+// ============================================================================
+// UNIFIED SYNC ROUTES (NEW - CLEAN API)
+// ============================================================================
+
+/**
+ * POST /sync/rider/:riderId
+ * Sync single rider to Firestore
+ */
+router.post('/sync/rider/:riderId', asyncHandler(async (req, res) => {
+  const riderId = parseInt(req.params.riderId);
+
+  if (isNaN(riderId)) {
+    return res.status(400).json({ error: 'Invalid rider ID' });
+  }
+
+  logger.info(`🔄 API: Sync rider ${riderId}`);
+
+  const result = await unifiedSyncService.syncRider(riderId);
+
+  if (result.success) {
+    res.json(result);
+  } else {
+    res.status(500).json(result);
+  }
+}));
+
+/**
+ * POST /sync/riders/bulk
+ * Bulk sync riders to Firestore
+ * Body: { riderIds: number[] }
+ */
+router.post('/sync/riders/bulk', asyncHandler(async (req, res) => {
+  const { riderIds } = req.body;
+
+  if (!Array.isArray(riderIds) || riderIds.length === 0) {
+    return res.status(400).json({ error: 'riderIds must be a non-empty array' });
+  }
+
+  logger.info(`🔄 API: Bulk sync ${riderIds.length} riders`);
+
+  // Start sync in background for large batches
+  if (riderIds.length > 10) {
+    // Background sync
+    unifiedSyncService.syncRidersBulk(riderIds).then((result) => {
+      logger.info(`✅ Background bulk sync complete: ${result.synced}/${result.total}`);
+    }).catch((error) => {
+      logger.error(`❌ Background bulk sync failed:`, error);
+    });
+
+    return res.status(202).json({
+      message: 'Bulk sync started in background',
+      total: riderIds.length,
+    });
+  }
+
+  // Sync immediately for small batches
+  const result = await unifiedSyncService.syncRidersBulk(riderIds);
+  res.json(result);
+}));
+
+/**
+ * POST /sync/club/:clubId
+ * Sync club + members to Firestore
+ */
+router.post('/sync/club/:clubId', asyncHandler(async (req, res) => {
+  const clubId = parseInt(req.params.clubId);
+
+  if (isNaN(clubId)) {
+    return res.status(400).json({ error: 'Invalid club ID' });
+  }
+
+  logger.info(`🔄 API: Sync club ${clubId}`);
+
+  const result = await unifiedSyncService.syncClub(clubId);
+
+  if (result.success) {
+    res.json(result);
+  } else {
+    res.status(500).json(result);
+  }
+}));
+
+/**
+ * POST /sync/event/:eventId
+ * Sync event + results to Firestore
+ */
+router.post('/sync/event/:eventId', asyncHandler(async (req, res) => {
+  const eventId = parseInt(req.params.eventId);
+
+  if (isNaN(eventId)) {
+    return res.status(400).json({ error: 'Invalid event ID' });
+  }
+
+  logger.info(`🔄 API: Sync event ${eventId}`);
+
+  const result = await unifiedSyncService.syncEvent(eventId);
+
+  if (result.success) {
+    res.json(result);
+  } else {
+    res.status(500).json(result);
+  }
+}));
+
+/**
+ * GET /riders
+ * List all riders from Firestore
+ */
+router.get('/riders', asyncHandler(async (_req, res) => {
+  logger.info(`📊 API: List riders from Firestore`);
+
+  // Get from Firestore via admin SDK
+  // Note: In production, add pagination
+  const stats = await firebaseSyncService.getStats();
+
+  res.json({
+    message: 'Use Firestore client SDK in frontend for real-time data',
+    stats,
+    hint: 'Frontend should use onSnapshot() for live updates',
+  });
+}));
+
+/**
+ * GET /riders/:riderId/club
+ * Get club ID for rider
+ */
+router.get('/riders/:riderId/club', asyncHandler(async (req, res) => {
+  const riderId = parseInt(req.params.riderId);
+
+  if (isNaN(riderId)) {
+    return res.status(400).json({ error: 'Invalid rider ID' });
+  }
+
+  logger.info(`📊 API: Get club for rider ${riderId}`);
+
+  // Fetch from Zwift API
+  const result = await unifiedSyncService.syncRider(riderId);
+
+  if (result.success && result.clubId) {
+    res.json({
+      riderId,
+      clubId: result.clubId,
+    });
+  } else {
+    res.status(404).json({
+      riderId,
+      clubId: null,
+      error: 'Rider not found or no club',
+    });
+  }
 }));
 
 export default router;

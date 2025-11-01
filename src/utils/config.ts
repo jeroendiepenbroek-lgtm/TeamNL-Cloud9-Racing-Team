@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 // Laad environment variabelen
 dotenv.config();
@@ -18,7 +18,19 @@ interface Config {
 
   // Sync configuratie
   syncIntervalMinutes: number;
+  syncIntervalHours: number;
+  syncCronSchedule: string;
+  maxRetries: number;
   enableAutoSync: boolean;
+
+  // Event scraping configuratie
+  eventScrapingEnabled: boolean;
+  eventScrapingDays: number;
+
+  // Supabase configuratie
+  supabaseUrl: string;
+  supabaseServiceKey: string;
+  supabaseAnonKey: string;
 }
 
 function getEnvVar(key: string, defaultValue?: string): string {
@@ -62,7 +74,19 @@ export const config: Config = {
 
   // Sync configuratie
   syncIntervalMinutes: getEnvNumber('SYNC_INTERVAL_MINUTES', 60),
-  enableAutoSync: getEnvBoolean('ENABLE_AUTO_SYNC', true),
+  syncIntervalHours: getEnvNumber('SYNC_INTERVAL_HOURS', 1),
+  syncCronSchedule: getEnvVar('SYNC_CRON_SCHEDULE', '0 * * * *'),
+  maxRetries: getEnvNumber('MAX_RETRIES', 3),
+  enableAutoSync: getEnvBoolean('ENABLE_AUTO_SYNC', false),
+
+  // Event scraping configuratie
+  eventScrapingEnabled: getEnvBoolean('EVENT_SCRAPING_ENABLED', false),
+  eventScrapingDays: getEnvNumber('EVENT_SCRAPING_DAYS', 90),
+
+  // Supabase configuratie
+  supabaseUrl: getEnvVar('SUPABASE_URL', ''),
+  supabaseServiceKey: getEnvVar('SUPABASE_SERVICE_KEY', ''),
+  supabaseAnonKey: getEnvVar('SUPABASE_ANON_KEY', ''),
 };
 
 export default config;
