@@ -27,6 +27,19 @@
       "@utils/*": ["./src/utils/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/server.ts",
+    "src/api/mvp-routes.ts",
+    "src/api/zwift-client.ts",
+    "src/services/mvp-*.ts",
+    "src/services/mvp-event-enricher.service.ts",
+    "src/services/mvp-scheduler.service.ts",
+    "src/services/mvp-rider-upload.service.ts",
+    "src/services/mvp-event-scraper.service.ts",
+    "src/database/**/*",
+    "src/utils/**/*",
+    "src/middleware/**/*",
+    "src/types/**/*"
+  ],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

@@ -1,0 +1,25 @@
+name: Hourly Sync Job
+
+on:
+  schedule:
+    # Run every hour at :05 past the hour
+    - cron: '5 * * * *'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sync endpoint
+        env:
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          SYNC_API_KEY: ${{ secrets.SYNC_API_KEY }}
+        run: |
+          echo "🔄 Starting hourly sync..."
+          
+          # Sync club (TeamNL Cloud9 - ID 11818)
+          curl -X POST \
+            -H "Authorization: Bearer $SYNC_API_KEY" \
+            "$BACKEND_URL/api/sync/club/11818"
+          
+          echo "✅ Hourly sync complete"
