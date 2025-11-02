@@ -1,45 +1,93 @@
 import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
 
-// Environment-aware API URL
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+// Supabase client
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+)
+
+// ZwiftRacing API config
+const ZWIFT_API_BASE = 'https://zwift-ranking.herokuapp.com'
+const ZWIFT_API_KEY = '650c6d2fc4ef6858d74cbef1'
 
 export function AdminPanel() {
   const [riderIds, setRiderIds] = useState('')
   const [deleteId, setDeleteId] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [clubId, setClubId] = useState<number | null>(null)
-  const [clubs, setClubs] = useState<Array<{ id: number; name: string; memberCount: number }>>([])
+  const [clubs, setClubs] = useState<Array<{ id: number; club_name: string; member_count: number }>>([])
   const [loadingClubs, setLoadingClubs] = useState(false)
 
-  // Haal club ID op bij component mount
+  // Fetch clubs from Supabase
   useEffect(() => {
-    const fetchClubId = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/config`)
-        const data = await response.json()
-        setClubId(data.clubId)
-      } catch (err) {
-        console.error('Failed to fetch club ID:', err)
-        setClubId(11818) // Fallback naar default
-      }
-    }
-    fetchClubId()
     fetchClubs()
   }, [])
 
   const fetchClubs = async () => {
     setLoadingClubs(true)
     try {
-      const response = await fetch(`${API_BASE}/clubs`)
-      const data = await response.json()
-      if (data.success && data.clubs) {
-        setClubs(data.clubs)
-      }
+      const { data, error } = await supabase
+        .from('clubs')
+        .select('id, club_name, member_count')
+        .order('member_count', { ascending: false })
+
+      if (error) throw error
+      setClubs(data || [])
     } catch (err) {
       console.error('Failed to fetch clubs:', err)
     } finally {
       setLoadingClubs(false)
+    }
+  }
+
+  // Sync single rider from ZwiftRacing API to Supabase
+  const syncRider = async (riderId: number) => {
+    try {
+      // Fetch rider data from ZwiftRacing API
+      const response = await fetch(
+        `${ZWIFT_API_BASE}/public/rider/${riderId}?apikey=${ZWIFT_API_KEY}`
+      )
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
+      const riderData = await response.json()
+
+      // Extract club info
+      const clubId = riderData.clubId || riderData.club_id
+      const clubName = riderData.clubName || riderData.club_name || 'Unknown'
+
+      // Upsert club if exists
+      if (clubId) {
+        await supabase.from('clubs').upsert({
+          id: clubId,
+          club_name: clubName,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' })
+      }
+
+      // Upsert rider
+      await supabase.from('riders').upsert({
+        zwift_id: riderData.riderId,
+        name: riderData.name,
+        club_id: clubId,
+        ranking: riderData.ranking,
+        category_racing: riderData.category?.racing || null,
+        category_zftp: riderData.category?.zftp || null,
+        ftp: riderData.ftp,
+        weight: riderData.weight,
+        watts_per_kg: riderData.ftp && riderData.weight ? riderData.ftp / riderData.weight : null,
+        age: riderData.age,
+        country: riderData.country,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'zwift_id' })
+
+      return { success: true, clubId, clubName }
+    } catch (error: any) {
+      console.error(`Failed to sync rider ${riderId}:`, error)
+      return { success: false, error: error?.message || 'Unknown error' }
     }
   }
 
@@ -55,33 +103,45 @@ export function AdminPanel() {
 
       if (ids.length === 0) {
         setMessage('❌ No valid rider IDs found')
+        setLoading(false)
         return
       }
 
-      // Use the multi-club endpoint which will detect clubs based on riders
-      const response = await fetch(`${API_BASE}/sync/riders-with-clubs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ riderIds: ids }),
-      })
-
-      const data = await response.json()
-
-      if (data && data.success) {
-        const ridersSynced = data.synced?.riders ?? 0
-        const clubsSynced = data.synced?.clubs ?? 0
-        const clubsList = (data.clubs || []).map((c: any) => `${c.name} (${c.memberCount})`).join(', ')
-
-        setMessage(`✅ Synced ${ridersSynced} riders across ${clubsSynced} clubs${clubsList ? ': ' + clubsList : ''}`)
-        setRiderIds('')
-        fetchClubs() // Refresh clubs
-      } else if (response.status === 202) {
-        setMessage('✅ Bulk sync started in background')
-        setRiderIds('')
-        setTimeout(fetchClubs, 2000) // Refresh after delay
-      } else {
-        setMessage(`❌ Upload failed: ${data.error || 'Unknown error'}`)
+      const results = {
+        success: [] as number[],
+        failed: [] as number[],
+        clubs: new Set<string>(),
       }
+
+      // Sync each rider with 2 second delay (rate limiting)
+      for (let i = 0; i < ids.length; i++) {
+        const riderId = ids[i]
+        setMessage(`⏳ Syncing rider ${i + 1}/${ids.length}...`)
+
+        const result = await syncRider(riderId)
+        
+        if (result.success) {
+          results.success.push(riderId)
+          if (result.clubName) results.clubs.add(result.clubName)
+        } else {
+          results.failed.push(riderId)
+        }
+
+        // Rate limiting: 2 second delay between requests
+        if (i < ids.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+      }
+
+      // Show summary
+      const clubsList = Array.from(results.clubs).join(', ')
+      setMessage(
+        `✅ Synced ${results.success.length}/${ids.length} riders` +
+        (results.failed.length > 0 ? ` (${results.failed.length} failed)` : '') +
+        (clubsList ? ` across clubs: ${clubsList}` : '')
+      )
+      setRiderIds('')
+      fetchClubs() // Refresh clubs
     } catch (err) {
       setMessage(`❌ Error: ${err}`)
     } finally {
@@ -99,48 +159,26 @@ export function AdminPanel() {
     setMessage('')
     
     try {
-      const response = await fetch(`${API_BASE}/riders/${deleteId}`, {
-        method: 'DELETE',
-      })
-
-      const data = await response.json()
+      const riderId = parseInt(deleteId)
       
-      if (data.success || response.ok) {
-        setMessage(`✅ Rider ${deleteId} deleted`)
-        setDeleteId('')
-      } else {
-        setMessage(`❌ Delete failed: ${data.error || 'Unknown error'}`)
+      if (isNaN(riderId)) {
+        setMessage('❌ Invalid rider ID')
+        setLoading(false)
+        return
       }
+
+      const { error } = await supabase
+        .from('riders')
+        .delete()
+        .eq('zwift_id', riderId)
+
+      if (error) throw error
+
+      setMessage(`✅ Rider ${riderId} deleted`)
+      setDeleteId('')
+      fetchClubs() // Refresh in case rider was last in a club
     } catch (err) {
-      setMessage(`❌ Error: ${err}`)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleClubSync = async () => {
-    if (!clubId) {
-      setMessage('⏳ Loading club configuration...')
-      return
-    }
-
-    setLoading(true)
-    setMessage('🔄 Syncing club data...')
-    
-    try {
-      const response = await fetch(`${API_BASE}/sync/club/${clubId}`, {
-        method: 'POST',
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
-        setMessage(`✅ Club synced: ${data.memberCount} members`)
-      } else {
-        setMessage(`❌ Sync failed: ${data.error || 'Unknown error'}`)
-      }
-    } catch (err) {
-      setMessage(`❌ Error: ${err}`)
+      setMessage(`❌ Delete failed: ${err}`)
     } finally {
       setLoading(false)
     }
@@ -196,19 +234,6 @@ export function AdminPanel() {
         </div>
 
         <div className="admin-section">
-          <h3>🔄 Sync Club Data</h3>
-          <p style={{ fontSize: '14px', color: '#718096', marginBottom: '12px' }}>
-            Fetch latest club members from ZwiftRacing API and sync to Supabase
-          </p>
-          <button 
-            onClick={handleClubSync} 
-            disabled={loading || !clubId}
-          >
-            {loading ? 'Syncing...' : clubId ? `Sync Club ${clubId}` : 'Loading...'}
-          </button>
-        </div>
-
-        <div className="admin-section">
           <h3>🏢 Tracked Clubs</h3>
           <p style={{ fontSize: '14px', color: '#718096', marginBottom: '12px' }}>
             All clubs detected from uploaded riders
@@ -237,8 +262,8 @@ export function AdminPanel() {
                   display: 'flex',
                   justifyContent: 'space-between'
                 }}>
-                  <span><strong>{club.name}</strong> (ID: {club.id})</span>
-                  <span style={{ color: '#718096' }}>{club.memberCount} members</span>
+                  <span><strong>{club.club_name}</strong> (ID: {club.id})</span>
+                  <span style={{ color: '#718096' }}>{club.member_count} members</span>
                 </div>
               ))}
             </div>
