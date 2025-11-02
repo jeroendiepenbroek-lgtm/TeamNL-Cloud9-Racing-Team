@@ -16,7 +16,7 @@ export function AdminPanel() {
   const [deleteId, setDeleteId] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
-  const [clubs, setClubs] = useState<Array<{ id: number; club_name: string; member_count: number }>>([])
+  const [clubs, setClubs] = useState<Array<{ club_id: number; club_name: string; member_count: number }>>([])
   const [loadingClubs, setLoadingClubs] = useState(false)
 
   // Fetch clubs from Supabase
@@ -29,7 +29,7 @@ export function AdminPanel() {
     try {
       const { data, error } = await supabase
         .from('clubs')
-        .select('id, club_name, member_count')
+        .select('club_id, club_name, member_count')
         .order('member_count', { ascending: false })
 
       if (error) throw error
@@ -41,7 +41,7 @@ export function AdminPanel() {
     }
   }
 
-  // Sync single rider from ZwiftRacing API to Supabase
+  // US2 + US3: Sync single rider from ZwiftRacing API to Supabase (MVP schema)
   const syncRider = async (riderId: number) => {
     try {
       // Fetch rider data from ZwiftRacing API
@@ -55,33 +55,39 @@ export function AdminPanel() {
 
       const riderData = await response.json()
 
-      // Extract club info
+      // US3: Extract club info (auto-detect)
       const clubId = riderData.clubId || riderData.club_id
-      const clubName = riderData.clubName || riderData.club_name || 'Unknown'
+      const clubName = riderData.clubName || riderData.club_name || null
 
-      // Upsert club if exists
-      if (clubId) {
+      // US3: Upsert club if exists (sourcing table: clubs)
+      if (clubId && clubName) {
         await supabase.from('clubs').upsert({
-          id: clubId,
+          club_id: clubId,
           club_name: clubName,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' })
+          member_count: 0, // Will be updated by club sync
+          last_synced: new Date().toISOString(),
+        }, { onConflict: 'club_id' })
       }
 
-      // Upsert rider
+      // US2: Upsert rider (sourcing table: riders)
       await supabase.from('riders').upsert({
         zwift_id: riderData.riderId,
         name: riderData.name,
         club_id: clubId,
+        club_name: clubName,
         ranking: riderData.ranking,
-        category_racing: riderData.category?.racing || null,
+        ranking_score: riderData.rankingScore || riderData.ranking_score,
+        category_racing: riderData.category?.racing || riderData.categoryRacing || null,
         category_zftp: riderData.category?.zftp || null,
         ftp: riderData.ftp,
         weight: riderData.weight,
-        watts_per_kg: riderData.ftp && riderData.weight ? riderData.ftp / riderData.weight : null,
         age: riderData.age,
-        country: riderData.country,
-        updated_at: new Date().toISOString(),
+        gender: riderData.gender,
+        country: riderData.country || riderData.countryCode,
+        total_races: riderData.totalRaces || 0,
+        total_wins: riderData.totalWins || 0,
+        total_podiums: riderData.totalPodiums || 0,
+        last_synced: new Date().toISOString(),
       }, { onConflict: 'zwift_id' })
 
       return { success: true, clubId, clubName }
@@ -254,7 +260,7 @@ export function AdminPanel() {
               padding: '8px'
             }}>
               {clubs.map(club => (
-                <div key={club.id} style={{
+                <div key={club.club_id} style={{
                   padding: '8px',
                   marginBottom: '4px',
                   background: '#f7fafc',
@@ -262,7 +268,7 @@ export function AdminPanel() {
                   display: 'flex',
                   justifyContent: 'space-between'
                 }}>
-                  <span><strong>{club.club_name}</strong> (ID: {club.id})</span>
+                  <span><strong>{club.club_name}</strong> (ID: {club.club_id})</span>
                   <span style={{ color: '#718096' }}>{club.member_count} members</span>
                 </div>
               ))}
