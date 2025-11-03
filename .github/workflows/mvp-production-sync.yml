@@ -1,0 +1,234 @@
+# ============================================================================
+# MVP PRODUCTIE WORKFLOW - TeamNL Cloud9 Racing
+# ============================================================================
+# 
+# US5: Hourly event sync voor tracked riders
+# US6: Hourly rider updates
+# US7: Configureerbare sync times via GitHub Secrets
+#
+# Triggers:
+#   - Schedule: Cron (configureerbaar via SYNC_CRON_SCHEDULE secret)
+#   - Manual: workflow_dispatch met inputs
+#
+# Environment Secrets Required:
+#   - SUPABASE_URL
+#   - SUPABASE_SERVICE_KEY
+#   - ZWIFT_API_KEY
+#   - SYNC_CRON_SCHEDULE (optioneel, default: "0 * * * *")
+#   - EVENT_SCRAPING_ENABLED (optioneel, default: "false")
+#   - EVENT_SCRAPING_DAYS (optioneel, default: "90")
+# ============================================================================
+
+name: MVP Production Sync
+
+on:
+  # US7: Configureerbare schedule via secret (default: elk uur)
+  schedule:
+    - cron: ${{ vars.SYNC_CRON_SCHEDULE || '0 * * * *' }}
+  
+  # Manual trigger met inputs
+  workflow_dispatch:
+    inputs:
+      rider_ids:
+        description: 'Rider IDs (comma-separated, e.g. 150437,123456)'
+        required: false
+        type: string
+      club_id:
+        description: 'Club ID (e.g. 11818 voor TeamNL)'
+        required: false
+        type: string
+        default: '11818'
+      scrape_events:
+        description: 'Scrape events voor alle tracked riders?'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  # ============================================================================
+  # JOB 1: Sync Club + Members (US1)
+  # ============================================================================
+  sync-club:
+    name: Sync Club Members
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.club_id != ''
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run club sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ZWIFT_API_KEY: ${{ secrets.ZWIFT_API_KEY }}
+        run: |
+          CLUB_ID=${{ github.event.inputs.club_id || '11818' }}
+          echo "Syncing club: $CLUB_ID"
+          npx tsx scripts/mvp-sync-club.ts $CLUB_ID
+
+  # ============================================================================
+  # JOB 2: Sync Tracked Riders (US6)
+  # ============================================================================
+  sync-riders:
+    name: Sync Tracked Riders
+    runs-on: ubuntu-latest
+    needs: sync-club
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get tracked riders
+        id: get-riders
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          # Get all rider IDs from Supabase
+          RIDER_IDS=$(curl -X GET "$SUPABASE_URL/rest/v1/riders?select=zwift_id&limit=1000" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            | jq -r '.[].zwift_id' | tr '\n' ',' | sed 's/,$//')
+          
+          echo "rider_ids=$RIDER_IDS" >> $GITHUB_OUTPUT
+          echo "Found $(echo $RIDER_IDS | tr ',' '\n' | wc -l) tracked riders"
+
+      - name: Sync all tracked riders
+        if: steps.get-riders.outputs.rider_ids != ''
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ZWIFT_API_KEY: ${{ secrets.ZWIFT_API_KEY }}
+        run: |
+          IFS=',' read -ra RIDERS <<< "${{ steps.get-riders.outputs.rider_ids }}"
+          
+          for RIDER_ID in "${RIDERS[@]}"; do
+            echo "Syncing rider: $RIDER_ID"
+            npx tsx scripts/mvp-sync-rider.ts $RIDER_ID || echo "Failed rider $RIDER_ID (continuing...)"
+            
+            # Rate limiting: 2 sec tussen riders
+            sleep 2
+          done
+
+  # ============================================================================
+  # JOB 3: Scrape Events (US4 + US5) - Only if enabled
+  # ============================================================================
+  scrape-events:
+    name: Scrape Events voor Riders
+    runs-on: ubuntu-latest
+    needs: sync-riders
+    if: |
+      (github.event_name == 'schedule' && vars.EVENT_SCRAPING_ENABLED == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.scrape_events == 'true')
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get tracked riders
+        id: get-riders
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          RIDER_IDS=$(curl -X GET "$SUPABASE_URL/rest/v1/riders?select=zwift_id&limit=1000" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_KEY }}" \
+            | jq -r '.[].zwift_id' | tr '\n' ',' | sed 's/,$//')
+          
+          echo "rider_ids=$RIDER_IDS" >> $GITHUB_OUTPUT
+          echo "Found $(echo $RIDER_IDS | tr ',' '\n' | wc -l) tracked riders for event scraping"
+
+      - name: Scrape events for all riders
+        if: steps.get-riders.outputs.rider_ids != ''
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ZWIFT_API_KEY: ${{ secrets.ZWIFT_API_KEY }}
+        run: |
+          IFS=',' read -ra RIDERS <<< "${{ steps.get-riders.outputs.rider_ids }}"
+          SCRAPING_DAYS=${{ vars.EVENT_SCRAPING_DAYS || '90' }}
+          
+          for RIDER_ID in "${RIDERS[@]}"; do
+            echo "Scraping events for rider: $RIDER_ID (last $SCRAPING_DAYS days)"
+            npx tsx scripts/mvp-scrape-events.ts $RIDER_ID $SCRAPING_DAYS || echo "Failed scraping rider $RIDER_ID (continuing...)"
+            
+            # Rate limiting: 5 sec tussen riders (scraping is heavy)
+            sleep 5
+          done
+
+  # ============================================================================
+  # JOB 4: Summary
+  # ============================================================================
+  summary:
+    name: Workflow Summary
+    runs-on: ubuntu-latest
+    needs: [sync-club, sync-riders, scrape-events]
+    if: always()
+    
+    steps:
+      - name: Print summary
+        run: |
+          echo "# MVP Production Sync - Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sync Club | ${{ needs.sync-club.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Sync Riders | ${{ needs.sync-riders.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Scrape Events | ${{ needs.scrape-events.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Run**: Configured via SYNC_CRON_SCHEDULE secret" >> $GITHUB_STEP_SUMMARY
+          echo "**Event Scraping**: ${{ vars.EVENT_SCRAPING_ENABLED || 'false' }}" >> $GITHUB_STEP_SUMMARY
+
+# ============================================================================
+# CONFIGURATION GUIDE
+# ============================================================================
+#
+# Ga naar: GitHub repo → Settings → Secrets and variables → Actions
+#
+# Required Secrets:
+#   SUPABASE_URL=https://bktbeefdmrpxhsyyalvc.supabase.co
+#   SUPABASE_SERVICE_KEY=eyJ... (service_role key)
+#   ZWIFT_API_KEY=650c6d2fc4ef6858d74cbef1
+#
+# Optional Variables (via SyncSettings UI):
+#   SYNC_CRON_SCHEDULE="0 * * * *"          # Elk uur (default)
+#   EVENT_SCRAPING_ENABLED="false"          # Event scraping aan/uit
+#   EVENT_SCRAPING_DAYS="90"                # Historical range (dagen)
+#
+# Cron Examples:
+#   "0 * * * *"         → Elk uur om :00
+#   "0 */2 * * *"       → Elke 2 uur
+#   "0 0,6,12,18 * * *" → Om 00:00, 06:00, 12:00, 18:00 UTC
+#
+# ============================================================================

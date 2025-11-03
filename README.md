@@ -2,6 +2,25 @@
 
 Dashboard voor TeamNL Cloud9 met real-time Zwift racing data integratie.
 
+## 🔍 **Data Bekijken? Start Hier!**
+
+**Vraag**: Kan ik de opgehaalde data zien?
+
+**Antwoord**: Ja! Gebruik Prisma Studio (visuele database browser):
+
+```bash
+npm run db:studio  # Opens http://localhost:5555
+```
+
+**Of** snel overzicht in terminal:
+```bash
+npm run db:view
+```
+
+📖 **Complete handleiding**: [docs/DATA_VIEWING_QUICKSTART.md](docs/DATA_VIEWING_QUICKSTART.md)
+
+---
+
 ## ✨ **NIEUW: Web GUI met Queue Monitoring** (100% gratis!)
 
 **Geen CLI meer nodig!** Beheer je favorite riders via een professionele web interface met **real-time queue status**:
@@ -48,6 +67,41 @@ npm run dev
 - **API**: ZwiftRacing.app Public API
 - **Scheduling**: node-cron voor automatische data synchronisatie
 
+### 🆕 Brondatatabellen (Source Data Architecture)
+
+**Nieuw**: Immutable source-of-truth voor alle API data!
+
+De applicatie slaat nu **ruwe API responses** op in dedicated brondatatabellen voor:
+- 📊 **Trend analyse**: Historische snapshots van riders, clubs, events
+- 🐛 **Debugging**: Volledige API responses beschikbaar voor troubleshooting
+- 🔍 **Data auditing**: Traceerbaarheid van alle API calls
+- ⚡ **Performance**: Parsed key fields voor snelle queries
+
+**9 Brondatatabellen**:
+- `club_source_data` - Club snapshots (1/60min)
+- `club_roster_source_data` - Club member lists (paginated)
+- `event_results_source_data` - Event results met ratings (1/min)
+- `event_zp_source_data` - ZwiftPower data met power curves (1/min)
+- `rider_source_data` - Rider profiles (5/min)
+- `rider_history_source_data` - Historical rider snapshots (5/min)
+- `rider_bulk_source_data` - Bulk rider fetches (1/15min)
+- `rider_bulk_history_source_data` - Bulk historical snapshots
+- `rate_limit_logs` - Automatic rate limit tracking
+
+**Principes**:
+- ✅ **Immutable**: Never update, always append
+- ✅ **Complete**: Store full JSON responses
+- ✅ **Traceable**: Metadata (fetchedAt, responseTime, rateLimitRemaining)
+- ✅ **Indexed**: Key fields extracted voor fast queries
+
+**API Endpoints**:
+- `POST /api/source-data/collect/rider/:riderId` - Verzamel rider + club data
+- `POST /api/source-data/collect/events/:riderId` - Verzamel 90-dagen event history
+- `POST /api/source-data/scan/events` - Scan multiple riders op nieuwe events
+- `GET /api/source-data/rate-limits` - Rate limit monitoring dashboard
+
+**Zie [docs/SOURCE_DATA_ARCHITECTURE.md](docs/SOURCE_DATA_ARCHITECTURE.md) voor volledige architectuur documentatie!**
+
 ### Project Structuur
 
 ```
@@ -57,24 +111,29 @@ TeamNL-Cloud9-Racing-Team/
 ├── src/
 │   ├── api/
 │   │   ├── zwift-client.ts      # Modulaire API client met rate limiting
-│   │   └── routes.ts             # Express REST API endpoints
+│   │   ├── routes.ts            # Express REST API endpoints
+│   │   └── source-data-routes.ts # 🆕 Brondatatabellen API (11 endpoints)
 │   ├── database/
 │   │   ├── client.ts             # Prisma client singleton
-│   │   └── repositories.ts       # Repository pattern voor data access
+│   │   ├── repositories.ts       # Repository pattern voor data access
+│   │   └── source-repositories.ts # 🆕 Repositories voor brondatatabellen (9 classes)
 │   ├── services/
-│   │   └── sync.ts               # Data synchronisatie service
+│   │   ├── sync.ts               # Data synchronisatie service
+│   │   └── source-data-collector.ts # 🆕 US5-US7 data collection logic
 │   ├── types/
 │   │   ├── api.types.ts          # Type definities en Zod schemas
 │   │   └── errors.ts             # Custom error classes
 │   ├── utils/
 │   │   ├── config.ts             # Environment configuratie
-│   │   └── logger.ts             # Gestructureerde logging
+│   │   ├── logger.ts             # Gestructureerde logging
+│   │   └── async-handler.ts      # 🆕 Express async error handler
 │   └── server.ts                 # Express server + cron scheduling
 ├── prisma/
-│   └── schema.prisma             # Database schema
+│   └── schema.prisma             # Database schema (+ 9 brondatatabellen)
 ├── docs/
-│   ├── API.md                    # API documentatie
-│   ├── GUI-QUICKSTART.md         # 🆕 GUI handleiding
+│   ├── API.md                    # API documentatie (+ source-data endpoints)
+│   ├── SOURCE_DATA_ARCHITECTURE.md # 🆕 Brondatatabellen architectuur docs
+│   ├── GUI-QUICKSTART.md         # GUI handleiding
 │   └── FAVORITES-GUIDE.md        # Favorites feature docs
 └── package.json
 ```
@@ -105,9 +164,6 @@ npm run db:generate
 
 # Run database migrations
 npm run db:migrate
-
-# (Optioneel) Open Prisma Studio voor database inzicht
-npm run db:studio
 ```
 
 ### 3. Eerste Data Sync
@@ -125,6 +181,41 @@ npm run dev
 ```
 
 Server draait op `http://localhost:3000`
+
+### 5. **Bekijk je Data** 🔍
+
+Je hebt **3 eenvoudige manieren** om de opgehaalde data te bekijken:
+
+#### Optie 1: Prisma Studio (Visuele Database Browser) - **Aanbevolen!**
+```bash
+npm run db:studio
+```
+- Opent automatisch op `http://localhost:5555`
+- Gebruiksvriendelijke interface
+- Sorteer, filter, zoek, bewerk data
+- Bekijk relaties tussen tabellen
+
+#### Optie 2: Quick View (Terminal)
+```bash
+npm run db:view
+```
+- Snel overzicht in de terminal
+- Tabel counts, recente riders, top performers
+- Laatste sync status
+- Recente events
+
+#### Optie 3: Via API Endpoints
+```bash
+# Start server (indien nog niet draait)
+npm run dev
+
+# Haal data op
+curl http://localhost:3000/api/riders/150437
+curl http://localhost:3000/api/favorites
+curl http://localhost:3000/api/events
+```
+
+**📖 Volledige handleiding**: Zie [docs/DATA_VIEWING_GUIDE.md](docs/DATA_VIEWING_GUIDE.md)
 
 ## 📡 API Endpoints
 
@@ -147,6 +238,22 @@ Server draait op `http://localhost:3000`
 
 **Web GUI**: http://localhost:3000/favorites-manager.html  
 **Queue Monitoring**: Real-time status updates elke 5s
+
+### 🆕 Source Data (Brondatatabellen - Immutable API Data)
+- `GET /api/source-data/rate-limits` - Rate limit monitoring (24h stats)
+- `GET /api/source-data/clubs/:clubId` - Club snapshots (all)
+- `GET /api/source-data/clubs/:clubId/latest` - Latest club snapshot + raw JSON
+- `GET /api/source-data/events/:eventId/results` - Event results data
+- `GET /api/source-data/events/:eventId/zp` - Event ZwiftPower data (power curves!)
+- `GET /api/source-data/events/recent?days=90` - Recent events (beide endpoints)
+- `GET /api/source-data/riders/:riderId` - Rider snapshots (all)
+- `GET /api/source-data/riders/:riderId/latest` - Latest rider snapshot + raw JSON
+- `POST /api/source-data/collect/rider/:riderId` - US5: Verzamel rider + club data
+- `POST /api/source-data/collect/events/:riderId` - US6: 90-dagen event history
+- `POST /api/source-data/scan/events` - US7: Scan nieuwe events (multiple riders)
+
+**US5 Tested**: ✅ Rider 150437 data successfully saved (rider + club, 2 rate limit logs)  
+**Zie [docs/SOURCE_DATA_ARCHITECTURE.md](docs/SOURCE_DATA_ARCHITECTURE.md) voor architectuur en [docs/API.md](docs/API.md) voor details!**
 
 ### Club
 - `GET /api/club` - Haal club data op met members
@@ -234,9 +341,13 @@ npm run favorites:remove <ids>   # Verwijder favorites
 npm run favorites:sync           # Sync favorites data
 npm run favorites:test           # Run E2E test flow
 
+# 🔍 Database & Data Viewing
 npm run db:generate  # Genereer Prisma client
 npm run db:migrate   # Run database migrations
-npm run db:studio    # Open Prisma Studio
+npm run db:studio    # Open Prisma Studio (visuele database browser)
+npm run db:view      # Quick data overzicht in terminal
+npm run db:seed      # Seed database met test data
+
 npm run lint         # Run ESLint
 npm run format       # Format code met Prettier
 npm test             # Run tests
@@ -271,6 +382,17 @@ Belangrijkste entiteiten:
 - **TeamMember**: Team lidmaatschap met sync status
 - **UserFavorite**: Favoriete riders per user
 - **SyncLog**: Sync operatie logging
+
+🆕 **Brondatatabellen** (9 tables):
+- **ClubSourceData**: Club snapshots (complete API responses)
+- **ClubRosterSourceData**: Paginated club member lists
+- **EventResultsSourceData**: Event results met ratings
+- **EventZpSourceData**: ZwiftPower data (power curves, FTP, HR)
+- **RiderSourceData**: Current rider profiles
+- **RiderHistorySourceData**: Historical rider snapshots
+- **RiderBulkSourceData**: Bulk rider fetches (max 1000 IDs)
+- **RiderBulkHistorySourceData**: Bulk historical snapshots
+- **RateLimitLog**: Automatic rate limit tracking (all API calls)
 
 Zie `prisma/schema.prisma` voor volledige schema.
 

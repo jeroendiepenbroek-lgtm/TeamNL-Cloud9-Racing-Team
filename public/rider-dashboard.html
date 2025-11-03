@@ -1,102 +1,79 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-    <meta charset="UTF-8">
-    <title>Rijdersdashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: white; border-radius: 12px; padding: 30px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .chart-section, .events-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .event-item { padding: 16px; border-bottom: 1px solid #f3f4f6; cursor: pointer; }
-        .event-item:hover { background: #f9fafb; }
-        .filter-btn { padding: 6px 12px; border: 1px solid #e5e7eb; background: white; border-radius: 6px; cursor: pointer; margin: 0 4px; }
-        .filter-btn.active { background: #667eea; color: white; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rider Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Roboto,sans-serif;font-size:14px;line-height:1.5;color:rgba(0,0,0,.87);background:#f5f5f5}
+.topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:16px 24px}
+.topbar a{color:#1976d2;text-decoration:none;font-weight:500}
+.container{max-width:1280px;margin:0 auto;background:#fff;min-height:100vh}
+.header{padding:24px;border-bottom:1px solid #e0e0e0}
+.name{font-size:28px;font-weight:500;margin-bottom:8px}
+.meta{display:flex;gap:16px;align-items:center;color:rgba(0,0,0,.6);flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:500;font-size:12px;text-transform:uppercase}
+.badge-cat{background:#1976d2;color:#fff}
+.content{padding:24px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{border:1px solid #e0e0e0;border-radius:4px;padding:16px}
+.stat-label{font-size:12px;color:rgba(0,0,0,.6);text-transform:uppercase;margin-bottom:8px}
+.stat-value{font-size:32px;font-weight:300;margin-bottom:4px}
+.stat-sub{font-size:13px;color:rgba(0,0,0,.6)}
+.section{margin-bottom:32px}
+.section-title{font-size:20px;font-weight:500;margin-bottom:16px}
+.chart-box{border:1px solid #e0e0e0;border-radius:4px;padding:20px}
+.filter-group{display:flex;gap:8px;margin-bottom:16px;justify-content:flex-end}
+.filter-btn{padding:6px 16px;border:1px solid #e0e0e0;background:#fff;border-radius:4px;cursor:pointer;font-size:13px;font-weight:500}
+.filter-btn:hover{background:#f5f5f5}
+.filter-btn.active{background:#1976d2;color:#fff;border-color:#1976d2}
+table{width:100%;border-collapse:collapse}
+thead{background:#fafafa;border-bottom:2px solid #e0e0e0}
+th{text-align:left;padding:12px 16px;font-weight:500;font-size:13px;color:rgba(0,0,0,.6);text-transform:uppercase}
+td{padding:12px 16px;border-bottom:1px solid #f0f0f0}
+tr:hover{background:#fafafa}
+.result-row{cursor:pointer}
+.pos-badge{display:inline-flex;align-items:center;justify-content:center;min-width:32px;height:24px;border-radius:12px;font-weight:500;font-size:12px;padding:0 8px}
+.pos-top3{background:#ffd700;color:#000}
+.pos-top10{background:#c0c0c0;color:#000}
+.pos-other{background:#e0e0e0;color:rgba(0,0,0,.6)}
+.power-val{font-weight:500;color:#1976d2}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;flex-direction:column}
+.spinner{border:4px solid #f3f3f3;border-top:4px solid #1976d2;border-radius:50%;width:48px;height:48px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div id="loading" style="text-align:center;padding:40px;background:white;border-radius:12px;">Dashboard laden...</div>
-        <div id="dashboard" style="display:none;">
-            <div class="header">
-                <h1 id="rider-name">...</h1>
-                <div><span id="category"></span> <span id="rider-meta"></span></div>
-            </div>
-            <div class="stats-grid" id="stats-grid"></div>
-            <div class="chart-section">
-                <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
-                    <h2>Rating Ontwikkeling</h2>
-                    <div>
-                        <button class="filter-btn" data-days="30">30d</button>
-                        <button class="filter-btn active" data-days="60">60d</button>
-                        <button class="filter-btn" data-days="90">90d</button>
-                    </div>
-                </div>
-                <canvas id="ratingChart" height="80"></canvas>
-            </div>
-            <div class="events-section">
-                <h2>Race Geschiedenis</h2>
-                <div id="events-list"></div>
-            </div>
-        </div>
-    </div>
-    <script>
-        const riderId = new URLSearchParams(window.location.search).get('riderId') || '150437';
-        const API = window.location.origin;
-        let chart = null, days = 60;
-        
-        async function load() {
-            const res = await fetch(\`\${API}/api/riders/\${riderId}/dashboard\`);
-            const data = await res.json();
-            
-            document.getElementById('rider-name').textContent = data.rider.name;
-            document.getElementById('category').textContent = data.rider.categoryRacing;
-            document.getElementById('rider-meta').textContent = \`\${data.rider.ftp}w · \${(data.rider.ftp/data.rider.weightKg).toFixed(2)} w/kg · \${data.club?.name}\`;
-            
-            document.getElementById('stats-grid').innerHTML = [
-                {l:'Rating', v:data.rating?.current?.toFixed(1), s:\`Max 90d: \${data.rating?.max90?.toFixed(1)}\`},
-                {l:'FTP', v:\`\${data.rider.ftp}w\`, s:\`\${(data.rider.ftp/data.rider.weightKg).toFixed(2)} w/kg\`},
-                {l:'Races', v:data.totals?.finishes, s:\`\${data.totals?.wins} wins\`},
-                {l:'Phenotype', v:data.phenotype?.primaryType, s:\`Score: \${data.phenotype?.[data.phenotype.primaryType?.toLowerCase()]?.toFixed(1)}/100\`},
-                {l:'Club', v:data.club?.name, s:\`\${data.club?.memberCount} members\`}
-            ].map(c=>\`<div class="stat-card"><div style="font-size:12px;color:#666">\${c.l}</div><div style="font-size:28px;font-weight:700">\${c.v||'—'}</div><div style="font-size:14px;color:#666">\${c.s}</div></div>\`).join('');
-            
-            await loadChart(days);
-            await loadEvents(days);
-            
-            document.querySelectorAll('.filter-btn').forEach(b=>b.addEventListener('click', async ()=>{
-                document.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
-                b.classList.add('active');
-                days=parseInt(b.dataset.days);
-                await loadChart(days);
-                await loadEvents(days);
-            }));
-            
-            document.getElementById('loading').style.display='none';
-            document.getElementById('dashboard').style.display='block';
-        }
-        
-        async function loadChart(d) {
-            const res=await fetch(\`\${API}/api/riders/\${riderId}/rating-history?days=\${d}\`);
-            const h=await res.json();
-            if(chart)chart.destroy();
-            chart=new Chart(document.getElementById('ratingChart'),{
-                type:'line',
-                data:{labels:h.map(x=>new Date(x.date).toLocaleDateString('nl-NL',{month:'short',day:'numeric'})),datasets:[{label:'Rating',data:h.map(x=>x.rating),borderColor:'#667eea',backgroundColor:'rgba(102,126,234,0.1)',borderWidth:2,fill:true,tension:0.4}]},
-                options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false}}}
-            });
-        }
-        
-        async function loadEvents(d) {
-            const res=await fetch(\`\${API}/api/riders/\${riderId}/events?days=\${d}\`);
-            const ev=await res.json();
-            document.getElementById('events-list').innerHTML=ev.length?ev.map(e=>\`<div class="event-item" onclick="location.href='/event-detail.html?eventId=\${e.eventId}'"><div style="font-size:13px;color:#666">\${new Date(e.eventDate).toLocaleDateString('nl-NL')}</div><div style="font-size:16px;font-weight:600;margin:4px 0">\${e.eventName}</div><div style="font-size:13px;color:#666">#\${e.position} · \${e.avgPower}w · \${e.avgSpeed}km/h</div></div>\`).join(''):'<p style="text-align:center;color:#666;padding:20px">Geen events</p>';
-        }
-        
-        load();
-    </script>
+<div class="topbar"><a href="/">← Home</a></div>
+<div id="loading" class="loading"><div class="spinner"></div><p style="margin-top:16px;color:rgba(0,0,0,.6)">Loading rider data...</p></div>
+<div id="app" class="container" style="display:none">
+<div class="header"><h1 class="name" id="name">...</h1><div class="meta"><span class="badge badge-cat" id="cat">B</span><span id="flag">🇳🇱</span><span id="club">...</span></div></div>
+<div class="content">
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-label">Rating</div><div class="stat-value" id="rating">...</div><div class="stat-sub" id="ratingSub">...</div></div>
+<div class="stat-card"><div class="stat-label">FTP</div><div class="stat-value" id="ftp">...</div><div class="stat-sub" id="ftpSub">...</div></div>
+<div class="stat-card"><div class="stat-label">Races</div><div class="stat-value" id="races">...</div><div class="stat-sub" id="racesSub">...</div></div>
+<div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value" id="winRate">...</div><div class="stat-sub" id="winSub">...</div></div>
+</div>
+<div class="section"><div class="section-title">Rating Development</div><div class="filter-group"><button class="filter-btn" data-days="30">30 days</button><button class="filter-btn active" data-days="60">60 days</button><button class="filter-btn" data-days="90">90 days</button></div><div class="chart-box"><canvas id="chart" height="80"></canvas></div></div>
+<div class="section"><div class="section-title">Recent Results</div><table><thead><tr><th>Date</th><th>Event</th><th style="text-align:center">Pos</th><th style="text-align:right">Power</th><th style="text-align:right">Speed</th></tr></thead><tbody id="results"></tbody></table></div>
+</div>
+</div>
+<script>
+const API=window.location.origin;
+const riderId=new URLSearchParams(window.location.search).get('riderId')||'150437';
+let chart=null;
+let days=60;
+async function init(){try{const data=await(await fetch(API+'/api/riders/'+riderId+'/dashboard')).json();renderProfile(data);await loadChart(days);await loadEvents();setupFilters();document.getElementById('loading').style.display='none';document.getElementById('app').style.display='block'}catch(err){document.getElementById('loading').innerHTML='<div style="color:#d32f2f;text-align:center"><h2>Error</h2><p>'+err.message+'</p><p><a href="/">Home</a></p></div>'}}
+function renderProfile(d){const r=d.rider;const rt=d.rating;const t=d.totals;const w=r.weight||74;document.getElementById('name').textContent=r.name;document.getElementById('cat').textContent=r.categoryRacing||'N/A';document.getElementById('flag').textContent=r.countryCode==='nl'?'🇳🇱':'🌍';document.getElementById('club').textContent=d.club?d.club.name:'No club';document.getElementById('rating').textContent=rt?rt.current.toFixed(1):'N/A';document.getElementById('ratingSub').textContent=rt?'Max 90d: '+rt.max90.toFixed(1):'';document.getElementById('ftp').textContent=r.ftp?r.ftp+'w':'N/A';document.getElementById('ftpSub').textContent=r.ftp?(r.ftp/w).toFixed(2)+' w/kg':'';document.getElementById('races').textContent=t?t.finishes:'0';document.getElementById('racesSub').textContent=t?(t.podiums||0)+' podiums':'';const winPct=t&&t.finishes>0?((t.wins||0)/t.finishes*100):0;document.getElementById('winRate').textContent=winPct.toFixed(1)+'%';document.getElementById('winSub').textContent=t?(t.wins||0)+' wins':''}
+async function loadChart(d){const history=await(await fetch(API+'/api/riders/'+riderId+'/rating-history?days='+d)).json();if(chart)chart.destroy();chart=new Chart(document.getElementById('chart'),{type:'line',data:{labels:history.map(h=>new Date(h.date).toLocaleDateString('nl-NL',{month:'short',day:'numeric'})),datasets:[{label:'Rating',data:history.map(h=>h.rating),borderColor:'#1976d2',backgroundColor:'rgba(25,118,210,0.1)',borderWidth:2,fill:true,tension:0.4}]},options:{responsive:true,aspectRatio:3,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false,grid:{color:'#f0f0f0'}},x:{grid:{display:false}}}}})}
+async function loadEvents(){const events=await(await fetch(API+'/api/riders/'+riderId+'/events?days=90')).json();renderResults(events)}
+function renderResults(events){if(!events||!events.length){document.getElementById('results').innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(0,0,0,0.38)">No events found</td></tr>';return}const html=events.map(e=>{const pos=e.position;let posClass='pos-other';if(pos<=3)posClass='pos-top3';else if(pos<=10)posClass='pos-top10';const date=new Date(e.eventDate).toLocaleDateString('nl-NL',{month:'short',day:'numeric'});return '<tr class="result-row" onclick="location.href=\'/event-detail.html?eventId='+e.eventId+'\'"><td>'+date+'</td><td style="font-weight:500">'+e.eventName+'</td><td style="text-align:center"><span class="pos-badge '+posClass+'">'+pos+'</span></td><td style="text-align:right" class="power-val">'+e.avgPower+'w</td><td style="text-align:right">'+e.avgSpeed+' km/h</td></tr>'}).join('');document.getElementById('results').innerHTML=html}
+function setupFilters(){document.querySelectorAll('.filter-btn').forEach(btn=>{btn.addEventListener('click',async()=>{document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');days=parseInt(btn.dataset.days);await loadChart(days)})})}
+init();
+</script>
 </body>
 </html>
