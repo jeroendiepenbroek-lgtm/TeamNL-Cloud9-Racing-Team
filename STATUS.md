@@ -1,9 +1,9 @@
 # 📊 TeamNL Cloud9 Racing Dashboard - Status
 
 **Datum**: 3 november 2025  
-**Laatste update**: Ochtend 3 nov - Schema diagnosed  
-**Status**: 🔴 2 Critical Blockers - Schema + API Key  
-**Volgende stap**: Deploy schema + verkrijg nieuwe API key  
+**Laatste update**: Ochtend 3 nov - Deployment tools klaar  
+**Status**: 🔴 Manual Deployment Required - Schema + API Key  
+**Volgende stap**: JIJ moet SQL runnen in Supabase Dashboard (5 min)  
 
 ---
 
@@ -17,10 +17,11 @@
 - Test suite compleet: ✅ 20 tests
 
 ### ❌ BLOCKERS
-1. **Schema Mismatch** 🔴 
+1. **Schema Deployment** 🔴 
    - Oude schema actief (verkeerde column names)
-   - Moet `cleanup-schema.sql` + `mvp-schema.sql` runnen
-   - 5 minuten werk - **JIJ moet uitvoeren**
+   - **Automated deployment NIET mogelijk** (PostgreSQL DDL requires superuser)
+   - **JIJ moet handmatig SQL runnen** (5 min via Supabase Dashboard)
+   - Tools klaar: `cleanup-schema.sql` + `mvp-schema.sql`
    
 2. **API Key Invalid** 🔴
    - ZwiftRacing API geeft HTTP 401
@@ -31,27 +32,44 @@
 
 ## 📋 ACTIE VEREIST - Prioriteit Volgorde
 
-### 1️⃣ SCHEMA DEPLOYEN (5 min) - **KRITISCH**
+### 1️⃣ SCHEMA DEPLOYEN (5 min) - **HANDMATIG VEREIST**
 
 **Wat**: Oude schema vervangen door MVP schema  
 **Waarom**: Column names matchen niet, inserts falen  
-**Hoe**: Zie `SCHEMA_DEPLOYMENT_GUIDE.md`
+**Hoe**: Via Supabase Dashboard (automated deployment niet mogelijk)
 
-**Quick Steps**:
+**⚠️  IMPORTANT**: PostgreSQL DDL (CREATE/DROP) vereist superuser privileges
+die niet beschikbaar zijn via Supabase REST API. Schema changes moeten via
+SQL Editor of psql CLI.
+
+**Stappen**:
 ```
 1. Open: https://app.supabase.com/project/bktbeefdmrpxhsyyalvc/sql
-2. New Query → Copy-paste: supabase/cleanup-schema.sql → Run
-3. New Query → Copy-paste: supabase/mvp-schema.sql → Run  
-4. Verify: Table Editor moet 7 tabellen tonen
+
+2. CLEANUP (New Query):
+   • Open in VS Code: supabase/cleanup-schema.sql
+   • Copy alle 68 regels
+   • Paste in SQL Editor
+   • Klik: RUN
+   • Verwacht: "Cleanup voltooid!"
+
+3. DEPLOY (New Query):
+   • Klik: "New query"
+   • Open in VS Code: supabase/mvp-schema.sql  
+   • Copy alle 399 regels
+   • Paste in SQL Editor
+   • Klik: RUN
+   • Verwacht: "Success. No rows returned."
+
+4. VERIFY (Terminal):
+   npx tsx scripts/test-database-flow.ts
+   Verwacht: ✅ 20/20 PASS
 ```
 
-**Test**:
-```bash
-cd /workspaces/TeamNL-Cloud9-Racing-Team
-SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdGJlZWZkbXJweGhzeXlhbHZjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTk1NDYzMSwiZXhwIjoyMDc3NTMwNjMxfQ.jZeIBq_SUydFzFs6YUYJooxfu_mZ7ZBrz6oT_0QiHiU npx tsx scripts/test-database-flow.ts
-
-# Verwacht: ✅ 20/20 PASS
-```
+**Helper Scripts Created**:
+- `scripts/deploy-schema-manual.ts` - Geeft deployment instructies
+- `scripts/deploy-via-curl.sh` - Alternative deployment helper
+- SQL files ready: `supabase/cleanup-schema.sql` + `supabase/mvp-schema.sql`
 
 ---
 
