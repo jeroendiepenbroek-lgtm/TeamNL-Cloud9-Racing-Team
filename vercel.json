@@ -1,10 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "npm --prefix frontend install && npm --prefix frontend run build",
   "outputDirectory": "frontend/dist",
-  "installCommand": "cd frontend && npm install",
-  "framework": "vite",
+  "installCommand": "npm --prefix frontend install",
+  "framework": null,
   "env": {
     "VITE_SUPABASE_URL": "@supabase-url",
     "VITE_SUPABASE_ANON_KEY": "@supabase-anon-key"

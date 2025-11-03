@@ -5,7 +5,7 @@ import { config } from './utils/config.js';
 import { logger } from './utils/logger.js';
 // import mvpRoutes from './api/mvp-routes.js'; // Temporarily disabled - use Supabase
 // import { schedulerService } from './services/mvp-scheduler.service.js'; // Temporarily disabled
-import { firebaseSyncService } from './services/firebase-sync.service.js';
+// import { firebaseSyncService } from './services/firebase-sync.service.js'; // DISABLED - optional feature, not in MVP
 import { basicAuth, corsMiddleware } from './middleware/auth.js';
 import prisma from './database/client.js';
 
@@ -140,14 +140,16 @@ logger.info('⏰ Scheduler disabled during Supabase migration');
 // await schedulerService.start();
 
 // Initialize Firebase (optional - falls back to local-only if not configured)
-logger.info('🔥 Initializing Firebase sync');
-const firebaseInitialized = await firebaseSyncService.initialize();
-if (firebaseInitialized) {
-  const stats = await firebaseSyncService.getStats();
-  logger.info('🔥 Firebase stats:', stats);
-} else {
-  logger.info('   Using local database only');
-}
+// DISABLED - Firebase sync not in MVP
+// logger.info('🔥 Initializing Firebase sync');
+// const firebaseInitialized = await firebaseSyncService.initialize();
+// if (firebaseInitialized) {
+//   const stats = await firebaseSyncService.getStats();
+//   logger.info('🔥 Firebase stats:', stats);
+// } else {
+//   logger.info('   Using local database only');
+// }
+logger.info('   Using Supabase PostgreSQL database');
 
 // Export functie voor scheduler status (voor API)
 export function getSchedulerStatus() {
@@ -170,8 +172,8 @@ process.on('SIGTERM', async () => {
   // Stop scheduler - DISABLED
   // schedulerService.stop();
   
-  // Close Firebase
-  await firebaseSyncService.close();
+  // Close Firebase - DISABLED (not in MVP)
+  // await firebaseSyncService.close();
   
   server.close(async () => {
     await prisma.$disconnect();
