@@ -6,9 +6,10 @@ import { Legend } from './components/Legend'
 import { AdminPanel } from './components/AdminPanel'
 import { DataViewer } from './components/DataViewer'
 import { SyncSettings } from './components/SyncSettings'
+import E2ETest from './components/E2ETest'
 
 function App() {
-  const [activeView, setActiveView] = useState<'dashboard' | 'admin' | 'data' | 'settings'>('dashboard')
+  const [activeView, setActiveView] = useState<'dashboard' | 'admin' | 'data' | 'settings' | 'test'>('dashboard')
   const [selectedRider, setSelectedRider] = useState<any>(null)
 
   return (
@@ -40,6 +41,12 @@ function App() {
           >
             ⚙️ Sync
           </button>
+          <button 
+            className={activeView === 'test' ? 'active' : ''}
+            onClick={() => setActiveView('test')}
+          >
+            🧪 E2E Test
+          </button>
         </nav>
       </header>
 
@@ -61,6 +68,10 @@ function App() {
       ) : activeView === 'settings' ? (
         <main className="main-single">
           <SyncSettings />
+        </main>
+      ) : activeView === 'test' ? (
+        <main className="main-single">
+          <E2ETest />
         </main>
       ) : (
         <main className="main-single">

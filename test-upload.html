@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TeamNL Cloud9 - E2E Test</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .workflow {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .workflow h2 {
+      font-size: 16px;
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+    
+    .step {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    
+    .step-number {
+      background: #667eea;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 12px;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    
+    .step-text {
+      padding-top: 2px;
+      color: #555;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+    }
+    
+    .result.success {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      display: block;
+    }
+    
+    .result.error {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      display: block;
+    }
+    
+    .result.loading {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      display: block;
+    }
+    
+    .result h3 {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    
+    .result.success h3 { color: #155724; }
+    .result.error h3 { color: #721c24; }
+    .result.loading h3 { color: #856404; }
+    
+    .result pre {
+      background: rgba(0,0,0,0.05);
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .stat-box {
+      background: white;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    
+    .stat-value {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-top-color: #856404;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚴 TeamNL Cloud9 Racing</h1>
+    <p class="subtitle">End-to-End Test: ZwiftRacing API → Supabase Database</p>
+    
+    <div class="workflow">
+      <h2>📋 Workflow</h2>
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-text">Voer Zwift Rider ID in</div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-text">Fetch data van ZwiftRacing API</div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-text">Parse rider data (FTP, weight, club, ranking)</div>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-text">Insert in Supabase database</div>
+      </div>
+      <div class="step">
+        <div class="step-number">5</div>
+        <div class="step-text">Verify computed column (watts/kg)</div>
+      </div>
+      <div class="step">
+        <div class="step-number">6</div>
+        <div class="step-text">Toon resultaat + cleanup</div>
+      </div>
+    </div>
+    
+    <form id="uploadForm">
+      <div class="form-group">
+        <label for="riderId">Zwift Rider ID</label>
+        <input 
+          type="number" 
+          id="riderId" 
+          name="riderId" 
+          placeholder="Bijv: 150437"
+          required
+          value="150437"
+        >
+      </div>
+      
+      <button type="submit" id="submitBtn">
+        🚀 Start E2E Test
+      </button>
+    </form>
+    
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdGJlZWZkbXJweGhzeXlhbHZjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMDQ5MjgzMywiZXhwIjoyMDQ2MDY4ODMzfQ.NkV22nxX0pM4G2lEyF1SIHqp3zNVXy0T4YGlFsCFKI4';
+    const ZWIFT_API_KEY = '650c6d2fc4ef6858d74cbef1';
+    
+    const form = document.getElementById('uploadForm');
+    const result = document.getElementById('result');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const riderId = document.getElementById('riderId').value;
+      submitBtn.disabled = true;
+      
+      showResult('loading', '<div class="spinner"></div>Bezig met E2E test...', '');
+      
+      try {
+        // Step 1: Fetch from ZwiftRacing API
+        showResult('loading', '<div class="spinner"></div>Stap 1/6: Ophalen van ZwiftRacing API...', '');
+        
+        const apiResponse = await fetch(
+          `https://zwift-ranking.herokuapp.com/public/riders/${riderId}`,
+          { headers: { 'Authorization': ZWIFT_API_KEY } }
+        );
+        
+        if (!apiResponse.ok) {
+          throw new Error(`API failed: HTTP ${apiResponse.status}`);
+        }
+        
+        const riderData = await apiResponse.json();
+        
+        showResult('loading', '<div class="spinner"></div>Stap 2/6: Data ontvangen, parseren...', 
+          `Naam: ${riderData.name}\nFTP: ${riderData.zpFTP}W\nGewicht: ${riderData.weight}kg`);
+        
+        await sleep(500);
+        
+        // Step 2: Calculate expected W/kg
+        const expectedWkg = (riderData.zpFTP / riderData.weight).toFixed(2);
+        
+        showResult('loading', '<div class="spinner"></div>Stap 3/6: Inserting in database...', 
+          `Expected W/kg: ${expectedWkg}\nClub: ${riderData.club?.name || 'Geen'}`);
+        
+        await sleep(500);
+        
+        // Step 3: Insert into Supabase
+        const insertResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/riders`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify({
+              zwift_id: riderData.riderId,
+              name: riderData.name,
+              club_id: riderData.club?.id || null,
+              club_name: riderData.club?.name || null,
+              ftp: riderData.zpFTP,
+              weight: riderData.weight,
+              category_racing: riderData.zpCategory,
+              age: parseInt(riderData.age) || null,
+              gender: riderData.gender,
+              country: riderData.country,
+              total_races: riderData.race?.finishes || 0,
+              total_wins: riderData.race?.wins || 0,
+              ranking: Math.floor(riderData.race?.current?.rating || 0)
+            })
+          }
+        );
+        
+        if (!insertResponse.ok) {
+          const error = await insertResponse.text();
+          throw new Error(`Database insert failed: ${error}`);
+        }
+        
+        const inserted = await insertResponse.json();
+        
+        showResult('loading', '<div class="spinner"></div>Stap 4/6: Verifiëren computed column...', '');
+        
+        await sleep(500);
+        
+        // Step 4: Verify
+        const actualWkg = inserted[0].watts_per_kg;
+        const isCorrect = actualWkg === expectedWkg;
+        
+        showResult('loading', '<div class="spinner"></div>Stap 5/6: Querying database...', '');
+        
+        await sleep(500);
+        
+        // Step 5: Query to double-check
+        const queryResponse = await fetch(
+          `${SUPABASE_URL}/rest/v1/riders?zwift_id=eq.${riderId}&select=*`,
+          {
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          }
+        );
+        
+        const queried = await queryResponse.json();
+        
+        showResult('loading', '<div class="spinner"></div>Stap 6/6: Cleanup...', '');
+        
+        await sleep(500);
+        
+        // Step 6: Cleanup
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/riders?zwift_id=eq.${riderId}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_KEY,
+              'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+          }
+        );
+        
+        // Success!
+        showResult('success', '🎉 E2E Test Succesvol!', '', {
+          name: riderData.name,
+          club: riderData.club?.name || 'Geen',
+          ftp: riderData.zpFTP,
+          weight: riderData.weight,
+          wkg: actualWkg,
+          ranking: queried[0]?.ranking || 0,
+          races: riderData.race?.finishes || 0
+        });
+        
+      } catch (error) {
+        showResult('error', '❌ Test Gefaald', error.message);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+    
+    function showResult(type, title, message, stats = null) {
+      result.className = `result ${type}`;
+      
+      let html = `<h3>${title}</h3>`;
+      
+      if (message) {
+        html += `<pre>${message}</pre>`;
+      }
+      
+      if (stats) {
+        html += `
+          <div class="stats">
+            <div class="stat-box">
+              <div class="stat-label">FTP</div>
+              <div class="stat-value">${stats.ftp}W</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Gewicht</div>
+              <div class="stat-value">${stats.weight}kg</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">W/kg</div>
+              <div class="stat-value">${stats.wkg}</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">Ranking</div>
+              <div class="stat-value">${stats.ranking}</div>
+            </div>
+          </div>
+          <pre style="margin-top:15px">Naam: ${stats.name}\nClub: ${stats.club}\nRaces: ${stats.races}</pre>
+        `;
+      }
+      
+      result.innerHTML = html;
+    }
+    
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>
