@@ -1,10 +1,12 @@
 name: Deploy Frontend to Firebase Hosting
 
 on:
-  push:
-    paths:
-      - 'frontend/**'
-    branches: [ main ]
+  # Temporarily disabled - Vercel handles frontend deployment
+  # push:
+  #   paths:
+  #     - 'frontend/**'
+  #   branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:

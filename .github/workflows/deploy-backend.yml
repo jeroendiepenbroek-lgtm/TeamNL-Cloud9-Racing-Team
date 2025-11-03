@@ -1,9 +1,10 @@
 name: Deploy Backend to Railway
 
 on:
-  push:
-    branches:
-      - main
+  # Temporarily disabled - enable after RAILWAY_TOKEN secret is configured
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
