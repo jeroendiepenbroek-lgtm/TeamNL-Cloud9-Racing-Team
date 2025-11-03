@@ -72,9 +72,9 @@ app.post('/api/sync/riders-with-clubs', async (req: Request, res: Response) => {
     const { multiClubSyncService } = await import('./services/multi-club-sync.service.js');
     const result = await multiClubSyncService.syncRidersWithClubs(riderIds);
     
-    res.json(result);
+    return res.json(result);
   } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -141,7 +141,7 @@ logger.info('⏰ Scheduler disabled during Supabase migration');
 
 // Initialize Firebase (optional - falls back to local-only if not configured)
 logger.info('🔥 Initializing Firebase sync');
-const firebaseInitialized = firebaseSyncService.initialize();
+const firebaseInitialized = await firebaseSyncService.initialize();
 if (firebaseInitialized) {
   const stats = await firebaseSyncService.getStats();
   logger.info('🔥 Firebase stats:', stats);

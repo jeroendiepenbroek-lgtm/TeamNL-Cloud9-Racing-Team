@@ -8,17 +8,18 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { logger } from '../utils/logger.js';
 import mapper from './firebase-firestore.mapper.js';
+import type * as admin from 'firebase-admin';
 
 // Use CommonJS require for firebase-admin (ESM compatibility fix)
 const require = createRequire(import.meta.url);
-const admin = require('firebase-admin');
+const adminSdk = require('firebase-admin') as typeof admin;
 
 // ============================================================================
 // FIREBASE INITIALIZATION
 // ============================================================================
 
-let firebaseApp: admin.app.App | null = null;
-let firestore: admin.firestore.Firestore | null = null;
+let firebaseApp: adminSdk.app.App | null = null;
+let firestore: adminSdk.firestore.Firestore | null = null;
 
 /**
  * Initialize Firebase Admin SDK
@@ -47,10 +48,10 @@ export async function initializeFirebase(): Promise<boolean> {
       }
       
       logger.debug(`Admin object type: ${typeof admin}`);
-      logger.debug(`Admin.credential exists: ${!!admin.credential}`);
+      logger.debug(`Admin.credential exists: ${!!adminSdk.credential}`);
       
-      firebaseApp = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+      firebaseApp = adminSdk.initializeApp({
+        credential: adminSdk.credential.cert(serviceAccount),
         databaseURL: process.env.FIREBASE_DATABASE_URL,
       });
 
@@ -78,7 +79,7 @@ export async function initializeFirebase(): Promise<boolean> {
 /**
  * Get Firestore instance (lazy init)
  */
-async function getFirestore(): Promise<admin.firestore.Firestore | null> {
+async function getFirestore(): Promise<adminSdk.firestore.Firestore | null> {
   if (!firestore && !firebaseApp) {
     await initializeFirebase();
   }
@@ -119,8 +120,8 @@ export interface FirebaseRider {
   totalRaces?: number;
   totalWins?: number;
   totalPodiums?: number;
-  lastSynced: admin.firestore.Timestamp;
-  createdAt: admin.firestore.Timestamp;
+  lastSynced: adminSdk.firestore.Timestamp;
+  createdAt: adminSdk.firestore.Timestamp;
 }
 
 /**
@@ -136,8 +137,8 @@ export async function syncRiderToFirebase(riderData: any): Promise<boolean> {
     const mapped = mapper.mapRider(riderData) || {};
     const firebaseRider: Partial<FirebaseRider> = {
       ...mapped,
-      lastSynced: admin.firestore.Timestamp.now(),
-      createdAt: admin.firestore.Timestamp.now(),
+      lastSynced: adminSdk.firestore.Timestamp.now(),
+      createdAt: adminSdk.firestore.Timestamp.now(),
     };
 
     await docRef.set(firebaseRider, { merge: true });
@@ -169,9 +170,9 @@ export async function syncRiderHistoryToFirebase(
     const mapped = mapper.mapRiderHistory(riderId, snapshotDate, historyData) || {};
     await docRef.set({
       ...mapped,
-      snapshotDate: admin.firestore.Timestamp.fromDate(snapshotDate),
+      snapshotDate: adminSdk.firestore.Timestamp.fromDate(snapshotDate),
       rawData: JSON.stringify(historyData),
-      syncedAt: admin.firestore.Timestamp.now(),
+      syncedAt: adminSdk.firestore.Timestamp.now(),
     });
 
     logger.debug(`🔥 Rider history ${riderId} synced to Firebase`);
@@ -190,8 +191,8 @@ export interface FirebaseClub {
   id: number;
   name: string;
   memberCount: number;
-  lastSynced: admin.firestore.Timestamp;
-  createdAt: admin.firestore.Timestamp;
+  lastSynced: adminSdk.firestore.Timestamp;
+  createdAt: adminSdk.firestore.Timestamp;
 }
 
 /**
@@ -209,8 +210,8 @@ export async function syncClubToFirebase(clubData: any): Promise<boolean> {
       id: mapped.id as number,
       name: mapped.name as string,
       memberCount: (mapped.memberCount as number) || 0,
-      lastSynced: admin.firestore.Timestamp.now(),
-      createdAt: admin.firestore.Timestamp.now(),
+      lastSynced: adminSdk.firestore.Timestamp.now(),
+      createdAt: adminSdk.firestore.Timestamp.now(),
     };
 
     await docRef.set(firebaseClub, { merge: true });
@@ -235,7 +236,7 @@ export async function syncClubRosterToFirebase(
 
   try {
     const batch = db.batch();
-    const timestamp = admin.firestore.Timestamp.now();
+    const timestamp = adminSdk.firestore.Timestamp.now();
 
     // Batch write all members (max 500 per batch)
     for (let i = 0; i < members.length; i += 500) {
@@ -275,14 +276,14 @@ export async function syncClubRosterToFirebase(
 export interface FirebaseEvent {
   id: number;
   name: string;
-  eventDate: admin.firestore.Timestamp;
+  eventDate: adminSdk.firestore.Timestamp;
   route?: string;
   laps?: number;
   distanceInMeters?: number;
   totalElevation?: number;
   category?: string;
-  lastSynced: admin.firestore.Timestamp;
-  createdAt: admin.firestore.Timestamp;
+  lastSynced: adminSdk.firestore.Timestamp;
+  createdAt: adminSdk.firestore.Timestamp;
 }
 
 /**
@@ -299,14 +300,14 @@ export async function syncEventToFirebase(eventData: any): Promise<boolean> {
     const firebaseEvent: FirebaseEvent = {
       id: mapped.id as number,
       name: mapped.name as string,
-      eventDate: admin.firestore.Timestamp.fromDate(new Date(mapped.eventDate as string)),
+      eventDate: adminSdk.firestore.Timestamp.fromDate(new Date(mapped.eventDate as string)),
       route: mapped.route as string,
       laps: mapped.laps as number,
       distanceInMeters: mapped.distanceInMeters as number,
       totalElevation: mapped.totalElevation as number,
       category: mapped.category as string,
-      lastSynced: admin.firestore.Timestamp.now(),
-      createdAt: admin.firestore.Timestamp.now(),
+      lastSynced: adminSdk.firestore.Timestamp.now(),
+      createdAt: adminSdk.firestore.Timestamp.now(),
     };
 
     await docRef.set(firebaseEvent, { merge: true });
@@ -331,7 +332,7 @@ export async function syncRaceResultsToFirebase(
 
   try {
     const batch = db.batch();
-    const timestamp = admin.firestore.Timestamp.now();
+    const timestamp = adminSdk.firestore.Timestamp.now();
 
     // Batch write results (max 500 per batch)
     for (let i = 0; i < results.length; i += 500) {

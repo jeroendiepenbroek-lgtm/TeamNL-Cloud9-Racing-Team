@@ -21,12 +21,15 @@ import { config } from '../utils/config.js';
 
 // Temporary stubs for old MVP repositories
 const riderSourceRepo = {
-  saveRiderData: async () => ({ success: true }),
-  getRiderData: async () => null,
+  saveRiderData: async (..._args: unknown[]) => ({ success: true }),
+  getRiderData: async (..._args: unknown[]) => null,
+  getLatestRiderData: async (..._args: unknown[]) => null,
+  getRiderDataHistory: async (..._args: unknown[]) => [],
+  hasRecentData: async (..._args: unknown[]) => false,
 };
 const riderHistorySourceRepo = {
-  hasRecentSnapshot: async () => false,
-  saveRiderHistoryData: async () => ({ success: true })
+  hasRecentSnapshot: async (..._args: unknown[]) => false,
+  saveRiderHistoryData: async (..._args: unknown[]) => ({ success: true })
 };
 
 export interface RiderSyncResult {

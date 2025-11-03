@@ -10,14 +10,24 @@
  */
 
 import { ZwiftApiClient } from '../api/zwift-client.js';
-import { 
-  clubSourceRepo, 
-  clubRosterSourceRepo 
-} from '../database/index.js';
 import { ClubRepository, RiderRepository } from '../database/repositories-mvp.js';
 import { firebaseSyncService } from './firebase-sync.service.js';
 import { logger } from '../utils/logger.js';
 import { config } from '../utils/config.js';
+
+// Mock source repos (legacy code - disabled for MVP)
+const clubSourceRepo = {
+  saveClubData: async (..._args: unknown[]) => ({ success: true }),
+  getLatestClubData: async (..._args: unknown[]) => null,
+  hasRecentData: async (..._args: unknown[]) => false,
+};
+
+const clubRosterSourceRepo = {
+  saveClubRosterData: async (..._args: unknown[]) => ({ success: true }),
+  hasRecentRoster: async (..._args: unknown[]) => false,
+  getLatestRoster: async (..._args: unknown[]) => null,
+  getRiderInClub: async (..._args: unknown[]) => null,
+};
 
 export interface ClubSyncResult {
   success: boolean;
