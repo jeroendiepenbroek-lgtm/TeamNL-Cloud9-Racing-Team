@@ -57,7 +57,7 @@ jobs:
           echo "NODE_ENV=production" >> $GITHUB_ENV
       
       - name: Restore database from artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: database
           path: prisma/
@@ -134,7 +134,7 @@ jobs:
           echo "ZWIFT_API_BASE_URL=https://zwift-ranking.herokuapp.com" >> $GITHUB_ENV
       
       - name: Restore database
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: database
           path: prisma/
