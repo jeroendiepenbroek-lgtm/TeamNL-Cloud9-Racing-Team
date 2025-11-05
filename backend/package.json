@@ -4,10 +4,10 @@
   "description": "Clean MVP backend: 6 API endpoints + Supabase sync",
   "type": "module",
   "private": true,
-  "main": "src/server.js",
+  "main": "src/server.ts",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon --watch src --exec node src/server.js",
+    "start": "npx tsx src/server.ts",
+    "dev": "nodemon --watch src --exec npx tsx src/server.ts",
     "build": "cd frontend && npm install && npm run build",
     "build:frontend": "cd frontend && npm run build"
   },
