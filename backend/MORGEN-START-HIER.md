@@ -423,10 +423,9 @@ curl http://localhost:3000/api/sync_logs
 ## 📞 Next Steps After This
 
 1. Commit & push naar GitHub
-2. Deploy backend naar Railway
-3. Update frontend environment vars
-4. Build clean frontend
-5. Deploy frontend naar Vercel
+2. Deploy naar Railway (backend + frontend samen)
+3. Verify productie URL werkt
+4. Test API endpoints via dashboard
 
 ---
 
