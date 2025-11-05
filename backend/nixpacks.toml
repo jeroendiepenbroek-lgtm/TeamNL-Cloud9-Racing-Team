@@ -11,4 +11,8 @@ cmds = [
 ]
 
 [phases.build]
-cmds = ["cd frontend && npm run build"]
+cmds = [
+  "mkdir -p public/dist",
+  "cd frontend && npm run build",
+  "ls -la public/dist"
+]
