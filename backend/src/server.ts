@@ -7,7 +7,6 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync } from 'fs';
 import 'dotenv/config';
 
 // Import endpoints
@@ -52,19 +51,10 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Root route for debugging
+// Root route - Serve React app
 app.get('/', (req: Request, res: Response) => {
-  console.log('Root route accessed');
-  // Try React app first, fallback to old HTML
-  const reactIndexPath = path.join(__dirname, '../public/dist/index.html');
-  const oldIndexPath = path.join(__dirname, '../public/index.html');
-  
-  if (existsSync(reactIndexPath)) {
-    res.sendFile(reactIndexPath);
-  } else {
-    console.log('React build not found, serving old HTML');
-    res.sendFile(oldIndexPath);
-  }
+  console.log('Root route accessed - serving React app');
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
 });
 
 // API Routes - 6 Endpoints
@@ -84,15 +74,8 @@ app.use((req: Request, res: Response) => {
       path: req.path,
     });
   } else {
-    // Otherwise, serve React app (SPA fallback)
-    const reactIndexPath = path.join(__dirname, '../public/dist/index.html');
-    const oldIndexPath = path.join(__dirname, '../public/index.html');
-    
-    if (existsSync(reactIndexPath)) {
-      res.sendFile(reactIndexPath);
-    } else {
-      res.sendFile(oldIndexPath);
-    }
+    // Otherwise, serve React app (SPA fallback for client-side routing)
+    res.sendFile(path.join(__dirname, '../public/dist/index.html'));
   }
 });
 
