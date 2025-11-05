@@ -2,7 +2,16 @@
 
 Dashboard voor TeamNL Cloud9 met real-time Zwift racing data integratie.
 
-## 🔍 **Data Bekijken? Start Hier!**
+## � **PRODUCTION LIVE!**
+
+**React Dashboard**: https://teamnl-cloud9-racing-team-production.up.railway.app  
+**API Health**: https://teamnl-cloud9-racing-team-production.up.railway.app/health
+
+💰 **Cost Status**: Free Tier ($5/maand Railway) | [Monitoring Guide](COST-MONITORING.md)
+
+---
+
+## �🔍 **Data Bekijken? Start Hier!**
 
 **Vraag**: Kan ik de opgehaalde data zien?
 
