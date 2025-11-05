@@ -1,6 +1,13 @@
 /**
- * ZwiftRacing API Client
- * Rate limits: Club sync 1/60min, Riders 5/min, Events 1/min
+ * ZwiftRacing API Client - Volledige endpoint coverage
+ * 
+ * RATE LIMITS (Standard tier):
+ * - Clubs: 1/60min
+ * - Results: 1/1min  
+ * - Riders GET: 5/1min
+ * - Riders POST: 1/15min
+ * 
+ * Premium tier: 10x limiet voor clubs/riders, zelfde voor results
  */
 
 import axios, { AxiosInstance } from 'axios';
@@ -21,56 +28,168 @@ export class ZwiftApiClient {
       },
       timeout: 30000,
     });
+
+    // Axios interceptor voor logging
+    this.client.interceptors.request.use((config) => {
+      console.log(`[ZwiftAPI] ${config.method?.toUpperCase()} ${config.url}`);
+      return config;
+    });
+
+    this.client.interceptors.response.use(
+      (response) => {
+        console.log(`[ZwiftAPI] ✅ ${response.config.url} → ${response.status}`);
+        return response;
+      },
+      (error) => {
+        console.error(`[ZwiftAPI] ❌ ${error.config?.url} → ${error.response?.status || 'TIMEOUT'}`);
+        throw error;
+      }
+    );
   }
 
+  // ============================================================================
+  // CLUBS - Rate limit: 1/60min (Standard) | 10/60min (Premium)
+  // ============================================================================
+
   /**
-   * Endpoint 1: Haal club informatie op
+   * GET /public/clubs/<id>
+   * Returns data for active members of the club sorted by riderId
+   * Limited to 1000 results
+   * Rate limit: 1/60min (Standard)
    */
-  async getClub(clubId: number = TEAM_CLUB_ID): Promise<ZwiftClub> {
+  async getClubMembers(clubId: number = TEAM_CLUB_ID): Promise<ZwiftRider[]> {
     const response = await this.client.get(`/public/clubs/${clubId}`);
     return response.data;
   }
 
   /**
-   * Endpoint 2: Haal alle club members op
+   * GET /public/clubs/<id>/<riderId>
+   * Returns club members with riderId > <riderId> (pagination)
+   * Limited to 1000 results per page
+   * Rate limit: 1/60min (Standard)
    */
-  async getClubRiders(clubId: number = TEAM_CLUB_ID): Promise<ZwiftRider[]> {
-    const response = await this.client.get(`/public/clubs/${clubId}/members`);
+  async getClubMembersPaginated(clubId: number, afterRiderId: number): Promise<ZwiftRider[]> {
+    const response = await this.client.get(`/public/clubs/${clubId}/${afterRiderId}`);
     return response.data;
   }
 
-  /**
-   * Endpoint 3: Haal events voor club op
-   */
-  async getClubEvents(clubId: number = TEAM_CLUB_ID): Promise<ZwiftEvent[]> {
-    const response = await this.client.get(`/public/clubs/${clubId}/events`);
-    return response.data;
-  }
+  // ============================================================================
+  // RESULTS - Rate limit: 1/1min (beide tiers gelijk)
+  // ============================================================================
 
   /**
-   * Endpoint 4: Haal results voor specifiek event op
+   * GET /public/results/<eventId>
+   * Returns ZwiftRacing.app results for eventId
+   * Rate limit: 1/1min
    */
   async getEventResults(eventId: number): Promise<ZwiftResult[]> {
-    const response = await this.client.get(`/public/events/${eventId}/results`);
+    const response = await this.client.get(`/public/results/${eventId}`);
     return response.data;
   }
 
   /**
-   * Endpoint 5: Haal rider history op
+   * GET /public/zp/<eventId>/results
+   * Returns ZwiftPower results for eventId
+   * Rate limit: 1/1min
    */
-  async getRiderHistory(riderId: number): Promise<any[]> {
-    const response = await this.client.get(`/public/riders/${riderId}/history`);
+  async getEventResultsZwiftPower(eventId: number): Promise<any[]> {
+    const response = await this.client.get(`/public/zp/${eventId}/results`);
+    return response.data;
+  }
+
+  // ============================================================================
+  // RIDERS (GET) - Rate limit: 5/1min (Standard) | 10/1min (Premium)
+  // ============================================================================
+
+  /**
+   * GET /public/riders/<riderId>
+   * Returns current Rider data for riderId
+   * Rate limit: 5/1min (Standard)
+   */
+  async getRider(riderId: number): Promise<ZwiftRider> {
+    const response = await this.client.get(`/public/riders/${riderId}`);
     return response.data;
   }
 
   /**
-   * Endpoint 6: Haal bulk riders op (voor sync)
+   * GET /public/riders/<riderId>/<time>
+   * Returns Rider data at given epoch timestamp (no milliseconds!)
+   * Rate limit: 5/1min (Standard)
+   * @param time - Unix epoch (seconds, not milliseconds)
+   */
+  async getRiderAtTime(riderId: number, time: number): Promise<ZwiftRider> {
+    const response = await this.client.get(`/public/riders/${riderId}/${time}`);
+    return response.data;
+  }
+
+  // ============================================================================
+  // RIDERS (POST) - Rate limit: 1/15min (Standard) | 10/15min (Premium)
+  // ============================================================================
+
+  /**
+   * POST /public/riders
+   * Returns current Rider data for each riderId in array
+   * Max 1000 riders per call
+   * Rate limit: 1/15min (Standard) - VEEL EFFICIËNTER dan individuele GET!
    */
   async getBulkRiders(riderIds: number[]): Promise<ZwiftRider[]> {
-    const response = await this.client.post('/public/riders/bulk', {
-      riderIds,
-    });
+    if (riderIds.length > 1000) {
+      throw new Error('Maximum 1000 rider IDs per bulk request');
+    }
+    const response = await this.client.post('/public/riders', riderIds);
     return response.data;
+  }
+
+  /**
+   * POST /public/riders/<time>
+   * Returns Rider data for array of riderIds at given epoch timestamp
+   * Max 1000 riders per call
+   * Rate limit: 1/15min (Standard)
+   * @param time - Unix epoch (seconds, not milliseconds)
+   */
+  async getBulkRidersAtTime(riderIds: number[], time: number): Promise<ZwiftRider[]> {
+    if (riderIds.length > 1000) {
+      throw new Error('Maximum 1000 rider IDs per bulk request');
+    }
+    const response = await this.client.post(`/public/riders/${time}`, riderIds);
+    return response.data;
+  }
+
+  // ============================================================================
+  // LEGACY / DEPRECATED METHODS (behouden voor backwards compatibility)
+  // ============================================================================
+
+  /**
+   * @deprecated Use getClubMembers() instead
+   */
+  async getClub(clubId: number = TEAM_CLUB_ID): Promise<ZwiftClub> {
+    console.warn('[ZwiftAPI] getClub() is deprecated, use getClubMembers()');
+    const response = await this.client.get(`/public/clubs/${clubId}`);
+    return response.data;
+  }
+
+  /**
+   * @deprecated Use getClubMembers() instead
+   */
+  async getClubRiders(clubId: number = TEAM_CLUB_ID): Promise<ZwiftRider[]> {
+    console.warn('[ZwiftAPI] getClubRiders() is deprecated, use getClubMembers()');
+    return this.getClubMembers(clubId);
+  }
+
+  /**
+   * @deprecated Endpoint doesn't exist - use getClubMembers()
+   */
+  async getClubEvents(clubId: number = TEAM_CLUB_ID): Promise<ZwiftEvent[]> {
+    console.warn('[ZwiftAPI] getClubEvents() is niet beschikbaar in API');
+    throw new Error('Endpoint /public/clubs/{id}/events does not exist');
+  }
+
+  /**
+   * @deprecated Endpoint doesn't exist
+   */
+  async getRiderHistory(riderId: number): Promise<any[]> {
+    console.warn('[ZwiftAPI] getRiderHistory() is niet beschikbaar in API');
+    throw new Error('Endpoint /public/riders/{id}/history does not exist');
   }
 }
 

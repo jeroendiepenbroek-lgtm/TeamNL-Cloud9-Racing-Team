@@ -24,20 +24,28 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/riders/:zwiftId - Haal specifieke rider op
-router.get('/:zwiftId', async (req: Request, res: Response) => {
+// ============================================================================
+// TEAM MANAGEMENT - My Team (via view_my_team VIEW)
+// ============================================================================
+// IMPORTANT: These routes must be BEFORE /:zwiftId to avoid conflicts!
+
+// GET /api/riders/team - Haal "Mijn Team" riders op via VIEW
+router.get('/team', async (req: Request, res: Response) => {
   try {
-    const zwiftId = parseInt(req.params.zwiftId);
-    const rider = await supabase.getRider(zwiftId);
+    // Query via view_my_team (combineert my_team_members + riders + clubs)
+    const riders = await supabase.getMyTeamMembers();
     
-    if (!rider) {
-      return res.status(404).json({ error: 'Rider niet gevonden' });
-    }
+    // Extract unique clubs (automatisch uit riders.club_id)
+    const uniqueClubs = [...new Set(
+      riders
+        .map(r => r.club_name)
+        .filter(Boolean)
+    )];
     
-    res.json(rider);
+    res.json(riders);
   } catch (error) {
-    console.error('Error fetching rider:', error);
-    res.status(500).json({ error: 'Fout bij ophalen rider' });
+    console.error('Error fetching my team riders:', error);
+    res.status(500).json({ error: 'Fout bij ophalen team riders' });
   }
 });
 
@@ -58,59 +66,21 @@ router.post('/sync', async (req: Request, res: Response) => {
   }
 });
 
-// ============================================================================
-// TEAM MANAGEMENT - My Team (via view_my_team VIEW)
-// ============================================================================
-
-// GET /api/riders/team - Haal "Mijn Team" riders op via VIEW
-router.get('/team', async (req: Request, res: Response) => {
+// GET /api/riders/:zwiftId - Haal specifieke rider op
+// IMPORTANT: This must be AFTER all specific routes (/team, /sync, etc.)
+router.get('/:zwiftId', async (req: Request, res: Response) => {
   try {
-    // Query via view_my_team (combineert my_team_members + riders + clubs)
-    const riders = await supabase.getMyTeamMembers();
+    const zwiftId = parseInt(req.params.zwiftId);
+    const rider = await supabase.getRider(zwiftId);
     
-    // Extract unique clubs (automatisch uit riders.club_id)
-    const uniqueClubs = [...new Set(
-      riders
-        .map(r => r.club_name)
-        .filter(Boolean)
-    )];
+    if (!rider) {
+      return res.status(404).json({ error: 'Rider niet gevonden' });
+    }
     
-    res.json({
-      count: riders.length,
-      clubs: uniqueClubs,  // Alle clubs van je team members
-      riders: riders.map(r => ({
-        // Identifiers
-        id: r.rider_id,
-        zwiftId: r.zwift_id,
-        name: r.name,
-        
-        // Club (extracted from rider)
-        clubId: r.club_id,
-        clubName: r.club_name,
-        
-        // Racing
-        ranking: r.ranking,
-        categoryRacing: r.category_racing,
-        
-        // Power
-        ftp: r.ftp,
-        weight: r.weight,
-        wattsPerKg: r.watts_per_kg,  // Computed in VIEW!
-        
-        // Stats
-        totalRaces: r.total_races,
-        totalWins: r.total_wins,
-        totalPodiums: r.total_podiums,
-        
-        // Meta
-        lastSynced: r.rider_last_synced,
-        addedAt: r.team_added_at,
-        isFavorite: r.is_favorite,
-      })),
-    });
+    res.json(rider);
   } catch (error) {
-    console.error('Error fetching my team riders:', error);
-    res.status(500).json({ error: 'Fout bij ophalen team riders' });
+    console.error('Error fetching rider:', error);
+    res.status(500).json({ error: 'Fout bij ophalen rider' });
   }
 });
 
