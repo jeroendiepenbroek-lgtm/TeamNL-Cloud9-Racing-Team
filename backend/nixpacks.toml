@@ -5,7 +5,10 @@ cmd = "npx tsx src/server.ts"
 nixPkgs = ["nodejs_18", "npm-9_x"]
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = [
+  "npm ci",
+  "cd frontend && npm ci"
+]
 
 [phases.build]
-cmds = ["npm run build"]
+cmds = ["cd frontend && npm run build"]
