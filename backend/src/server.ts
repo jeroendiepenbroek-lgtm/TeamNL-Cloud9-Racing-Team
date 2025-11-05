@@ -5,6 +5,8 @@
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
 // Import endpoints
@@ -15,12 +17,18 @@ import resultsRouter from './api/endpoints/results.js';
 import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Logging middleware
 app.use((req: Request, res: Response, next) => {
