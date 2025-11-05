@@ -167,6 +167,58 @@ export class SupabaseService {
     if (error) throw error;
     return data;
   }
+
+  // ========== MY TEAM MEMBERS ==========
+  // Query via VIEW (niet direct riders tabel!)
+  async getMyTeamMembers(): Promise<any[]> {
+    const { data, error } = await this.client
+      .from('view_my_team')
+      .select('*')
+      .order('ranking', { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async addMyTeamMember(zwiftId: number): Promise<any> {
+    const { data, error } = await this.client
+      .from('my_team_members')
+      .insert({ zwift_id: zwiftId })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
+  async removeMyTeamMember(zwiftId: number): Promise<void> {
+    const { error } = await this.client
+      .from('my_team_members')
+      .delete()
+      .eq('zwift_id', zwiftId);
+
+    if (error) throw error;
+  }
+
+  async bulkAddMyTeamMembers(zwiftIds: number[]): Promise<any[]> {
+    const records = zwiftIds.map(id => ({ zwift_id: id }));
+    const { data, error } = await this.client
+      .from('my_team_members')
+      .upsert(records, { onConflict: 'zwift_id' })
+      .select();
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async toggleFavorite(zwiftId: number, isFavorite: boolean): Promise<void> {
+    const { error } = await this.client
+      .from('my_team_members')
+      .update({ is_favorite: isFavorite })
+      .eq('zwift_id', zwiftId);
+
+    if (error) throw error;
+  }
 }
 
 export const supabase = new SupabaseService();

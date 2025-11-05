@@ -1,0 +1,54 @@
+╔═══════════════════════════════════════════════════════════════════════════
+║ 📋 RAILWAY ENVIRONMENT VARIABLES - COPY-PASTE KLAAR
+╚═══════════════════════════════════════════════════════════════════════════
+
+🚀 GA NAAR: https://railway.app/project/airy-miracle
+   → Klik op je service "teamnl-cloud9-racing-team-production"
+   → Ga naar tabblad "Variables"
+   → Klik "+ New Variable"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ SUPABASE_URL
+   Plak deze waarde:
+   https://bktbeefdmrpxhsyyalvc.supabase.co
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2️⃣ SUPABASE_SERVICE_ROLE_KEY
+   Plak deze waarde:
+   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdGJlZWZkbXJweGhzeXlhbHZjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTk1NDYzMSwiZXhwIjoyMDc3NTMwNjMxfQ.jZeIBq_SUydFzFs6YUYJooxfu_mZ7ZBrz6oT_0QiHiU
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+3️⃣ ZWIFT_API_KEY
+   Plak deze waarde:
+   650c6d2fc4ef6858d74cbef1
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4️⃣ NODE_ENV
+   Plak deze waarde:
+   production
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5️⃣ PORT (OPTIONEEL - Railway set deze automatisch)
+   Als je hem toch wilt toevoegen:
+   8080
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ NA HET TOEVOEGEN:
+   1. Klik "Deploy" (Railway detecteert de wijziging)
+   2. Wacht 2-3 minuten op deployment
+   3. Test: https://teamnl-cloud9-racing-team-production.up.railway.app/health
+   4. Controleer of er geen Supabase errors meer zijn in de logs
+
+⚠️ BELANGRIJK:
+   - Voeg ALLE 4 variabelen toe (1-4)
+   - PORT is optioneel (Railway set $PORT automatisch)
+   - Zorg dat er geen spaties voor/na de waardes staan bij copy-paste
+   - Check Railway logs na deployment: "View Logs" knop
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
