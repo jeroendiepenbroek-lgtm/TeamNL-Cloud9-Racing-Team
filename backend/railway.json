@@ -5,8 +5,10 @@
     "buildCommand": "npm install"
   },
   "deploy": {
-    "startCommand": "npx tsx src/server.ts",
+    "startCommand": "node --loader tsx src/server.ts",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
+    "restartPolicyMaxRetries": 10,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 100
   }
 }
