@@ -1,5 +1,5 @@
 [start]
-cmd = "cd backend && npx tsx src/server.ts"
+cmd = "npx tsx backend/src/server.ts"
 
 [phases.setup]
 nixPkgs = ["nodejs_18", "npm-9_x"]
