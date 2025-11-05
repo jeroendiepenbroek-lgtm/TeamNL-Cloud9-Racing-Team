@@ -7,7 +7,9 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon --watch src --exec node src/server.js"
+    "dev": "nodemon --watch src --exec node src/server.js",
+    "build": "cd frontend && npm install && npm run build",
+    "build:frontend": "cd frontend && npm run build"
   },
   "keywords": ["zwift", "racing", "api", "supabase"],
   "author": "TeamNL Cloud9",

@@ -7,6 +7,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { existsSync } from 'fs';
 import 'dotenv/config';
 
 // Import endpoints
@@ -27,7 +28,10 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from public directory
+// Serve React frontend build (producti)
+app.use(express.static(path.join(__dirname, '../public/dist')));
+
+// Fallback: serve old public/index.html (development)
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Logging middleware
@@ -51,7 +55,16 @@ app.get('/health', (req: Request, res: Response) => {
 // Root route for debugging
 app.get('/', (req: Request, res: Response) => {
   console.log('Root route accessed');
-  res.redirect('/index.html');
+  // Try React app first, fallback to old HTML
+  const reactIndexPath = path.join(__dirname, '../public/dist/index.html');
+  const oldIndexPath = path.join(__dirname, '../public/index.html');
+  
+  if (existsSync(reactIndexPath)) {
+    res.sendFile(reactIndexPath);
+  } else {
+    console.log('React build not found, serving old HTML');
+    res.sendFile(oldIndexPath);
+  }
 });
 
 // API Routes - 6 Endpoints
@@ -64,10 +77,23 @@ app.use('/api/sync-logs', syncLogsRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    error: 'Endpoint niet gevonden',
-    path: req.path,
-  });
+  // If API call, return JSON error
+  if (req.path.startsWith('/api/')) {
+    res.status(404).json({
+      error: 'Endpoint niet gevonden',
+      path: req.path,
+    });
+  } else {
+    // Otherwise, serve React app (SPA fallback)
+    const reactIndexPath = path.join(__dirname, '../public/dist/index.html');
+    const oldIndexPath = path.join(__dirname, '../public/index.html');
+    
+    if (existsSync(reactIndexPath)) {
+      res.sendFile(reactIndexPath);
+    } else {
+      res.sendFile(oldIndexPath);
+    }
+  }
 });
 
 // Error handler
