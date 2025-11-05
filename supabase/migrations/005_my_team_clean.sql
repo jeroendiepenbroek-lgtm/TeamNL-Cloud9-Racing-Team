@@ -7,21 +7,39 @@
 -- 3. VIEWS = Computed data via JOINs (geen duplicatie!)
 -- ============================================================================
 
+-- Drop existing table if needed (safe - only if you want to recreate)
+-- Uncomment next line only if you want to start fresh:
+-- DROP TABLE IF EXISTS my_team_members CASCADE;
+
 -- Relation Table: my_team_members
 -- Alleen de relatie: "Deze zwift_id hoort in mijn team"
 CREATE TABLE IF NOT EXISTS my_team_members (
   zwift_id INTEGER PRIMARY KEY,  -- Direct reference naar riders.zwift_id
   added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  is_favorite BOOLEAN DEFAULT FALSE,
-  
-  -- Foreign key constraint
-  CONSTRAINT fk_my_team_rider FOREIGN KEY (zwift_id) 
-    REFERENCES riders(zwift_id) ON DELETE CASCADE
+  is_favorite BOOLEAN DEFAULT FALSE
 );
 
--- Indexes
-CREATE INDEX IF NOT EXISTS idx_my_team_added_at ON my_team_members(added_at);
-CREATE INDEX IF NOT EXISTS idx_my_team_favorite ON my_team_members(is_favorite);
+-- Foreign key constraint (add if not exists)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'fk_my_team_rider'
+  ) THEN
+    ALTER TABLE my_team_members
+    ADD CONSTRAINT fk_my_team_rider FOREIGN KEY (zwift_id) 
+    REFERENCES riders(zwift_id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
+-- Indexes (drop and recreate to avoid conflicts)
+DROP INDEX IF EXISTS idx_my_team_added_at;
+DROP INDEX IF EXISTS idx_my_team_favorite;
+DROP INDEX IF EXISTS idx_my_team_members_zwift_id;
+DROP INDEX IF EXISTS idx_my_team_members_favorite;
+DROP INDEX IF EXISTS idx_my_team_members_added_at;
+
+CREATE INDEX idx_my_team_added_at ON my_team_members(added_at);
+CREATE INDEX idx_my_team_favorite ON my_team_members(is_favorite);
 
 -- ============================================================================
 -- VIEW: view_my_team
@@ -35,25 +53,23 @@ SELECT
   r.zwift_id,
   r.name,
   
-  -- Club info (automatisch geëxtraheerd)
+  -- Club info (riders table heeft al club_name!)
   r.club_id,
-  c.name as club_name,
+  r.club_name,  -- riders.club_name (NOT from clubs table JOIN!)
   
   -- Racing info
   r.category_racing,
+  r.category_zftp,
   r.ranking,
   r.ranking_score,
   
-  -- Power metrics (computed watts/kg here!)
+  -- Power metrics (riders table heeft al watts_per_kg!)
   r.ftp,
   r.weight,
-  CASE 
-    WHEN r.weight > 0 THEN ROUND((r.ftp / r.weight)::numeric, 2)
-    ELSE NULL 
-  END as watts_per_kg,
+  r.watts_per_kg,  -- Already stored in riders table!
   
   -- Personal info
-  r.country_code,
+  r.country,  -- NOT country_code!
   r.gender,
   r.age,
   
@@ -61,11 +77,12 @@ SELECT
   r.total_races,
   r.total_wins,
   r.total_podiums,
-  r.total_dnfs,
+  -- r.total_dnfs doesn't exist in table
   
   -- Timestamps
   r.created_at as rider_created_at,
   r.last_synced as rider_last_synced,
+  r.updated_at as rider_updated_at,
   
   -- Team membership info
   tm.added_at as team_added_at,
@@ -73,13 +90,17 @@ SELECT
   
 FROM my_team_members tm
 INNER JOIN riders r ON tm.zwift_id = r.zwift_id
-LEFT JOIN clubs c ON r.club_id = c.id
+-- NO clubs JOIN needed - club_name already in riders table!
 ORDER BY r.ranking ASC NULLS LAST;
 
 -- ============================================================================
 -- Row Level Security (RLS)
 -- ============================================================================
 ALTER TABLE my_team_members ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policy if exists
+DROP POLICY IF EXISTS "Allow service_role full access to my_team_members" ON my_team_members;
+DROP POLICY IF EXISTS "Allow all operations on my_team_members" ON my_team_members;
 
 -- Policy: Allow all with service_role (backend gebruikt service_role_key)
 CREATE POLICY "Allow service_role full access to my_team_members"
