@@ -1,6 +1,4 @@
-export default function Riders() {
-  return (
-    import { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   useReactTable,
@@ -12,24 +10,36 @@ import {
   SortingState,
 } from '@tanstack/react-table';
 
-// Types
-interface Rider {
-  id: number;
-  zwiftId: number;
+// Types based on view_my_team
+interface TeamRider {
+  rider_id: number;
+  zwift_id: number;
   name: string;
+  club_id: number | null;
+  club_name: string | null;
+  category_racing: string | null;
+  category_zftp: string | null;
   ranking: number | null;
+  ranking_score: number | null;
   ftp: number | null;
   weight: number | null;
-  wattsPerKg: string | null;
-  categoryRacing: string | null;
-  totalRaces: number | null;
-  totalWins: number | null;
-  lastSynced: string;
+  watts_per_kg: number | null;
+  country: string | null;
+  gender: string | null;
+  age: number | null;
+  total_races: number;
+  total_wins: number;
+  total_podiums: number;
+  rider_created_at: string;
+  rider_last_synced: string;
+  rider_updated_at: string;
+  team_added_at: string;
+  is_favorite: boolean;
 }
 
 const API_BASE = '';
 
-export function Riders() {
+export default function Riders() {
   const queryClient = useQueryClient();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -47,12 +57,28 @@ export function Riders() {
     refetchInterval: 60000, // Refresh elke minuut
   });
 
-  const riders: Rider[] = data?.riders || [];
+  const riders: TeamRider[] = data || [];
+
+  // Mutations
+  const toggleFavorite = useMutation({
+    mutationFn: async ({ zwiftId, isFavorite }: { zwiftId: number; isFavorite: boolean }) => {
+      const res = await fetch(`${API_BASE}/api/riders/team/${zwiftId}/favorite`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite }),
+      });
+      if (!res.ok) throw new Error('Failed to update favorite');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamRiders'] });
+    },
+  });
 
   // Table columns
-  const columnHelper = createColumnHelper<Rider>();
+  const columnHelper = createColumnHelper<TeamRider>();
   const columns = [
-    columnHelper.accessor('zwiftId', {
+    columnHelper.accessor('zwift_id', {
       header: 'Zwift ID',
       cell: (info) => info.getValue(),
     }),
@@ -60,11 +86,15 @@ export function Riders() {
       header: 'Naam',
       cell: (info) => <span className="font-medium">{info.getValue()}</span>,
     }),
+    columnHelper.accessor('club_name', {
+      header: 'Club',
+      cell: (info) => info.getValue() || '-',
+    }),
     columnHelper.accessor('ranking', {
       header: 'Ranking',
       cell: (info) => info.getValue() || '-',
     }),
-    columnHelper.accessor('categoryRacing', {
+    columnHelper.accessor('category_racing', {
       header: 'Cat',
       cell: (info) => (
         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
@@ -80,18 +110,32 @@ export function Riders() {
       header: 'Weight',
       cell: (info) => (info.getValue() ? `${info.getValue()}kg` : '-'),
     }),
-    columnHelper.accessor('wattsPerKg', {
+    columnHelper.accessor('watts_per_kg', {
       header: 'W/kg',
-      cell: (info) => (info.getValue() ? `${info.getValue()}` : '-'),
+      cell: (info) => (info.getValue() ? `${Number(info.getValue()).toFixed(2)}` : '-'),
     }),
-    columnHelper.accessor('totalRaces', {
+    columnHelper.accessor('total_races', {
       header: 'Races',
       cell: (info) => info.getValue() || 0,
     }),
-    columnHelper.accessor('totalWins', {
+    columnHelper.accessor('total_wins', {
       header: 'Wins',
       cell: (info) => (
         <span className="font-semibold text-yellow-600">{info.getValue() || 0}</span>
+      ),
+    }),
+    columnHelper.accessor('is_favorite', {
+      header: '⭐',
+      cell: (info) => (
+        <button
+          onClick={() => toggleFavorite.mutate({ 
+            zwiftId: info.row.original.zwift_id, 
+            isFavorite: !info.getValue() 
+          })}
+          className="text-2xl hover:scale-110 transition-transform"
+        >
+          {info.getValue() ? '⭐' : '☆'}
+        </button>
       ),
     }),
   ];
@@ -148,7 +192,7 @@ export function Riders() {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-gray-500 text-sm">Total Wins</div>
           <div className="text-2xl font-bold text-yellow-600">
-            {riders.reduce((sum, r) => sum + (r.totalWins || 0), 0)}
+            {riders.reduce((sum, r) => sum + (r.total_wins || 0), 0)}
           </div>
         </div>
       </div>
@@ -344,7 +388,6 @@ function AddRiderModal({ onClose }: { onClose: () => void }) {
 // ============================================================================
 function BulkUploadModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [fileContent, setFileContent] = useState('');
   const [parsedRiders, setParsedRiders] = useState<Array<{ zwiftId: number; name: string }>>([]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,7 +397,6 @@ function BulkUploadModal({ onClose }: { onClose: () => void }) {
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      setFileContent(content);
       parseRiders(content);
     };
     reader.readAsText(file);
@@ -486,10 +528,11 @@ function BulkUploadModal({ onClose }: { onClose: () => void }) {
 // ============================================================================
 // CSV Export Helper
 // ============================================================================
-function generateCSV(riders: Rider[]): string {
+function generateCSV(riders: TeamRider[]): string {
   const headers = [
     'Zwift ID',
     'Name',
+    'Club',
     'Ranking',
     'Category',
     'FTP',
@@ -497,17 +540,20 @@ function generateCSV(riders: Rider[]): string {
     'W/kg',
     'Races',
     'Wins',
+    'Podiums',
   ];
   const rows = riders.map((r) => [
-    r.zwiftId,
+    r.zwift_id,
     r.name,
+    r.club_name || '',
     r.ranking || '',
-    r.categoryRacing || '',
+    r.category_racing || '',
     r.ftp || '',
     r.weight || '',
-    r.wattsPerKg || '',
-    r.totalRaces || 0,
-    r.totalWins || 0,
+    r.watts_per_kg || '',
+    r.total_races || 0,
+    r.total_wins || 0,
+    r.total_podiums || 0,
   ]);
 
   return [headers, ...rows].map((row) => row.join(',')).join('\n');
@@ -522,5 +568,4 @@ function downloadCSV(csv: string, filename: string) {
   a.click();
   window.URL.revokeObjectURL(url);
 }
-  )
-}
+
