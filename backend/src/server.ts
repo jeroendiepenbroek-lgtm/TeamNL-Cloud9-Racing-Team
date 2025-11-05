@@ -38,12 +38,20 @@ app.use((req: Request, res: Response, next) => {
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-  res.json({
+  console.log('Health check received');
+  res.status(200).json({
     status: 'ok',
     service: 'TeamNL Cloud9 Backend',
     timestamp: new Date().toISOString(),
     version: '2.0.0-clean',
+    port: PORT,
   });
+});
+
+// Root route for debugging
+app.get('/', (req: Request, res: Response) => {
+  console.log('Root route accessed');
+  res.redirect('/index.html');
 });
 
 // API Routes - 6 Endpoints
@@ -72,13 +80,18 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
 });
 
 // Start server
+console.log(`Starting server on port ${PORT}...`);
+console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`Binding to: 0.0.0.0:${PORT}`);
+
 const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ Server successfully started!`);
   console.log(`
 ╔════════════════════════════════════════════════╗
 ║  TeamNL Cloud9 Racing Team - Backend v2.0     ║
 ╠════════════════════════════════════════════════╣
 ║  🚀 Server running on port ${PORT}               ║
-║  📍 Health: http://localhost:${PORT}/health      ║
+║  📍 Health: http://0.0.0.0:${PORT}/health        ║
 ║                                                ║
 ║  🔗 6 API Endpoints:                           ║
 ║  • GET  /api/clubs/:id                         ║
@@ -97,6 +110,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  • POST /api/sync-logs/full-sync               ║
 ╚════════════════════════════════════════════════╝
   `);
+});
+
+// Server error handling
+server.on('error', (error: any) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  }
+  process.exit(1);
 });
 
 // Graceful shutdown
