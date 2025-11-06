@@ -88,6 +88,23 @@ export default function Riders() {
     },
   });
 
+  const triggerManualSync = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`${API_BASE}/api/auto-sync/trigger`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to trigger sync');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['teamRiders'] });
+      alert(`✅ Sync voltooid!\n\nSucces: ${data.result.success} riders\nErrors: ${data.result.errors}\nSkipped: ${data.result.skipped}`);
+    },
+    onError: (error: any) => {
+      alert(`❌ Sync failed: ${error.message}`);
+    },
+  });
+
   // Table columns
   const columnHelper = createColumnHelper<TeamRider>();
   const columns = [
@@ -254,6 +271,14 @@ export default function Riders() {
               <span>📤</span> Bulk Upload
             </button>
             <button
+              onClick={() => triggerManualSync.mutate()}
+              disabled={triggerManualSync.isPending || riders.length === 0}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              title={riders.length === 0 ? 'Voeg eerst riders toe om te synchen' : 'Sync alle team members met ZwiftRacing API'}
+            >
+              <span>🔄</span> {triggerManualSync.isPending ? 'Syncing...' : 'Sync All'}
+            </button>
+            <button
               onClick={() => {
                 const csv = generateCSV(riders);
                 downloadCSV(csv, 'teamnl-cloud9-riders.csv');
@@ -344,7 +369,7 @@ function AddRiderModal({ onClose }: { onClose: () => void }) {
       const res = await fetch(`${API_BASE}/api/riders/team`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zwiftId: parseInt(zwiftId), name }),
+        body: JSON.stringify({ zwiftId: parseInt(zwiftId), name: name || undefined }),
       });
       if (!res.ok) {
         const error = await res.json();
@@ -352,8 +377,9 @@ function AddRiderModal({ onClose }: { onClose: () => void }) {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['teamRiders'] });
+      alert(`✅ ${data.message}\n\n${data.synced || ''}`);
       onClose();
     },
   });
@@ -376,15 +402,27 @@ function AddRiderModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Naam <span className="text-gray-400 text-xs">(optioneel - wordt automatisch opgehaald)</span>
+            </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="John Doe"
+              placeholder="Wordt automatisch gesynchroniseerd"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {mutation.isPending && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-sm flex items-center gap-2">
+              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Rider toevoegen en data synchroniseren van ZwiftRacing API...</span>
+            </div>
+          )}
 
           {mutation.error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -395,10 +433,10 @@ function AddRiderModal({ onClose }: { onClose: () => void }) {
           <div className="flex gap-2 pt-4">
             <button
               onClick={() => mutation.mutate()}
-              disabled={!zwiftId || !name || mutation.isPending}
+              disabled={!zwiftId || mutation.isPending}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {mutation.isPending ? 'Adding...' : 'Add Rider'}
+              {mutation.isPending ? '🔄 Syncing...' : '➕ Add & Sync Rider'}
             </button>
             <button
               onClick={onClose}

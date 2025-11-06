@@ -8,15 +8,18 @@ interface HealthCheck {
   port: number
 }
 
+const API_BASE = ''; // Empty = same origin (production), of http://localhost:3000 voor dev
+
 export default function Dashboard() {
   const { data: health, isLoading } = useQuery<HealthCheck>({
     queryKey: ['health'],
     queryFn: async () => {
-      const res = await fetch('/api/health')
+      const res = await fetch(`${API_BASE}/health`)
       if (!res.ok) throw new Error('Health check failed')
       return res.json()
     },
     refetchInterval: 30000, // Elke 30 sec
+    retry: 3,
   })
 
   const endpoints = [
