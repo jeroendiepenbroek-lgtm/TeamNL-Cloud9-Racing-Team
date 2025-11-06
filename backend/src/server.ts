@@ -16,6 +16,11 @@ import eventsRouter from './api/endpoints/events.js';
 import resultsRouter from './api/endpoints/results.js';
 import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
+import autoSyncRouter from './api/endpoints/auto-sync.js';
+
+// US7 + US8: Auto-sync service
+import { autoSyncService } from './services/auto-sync.service.js';
+import { syncConfig } from './config/sync.config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +69,7 @@ app.use('/api/events', eventsRouter);
 app.use('/api/results', resultsRouter);
 app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
+app.use('/api/auto-sync', autoSyncRouter); // US8
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -117,8 +123,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  • POST /api/results/:eventId/sync             ║
 ║  • POST /api/history/:riderId/sync             ║
 ║  • POST /api/sync-logs/full-sync               ║
+║                                                ║
+║  ⏰ Auto-Sync (US8):                           ║
+║  • Enabled: ${syncConfig.enabled ? 'YES' : 'NO'}                              ║
+║  • Interval: Every ${syncConfig.intervalHours}h                      ║
 ╚════════════════════════════════════════════════╝
   `);
+  
+  // US7 + US8: Start auto-sync scheduler
+  autoSyncService.start();
 });
 
 // Server error handling

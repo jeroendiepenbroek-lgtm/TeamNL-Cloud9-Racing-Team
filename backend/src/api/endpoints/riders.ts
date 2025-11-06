@@ -84,7 +84,7 @@ router.get('/:zwiftId', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/riders/team - Voeg rider toe aan "Mijn Team"
+// POST /api/riders/team - Voeg rider toe aan "Mijn Team" met automatische sync (US7)
 router.post('/team', async (req: Request, res: Response) => {
   try {
     const { zwiftId, name } = req.body;
@@ -102,22 +102,53 @@ router.post('/team', async (req: Request, res: Response) => {
       return res.status(409).json({ error: 'Rider zit al in jouw team' });
     }
     
-    // Check of rider bestaat in riders tabel
+    // US7: Probeer eerst data op te halen van ZwiftRacing API
     let rider = await supabase.getRider(zwiftId);
+    let syncedFromApi = false;
     
-    // Als rider niet bestaat EN name is gegeven, maak aan
-    if (!rider && name) {
-      const newRiders = await supabase.upsertRiders([{
-        zwift_id: zwiftId,
-        name,
-      }]);
-      rider = newRiders[0];
+    if (!rider) {
+      try {
+        console.log(`[Add Rider] Syncing rider ${zwiftId} from ZwiftRacing API...`);
+        const { zwiftClient } = await import('../zwift-client.js');
+        const zwiftData = await zwiftClient.getRider(zwiftId);
+        
+        // Upsert met verse API data
+        const upserted = await supabase.upsertRiders([{
+          zwift_id: zwiftData.riderId,
+          name: zwiftData.name,
+          club_id: zwiftData.club?.id,
+          category_racing: zwiftData.category?.racing,
+          category_zftp: zwiftData.category?.zFTP,
+          ranking: zwiftData.ranking ?? undefined,
+          ranking_score: zwiftData.rankingScore,
+          ftp: zwiftData.ftp,
+          weight: zwiftData.weight,
+          watts_per_kg: zwiftData.wattsPerKg,
+          country: zwiftData.countryAlpha3,
+          gender: zwiftData.gender,
+          age: zwiftData.age,
+        }]);
+        rider = upserted[0];
+        syncedFromApi = true;
+        console.log(`[Add Rider] ✅ Synced rider data from API`);
+      } catch (apiError: any) {
+        console.warn(`[Add Rider] ⚠️ API sync failed: ${apiError.message}`);
+        
+        // Fallback: gebruik manual name als opgegeven
+        if (name) {
+          const newRiders = await supabase.upsertRiders([{
+            zwift_id: zwiftId,
+            name,
+          }]);
+          rider = newRiders[0];
+        }
+      }
     }
     
     if (!rider) {
       return res.status(400).json({
-        error: 'Rider niet gevonden in database. Voeg "name" parameter toe.',
-        hint: 'Of sync eerst de rider data van ZwiftRacing API',
+        error: 'Rider niet gevonden in ZwiftRacing API en geen "name" parameter opgegeven.',
+        hint: 'Voeg "name" parameter toe of controleer het zwiftId',
         example: { zwiftId: 150437, name: 'John Doe' }
       });
     }
@@ -129,6 +160,7 @@ router.post('/team', async (req: Request, res: Response) => {
       success: true,
       message: `${rider.name} toegevoegd aan jouw team`,
       zwiftId,
+      synced: syncedFromApi ? '✅ Data synced from ZwiftRacing API' : '⚠️ Using manual/existing data',
     });
   } catch (error) {
     console.error('Error adding rider to team:', error);
@@ -136,7 +168,7 @@ router.post('/team', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/riders/team/bulk - Bulk import riders
+// POST /api/riders/team/bulk - Bulk import riders met ZwiftRacing API sync (US6 + US7)
 router.post('/team/bulk', async (req: Request, res: Response) => {
   try {
     const { riders } = req.body;
@@ -157,6 +189,7 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
       success: 0,
       skipped: 0,
       created: 0,
+      synced: 0,
       errors: [] as Array<{ zwiftId: number; error: string }>,
     };
     
@@ -164,33 +197,76 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
     const existingTeam = await supabase.getMyTeamMembers();
     const existingZwiftIds = new Set(existingTeam.map(m => m.zwift_id));
     
+    // US6: Collect nieuwe rider IDs voor bulk ZwiftRacing API call
+    const newRiderIds: number[] = [];
+    const riderInputMap = new Map<number, { zwiftId: number; name?: string }>();
+    
     for (const riderInput of riders) {
+      const { zwiftId, name } = riderInput;
+      
+      if (!zwiftId) {
+        results.errors.push({ zwiftId: 0, error: 'zwiftId is verplicht' });
+        continue;
+      }
+      
+      // Skip als al in team
+      if (existingZwiftIds.has(zwiftId)) {
+        results.skipped++;
+        continue;
+      }
+      
+      newRiderIds.push(zwiftId);
+      riderInputMap.set(zwiftId, { zwiftId, name });
+    }
+    
+    // US6 + US7: Bulk fetch van ZwiftRacing API (max 1000, rate: 1/15min)
+    let zwiftRidersData: any[] = [];
+    if (newRiderIds.length > 0) {
       try {
-        const { zwiftId, name } = riderInput;
+        console.log(`[Bulk Import] Fetching ${newRiderIds.length} riders via ZwiftRacing POST API...`);
+        const { zwiftClient } = await import('../zwift-client.js');
+        zwiftRidersData = await zwiftClient.getBulkRiders(newRiderIds);
+        results.synced = zwiftRidersData.length;
+        console.log(`[Bulk Import] ✅ Synced ${zwiftRidersData.length} riders from ZwiftRacing API`);
+      } catch (apiError: any) {
+        console.warn('[Bulk Import] ⚠️ ZwiftRacing API failed, falling back to manual data:', apiError.message);
+      }
+    }
+    
+    // Process riders
+    for (const zwiftId of newRiderIds) {
+      try {
+        const riderInput = riderInputMap.get(zwiftId)!;
         
-        if (!zwiftId) {
-          results.errors.push({ zwiftId: 0, error: 'zwiftId is verplicht' });
-          continue;
-        }
+        // Check if we got data from ZwiftRacing API
+        const zwiftData = zwiftRidersData.find(r => r.riderId === zwiftId);
         
-        // Skip als al in team
-        if (existingZwiftIds.has(zwiftId)) {
-          results.skipped++;
-          continue;
-        }
-        
-        // Check/create rider in riders tabel
-        let rider = await supabase.getRider(zwiftId);
-        if (!rider && name) {
-          const newRiders = await supabase.upsertRiders([{ zwift_id: zwiftId, name }]);
-          rider = newRiders[0];
+        if (zwiftData) {
+          // US7: Upsert met verse ZwiftRacing data
+          await supabase.upsertRiders([{
+            zwift_id: zwiftData.riderId,
+            name: zwiftData.name,
+            club_id: zwiftData.club?.id,
+            category_racing: zwiftData.category?.racing,
+            category_zftp: zwiftData.category?.zFTP,
+            ranking: zwiftData.ranking ?? undefined,
+            ranking_score: zwiftData.rankingScore,
+            ftp: zwiftData.ftp,
+            weight: zwiftData.weight,
+            watts_per_kg: zwiftData.wattsPerKg,
+            country: zwiftData.countryAlpha3,
+            gender: zwiftData.gender,
+            age: zwiftData.age,
+          }]);
           results.created++;
-        }
-        
-        if (!rider) {
+        } else if (riderInput.name) {
+          // Fallback: manual name alleen
+          await supabase.upsertRiders([{ zwift_id: zwiftId, name: riderInput.name }]);
+          results.created++;
+        } else {
           results.errors.push({ 
             zwiftId, 
-            error: 'Rider niet gevonden. Voeg "name" toe of sync eerst.' 
+            error: 'Rider niet gevonden in ZwiftRacing API en geen name opgegeven' 
           });
           continue;
         }
@@ -200,7 +276,7 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
         results.success++;
         
       } catch (error: any) {
-        results.errors.push({ zwiftId: riderInput.zwiftId, error: error.message });
+        results.errors.push({ zwiftId, error: error.message });
       }
     }
     
@@ -208,6 +284,7 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
       message: 'Bulk import voltooid',
       total: riders.length,
       results,
+      apiSync: results.synced > 0 ? `✅ Synced ${results.synced} riders from ZwiftRacing API` : '⚠️ API sync failed, used manual data',
     });
   } catch (error) {
     console.error('Error bulk importing riders:', error);

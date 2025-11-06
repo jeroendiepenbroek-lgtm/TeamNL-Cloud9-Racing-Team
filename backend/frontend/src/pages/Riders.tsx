@@ -75,6 +75,19 @@ export default function Riders() {
     },
   });
 
+  const deleteRider = useMutation({
+    mutationFn: async (zwiftId: number) => {
+      const res = await fetch(`${API_BASE}/api/riders/team/${zwiftId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete rider');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamRiders'] });
+    },
+  });
+
   // Table columns
   const columnHelper = createColumnHelper<TeamRider>();
   const columns = [
@@ -135,6 +148,23 @@ export default function Riders() {
           className="text-2xl hover:scale-110 transition-transform"
         >
           {info.getValue() ? '⭐' : '☆'}
+        </button>
+      ),
+    }),
+    columnHelper.display({
+      id: 'actions',
+      header: 'Actions',
+      cell: (info) => (
+        <button
+          onClick={() => {
+            if (window.confirm(`Weet je zeker dat je ${info.row.original.name} wilt verwijderen?`)) {
+              deleteRider.mutate(info.row.original.zwift_id);
+            }
+          }}
+          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+          disabled={deleteRider.isPending}
+        >
+          {deleteRider.isPending ? '...' : '🗑️ Delete'}
         </button>
       ),
     }),

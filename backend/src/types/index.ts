@@ -14,8 +14,22 @@ export interface ZwiftClub {
 export interface ZwiftRider {
   riderId: number;
   name: string;
-  category?: string;
-  ranking?: number;
+  club?: {
+    id: number;
+    name: string;
+  };
+  category?: {
+    racing: string;
+    zFTP: string;
+  };
+  ranking?: number | null;
+  rankingScore?: number;
+  ftp?: number;
+  weight?: number;
+  wattsPerKg?: number;
+  countryAlpha3?: string;
+  gender?: string;
+  age?: number;
   points?: number;
 }
 
@@ -68,10 +82,20 @@ export interface DbRider {
   id: number;
   zwift_id: number;
   name: string;
-  category?: string;
-  ranking?: number;
-  points?: number;
   club_id?: number;
+  category_racing?: string;
+  category_zftp?: string;
+  ranking?: number;
+  ranking_score?: number;
+  ftp?: number;
+  weight?: number;
+  watts_per_kg?: number;
+  country?: string;
+  gender?: string;
+  age?: number;
+  total_races?: number;
+  total_wins?: number;
+  total_podiums?: number;
   is_active?: boolean;
   last_synced?: string;
   created_at?: string;
