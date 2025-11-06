@@ -36,9 +36,13 @@ ENV PORT=3000
 # Expose port
 EXPOSE 3000
 
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:'+process.env.PORT+'/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start server with tsx (needed for TypeScript runtime)
-CMD ["npx", "tsx", "src/server.ts"]
+# Start server with debug script
+CMD ["/app/start.sh"]
