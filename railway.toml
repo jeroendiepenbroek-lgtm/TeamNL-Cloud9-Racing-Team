@@ -1,0 +1,9 @@
+# Railway Configuration
+# Use backend/ as the root directory for build
+
+[build]
+builder = "nixpacks"
+
+[nixpacks]
+# Set backend/ as working directory so Railway uses backend/package.json
+root = "backend"
