@@ -24,7 +24,7 @@ export class ZwiftApiClient {
     this.client = axios.create({
       baseURL: ZWIFT_API_BASE,
       headers: {
-        'x-api-key': ZWIFT_API_KEY,
+        'Authorization': ZWIFT_API_KEY,
       },
       timeout: 30000,
     });
