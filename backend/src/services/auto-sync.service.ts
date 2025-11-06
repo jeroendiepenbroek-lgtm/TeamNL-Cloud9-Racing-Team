@@ -20,6 +20,7 @@ export class AutoSyncService {
     success: number;
     errors: number;
     skipped: number;
+    errorMessages?: string[];
   }> {
     if (this.isRunning) {
       console.log('[AutoSync] ⚠️ Sync already running, skipping...');
@@ -43,7 +44,8 @@ export class AutoSyncService {
       
       console.log(`[AutoSync] 📊 Syncing ${zwiftIds.length} riders...`);
       
-      let ridersData: any[] = [];
+  let ridersData: any[] = [];
+  const errorMessages: string[] = [];
       
       // Strategy: Use GET for small teams (< 10 riders, 5/min rate)
       //           Use POST bulk for larger teams (1/15min rate, max 1000)
@@ -61,6 +63,7 @@ export class AutoSyncService {
             }
           } catch (error: any) {
             console.error(`[AutoSync] ⚠️ Failed to sync rider ${zwiftId}:`, error.message);
+            errorMessages.push(`rider ${zwiftId}: ${error.message}`);
           }
         }
       } else {
@@ -80,6 +83,7 @@ export class AutoSyncService {
               await new Promise(resolve => setTimeout(resolve, 12000)); // 5/min rate
             } catch (err: any) {
               console.error(`[AutoSync] ⚠️ Failed to sync rider ${zwiftId}:`, err.message);
+              errorMessages.push(`rider ${zwiftId}: ${err.message}`);
             }
           }
         }
@@ -87,7 +91,7 @@ export class AutoSyncService {
       
       if (ridersData.length === 0) {
         console.log('[AutoSync] ⚠️ No rider data received from API');
-        return { success: 0, errors: 1, skipped: 0 };
+        return { success: 0, errors: 1, skipped: 0, errorMessages };
       }
       
       console.log(`[AutoSync] ✅ Received ${ridersData.length} riders from API`);
@@ -121,6 +125,7 @@ export class AutoSyncService {
         success: ridersData.length,
         errors: 0,
         skipped: zwiftIds.length - ridersData.length,
+        errorMessages: errorMessages.length ? errorMessages : undefined,
       };
       
     } catch (error: any) {
@@ -131,6 +136,7 @@ export class AutoSyncService {
         success: 0,
         errors: 1,
         skipped: 0,
+        errorMessages: [error.message],
       };
       
     } finally {
