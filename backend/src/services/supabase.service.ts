@@ -28,7 +28,7 @@ export class SupabaseService {
       .from('clubs')
       .select('*')
       .eq('id', clubId)
-      .single();
+      .maybeSingle(); // Use maybeSingle() instead of single() - returns null if no rows
 
     if (error) throw error;
     return data;
