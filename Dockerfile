@@ -2,35 +2,34 @@
 # Build backend + frontend, deploy backend server
 
 FROM node:22-alpine AS base
-WORKDIR /app
 
 # === FRONTEND BUILD ===
 FROM base AS frontend-builder
-WORKDIR /app/frontend
+WORKDIR /build
 COPY backend/frontend/package*.json ./
 RUN npm ci
 COPY backend/frontend/ ./
-RUN npm run build
+# Vite builds to ../public/dist (relative to frontend/)
+# But we're in /build, so it will fail. Let's override:
+RUN npm run build -- --outDir=/frontend-dist
 
-# === BACKEND BUILD ===
-FROM base AS backend-builder
-WORKDIR /app/backend
-COPY backend/package*.json ./
-RUN npm ci
-COPY backend/ ./
-# Copy frontend build
-RUN mkdir -p public/dist
-COPY --from=frontend-builder /app/frontend/dist/ ./public/dist/
-
-# === PRODUCTION ===
-FROM node:22-alpine
+# === BACKEND RUNTIME ===
+FROM base AS final
 WORKDIR /app
+
+# Install backend dependencies
+COPY backend/package*.json ./
+RUN npm ci --only=production
+
+# Copy backend code
+COPY backend/src ./src
+
+# Create public/dist and copy frontend build
+RUN mkdir -p public/dist
+COPY --from=frontend-builder /frontend-dist/ ./public/dist/
+
+# Environment
 ENV NODE_ENV=production
-
-# Copy backend with frontend build
-COPY --from=backend-builder /app/backend /app
-
-# Expose port
 EXPOSE 3000
 
 # Start server
