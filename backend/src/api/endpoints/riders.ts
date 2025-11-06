@@ -113,6 +113,7 @@ router.post('/team', async (req: Request, res: Response) => {
         const zwiftData = await zwiftClient.getRider(zwiftId);
         
         // Upsert met verse API data
+        // NOTE: watts_per_kg is GENERATED kolom - database berekent dit automatisch
         const upserted = await supabase.upsertRiders([{
           zwift_id: zwiftData.riderId,
           name: zwiftData.name,
@@ -123,7 +124,7 @@ router.post('/team', async (req: Request, res: Response) => {
           ranking_score: zwiftData.rankingScore,
           ftp: zwiftData.ftp,
           weight: zwiftData.weight,
-          watts_per_kg: zwiftData.wattsPerKg,
+          // watts_per_kg: VERWIJDERD - generated column!
           country: zwiftData.countryAlpha3,
           gender: zwiftData.gender,
           age: zwiftData.age,
@@ -283,6 +284,7 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
         
         if (zwiftData) {
           // US7: Upsert met verse ZwiftRacing data
+          // NOTE: watts_per_kg is GENERATED kolom - database berekent dit
           await supabase.upsertRiders([{
             zwift_id: zwiftData.riderId,
             name: zwiftData.name,
@@ -293,7 +295,7 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
             ranking_score: zwiftData.rankingScore,
             ftp: zwiftData.ftp,
             weight: zwiftData.weight,
-            watts_per_kg: zwiftData.wattsPerKg,
+            // watts_per_kg: VERWIJDERD - generated column!
             country: zwiftData.countryAlpha3,
             gender: zwiftData.gender,
             age: zwiftData.age,

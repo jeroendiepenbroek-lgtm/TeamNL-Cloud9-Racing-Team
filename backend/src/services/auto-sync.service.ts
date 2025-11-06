@@ -93,6 +93,7 @@ export class AutoSyncService {
       console.log(`[AutoSync] ✅ Received ${ridersData.length} riders from API`);
       
       // Upsert naar database
+      // NOTE: watts_per_kg is GENERATED kolom (ftp/weight) - niet handmatig zetten!
       const upsertData = ridersData.map(r => ({
         zwift_id: r.riderId,
         name: r.name,
@@ -103,7 +104,7 @@ export class AutoSyncService {
         ranking_score: r.rankingScore,
         ftp: r.ftp,
         weight: r.weight,
-        watts_per_kg: r.wattsPerKg,
+        // watts_per_kg: VERWIJDERD - is generated column!
         country: r.countryAlpha3,
         gender: r.gender,
         age: r.age,
