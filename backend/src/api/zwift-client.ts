@@ -29,9 +29,11 @@ export class ZwiftApiClient {
       timeout: 30000,
     });
 
+    console.log(`[ZwiftAPI] ✅ Client initialized with header: Authorization: ${ZWIFT_API_KEY.substring(0, 10)}...`);
+
     // Axios interceptor voor logging
     this.client.interceptors.request.use((config) => {
-      console.log(`[ZwiftAPI] ${config.method?.toUpperCase()} ${config.url}`);
+      console.log(`[ZwiftAPI] ${config.method?.toUpperCase()} ${config.url} | Header: Authorization: ${config.headers['Authorization']?.toString().substring(0, 10)}...`);
       return config;
     });
 
