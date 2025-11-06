@@ -1,8 +1,11 @@
+# Nixpacks Configuration for Railway
+# Build backend + frontend, skip root package.json
+
 [start]
-cmd = "npx tsx backend/src/server.ts"
+cmd = "cd backend && npx tsx src/server.ts"
 
 [phases.setup]
-nixPkgs = ["nodejs_18", "npm-9_x"]
+nixPkgs = ["nodejs_22"]  # Match Railway's Node 22.21.1
 
 [phases.install]
 cmds = [
@@ -12,7 +15,6 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "cd backend && mkdir -p public/dist",
   "cd backend/frontend && npm run build",
   "ls -la backend/public/dist"
 ]

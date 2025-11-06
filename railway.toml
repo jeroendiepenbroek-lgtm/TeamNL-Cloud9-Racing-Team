@@ -1,9 +1,5 @@
 # Railway Configuration
-# Use backend/ as the root directory for build
+# Uses nixpacks.toml for custom build phases
 
 [build]
 builder = "nixpacks"
-
-[nixpacks]
-# Set backend/ as working directory so Railway uses backend/package.json
-root = "backend"
