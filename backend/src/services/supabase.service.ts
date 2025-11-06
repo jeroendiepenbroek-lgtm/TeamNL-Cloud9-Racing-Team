@@ -70,9 +70,26 @@ export class SupabaseService {
   }
 
   async upsertRiders(riders: Partial<DbRider>[]): Promise<DbRider[]> {
+    // Strip generated or read-only columns before upsert (e.g. watts_per_kg)
+    // Be defensief: verwijder expliciet bekende generated kolommen en gooi
+    // properties weg die expliciet undefined zijn om per ongeluk setten te voorkomen.
+    const GENERATED_COLUMNS = ['watts_per_kg', 'rider_created_at', 'rider_updated_at'];
+    const cleaned = riders.map(r => {
+      const copy: any = { ...r };
+      // Remove known generated/read-only columns if present
+      for (const col of GENERATED_COLUMNS) {
+        if (col in copy) delete copy[col];
+      }
+      // Remove any keys that are explicitly undefined (avoid sending e.g. {foo: undefined})
+      for (const k of Object.keys(copy)) {
+        if (copy[k] === undefined) delete copy[k];
+      }
+      return copy as Partial<DbRider>;
+    });
+
     const { data, error } = await this.client
       .from('riders')
-      .upsert(riders, { onConflict: 'zwift_id' })
+      .upsert(cleaned, { onConflict: 'zwift_id' })
       .select();
 
     if (error) throw error;
