@@ -9,7 +9,7 @@ ls -la
 echo ""
 echo "🔧 Environment Check:"
 echo "NODE_ENV: ${NODE_ENV:-not set}"
-echo "PORT: ${PORT:-not set}"
+echo "PORT: ${PORT:-not set} (Railway dynamic port)"
 echo "SUPABASE_URL: ${SUPABASE_URL:+[SET]}"
 echo "SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:+[SET]}"
 echo "ZWIFT_API_KEY: ${ZWIFT_API_KEY:+[SET]}"
@@ -21,5 +21,9 @@ ls node_modules/express > /dev/null 2>&1 && echo "✅ express found" || echo "�
 ls node_modules/dotenv > /dev/null 2>&1 && echo "✅ dotenv found" || echo "❌ dotenv NOT found"
 
 echo ""
-echo "🎯 Starting server..."
+echo "🎯 Starting server on PORT ${PORT:-3000}..."
+
+# Ensure PORT is set (Railway sets this automatically, but fallback to 3000)
+export PORT=${PORT:-3000}
+
 exec npx tsx src/server.ts
