@@ -1,5 +1,6 @@
 # Railway Configuration
-# Uses nixpacks.toml for custom build phases
+# Use Dockerfile for complete build control (bypass Railpack)
 
 [build]
-builder = "nixpacks"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
