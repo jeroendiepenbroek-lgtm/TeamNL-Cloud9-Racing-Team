@@ -219,17 +219,57 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
       riderInputMap.set(zwiftId, { zwiftId, name });
     }
     
-    // US6 + US7: Bulk fetch van ZwiftRacing API (max 1000, rate: 1/15min)
+    // US6 + US7: Bulk fetch van ZwiftRacing API
+    // Strategy: POST bulk voor grote imports (1/15min rate)
+    //           GET individual voor kleine imports (5/min rate)
     let zwiftRidersData: any[] = [];
     if (newRiderIds.length > 0) {
-      try {
-        console.log(`[Bulk Import] Fetching ${newRiderIds.length} riders via ZwiftRacing POST API...`);
-        const { zwiftClient } = await import('../zwift-client.js');
-        zwiftRidersData = await zwiftClient.getBulkRiders(newRiderIds);
-        results.synced = zwiftRidersData.length;
-        console.log(`[Bulk Import] ✅ Synced ${zwiftRidersData.length} riders from ZwiftRacing API`);
-      } catch (apiError: any) {
-        console.warn('[Bulk Import] ⚠️ ZwiftRacing API failed, falling back to manual data:', apiError.message);
+      const { zwiftClient } = await import('../zwift-client.js');
+      
+      // Voor grote bulk import: gebruik POST (1/15min rate, max 1000)
+      if (newRiderIds.length > 10) {
+        try {
+          console.log(`[Bulk Import] Fetching ${newRiderIds.length} riders via POST bulk API (1/15min rate)...`);
+          zwiftRidersData = await zwiftClient.getBulkRiders(newRiderIds);
+          results.synced = zwiftRidersData.length;
+          console.log(`[Bulk Import] ✅ Synced ${zwiftRidersData.length} riders via POST`);
+        } catch (apiError: any) {
+          console.warn('[Bulk Import] ⚠️ POST bulk failed, falling back to GET calls:', apiError.message);
+          
+          // Fallback: individual GET calls (5/min rate)
+          for (const zwiftId of newRiderIds) {
+            try {
+              const rider = await zwiftClient.getRider(zwiftId);
+              zwiftRidersData.push(rider);
+              results.synced++;
+              
+              // Rate limit: 5/min = 12 sec between calls
+              if (newRiderIds.indexOf(zwiftId) < newRiderIds.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 12000));
+              }
+            } catch (err: any) {
+              console.warn(`[Bulk Import] Failed to fetch rider ${zwiftId}:`, err.message);
+            }
+          }
+        }
+      } else {
+        // Voor kleine imports: gebruik GET (5/min rate, sneller dan POST voor < 10 riders)
+        console.log(`[Bulk Import] Fetching ${newRiderIds.length} riders via GET calls (5/min rate)...`);
+        for (const zwiftId of newRiderIds) {
+          try {
+            const rider = await zwiftClient.getRider(zwiftId);
+            zwiftRidersData.push(rider);
+            results.synced++;
+            
+            // Rate limit: 5/min = 12 sec between calls
+            if (newRiderIds.indexOf(zwiftId) < newRiderIds.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 12000));
+            }
+          } catch (err: any) {
+            console.warn(`[Bulk Import] Failed to fetch rider ${zwiftId}:`, err.message);
+          }
+        }
+        console.log(`[Bulk Import] ✅ Synced ${zwiftRidersData.length} riders via GET`);
       }
     }
     

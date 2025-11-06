@@ -41,10 +41,54 @@ export class AutoSyncService {
         return { success: 0, errors: 0, skipped: 0 };
       }
       
-      console.log(`[AutoSync] 📊 Syncing ${zwiftIds.length} riders via bulk API...`);
+      console.log(`[AutoSync] 📊 Syncing ${zwiftIds.length} riders...`);
       
-      // Bulk fetch van ZwiftRacing API (max 1000, rate: 1/15min)
-      const ridersData = await zwiftClient.getBulkRiders(zwiftIds);
+      let ridersData: any[] = [];
+      
+      // Strategy: Use GET for small teams (< 10 riders, 5/min rate)
+      //           Use POST bulk for larger teams (1/15min rate, max 1000)
+      if (zwiftIds.length <= 10) {
+        console.log('[AutoSync] 📡 Using individual GET calls (small team, 5/min rate)');
+        
+        for (const zwiftId of zwiftIds) {
+          try {
+            const rider = await zwiftClient.getRider(zwiftId);
+            ridersData.push(rider);
+            
+            // Rate limit: 5/min = 12 sec between calls
+            if (zwiftIds.length > 1) {
+              await new Promise(resolve => setTimeout(resolve, 12000));
+            }
+          } catch (error: any) {
+            console.error(`[AutoSync] ⚠️ Failed to sync rider ${zwiftId}:`, error.message);
+          }
+        }
+      } else {
+        console.log('[AutoSync] 📡 Using bulk POST API (large team, 1/15min rate)');
+        
+        try {
+          // Bulk fetch van ZwiftRacing API (max 1000, rate: 1/15min)
+          ridersData = await zwiftClient.getBulkRiders(zwiftIds);
+        } catch (error: any) {
+          console.error('[AutoSync] ❌ Bulk POST failed, falling back to GET:', error.message);
+          
+          // Fallback: individual GET calls
+          for (const zwiftId of zwiftIds) {
+            try {
+              const rider = await zwiftClient.getRider(zwiftId);
+              ridersData.push(rider);
+              await new Promise(resolve => setTimeout(resolve, 12000)); // 5/min rate
+            } catch (err: any) {
+              console.error(`[AutoSync] ⚠️ Failed to sync rider ${zwiftId}:`, err.message);
+            }
+          }
+        }
+      }
+      
+      if (ridersData.length === 0) {
+        console.log('[AutoSync] ⚠️ No rider data received from API');
+        return { success: 0, errors: 1, skipped: 0 };
+      }
       
       console.log(`[AutoSync] ✅ Received ${ridersData.length} riders from API`);
       
