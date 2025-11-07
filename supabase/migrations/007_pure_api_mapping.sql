@@ -102,16 +102,24 @@ ALTER TABLE riders ADD COLUMN IF NOT EXISTS phenotype_value TEXT;
 ALTER TABLE riders ADD COLUMN IF NOT EXISTS phenotype_bias NUMERIC;
 
 -- ============================================================================
--- STEP 5: UPDATE CONSTRAINTS
+-- STEP 5: DROP FOREIGN KEYS EERST (voordat we constraint kunnen droppen)
+-- ============================================================================
+-- Drop alle FK constraints die afhangen van riders.zwift_id
+ALTER TABLE my_team_members DROP CONSTRAINT IF EXISTS fk_my_team_members_rider;
+ALTER TABLE my_team_members DROP CONSTRAINT IF EXISTS fk_my_team_rider;
+ALTER TABLE my_team_members DROP CONSTRAINT IF EXISTS my_team_members_zwift_id_fkey;
+
+-- ============================================================================
+-- STEP 6: UPDATE CONSTRAINTS
 -- ============================================================================
 -- Drop oude constraint op zwift_id (nu rider_id)
-ALTER TABLE riders DROP CONSTRAINT IF EXISTS riders_zwift_id_key;
+ALTER TABLE riders DROP CONSTRAINT IF EXISTS riders_zwift_id_key CASCADE;
 
 -- Add new unique constraint op rider_id
 ALTER TABLE riders ADD CONSTRAINT riders_rider_id_key UNIQUE (rider_id);
 
 -- ============================================================================
--- STEP 6: CREATE COMPUTED VIEW (voor backwards compatibility)
+-- STEP 7: CREATE COMPUTED VIEW (voor backwards compatibility)
 -- ============================================================================
 DROP VIEW IF EXISTS riders_computed CASCADE;
 
@@ -134,15 +142,12 @@ FROM riders;
 COMMENT ON VIEW riders_computed IS 'Riders met computed velden (watts_per_kg) voor backwards compatibility';
 
 -- ============================================================================
--- STEP 7: UPDATE my_team_members FOREIGN KEY
+-- STEP 8: UPDATE my_team_members FOREIGN KEY
 -- ============================================================================
--- Drop oude FK constraint
-ALTER TABLE my_team_members DROP CONSTRAINT IF EXISTS my_team_members_zwift_id_fkey;
-
--- Add nieuwe FK constraint (zwift_id kolom blijft in my_team_members, maar references rider_id)
--- NOTE: my_team_members.zwift_id moet hernoemd worden naar rider_id
+-- Rename kolom van zwift_id naar rider_id
 ALTER TABLE my_team_members RENAME COLUMN zwift_id TO rider_id;
 
+-- Add nieuwe FK constraint naar riders(rider_id)
 ALTER TABLE my_team_members 
   ADD CONSTRAINT my_team_members_rider_id_fkey 
   FOREIGN KEY (rider_id) 
@@ -150,7 +155,7 @@ ALTER TABLE my_team_members
   ON DELETE CASCADE;
 
 -- ============================================================================
--- STEP 8: RECREATE view_my_team MET NIEUWE STRUCTUUR
+-- STEP 9: RECREATE view_my_team MET NIEUWE STRUCTUUR
 -- ============================================================================
 DROP VIEW IF EXISTS view_my_team CASCADE;
 
@@ -169,7 +174,7 @@ ORDER BY r.race_current_rating DESC NULLS LAST;
 COMMENT ON VIEW view_my_team IS 'My team riders met computed velden en club info';
 
 -- ============================================================================
--- STEP 9: ADD COMMENTS FOR DOCUMENTATION
+-- STEP 10: ADD COMMENTS FOR DOCUMENTATION
 -- ============================================================================
 COMMENT ON COLUMN riders.rider_id IS 'Zwift Rider ID (was: zwift_id) - matches API riderId';
 COMMENT ON COLUMN riders.zp_category IS 'Zwift Racing category (A/B/C/D/E)';
@@ -181,7 +186,7 @@ COMMENT ON COLUMN riders.race_finishes IS 'Total races finished (was: total_race
 COMMENT ON COLUMN riders.phenotype_value IS 'Rider phenotype: Sprinter/Climber/TT/etc';
 
 -- ============================================================================
--- STEP 10: DATA MIGRATION (fallback values)
+-- STEP 11: DATA MIGRATION (fallback values)
 -- ============================================================================
 -- Kopieer oude FTP/category data naar nieuwe velden als fallback
 UPDATE riders 
@@ -199,7 +204,7 @@ SET
 WHERE race_finishes IS NULL;
 
 -- ============================================================================
--- STEP 11: VALIDATION QUERIES
+-- STEP 12: VALIDATION QUERIES
 -- ============================================================================
 -- Run deze queries NA de migration om te valideren:
 
