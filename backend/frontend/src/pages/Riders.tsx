@@ -10,29 +10,91 @@ import {
   SortingState,
 } from '@tanstack/react-table';
 
-// Types based on view_my_team
+// Types based on view_my_team + migration 007 (61 API fields)
 interface TeamRider {
+  // Primary key & core
   rider_id: number;
-  zwift_id: number;
   name: string;
+  gender: string | null;
+  country: string | null;
+  age: string | null; // "Vet", "30-39", etc. (TEXT not number!)
+  height: number | null;
+  weight: number | null;
+
+  // ZwiftPower category & FTP
+  zp_category: string | null; // A/B/C/D/E
+  zp_ftp: number | null;
+
+  // Power metrics (18 fields)
+  power_wkg5: number | null;
+  power_wkg15: number | null;
+  power_wkg30: number | null;
+  power_wkg60: number | null;
+  power_wkg120: number | null;
+  power_wkg300: number | null;
+  power_wkg1200: number | null;
+  power_w5: number | null;
+  power_w15: number | null;
+  power_w30: number | null;
+  power_w60: number | null;
+  power_w120: number | null;
+  power_w300: number | null;
+  power_w1200: number | null;
+  power_cp: number | null; // Critical Power
+  power_awc: number | null; // Anaerobic Work Capacity
+  power_compound_score: number | null;
+  power_rating: number | null;
+
+  // Race stats (14 fields)
+  race_last_rating: number | null;
+  race_last_date: string | null;
+  race_current_rating: number | null;
+  race_current_date: string | null;
+  race_max30_rating: number | null;
+  race_max30_date: string | null;
+  race_max90_rating: number | null;
+  race_max90_date: string | null;
+  race_finishes: number;
+  race_dnfs: number | null;
+  race_wins: number;
+  race_podiums: number | null;
+  race_disqualifications: number | null;
+  race_upgrades: number | null;
+
+  // Phenotype (7 fields)
+  phenotype_value: string | null; // "Sprinter", "Climber", etc.
+  phenotype_sprinter: number | null;
+  phenotype_puncheur: number | null;
+  phenotype_pursuiter: number | null;
+  phenotype_climber: number | null;
+  phenotype_tt: number | null;
+  phenotype_bias: number | null;
+
+  // Handicaps (4 fields)
+  handicap_flat: number | null;
+  handicap_rolling: number | null;
+  handicap_hilly: number | null;
+  handicap_mountainous: number | null;
+
+  // Club
   club_id: number | null;
   club_name: string | null;
-  category_racing: string | null;
-  category_zftp: string | null;
-  ranking: number | null;
-  ranking_score: number | null;
-  ftp: number | null;
-  weight: number | null;
-  watts_per_kg: number | null;
-  country: string | null;
-  gender: string | null;
-  age: number | null;
-  total_races: number;
-  total_wins: number;
-  total_podiums: number;
-  rider_created_at: string;
-  rider_last_synced: string;
-  rider_updated_at: string;
+
+  // Computed (from riders_computed view)
+  watts_per_kg: number | null; // zp_ftp / weight
+
+  // Compatibility fields (old ZwiftRacing format)
+  ranking: number | null; // DEPRECATED - use race_current_rating
+  total_races_compat: number; // DEPRECATED - use race_finishes
+  total_wins_compat: number; // DEPRECATED - use race_wins
+  total_podiums_compat: number | null; // DEPRECATED - use race_podiums
+
+  // Metadata
+  id: number;
+  created_at: string;
+  last_synced: string;
+
+  // Team membership (from my_team_members via view_my_team)
   team_added_at: string;
   is_favorite: boolean;
 }
@@ -108,8 +170,8 @@ export default function Riders() {
   // Table columns
   const columnHelper = createColumnHelper<TeamRider>();
   const columns = [
-    columnHelper.accessor('zwift_id', {
-      header: 'Zwift ID',
+    columnHelper.accessor('rider_id', {
+      header: 'Rider ID',
       cell: (info) => info.getValue(),
     }),
     columnHelper.accessor('name', {
@@ -120,11 +182,14 @@ export default function Riders() {
       header: 'Club',
       cell: (info) => info.getValue() || '-',
     }),
-    columnHelper.accessor('ranking', {
+    columnHelper.accessor('race_current_rating', {
       header: 'Ranking',
-      cell: (info) => info.getValue() || '-',
+      cell: (info) => {
+        const val = info.getValue();
+        return val ? Math.round(val) : '-';
+      },
     }),
-    columnHelper.accessor('category_racing', {
+    columnHelper.accessor('zp_category', {
       header: 'Cat',
       cell: (info) => (
         <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
@@ -132,7 +197,7 @@ export default function Riders() {
         </span>
       ),
     }),
-    columnHelper.accessor('ftp', {
+    columnHelper.accessor('zp_ftp', {
       header: 'FTP',
       cell: (info) => (info.getValue() ? `${info.getValue()}W` : '-'),
     }),
@@ -144,11 +209,11 @@ export default function Riders() {
       header: 'W/kg',
       cell: (info) => (info.getValue() ? `${Number(info.getValue()).toFixed(2)}` : '-'),
     }),
-    columnHelper.accessor('total_races', {
+    columnHelper.accessor('race_finishes', {
       header: 'Races',
       cell: (info) => info.getValue() || 0,
     }),
-    columnHelper.accessor('total_wins', {
+    columnHelper.accessor('race_wins', {
       header: 'Wins',
       cell: (info) => (
         <span className="font-semibold text-yellow-600">{info.getValue() || 0}</span>
@@ -159,7 +224,7 @@ export default function Riders() {
       cell: (info) => (
         <button
           onClick={() => toggleFavorite.mutate({ 
-            zwiftId: info.row.original.zwift_id, 
+            zwiftId: info.row.original.rider_id,  // Fixed: rider_id
             isFavorite: !info.getValue() 
           })}
           className="text-2xl hover:scale-110 transition-transform"
@@ -175,7 +240,7 @@ export default function Riders() {
         <button
           onClick={() => {
             if (window.confirm(`Weet je zeker dat je ${info.row.original.name} wilt verwijderen?`)) {
-              deleteRider.mutate(info.row.original.zwift_id);
+              deleteRider.mutate(info.row.original.rider_id);  // Fixed: rider_id
             }
           }}
           className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
@@ -219,7 +284,7 @@ export default function Riders() {
           <div className="text-2xl font-bold text-green-600">
             {riders.length > 0
               ? Math.round(
-                  riders.reduce((sum, r) => sum + (r.ranking || 0), 0) / riders.length
+                  riders.reduce((sum, r) => sum + (r.race_current_rating || 0), 0) / riders.length
                 )
               : '-'}
           </div>
@@ -227,10 +292,10 @@ export default function Riders() {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-gray-500 text-sm">Avg FTP</div>
           <div className="text-2xl font-bold text-purple-600">
-            {riders.filter((r) => r.ftp).length > 0
+            {riders.filter((r) => r.zp_ftp).length > 0
               ? Math.round(
-                  riders.filter((r) => r.ftp).reduce((sum, r) => sum + (r.ftp || 0), 0) /
-                    riders.filter((r) => r.ftp).length
+                  riders.filter((r) => r.zp_ftp).reduce((sum, r) => sum + (r.zp_ftp || 0), 0) /
+                    riders.filter((r) => r.zp_ftp).length
                 )
               : '-'}
             W
@@ -239,7 +304,7 @@ export default function Riders() {
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-gray-500 text-sm">Total Wins</div>
           <div className="text-2xl font-bold text-yellow-600">
-            {riders.reduce((sum, r) => sum + (r.total_wins || 0), 0)}
+            {riders.reduce((sum, r) => sum + (r.race_wins || 0), 0)}
           </div>
         </div>
       </div>
@@ -611,17 +676,17 @@ function generateCSV(riders: TeamRider[]): string {
     'Podiums',
   ];
   const rows = riders.map((r) => [
-    r.zwift_id,
+    r.rider_id,
     r.name,
     r.club_name || '',
-    r.ranking || '',
-    r.category_racing || '',
-    r.ftp || '',
+    r.race_current_rating || '',
+    r.zp_category || '',
+    r.zp_ftp || '',
     r.weight || '',
     r.watts_per_kg || '',
-    r.total_races || 0,
-    r.total_wins || 0,
-    r.total_podiums || 0,
+    r.race_finishes || 0,
+    r.race_wins || 0,
+    r.race_podiums || 0,
   ]);
 
   return [headers, ...rows].map((row) => row.join(',')).join('\n');
