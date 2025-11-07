@@ -1,7 +1,7 @@
 # Development Setup Guide - TeamNL Cloud9 Racing Team
 
 **Laatste update**: 2025-11-07  
-**Status**: Migration 007 deployed ✅, Frontend fixes deployed ✅, Firebase assets cloned ✅
+**Status**: Migration 007 deployed ✅, Backend API operational ✅
 
 ---
 
@@ -30,7 +30,7 @@ git pull
 
 **Laatste commits**:
 - `64f65c6` - Firebase static assets cloned
-- `f35a6c7` - Frontend interface updated (61 velden)
+- `f35a6c7` - Backend interface updated (61 velden)
 - `249f932` - Deployment success documentation
 - `1e8d362` - Backend auto-sync fixed (rider_id)
 
@@ -39,11 +39,6 @@ git pull
 # Backend (Express + TypeScript)
 cd backend
 npm install
-
-# Frontend (Vite + React + Tailwind)
-cd frontend
-npm install
-cd ../..
 ```
 
 ### 4. Environment Variables
@@ -122,6 +117,42 @@ cd backend/frontend
 npm run dev
 # Luistert op http://localhost:5173
 ```
+
+### Clone / Recover Firebase site (zwiftracingcloud9.web.app)
+
+Als je de gehoste Firebase site wilt ophalen en integreren in dit project, volg één van de opties hieronder.
+
+Optie A — Bronrepository beschikbaar
+
+1. Vraag de repository-URL op bij het team (bijv. GitHub/GitLab).
+2. Clone en kopieer de public/dist map naar `backend/frontend/public/legacy/`:
+
+```bash
+# voorbeeld (vervang <repo-url> door de echte URL)
+git clone <repo-url> zwiftracingcloud9
+cp -r zwiftracingcloud9/public/* backend/frontend/public/legacy/
+```
+
+Optie B — Mirror de gehoste site (geen bronrepo beschikbaar)
+
+Deze methode downloadt een statische kopie van de gehoste site en plaatst deze in `backend/frontend/public/legacy/`.
+
+```bash
+mkdir -p backend/frontend/public/legacy
+cd backend/frontend/public/legacy
+# Mirror site inclusief assets. Kan veel files downloaden.
+wget --mirror --convert-links --adjust-extension --page-requisites --no-parent https://zwiftracingcloud9.web.app/
+# Controleer of index.html en js/css bestanden aanwezig zijn
+ls -la
+```
+
+Controle & integratie:
+- Controleer `backend/frontend/public/legacy/index.html` en bijbehorende assets.
+- De legacy map is alleen voor referentie of snelle tijdelijke hosting; moderne frontend-ontwikkeling gebeurt in `backend/frontend/src/`.
+
+Security:
+- Commit alleen assets als team akkoord is; ze bevatten geen secrets maar verhogen repository-grootte.
+
 
 **Check logs**:
 - Backend: `[date] [level] message` in kleur
