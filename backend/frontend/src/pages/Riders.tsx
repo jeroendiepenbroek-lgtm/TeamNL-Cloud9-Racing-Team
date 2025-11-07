@@ -269,8 +269,10 @@ export default function Riders() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">TeamNL Cloud9 - Riders</h1>
-        <p className="text-gray-600 mt-2">Beheer je team members en track performance</p>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+          CLOUDRACER - Team Riders
+        </h1>
+        <p className="text-gray-600 mt-2">🚴 Beheer je team members en track performance 📊</p>
       </div>
 
       {/* Stats Cards */}
