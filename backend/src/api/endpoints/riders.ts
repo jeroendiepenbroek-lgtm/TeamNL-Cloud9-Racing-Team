@@ -112,22 +112,72 @@ router.post('/team', async (req: Request, res: Response) => {
         const { zwiftClient } = await import('../zwift-client.js');
         const zwiftData = await zwiftClient.getRider(zwiftId);
         
-        // Upsert met verse API data
-        // NOTE: watts_per_kg is GENERATED kolom - database berekent dit automatisch
+        // Upsert met verse API data - PURE 1:1 MAPPING
         const upserted = await supabase.upsertRiders([{
-          zwift_id: zwiftData.riderId,
+          rider_id: zwiftData.riderId,
           name: zwiftData.name,
-          club_id: zwiftData.club?.id,
-          category_racing: zwiftData.category?.racing,
-          category_zftp: zwiftData.category?.zFTP,
-          ranking: zwiftData.ranking ?? undefined,
-          ranking_score: zwiftData.rankingScore,
-          ftp: zwiftData.ftp,
-          weight: zwiftData.weight,
-          // watts_per_kg: VERWIJDERD - generated column!
-          country: zwiftData.countryAlpha3,
           gender: zwiftData.gender,
+          country: zwiftData.country,
           age: zwiftData.age,
+          height: zwiftData.height,
+          weight: zwiftData.weight,
+          zp_category: zwiftData.zpCategory,
+          zp_ftp: zwiftData.zpFTP,
+          
+          // Power (14 velden)
+          power_wkg5: zwiftData.power?.wkg5,
+          power_wkg15: zwiftData.power?.wkg15,
+          power_wkg30: zwiftData.power?.wkg30,
+          power_wkg60: zwiftData.power?.wkg60,
+          power_wkg120: zwiftData.power?.wkg120,
+          power_wkg300: zwiftData.power?.wkg300,
+          power_wkg1200: zwiftData.power?.wkg1200,
+          power_w5: zwiftData.power?.w5,
+          power_w15: zwiftData.power?.w15,
+          power_w30: zwiftData.power?.w30,
+          power_w60: zwiftData.power?.w60,
+          power_w120: zwiftData.power?.w120,
+          power_w300: zwiftData.power?.w300,
+          power_w1200: zwiftData.power?.w1200,
+          power_cp: zwiftData.power?.CP,
+          power_awc: zwiftData.power?.AWC,
+          power_compound_score: zwiftData.power?.compoundScore,
+          power_rating: zwiftData.power?.powerRating,
+          
+          // Race (12 velden)
+          race_last_rating: zwiftData.race?.last?.rating,
+          race_last_date: zwiftData.race?.last?.date,
+          race_last_category: zwiftData.race?.last?.mixed?.category,
+          race_last_number: zwiftData.race?.last?.mixed?.number,
+          race_current_rating: zwiftData.race?.current?.rating,
+          race_current_date: zwiftData.race?.current?.date,
+          race_max30_rating: zwiftData.race?.max30?.rating,
+          race_max30_expires: zwiftData.race?.max30?.expires,
+          race_max90_rating: zwiftData.race?.max90?.rating,
+          race_max90_expires: zwiftData.race?.max90?.expires,
+          race_finishes: zwiftData.race?.finishes,
+          race_dnfs: zwiftData.race?.dnfs,
+          race_wins: zwiftData.race?.wins,
+          race_podiums: zwiftData.race?.podiums,
+          
+          // Handicaps (4 velden)
+          handicap_flat: zwiftData.handicaps?.profile?.flat,
+          handicap_rolling: zwiftData.handicaps?.profile?.rolling,
+          handicap_hilly: zwiftData.handicaps?.profile?.hilly,
+          handicap_mountainous: zwiftData.handicaps?.profile?.mountainous,
+          
+          // Phenotype (7 velden)
+          phenotype_sprinter: zwiftData.phenotype?.scores?.sprinter,
+          phenotype_puncheur: zwiftData.phenotype?.scores?.puncheur,
+          phenotype_pursuiter: zwiftData.phenotype?.scores?.pursuiter,
+          phenotype_climber: zwiftData.phenotype?.scores?.climber,
+          phenotype_tt: zwiftData.phenotype?.scores?.tt,
+          phenotype_value: zwiftData.phenotype?.value,
+          phenotype_bias: zwiftData.phenotype?.bias,
+          
+          // Club
+          club_id: zwiftData.club?.id,
+          club_name: zwiftData.club?.name,
         }]);
         rider = upserted[0];
         syncedFromApi = true;
@@ -138,7 +188,7 @@ router.post('/team', async (req: Request, res: Response) => {
         // Fallback: gebruik manual name als opgegeven
         if (name) {
           const newRiders = await supabase.upsertRiders([{
-            zwift_id: zwiftId,
+            rider_id: zwiftId,
             name,
           }]);
           rider = newRiders[0];
@@ -283,27 +333,77 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
         const zwiftData = zwiftRidersData.find(r => r.riderId === zwiftId);
         
         if (zwiftData) {
-          // US7: Upsert met verse ZwiftRacing data
-          // NOTE: watts_per_kg is GENERATED kolom - database berekent dit
+          // US7: Upsert met verse ZwiftRacing data - PURE 1:1 MAPPING
           await supabase.upsertRiders([{
-            zwift_id: zwiftData.riderId,
+            rider_id: zwiftData.riderId,
             name: zwiftData.name,
-            club_id: zwiftData.club?.id,
-            category_racing: zwiftData.category?.racing,
-            category_zftp: zwiftData.category?.zFTP,
-            ranking: zwiftData.ranking ?? undefined,
-            ranking_score: zwiftData.rankingScore,
-            ftp: zwiftData.ftp,
-            weight: zwiftData.weight,
-            // watts_per_kg: VERWIJDERD - generated column!
-            country: zwiftData.countryAlpha3,
             gender: zwiftData.gender,
+            country: zwiftData.country,
             age: zwiftData.age,
+            height: zwiftData.height,
+            weight: zwiftData.weight,
+            zp_category: zwiftData.zpCategory,
+            zp_ftp: zwiftData.zpFTP,
+            
+            // Power
+            power_wkg5: zwiftData.power?.wkg5,
+            power_wkg15: zwiftData.power?.wkg15,
+            power_wkg30: zwiftData.power?.wkg30,
+            power_wkg60: zwiftData.power?.wkg60,
+            power_wkg120: zwiftData.power?.wkg120,
+            power_wkg300: zwiftData.power?.wkg300,
+            power_wkg1200: zwiftData.power?.wkg1200,
+            power_w5: zwiftData.power?.w5,
+            power_w15: zwiftData.power?.w15,
+            power_w30: zwiftData.power?.w30,
+            power_w60: zwiftData.power?.w60,
+            power_w120: zwiftData.power?.w120,
+            power_w300: zwiftData.power?.w300,
+            power_w1200: zwiftData.power?.w1200,
+            power_cp: zwiftData.power?.CP,
+            power_awc: zwiftData.power?.AWC,
+            power_compound_score: zwiftData.power?.compoundScore,
+            power_rating: zwiftData.power?.powerRating,
+            
+            // Race
+            race_last_rating: zwiftData.race?.last?.rating,
+            race_last_date: zwiftData.race?.last?.date,
+            race_last_category: zwiftData.race?.last?.mixed?.category,
+            race_last_number: zwiftData.race?.last?.mixed?.number,
+            race_current_rating: zwiftData.race?.current?.rating,
+            race_current_date: zwiftData.race?.current?.date,
+            race_max30_rating: zwiftData.race?.max30?.rating,
+            race_max30_expires: zwiftData.race?.max30?.expires,
+            race_max90_rating: zwiftData.race?.max90?.rating,
+            race_max90_expires: zwiftData.race?.max90?.expires,
+            race_finishes: zwiftData.race?.finishes,
+            race_dnfs: zwiftData.race?.dnfs,
+            race_wins: zwiftData.race?.wins,
+            race_podiums: zwiftData.race?.podiums,
+            
+            // Handicaps
+            handicap_flat: zwiftData.handicaps?.profile?.flat,
+            handicap_rolling: zwiftData.handicaps?.profile?.rolling,
+            handicap_hilly: zwiftData.handicaps?.profile?.hilly,
+            handicap_mountainous: zwiftData.handicaps?.profile?.mountainous,
+            
+            // Phenotype
+            phenotype_sprinter: zwiftData.phenotype?.scores?.sprinter,
+            phenotype_puncheur: zwiftData.phenotype?.scores?.puncheur,
+            phenotype_pursuiter: zwiftData.phenotype?.scores?.pursuiter,
+            phenotype_climber: zwiftData.phenotype?.scores?.climber,
+            phenotype_tt: zwiftData.phenotype?.scores?.tt,
+            phenotype_value: zwiftData.phenotype?.value,
+            phenotype_bias: zwiftData.phenotype?.bias,
+            
+            // Club
+            club_id: zwiftData.club?.id,
+            club_name: zwiftData.club?.name,
           }]);
           results.created++;
         } else if (riderInput.name) {
           // Fallback: manual name alleen
-          await supabase.upsertRiders([{ zwift_id: zwiftId, name: riderInput.name }]);
+          await supabase.upsertRiders([{ rider_id: zwiftId, name: riderInput.name }]);
           results.created++;
         } else {
           results.errors.push({ 

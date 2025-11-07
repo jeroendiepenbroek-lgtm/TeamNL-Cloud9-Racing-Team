@@ -58,11 +58,11 @@ export class SupabaseService {
     return data || [];
   }
 
-  async getRider(zwiftId: number): Promise<DbRider | null> {
+  async getRider(riderId: number): Promise<DbRider | null> {
     const { data, error } = await this.client
       .from('riders')
       .select('*')
-      .eq('zwift_id', zwiftId)
+      .eq('rider_id', riderId)
       .single();
 
     if (error && error.code !== 'PGRST116') throw error;
@@ -70,10 +70,10 @@ export class SupabaseService {
   }
 
   async upsertRiders(riders: Partial<DbRider>[]): Promise<DbRider[]> {
-    // Strip generated or read-only columns before upsert (e.g. watts_per_kg)
+    // Strip generated or read-only columns before upsert
     // Be defensief: verwijder expliciet bekende generated kolommen en gooi
     // properties weg die expliciet undefined zijn om per ongeluk setten te voorkomen.
-    const GENERATED_COLUMNS = ['watts_per_kg', 'rider_created_at', 'rider_updated_at'];
+    const GENERATED_COLUMNS = ['watts_per_kg', 'rider_created_at', 'rider_updated_at', 'created_at', 'updated_at'];
     const cleaned = riders.map(r => {
       const copy: any = { ...r };
       // Remove known generated/read-only columns if present
@@ -89,7 +89,7 @@ export class SupabaseService {
 
     const { data, error } = await this.client
       .from('riders')
-      .upsert(cleaned, { onConflict: 'zwift_id' })
+      .upsert(cleaned, { onConflict: 'rider_id' })
       .select();
 
     if (error) throw error;
@@ -197,10 +197,10 @@ export class SupabaseService {
     return data || [];
   }
 
-  async addMyTeamMember(zwiftId: number): Promise<any> {
+  async addMyTeamMember(riderId: number): Promise<any> {
     const { data, error } = await this.client
       .from('my_team_members')
-      .insert({ zwift_id: zwiftId })
+      .insert({ rider_id: riderId })
       .select()
       .single();
 
@@ -208,31 +208,31 @@ export class SupabaseService {
     return data;
   }
 
-  async removeMyTeamMember(zwiftId: number): Promise<void> {
+  async removeMyTeamMember(riderId: number): Promise<void> {
     const { error } = await this.client
       .from('my_team_members')
       .delete()
-      .eq('zwift_id', zwiftId);
+      .eq('rider_id', riderId);
 
     if (error) throw error;
   }
 
-  async bulkAddMyTeamMembers(zwiftIds: number[]): Promise<any[]> {
-    const records = zwiftIds.map(id => ({ zwift_id: id }));
+  async bulkAddMyTeamMembers(riderIds: number[]): Promise<any[]> {
+    const records = riderIds.map(id => ({ rider_id: id }));
     const { data, error } = await this.client
       .from('my_team_members')
-      .upsert(records, { onConflict: 'zwift_id' })
+      .upsert(records, { onConflict: 'rider_id' })
       .select();
 
     if (error) throw error;
     return data || [];
   }
 
-  async toggleFavorite(zwiftId: number, isFavorite: boolean): Promise<void> {
+  async toggleFavorite(riderId: number, isFavorite: boolean): Promise<void> {
     const { error } = await this.client
       .from('my_team_members')
       .update({ is_favorite: isFavorite })
-      .eq('zwift_id', zwiftId);
+      .eq('rider_id', riderId);
 
     if (error) throw error;
   }

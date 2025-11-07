@@ -96,22 +96,75 @@ export class AutoSyncService {
       
       console.log(`[AutoSync] ✅ Received ${ridersData.length} riders from API`);
       
-      // Upsert naar database
-      // NOTE: watts_per_kg is GENERATED kolom (ftp/weight) - niet handmatig zetten!
+      // Upsert naar database - PURE 1:1 API MAPPING (61 velden)
       const upsertData = ridersData.map(r => ({
-        zwift_id: r.riderId,
+        // Core Identity
+        rider_id: r.riderId,
         name: r.name,
-        club_id: r.club?.id,
-        category_racing: r.category?.racing,
-        category_zftp: r.category?.zFTP,
-        ranking: r.ranking ?? undefined,
-        ranking_score: r.rankingScore,
-        ftp: r.ftp,
-        weight: r.weight,
-        // watts_per_kg: VERWIJDERD - is generated column!
-        country: r.countryAlpha3,
         gender: r.gender,
+        country: r.country,
         age: r.age,
+        height: r.height,
+        weight: r.weight,
+        
+        // Zwift Performance
+        zp_category: r.zpCategory,
+        zp_ftp: r.zpFTP,
+        
+        // Power Data (14 velden)
+        power_wkg5: r.power?.wkg5,
+        power_wkg15: r.power?.wkg15,
+        power_wkg30: r.power?.wkg30,
+        power_wkg60: r.power?.wkg60,
+        power_wkg120: r.power?.wkg120,
+        power_wkg300: r.power?.wkg300,
+        power_wkg1200: r.power?.wkg1200,
+        power_w5: r.power?.w5,
+        power_w15: r.power?.w15,
+        power_w30: r.power?.w30,
+        power_w60: r.power?.w60,
+        power_w120: r.power?.w120,
+        power_w300: r.power?.w300,
+        power_w1200: r.power?.w1200,
+        power_cp: r.power?.CP,
+        power_awc: r.power?.AWC,
+        power_compound_score: r.power?.compoundScore,
+        power_rating: r.power?.powerRating,
+        
+        // Race Stats (12 velden)
+        race_last_rating: r.race?.last?.rating,
+        race_last_date: r.race?.last?.date,
+        race_last_category: r.race?.last?.mixed?.category,
+        race_last_number: r.race?.last?.mixed?.number,
+        race_current_rating: r.race?.current?.rating,
+        race_current_date: r.race?.current?.date,
+        race_max30_rating: r.race?.max30?.rating,
+        race_max30_expires: r.race?.max30?.expires,
+        race_max90_rating: r.race?.max90?.rating,
+        race_max90_expires: r.race?.max90?.expires,
+        race_finishes: r.race?.finishes,
+        race_dnfs: r.race?.dnfs,
+        race_wins: r.race?.wins,
+        race_podiums: r.race?.podiums,
+        
+        // Handicaps (4 velden)
+        handicap_flat: r.handicaps?.profile?.flat,
+        handicap_rolling: r.handicaps?.profile?.rolling,
+        handicap_hilly: r.handicaps?.profile?.hilly,
+        handicap_mountainous: r.handicaps?.profile?.mountainous,
+        
+        // Phenotype (7 velden)
+        phenotype_sprinter: r.phenotype?.scores?.sprinter,
+        phenotype_puncheur: r.phenotype?.scores?.puncheur,
+        phenotype_pursuiter: r.phenotype?.scores?.pursuiter,
+        phenotype_climber: r.phenotype?.scores?.climber,
+        phenotype_tt: r.phenotype?.scores?.tt,
+        phenotype_value: r.phenotype?.value,
+        phenotype_bias: r.phenotype?.bias,
+        
+        // Club Info
+        club_id: r.club?.id,
+        club_name: r.club?.name,
       }));
       
       await supabase.upsertRiders(upsertData);
