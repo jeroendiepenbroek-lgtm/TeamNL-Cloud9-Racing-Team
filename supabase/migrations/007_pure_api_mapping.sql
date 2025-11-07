@@ -163,12 +163,11 @@ CREATE VIEW view_my_team AS
 SELECT 
   r.*,
   r.watts_per_kg,  -- From riders_computed
-  c.name AS club_name,
+  r.club_name,     -- Club name is nu in riders tabel zelf (van API)
   m.added_at AS team_added_at,
   m.is_favorite
 FROM my_team_members m
 JOIN riders_computed r ON r.rider_id = m.rider_id
-LEFT JOIN clubs c ON c.id = r.club_id
 ORDER BY r.race_current_rating DESC NULLS LAST;
 
 COMMENT ON VIEW view_my_team IS 'My team riders met computed velden en club info';
