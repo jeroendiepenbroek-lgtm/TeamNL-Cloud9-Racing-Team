@@ -20,8 +20,17 @@ SELECT * FROM riders;
 COMMENT ON TABLE riders_backup_20251107 IS 'Backup before migration 007 - Pure API mapping';
 
 -- ============================================================================
--- STEP 2: DROP COMPUTED/DEPRECATED COLUMNS
+-- STEP 2: DROP TRIGGERS EN COMPUTED/DEPRECATED COLUMNS
 -- ============================================================================
+-- Drop triggers die afhangen van updated_at kolom (op ALLE tabellen)
+DROP TRIGGER IF EXISTS set_updated_at ON riders;
+DROP TRIGGER IF EXISTS set_updated_at ON my_team_members;
+DROP TRIGGER IF EXISTS update_riders_updated_at ON riders;
+DROP TRIGGER IF EXISTS update_my_team_members_updated_at ON my_team_members;
+
+-- Drop de trigger functie zelf (kan ook door andere tabellen gebruikt worden)
+DROP FUNCTION IF EXISTS update_updated_at() CASCADE;
+
 -- Deze kolommen waren berekend of inconsistent met API
 ALTER TABLE riders DROP COLUMN IF EXISTS watts_per_kg CASCADE;
 ALTER TABLE riders DROP COLUMN IF EXISTS ranking CASCADE;
