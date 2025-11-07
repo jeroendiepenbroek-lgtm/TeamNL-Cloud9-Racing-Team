@@ -35,35 +35,35 @@ export class AutoSyncService {
       
       // Haal alle team member IDs op
       const teamMembers = await supabase.getMyTeamMembers();
-      const zwiftIds = teamMembers.map(m => m.zwift_id);
+      const riderIds = teamMembers.map(m => m.rider_id);
       
-      if (zwiftIds.length === 0) {
+      if (riderIds.length === 0) {
         console.log('[AutoSync] ℹ️ No team members to sync');
         return { success: 0, errors: 0, skipped: 0 };
       }
       
-      console.log(`[AutoSync] 📊 Syncing ${zwiftIds.length} riders...`);
+      console.log(`[AutoSync] 📊 Syncing ${riderIds.length} riders...`);
       
   let ridersData: any[] = [];
   const errorMessages: string[] = [];
       
       // Strategy: Use GET for small teams (< 10 riders, 5/min rate)
       //           Use POST bulk for larger teams (1/15min rate, max 1000)
-      if (zwiftIds.length <= 10) {
+      if (riderIds.length <= 10) {
         console.log('[AutoSync] 📡 Using individual GET calls (small team, 5/min rate)');
         
-        for (const zwiftId of zwiftIds) {
+        for (const riderId of riderIds) {
           try {
-            const rider = await zwiftClient.getRider(zwiftId);
+            const rider = await zwiftClient.getRider(riderId);
             ridersData.push(rider);
             
             // Rate limit: 5/min = 12 sec between calls
-            if (zwiftIds.length > 1) {
+            if (riderIds.length > 1) {
               await new Promise(resolve => setTimeout(resolve, 12000));
             }
           } catch (error: any) {
-            console.error(`[AutoSync] ⚠️ Failed to sync rider ${zwiftId}:`, error.message);
-            errorMessages.push(`rider ${zwiftId}: ${error.message}`);
+            console.error(`[AutoSync] ⚠️ Failed to sync rider ${riderId}:`, error.message);
+            errorMessages.push(`rider ${riderId}: ${error.message}`);
           }
         }
       } else {
@@ -71,19 +71,19 @@ export class AutoSyncService {
         
         try {
           // Bulk fetch van ZwiftRacing API (max 1000, rate: 1/15min)
-          ridersData = await zwiftClient.getBulkRiders(zwiftIds);
+          ridersData = await zwiftClient.getBulkRiders(riderIds);
         } catch (error: any) {
           console.error('[AutoSync] ❌ Bulk POST failed, falling back to GET:', error.message);
           
           // Fallback: individual GET calls
-          for (const zwiftId of zwiftIds) {
+          for (const riderId of riderIds) {
             try {
-              const rider = await zwiftClient.getRider(zwiftId);
+              const rider = await zwiftClient.getRider(riderId);
               ridersData.push(rider);
               await new Promise(resolve => setTimeout(resolve, 12000)); // 5/min rate
             } catch (err: any) {
-              console.error(`[AutoSync] ⚠️ Failed to sync rider ${zwiftId}:`, err.message);
-              errorMessages.push(`rider ${zwiftId}: ${err.message}`);
+              console.error(`[AutoSync] ⚠️ Failed to sync rider ${riderId}:`, err.message);
+              errorMessages.push(`rider ${riderId}: ${err.message}`);
             }
           }
         }
@@ -177,7 +177,7 @@ export class AutoSyncService {
       return {
         success: ridersData.length,
         errors: 0,
-        skipped: zwiftIds.length - ridersData.length,
+        skipped: riderIds.length - ridersData.length,
         errorMessages: errorMessages.length ? errorMessages : undefined,
       };
       
