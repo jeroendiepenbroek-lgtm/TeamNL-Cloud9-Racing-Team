@@ -27,6 +27,9 @@ COPY backend/src ./src
 # Create public/dist and copy frontend build
 RUN mkdir -p public/dist
 COPY --from=frontend-builder /frontend-dist/ ./public/dist/
+# Copy legacy firebase static assets (if present)
+RUN mkdir -p public/legacy
+COPY backend/frontend/public/legacy/ ./public/legacy/
 
 # Environment
 ENV NODE_ENV=production

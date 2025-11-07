@@ -32,10 +32,13 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors());
 app.use(express.json());
 
-// Serve React frontend build (producti)
-app.use(express.static(path.join(__dirname, '../public/dist')));
+// Serve Firebase legacy site (cloned from zwiftracingcloud9.web.app)
+app.use('/legacy', express.static(path.join(__dirname, '../frontend/public/legacy')));
 
-// Fallback: serve old public/index.html (development)
+// Serve React frontend build (production)
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Fallback: serve public folder (development)
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Logging middleware
