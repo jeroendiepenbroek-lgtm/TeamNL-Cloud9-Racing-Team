@@ -49,11 +49,16 @@ ALTER TABLE riders RENAME COLUMN category_racing TO category_racing_deprecated;
 ALTER TABLE riders RENAME COLUMN category_zftp TO category_zftp_deprecated;
 
 -- ============================================================================
--- STEP 4: ADD ALL NEW API FIELDS (40 nieuwe kolommen)
+-- STEP 4: ADD ALL NEW API FIELDS (46 nieuwe kolommen)
 -- ============================================================================
 
--- === Core Fields (was al deels aanwezig) ===
--- name, gender, country, age, height, weight blijven zoals ze zijn
+-- === Core Fields (zorgen dat ze bestaan) ===
+ALTER TABLE riders ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE riders ADD COLUMN IF NOT EXISTS gender TEXT;
+ALTER TABLE riders ADD COLUMN IF NOT EXISTS country TEXT;
+ALTER TABLE riders ADD COLUMN IF NOT EXISTS age INTEGER;
+ALTER TABLE riders ADD COLUMN IF NOT EXISTS height INTEGER;
+ALTER TABLE riders ADD COLUMN IF NOT EXISTS weight NUMERIC;
 
 -- === Zwift Performance (2 velden) ===
 ALTER TABLE riders ADD COLUMN IF NOT EXISTS zp_category TEXT;
