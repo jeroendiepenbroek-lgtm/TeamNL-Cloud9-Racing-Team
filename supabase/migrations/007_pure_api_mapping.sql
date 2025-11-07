@@ -101,6 +101,9 @@ ALTER TABLE riders ADD COLUMN IF NOT EXISTS phenotype_tt NUMERIC;
 ALTER TABLE riders ADD COLUMN IF NOT EXISTS phenotype_value TEXT;
 ALTER TABLE riders ADD COLUMN IF NOT EXISTS phenotype_bias NUMERIC;
 
+-- === Club Data (2 velden) ===
+ALTER TABLE riders ADD COLUMN IF NOT EXISTS club_name TEXT;
+
 -- ============================================================================
 -- STEP 5: DROP FOREIGN KEYS EERST (voordat we constraint kunnen droppen)
 -- ============================================================================
@@ -161,9 +164,7 @@ DROP VIEW IF EXISTS view_my_team CASCADE;
 
 CREATE VIEW view_my_team AS
 SELECT 
-  r.*,
-  r.watts_per_kg,  -- From riders_computed
-  r.club_name,     -- Club name is nu in riders tabel zelf (van API)
+  r.*,              -- Alle riders_computed kolommen (inclusief watts_per_kg en club_name)
   m.added_at AS team_added_at,
   m.is_favorite
 FROM my_team_members m
