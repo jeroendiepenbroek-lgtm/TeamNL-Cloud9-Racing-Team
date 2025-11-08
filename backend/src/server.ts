@@ -63,11 +63,8 @@ app.use('/api/auto-sync', autoSyncRouter); // US8
 // Serve Firebase legacy site
 app.use('/legacy', express.static(path.join(__dirname, '../frontend/public/legacy')));
 
-// Serve React frontend build assets (js, css, images)
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-
-// Fallback: serve public folder (development)
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve React frontend build (Vite builds to backend/public/dist/)
+app.use(express.static(path.join(__dirname, '../public/dist')));
 
 // SPA Fallback - LAST route (catch-all for client-side routing)
 app.get('*', (req: Request, res: Response) => {
@@ -79,7 +76,7 @@ app.get('*', (req: Request, res: Response) => {
     });
   } else {
     // Otherwise, serve React app index.html (SPA fallback)
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../public/dist/index.html'));
   }
 });
 
