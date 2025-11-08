@@ -24,12 +24,17 @@ RUN npm ci
 # Copy backend code
 COPY backend/src ./src
 
-# Create public/dist and copy frontend build
+# Create frontend/dist and copy frontend build
+RUN mkdir -p frontend/dist
+COPY --from=frontend-builder /frontend-dist/ ./frontend/dist/
+
+# Copy legacy firebase static assets
+RUN mkdir -p frontend/public/legacy
+COPY backend/frontend/public/legacy/ ./frontend/public/legacy/
+
+# Also copy to public/dist for backwards compatibility
 RUN mkdir -p public/dist
 COPY --from=frontend-builder /frontend-dist/ ./public/dist/
-# Copy legacy firebase static assets (if present)
-RUN mkdir -p public/legacy
-COPY backend/frontend/public/legacy/ ./public/legacy/
 
 # Environment
 ENV NODE_ENV=production
