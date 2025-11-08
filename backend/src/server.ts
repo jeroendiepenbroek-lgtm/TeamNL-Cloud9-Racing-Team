@@ -32,16 +32,7 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors());
 app.use(express.json());
 
-// Serve Firebase legacy site (cloned from zwiftracingcloud9.web.app)
-app.use('/legacy', express.static(path.join(__dirname, '../frontend/public/legacy')));
-
-// Serve React frontend build (production)
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-
-// Fallback: serve public folder (development)
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Logging middleware
+// Logging middleware (early for all requests)
 app.use((req: Request, res: Response, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
@@ -59,13 +50,7 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Root route - Serve React app
-app.get('/', (req: Request, res: Response) => {
-  console.log('Root route accessed - serving React app');
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
-});
-
-// API Routes - 6 Endpoints
+// API Routes - 6 Endpoints (BEFORE static files!)
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
 app.use('/api/events', eventsRouter);
@@ -74,17 +59,27 @@ app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  // If API call, return JSON error
+// Static files (AFTER API routes to avoid conflicts)
+// Serve Firebase legacy site
+app.use('/legacy', express.static(path.join(__dirname, '../frontend/public/legacy')));
+
+// Serve React frontend build assets (js, css, images)
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// Fallback: serve public folder (development)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// SPA Fallback - LAST route (catch-all for client-side routing)
+app.get('*', (req: Request, res: Response) => {
+  // If API call that wasn't caught, return JSON error
   if (req.path.startsWith('/api/')) {
     res.status(404).json({
       error: 'Endpoint niet gevonden',
       path: req.path,
     });
   } else {
-    // Otherwise, serve React app (SPA fallback for client-side routing)
-    res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+    // Otherwise, serve React app index.html (SPA fallback)
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   }
 });
 
