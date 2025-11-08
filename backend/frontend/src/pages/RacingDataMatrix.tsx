@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
 interface MatrixRider {
   rider_id: number
@@ -8,12 +8,13 @@ interface MatrixRider {
   zp_ftp: number | null
   weight: number | null
   race_current_rating: number | null
+  rating_30day_avg: number | null  // vELO 30-day average
   race_wins: number
   race_podiums: number | null
   race_finishes: number
   race_dnfs: number | null
   watts_per_kg: number | null
-  // Power intervals - correcte veldnamen uit API
+  // Power intervals - correcte veldnamen uit API (in watts)
   power_w5: number | null      // 5s in watts
   power_w15: number | null     // 15s in watts
   power_w30: number | null     // 30s in watts
@@ -21,22 +22,21 @@ interface MatrixRider {
   power_w120: number | null    // 2min in watts
   power_w300: number | null    // 5min in watts
   power_w1200: number | null   // 20min in watts
-  ranking: number | null       // Overall rank
 }
 
 const API_BASE = ''
 
-// vELO Tiers met moderne kleuren
+// vELO Tiers met moderne kleuren en rank numbers
 const VELO_TIERS = [
-  { name: 'Diamond', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100', bgColor: 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20' },
-  { name: 'Ruby', min: 1900, max: 2199, color: 'from-red-500 to-pink-600', textColor: 'text-red-100', bgColor: 'bg-gradient-to-r from-red-500/20 to-pink-600/20' },
-  { name: 'Emerald', min: 1650, max: 1899, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100', bgColor: 'bg-gradient-to-r from-emerald-400/20 to-green-600/20' },
-  { name: 'Sapphire', min: 1450, max: 1649, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100', bgColor: 'bg-gradient-to-r from-blue-400/20 to-indigo-600/20' },
-  { name: 'Amethyst', min: 1300, max: 1449, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100', bgColor: 'bg-gradient-to-r from-purple-400/20 to-violet-600/20' },
-  { name: 'Platinum', min: 1150, max: 1299, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100', bgColor: 'bg-gradient-to-r from-slate-400/20 to-slate-500/20' },
-  { name: 'Gold', min: 1000, max: 1149, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900', bgColor: 'bg-gradient-to-r from-yellow-400/20 to-amber-600/20' },
-  { name: 'Silver', min: 850, max: 999, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700', bgColor: 'bg-gradient-to-r from-gray-300/20 to-gray-500/20' },
-  { name: 'Bronze', min: 650, max: 849, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-400/20 to-orange-700/20' },
+  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100', bgColor: 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20' },
+  { rank: 2, name: 'Ruby', icon: '💍', min: 1900, max: 2199, color: 'from-red-500 to-pink-600', textColor: 'text-red-100', bgColor: 'bg-gradient-to-r from-red-500/20 to-pink-600/20' },
+  { rank: 3, name: 'Emerald', icon: '💚', min: 1650, max: 1899, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100', bgColor: 'bg-gradient-to-r from-emerald-400/20 to-green-600/20' },
+  { rank: 4, name: 'Sapphire', icon: '💙', min: 1450, max: 1649, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100', bgColor: 'bg-gradient-to-r from-blue-400/20 to-indigo-600/20' },
+  { rank: 5, name: 'Amethyst', icon: '💜', min: 1300, max: 1449, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100', bgColor: 'bg-gradient-to-r from-purple-400/20 to-violet-600/20' },
+  { rank: 6, name: 'Platinum', icon: '⚪', min: 1150, max: 1299, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100', bgColor: 'bg-gradient-to-r from-slate-400/20 to-slate-500/20' },
+  { rank: 7, name: 'Gold', icon: '🟡', min: 1000, max: 1149, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900', bgColor: 'bg-gradient-to-r from-yellow-400/20 to-amber-600/20' },
+  { rank: 8, name: 'Silver', icon: '⚫', min: 850, max: 999, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700', bgColor: 'bg-gradient-to-r from-gray-300/20 to-gray-500/20' },
+  { rank: 9, name: 'Bronze', icon: '🟠', min: 650, max: 849, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-400/20 to-orange-700/20' },
 ]
 
 // ZP Categories met subtiele kleuren
@@ -48,15 +48,15 @@ const ZP_CATEGORIES = {
   'D': { color: 'bg-yellow-50 text-yellow-800 border-yellow-200', label: 'D' },
 }
 
-// Result Power Colors - voor interval highlighting
-const getPowerColor = (value: number | null, personalBest: number | null): string => {
-  if (!value || !personalBest || personalBest === 0) return 'bg-gray-100 text-gray-600'
+// Team-relative Power Colors - highlighting relatief t.o.v. team beste prestatie per interval
+const getTeamRelativePowerColor = (value: number | null, teamBest: number | null): string => {
+  if (!value || !teamBest || teamBest === 0) return 'bg-gray-100 text-gray-600'
   
-  const percentage = (value / personalBest) * 100
+  const percentage = (value / teamBest) * 100
   
-  if (percentage >= 100) return 'bg-yellow-300 text-yellow-900 font-bold' // Gold: Personal Best
-  if (percentage >= 95) return 'bg-gray-300 text-gray-800 font-semibold' // Silver: Near Best
-  if (percentage >= 90) return 'bg-orange-300 text-orange-900' // Bronze: Good Effort
+  if (percentage >= 100) return 'bg-yellow-300 text-yellow-900 font-bold' // Gold: Team Best
+  if (percentage >= 95) return 'bg-gray-300 text-gray-800 font-semibold' // Silver: Near Best (95-99%)
+  if (percentage >= 90) return 'bg-orange-300 text-orange-900' // Bronze: Good (90-94%)
   
   return 'bg-gray-100 text-gray-600' // Below 90%
 }
@@ -69,10 +69,21 @@ const getVeloTier = (rating: number | null) => {
   )
 }
 
+// Bereken W/kg voor interval
+const calculateWkg = (watts: number | null, weight: number | null): number | null => {
+  if (!watts || !weight || weight === 0) return null
+  return watts / weight
+}
+
 export default function RacingDataMatrix() {
   const [showLegend, setShowLegend] = useState(false)
   const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_current_rating')
   const [sortDesc, setSortDesc] = useState(true)
+  
+  // Filters
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+  const [filterVeloLive, setFilterVeloLive] = useState<number | 'all'>('all')
+  const [filterVelo30day, setFilterVelo30day] = useState<number | 'all'>('all')
 
   const { data: riders, isLoading } = useQuery<MatrixRider[]>({
     queryKey: ['matrixRiders'],
@@ -84,23 +95,59 @@ export default function RacingDataMatrix() {
     refetchInterval: 60000,
   })
 
-  // Sorteer riders
-  const sortedRiders = riders ? [...riders].sort((a, b) => {
-    const aVal = a[sortBy] ?? 0
-    const bVal = b[sortBy] ?? 0
-    return sortDesc ? (bVal > aVal ? 1 : -1) : (aVal > bVal ? 1 : -1)
-  }) : []
+  // Bereken team bests voor elk interval (voor highlighting)
+  const teamBests = useMemo(() => {
+    if (!riders || riders.length === 0) return null
+    return {
+      power_w5: Math.max(...riders.map(r => r.power_w5 || 0)),
+      power_w15: Math.max(...riders.map(r => r.power_w15 || 0)),
+      power_w30: Math.max(...riders.map(r => r.power_w30 || 0)),
+      power_w60: Math.max(...riders.map(r => r.power_w60 || 0)),
+      power_w120: Math.max(...riders.map(r => r.power_w120 || 0)),
+      power_w300: Math.max(...riders.map(r => r.power_w300 || 0)),
+      power_w1200: Math.max(...riders.map(r => r.power_w1200 || 0)),
+    }
+  }, [riders])
 
-  // Bereken personal bests voor elke rider
-  const getRiderPersonalBests = (rider: MatrixRider) => ({
-    power_w5: rider.power_w5,
-    power_w15: rider.power_w15,
-    power_w30: rider.power_w30,
-    power_w60: rider.power_w60,
-    power_w120: rider.power_w120,
-    power_w300: rider.power_w300,
-    power_w1200: rider.power_w1200,
-  })
+  // Filter riders
+  const filteredRiders = useMemo(() => {
+    if (!riders) return []
+    
+    return riders.filter(rider => {
+      // Category filter
+      if (filterCategory !== 'all' && rider.zp_category !== filterCategory) {
+        return false
+      }
+      
+      // vELO Live rank filter
+      if (filterVeloLive !== 'all') {
+        const tier = getVeloTier(rider.race_current_rating)
+        if (!tier || tier.rank !== filterVeloLive) {
+          return false
+        }
+      }
+      
+      // vELO 30-day rank filter
+      if (filterVelo30day !== 'all') {
+        const tier = getVeloTier(rider.rating_30day_avg)
+        if (!tier || tier.rank !== filterVelo30day) {
+          return false
+        }
+      }
+      
+      return true
+    })
+  }, [riders, filterCategory, filterVeloLive, filterVelo30day])
+
+  // Sorteer riders
+  const sortedRiders = useMemo(() => {
+    const sorted = [...filteredRiders].sort((a, b) => {
+      const aVal = a[sortBy] ?? 0
+      const bVal = b[sortBy] ?? 0
+      return sortDesc ? (bVal > aVal ? 1 : -1) : (aVal > bVal ? 1 : -1)
+    })
+    return sorted
+  }, [filteredRiders, sortBy, sortDesc])
 
   const handleSort = (column: keyof MatrixRider) => {
     if (sortBy === column) {
@@ -113,25 +160,69 @@ export default function RacingDataMatrix() {
 
   return (
     <div className="space-y-6 max-w-[98vw] mx-auto">
-      {/* Header met legenda button */}
-      <div className="flex items-center justify-between">
+      {/* Header met filters en legend button */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <span className="mr-3">📊</span>
             RACING DATA MATRIX
           </h1>
           <p className="mt-1 text-sm text-gray-600">
-            Complete performance analytics met {sortedRiders.length} riders
+            Showing {sortedRiders.length} of {riders?.length || 0} riders
           </p>
         </div>
         
-        <button
-          onClick={() => setShowLegend(!showLegend)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
-        >
-          <span>{showLegend ? '📖' : '📚'}</span>
-          <span>{showLegend ? 'Hide' : 'Show'} Legend</span>
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Category Filter */}
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="all">All Categories</option>
+            <option value="A+">A+</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
+
+          {/* vELO Live Filter */}
+          <select
+            value={filterVeloLive}
+            onChange={(e) => setFilterVeloLive(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="all">All vELO Live</option>
+            {VELO_TIERS.map(tier => (
+              <option key={tier.rank} value={tier.rank}>
+                {tier.icon} {tier.name} (Rank {tier.rank})
+              </option>
+            ))}
+          </select>
+
+          {/* vELO 30-day Filter */}
+          <select
+            value={filterVelo30day}
+            onChange={(e) => setFilterVelo30day(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="all">All vELO 30-day</option>
+            {VELO_TIERS.map(tier => (
+              <option key={tier.rank} value={tier.rank}>
+                {tier.icon} {tier.name} (Rank {tier.rank})
+              </option>
+            ))}
+          </select>
+          
+          <button
+            onClick={() => setShowLegend(!showLegend)}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+          >
+            <span>{showLegend ? '📖' : '📚'}</span>
+            <span>{showLegend ? 'Hide' : 'Show'} Legend</span>
+          </button>
+        </div>
       </div>
 
       {/* Legend Panel - collapsible */}
@@ -179,29 +270,32 @@ export default function RacingDataMatrix() {
             <div>
               <h3 className="font-bold text-indigo-900 mb-3 flex items-center">
                 <span className="mr-2">⚡</span>
-                Interval Highlights
+                Interval Highlights (Team-Relative)
               </h3>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <div className="w-12 h-6 bg-yellow-300 rounded"></div>
                   <div>
                     <div className="text-sm font-medium">Gold</div>
-                    <div className="text-xs text-gray-600">100%+ Personal Best</div>
+                    <div className="text-xs text-gray-600">100% - Team Best voor dit interval</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-12 h-6 bg-gray-300 rounded"></div>
                   <div>
                     <div className="text-sm font-medium">Silver</div>
-                    <div className="text-xs text-gray-600">95-99% Near Best</div>
+                    <div className="text-xs text-gray-600">95-99% van team best</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div className="w-12 h-6 bg-orange-300 rounded"></div>
                   <div>
                     <div className="text-sm font-medium">Bronze</div>
-                    <div className="text-xs text-gray-600">90-94% Good Effort</div>
+                    <div className="text-xs text-gray-600">90-94% van team best</div>
                   </div>
+                </div>
+                <div className="mt-3 text-xs text-gray-600 italic">
+                  💡 Hover over interval values to see absolute watts
                 </div>
               </div>
             </div>
@@ -229,14 +323,11 @@ export default function RacingDataMatrix() {
                   <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('rider_id')}>
                     Rider ID
                   </th>
-                  <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('ranking')}>
-                    RP
-                  </th>
                   <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('race_current_rating')}>
                     vELO Live {sortBy === 'race_current_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
-                  <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider whitespace-nowrap">
-                    vELO J0D
+                  <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('rating_30day_avg')}>
+                    vELO 30-day {sortBy === 'rating_30day_avg' && (sortDesc ? '↓' : '↑')}
                   </th>
                   <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('name')}>
                     Rider Name
@@ -246,6 +337,9 @@ export default function RacingDataMatrix() {
                   </th>
                   <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('zp_ftp')}>
                     FTP
+                  </th>
+                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('watts_per_kg')}>
+                    W/kg
                   </th>
                   <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('weight')}>
                     Weight
@@ -290,33 +384,41 @@ export default function RacingDataMatrix() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {sortedRiders.map((rider) => {
-                  const veloTier = getVeloTier(rider.race_current_rating)
-                  const personalBests = getRiderPersonalBests(rider)
+                  const veloLiveTier = getVeloTier(rider.race_current_rating)
+                  const velo30dayTier = getVeloTier(rider.rating_30day_avg)
                   const zpCategory = rider.zp_category as keyof typeof ZP_CATEGORIES | null
                   
                   return (
                     <tr 
                       key={rider.rider_id} 
-                      className={`hover:bg-gray-50 transition-colors ${veloTier?.bgColor || ''}`}
+                      className={`hover:bg-gray-50 transition-colors ${veloLiveTier?.bgColor || ''}`}
                     >
                       <td className="px-4 py-3 whitespace-nowrap text-gray-700 font-mono text-sm">
                         {rider.rider_id}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-900 font-semibold">
-                        {rider.ranking || '-'}
-                      </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {veloTier ? (
-                          <span className={`px-3 py-1.5 rounded-lg font-bold text-base bg-gradient-to-r ${veloTier.color} ${veloTier.textColor} shadow-md`}>
-                            {Math.round(rider.race_current_rating || 0)}
-                          </span>
+                        {veloLiveTier ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{veloLiveTier.icon}</span>
+                            <span className={`px-3 py-1.5 rounded-lg font-bold text-base bg-gradient-to-r ${veloLiveTier.color} ${veloLiveTier.textColor} shadow-md`}>
+                              {Math.round(rider.race_current_rating || 0)}
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-gray-500 text-sm">
-                        {/* TODO: vELO J0D berekenen vanuit history */}
-                        -
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {velo30dayTier && rider.rating_30day_avg ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">{velo30dayTier.icon}</span>
+                            <span className={`px-3 py-1.5 rounded-lg font-bold text-base bg-gradient-to-r ${velo30dayTier.color} ${velo30dayTier.textColor} shadow-md`}>
+                              {Math.round(rider.rating_30day_avg)}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900">
                         {rider.name}
@@ -332,6 +434,9 @@ export default function RacingDataMatrix() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-gray-900 text-base">
                         {rider.zp_ftp || '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-indigo-700 text-base">
+                        {rider.watts_per_kg ? rider.watts_per_kg.toFixed(2) : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-gray-700">
                         {rider.weight ? `${rider.weight.toFixed(1)}kg` : '-'}
@@ -349,45 +454,62 @@ export default function RacingDataMatrix() {
                         {rider.race_dnfs || 0}
                       </td>
                       
-                      {/* Power Intervals met highlighting */}
+                      {/* Power Intervals in W/kg met team-relative highlighting */}
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <span className={`px-2 py-1 rounded text-sm font-semibold ${getPowerColor(rider.power_w5, personalBests.power_w5)}`}>
-                          {rider.power_w5 || '-'}
+                        <span 
+                          className={`px-2 py-1 rounded text-sm font-semibold ${getTeamRelativePowerColor(rider.power_w5, teamBests?.power_w5 || null)}`}
+                          title={`${rider.power_w5 || 0}W (${((rider.power_w5 || 0) / (teamBests?.power_w5 || 1) * 100).toFixed(1)}% of team best)`}
+                        >
+                          {calculateWkg(rider.power_w5, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <span className={`px-2 py-1 rounded text-sm font-semibold ${getPowerColor(rider.power_w15, personalBests.power_w15)}`}>
-                          {rider.power_w15 || '-'}
+                        <span 
+                          className={`px-2 py-1 rounded text-sm font-semibold ${getTeamRelativePowerColor(rider.power_w15, teamBests?.power_w15 || null)}`}
+                          title={`${rider.power_w15 || 0}W (${((rider.power_w15 || 0) / (teamBests?.power_w15 || 1) * 100).toFixed(1)}% of team best)`}
+                        >
+                          {calculateWkg(rider.power_w15, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <span className={`px-2 py-1 rounded text-sm font-semibold ${getPowerColor(rider.power_w30, personalBests.power_w30)}`}>
-                          {rider.power_w30 || '-'}
+                        <span 
+                          className={`px-2 py-1 rounded text-sm font-semibold ${getTeamRelativePowerColor(rider.power_w30, teamBests?.power_w30 || null)}`}
+                          title={`${rider.power_w30 || 0}W (${((rider.power_w30 || 0) / (teamBests?.power_w30 || 1) * 100).toFixed(1)}% of team best)`}
+                        >
+                          {calculateWkg(rider.power_w30, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <span className={`px-2 py-1 rounded text-sm font-semibold ${getPowerColor(rider.power_w60, personalBests.power_w60)}`}>
-                          {rider.power_w60 || '-'}
+                        <span 
+                          className={`px-2 py-1 rounded text-sm font-semibold ${getTeamRelativePowerColor(rider.power_w60, teamBests?.power_w60 || null)}`}
+                          title={`${rider.power_w60 || 0}W (${((rider.power_w60 || 0) / (teamBests?.power_w60 || 1) * 100).toFixed(1)}% of team best)`}
+                        >
+                          {calculateWkg(rider.power_w60, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <span className={`px-2 py-1 rounded text-sm font-semibold ${getPowerColor(rider.power_w120, personalBests.power_w120)}`}>
-                          {rider.power_w120 || '-'}
+                        <span 
+                          className={`px-2 py-1 rounded text-sm font-semibold ${getTeamRelativePowerColor(rider.power_w120, teamBests?.power_w120 || null)}`}
+                          title={`${rider.power_w120 || 0}W (${((rider.power_w120 || 0) / (teamBests?.power_w120 || 1) * 100).toFixed(1)}% of team best)`}
+                        >
+                          {calculateWkg(rider.power_w120, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <span className={`px-2 py-1 rounded text-sm font-semibold ${getPowerColor(rider.power_w300, personalBests.power_w300)}`}>
-                          {rider.power_w300 || '-'}
+                        <span 
+                          className={`px-2 py-1 rounded text-sm font-semibold ${getTeamRelativePowerColor(rider.power_w300, teamBests?.power_w300 || null)}`}
+                          title={`${rider.power_w300 || 0}W (${((rider.power_w300 || 0) / (teamBests?.power_w300 || 1) * 100).toFixed(1)}% of team best)`}
+                        >
+                          {calculateWkg(rider.power_w300, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        <span className={`px-2 py-1 rounded text-sm font-semibold ${getPowerColor(rider.power_w1200, personalBests.power_w1200)}`}>
-                          {rider.power_w1200 || '-'}
+                        <span 
+                          className={`px-2 py-1 rounded text-sm font-semibold ${getTeamRelativePowerColor(rider.power_w1200, teamBests?.power_w1200 || null)}`}
+                          title={`${rider.power_w1200 || 0}W (${((rider.power_w1200 || 0) / (teamBests?.power_w1200 || 1) * 100).toFixed(1)}% of team best)`}
+                        >
+                          {calculateWkg(rider.power_w1200, rider.weight)?.toFixed(2) || '-'}
                         </span>
-                      </td>
-                      
-                      <td className="px-4 py-3 whitespace-nowrap text-right font-bold text-indigo-700 text-base">
-                        {rider.watts_per_kg?.toFixed(2) || '-'}
                       </td>
                     </tr>
                   )
