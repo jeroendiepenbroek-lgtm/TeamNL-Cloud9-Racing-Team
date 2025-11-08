@@ -53,14 +53,14 @@ function App() {
         </nav>
 
         {/* Content */}
-        <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto py-6 px-4">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<div className="max-w-7xl mx-auto"><Dashboard /></div>} />
             <Route path="/matrix" element={<RacingDataMatrix />} />
-            <Route path="/clubs" element={<Clubs />} />
-            <Route path="/riders" element={<Riders />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/sync" element={<Sync />} />
+            <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
+            <Route path="/riders" element={<div className="max-w-7xl mx-auto"><Riders /></div>} />
+            <Route path="/events" element={<div className="max-w-7xl mx-auto"><Events /></div>} />
+            <Route path="/sync" element={<div className="max-w-7xl mx-auto"><Sync /></div>} />
           </Routes>
         </main>
       </div>
