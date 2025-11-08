@@ -4,6 +4,7 @@ import Clubs from './pages/Clubs'
 import Riders from './pages/Riders'
 import Events from './pages/Events'
 import Sync from './pages/Sync'
+import RacingDataMatrix from './pages/RacingDataMatrix'
 
 function App() {
   return (
@@ -27,10 +28,12 @@ function App() {
               </div>
 
               {/* Nav Links */}
-              {/* Nav Links */}
-              <div className="flex space-x-8">
+              <div className="flex space-x-6">
                 <Link to="/" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-cyan-300 border-b-2 border-transparent hover:border-cyan-400 transition">
                   🏠 Dashboard
+                </Link>
+                <Link to="/matrix" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
+                  📊 Matrix
                 </Link>
                 <Link to="/clubs" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
                   🏢 Clubs
@@ -53,6 +56,7 @@ function App() {
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/matrix" element={<RacingDataMatrix />} />
             <Route path="/clubs" element={<Clubs />} />
             <Route path="/riders" element={<Riders />} />
             <Route path="/events" element={<Events />} />
