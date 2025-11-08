@@ -22,7 +22,7 @@ interface TeamRider {
 const API_BASE = ''; // Empty = same origin (production)
 
 export default function Dashboard() {
-  const { data: health, isLoading: healthLoading } = useQuery<HealthCheck>({
+  const { data: health } = useQuery<HealthCheck>({
     queryKey: ['health'],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/health`)
