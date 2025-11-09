@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useFavorites } from '../hooks/useFavorites'
@@ -24,7 +25,8 @@ interface TeamRider {
 const API_BASE = ''; // Empty = same origin (production)
 
 export default function Dashboard() {
-  const { toggleFavorite, isFavorite } = useFavorites()
+  const { favorites, toggleFavorite, isFavorite } = useFavorites()
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
   
   const { data: health } = useQuery<HealthCheck>({
     queryKey: ['health'],
@@ -49,7 +51,7 @@ export default function Dashboard() {
 
   const teamStats = riders ? {
     totalRiders: riders.length,
-    avgRating: Math.round(riders.reduce((sum, r) => sum + (r.race_current_rating || 0), 0) / riders.length) || 0,
+    avgRating: Math.floor(riders.reduce((sum, r) => sum + (r.race_current_rating || 0), 0) / riders.length) || 0,
     avgFTP: Math.round(riders.filter(r => r.zp_ftp).reduce((sum, r) => sum + (r.zp_ftp || 0), 0) / riders.filter(r => r.zp_ftp).length) || 0,
     totalWins: riders.reduce((sum, r) => sum + r.race_wins, 0),
     categoryA: riders.filter(r => r.zp_category === 'A').length,
@@ -57,11 +59,16 @@ export default function Dashboard() {
     categoryC: riders.filter(r => r.zp_category === 'C').length,
   } : null
 
-  const topRiders = riders 
-    ? [...riders]
-        .sort((a, b) => (b.race_current_rating || 0) - (a.race_current_rating || 0))
-        .slice(0, 5)
+  // Filter riders based on showOnlyFavorites toggle
+  const filteredRiders = riders 
+    ? (showOnlyFavorites 
+        ? riders.filter(r => favorites.includes(r.rider_id))
+        : riders)
     : []
+  
+  const topRiders = filteredRiders
+    .sort((a, b) => (b.race_current_rating || 0) - (a.race_current_rating || 0))
+    .slice(0, 5)
 
   return (
     <div className="space-y-6">
@@ -151,10 +158,29 @@ export default function Dashboard() {
       {/* Top Riders Leaderboard */}
       <div className="bg-white shadow-lg rounded-xl overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-          <h2 className="text-xl font-bold text-white flex items-center">
-            <span className="mr-2">🏅</span>
-            Top 5 Riders by Rating
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-white flex items-center">
+              <span className="mr-2">🏅</span>
+              Top 5 Riders by Rating
+            </h2>
+            <button
+              onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+              className={`px-3 py-1.5 rounded-lg transition-colors text-sm font-medium flex items-center gap-2 ${
+                showOnlyFavorites 
+                  ? 'bg-white text-blue-600' 
+                  : 'bg-blue-700 text-white hover:bg-blue-800'
+              }`}
+              title={showOnlyFavorites ? 'Toon alle riders' : 'Toon alleen favorieten'}
+            >
+              <span>{showOnlyFavorites ? '⭐' : '☆'}</span>
+              <span>{showOnlyFavorites ? 'Favorieten' : 'Alle'}</span>
+              {showOnlyFavorites && favorites.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white rounded text-xs">
+                  {favorites.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
         <div className="p-6">
           {ridersLoading ? (
@@ -206,7 +232,7 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-gray-900">
-                      {rider.race_current_rating ? Math.round(rider.race_current_rating) : '-'}
+                      {rider.race_current_rating ? Math.floor(rider.race_current_rating) : '-'}
                     </div>
                     <div className="text-xs text-gray-500">Rating</div>
                   </div>

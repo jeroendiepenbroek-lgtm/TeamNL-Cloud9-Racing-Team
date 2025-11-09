@@ -89,7 +89,7 @@ const VeloBadge = ({ rating }: { rating: number | null }) => {
   if (!rating) return <span className="text-gray-400">-</span>
   
   const tier = getVeloTier(rating)
-  if (!tier) return <span className="text-gray-400">{Math.round(rating)}</span>
+  if (!tier) return <span className="text-gray-400">{Math.floor(rating)}</span>
   
   const progress = getTierProgress(rating, tier)
   
@@ -103,7 +103,7 @@ const VeloBadge = ({ rating }: { rating: number | null }) => {
       {/* Rating with Progress Bar */}
       <div className="flex flex-col min-w-[60px]">
         <div className="font-bold text-gray-900 text-xs">
-          {Math.round(rating)}
+          {Math.floor(rating)}
         </div>
         <div className="w-full bg-gray-200 rounded-full h-1 mt-0.5">
           <div 
