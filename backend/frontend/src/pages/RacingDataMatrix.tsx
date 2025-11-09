@@ -7,7 +7,7 @@ interface MatrixRider {
   zp_category: string | null
   zp_ftp: number | null
   weight: number | null
-  race_current_rating: number | null
+  race_last_rating: number | null   // vELO Live (last/current rating)
   race_max30_rating: number | null  // vELO 30-day (max rating last 30 days)
   race_wins: number
   race_podiums: number | null
@@ -120,7 +120,7 @@ const VeloBadge = ({ rating }: { rating: number | null }) => {
 
 export default function RacingDataMatrix() {
   const [showLegend, setShowLegend] = useState(false)
-  const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_current_rating')
+  const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_last_rating')
   const [sortDesc, setSortDesc] = useState(true)
   
   // Filters
@@ -164,7 +164,7 @@ export default function RacingDataMatrix() {
       
       // vELO Live rank filter
       if (filterVeloLive !== 'all') {
-        const tier = getVeloTier(rider.race_current_rating)
+        const tier = getVeloTier(rider.race_last_rating)
         if (!tier || tier.rank !== filterVeloLive) {
           return false
         }
@@ -364,16 +364,16 @@ export default function RacingDataMatrix() {
               <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white sticky top-0 z-10">
                 {/* Group Headers Row */}
                 <tr className="border-b border-slate-600">
-                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('rider_id')}>
                     Rider ID
                   </th>
-                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
-                    vELO Live
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_last_rating')}>
+                    vELO Live {sortBy === 'race_last_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
-                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
-                    vELO 30-day
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_max30_rating')}>
+                    vELO 30-day {sortBy === 'race_max30_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
-                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('name')}>
                     Rider Name
                   </th>
                   <th rowSpan={2} className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider border-r border-slate-600">
@@ -437,7 +437,7 @@ export default function RacingDataMatrix() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {sortedRiders.map((rider) => {
-                  const veloLiveTier = getVeloTier(rider.race_current_rating)
+                  const veloLiveTier = getVeloTier(rider.race_last_rating)
                   const velo30dayTier = getVeloTier(rider.race_max30_rating)
                   const zpCategory = rider.zp_category as keyof typeof ZP_CATEGORIES | null
                   
@@ -450,7 +450,7 @@ export default function RacingDataMatrix() {
                         {rider.rider_id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <VeloBadge rating={rider.race_current_rating} />
+                        <VeloBadge rating={rider.race_last_rating} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <VeloBadge rating={rider.race_max30_rating} />
