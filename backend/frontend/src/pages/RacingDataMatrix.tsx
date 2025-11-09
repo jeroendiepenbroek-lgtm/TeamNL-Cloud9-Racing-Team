@@ -234,17 +234,24 @@ export default function RacingDataMatrix() {
     retry: 3,
   })
 
-  // Bereken team bests voor elk interval (voor highlighting)
+  // Bereken team bests voor elk interval in W/kg (voor highlighting)
   const teamBests = useMemo(() => {
     if (!riders || riders.length === 0) return null
+    
+    // Helper functie om W/kg te berekenen
+    const getWkg = (power: number | null, weight: number | null) => {
+      if (!power || !weight || weight === 0) return 0
+      return power / weight
+    }
+    
     return {
-      power_w5: Math.max(...riders.map(r => r.power_w5 || 0)),
-      power_w15: Math.max(...riders.map(r => r.power_w15 || 0)),
-      power_w30: Math.max(...riders.map(r => r.power_w30 || 0)),
-      power_w60: Math.max(...riders.map(r => r.power_w60 || 0)),
-      power_w120: Math.max(...riders.map(r => r.power_w120 || 0)),
-      power_w300: Math.max(...riders.map(r => r.power_w300 || 0)),
-      power_w1200: Math.max(...riders.map(r => r.power_w1200 || 0)),
+      power_w5: Math.max(...riders.map(r => getWkg(r.power_w5, r.weight))),
+      power_w15: Math.max(...riders.map(r => getWkg(r.power_w15, r.weight))),
+      power_w30: Math.max(...riders.map(r => getWkg(r.power_w30, r.weight))),
+      power_w60: Math.max(...riders.map(r => getWkg(r.power_w60, r.weight))),
+      power_w120: Math.max(...riders.map(r => getWkg(r.power_w120, r.weight))),
+      power_w300: Math.max(...riders.map(r => getWkg(r.power_w300, r.weight))),
+      power_w1200: Math.max(...riders.map(r => getWkg(r.power_w1200, r.weight))),
     }
   }, [riders])
 
@@ -675,56 +682,56 @@ export default function RacingDataMatrix() {
                       {/* Power Intervals in W/kg met team-relative highlighting */}
                       <td className="px-2 py-1.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_w5, teamBests?.power_w5 || null)}`}
-                          title={`${rider.power_w5 || 0}W (${((rider.power_w5 || 0) / (teamBests?.power_w5 || 1) * 100).toFixed(1)}% of team best)`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w5, rider.weight), teamBests?.power_w5 || null)}`}
+                          title={`${rider.power_w5 || 0}W`}
                         >
                           {calculateWkg(rider.power_w5, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_w15, teamBests?.power_w15 || null)}`}
-                          title={`${rider.power_w15 || 0}W (${((rider.power_w15 || 0) / (teamBests?.power_w15 || 1) * 100).toFixed(1)}% of team best)`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w15, rider.weight), teamBests?.power_w15 || null)}`}
+                          title={`${rider.power_w15 || 0}W`}
                         >
                           {calculateWkg(rider.power_w15, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_w30, teamBests?.power_w30 || null)}`}
-                          title={`${rider.power_w30 || 0}W (${((rider.power_w30 || 0) / (teamBests?.power_w30 || 1) * 100).toFixed(1)}% of team best)`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w30, rider.weight), teamBests?.power_w30 || null)}`}
+                          title={`${rider.power_w30 || 0}W`}
                         >
                           {calculateWkg(rider.power_w30, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_w60, teamBests?.power_w60 || null)}`}
-                          title={`${rider.power_w60 || 0}W (${((rider.power_w60 || 0) / (teamBests?.power_w60 || 1) * 100).toFixed(1)}% of team best)`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w60, rider.weight), teamBests?.power_w60 || null)}`}
+                          title={`${rider.power_w60 || 0}W`}
                         >
                           {calculateWkg(rider.power_w60, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_w120, teamBests?.power_w120 || null)}`}
-                          title={`${rider.power_w120 || 0}W (${((rider.power_w120 || 0) / (teamBests?.power_w120 || 1) * 100).toFixed(1)}% of team best)`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w120, rider.weight), teamBests?.power_w120 || null)}`}
+                          title={`${rider.power_w120 || 0}W`}
                         >
                           {calculateWkg(rider.power_w120, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_w300, teamBests?.power_w300 || null)}`}
-                          title={`${rider.power_w300 || 0}W (${((rider.power_w300 || 0) / (teamBests?.power_w300 || 1) * 100).toFixed(1)}% of team best)`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w300, rider.weight), teamBests?.power_w300 || null)}`}
+                          title={`${rider.power_w300 || 0}W`}
                         >
                           {calculateWkg(rider.power_w300, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_w1200, teamBests?.power_w1200 || null)}`}
-                          title={`${rider.power_w1200 || 0}W (${((rider.power_w1200 || 0) / (teamBests?.power_w1200 || 1) * 100).toFixed(1)}% of team best)`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w1200, rider.weight), teamBests?.power_w1200 || null)}`}
+                          title={`${rider.power_w1200 || 0}W`}
                         >
                           {calculateWkg(rider.power_w1200, rider.weight)?.toFixed(2) || '-'}
                         </span>
