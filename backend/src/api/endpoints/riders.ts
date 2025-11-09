@@ -29,22 +29,15 @@ router.get('/', async (req: Request, res: Response) => {
 // ============================================================================
 // IMPORTANT: These routes must be BEFORE /:zwiftId to avoid conflicts!
 
-// GET /api/riders/team - Haal "Mijn Team" riders op via VIEW
+// GET /api/riders/team - Haal alle riders op (simpele fallback)
 router.get('/team', async (req: Request, res: Response) => {
   try {
-    // Query via view_my_team (combineert my_team_members + riders + clubs)
-    const riders = await supabase.getMyTeamMembers();
-    
-    // Extract unique clubs (automatisch uit riders.club_id)
-    const uniqueClubs = [...new Set(
-      riders
-        .map(r => r.club_name)
-        .filter(Boolean)
-    )];
+    // Simpele query: haal alle riders op
+    const riders = await supabase.getRiders();
     
     res.json(riders);
   } catch (error) {
-    console.error('Error fetching my team riders:', error);
+    console.error('Error fetching team riders:', error);
     res.status(500).json({ error: 'Fout bij ophalen team riders' });
   }
 });
