@@ -51,7 +51,7 @@ const ZP_CATEGORIES = {
 
 // Team-relative Power Colors - highlighting relatief t.o.v. team beste prestatie per interval
 const getTeamRelativePowerColor = (value: number | null, teamBest: number | null): string => {
-  if (!value || !teamBest || teamBest === 0) return 'bg-gray-100 text-gray-600'
+  if (!value || !teamBest || teamBest === 0) return 'text-gray-700' // No background
   
   const percentage = (value / teamBest) * 100
   
@@ -59,7 +59,7 @@ const getTeamRelativePowerColor = (value: number | null, teamBest: number | null
   if (percentage >= 95) return 'bg-gray-300 text-gray-800 font-semibold' // Silver: Near Best (95-99%)
   if (percentage >= 90) return 'bg-orange-300 text-orange-900' // Bronze: Good (90-94%)
   
-  return 'bg-gray-100 text-gray-600' // Below 90%
+  return 'text-gray-700' // Below 90% - no background, blends with table
 }
 
 // Bereken vELO tier op basis van rating
