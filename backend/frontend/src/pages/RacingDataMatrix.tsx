@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useFavorites } from '../hooks/useFavorites'
 
 interface MatrixRider {
   rider_id: number
@@ -207,6 +208,10 @@ export default function RacingDataMatrix() {
   const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_last_rating')
   const [sortDesc, setSortDesc] = useState(true)
   
+  // Favorites
+  const { favorites, toggleFavorite, isFavorite } = useFavorites()
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
+  
   // Filters - multiselect
   const [filterCategories, setFilterCategories] = useState<string[]>([])
   const [filterVeloLiveRanks, setFilterVeloLiveRanks] = useState<number[]>([])
@@ -243,11 +248,16 @@ export default function RacingDataMatrix() {
     }
   }, [riders])
 
-  // Filter riders - multiselect logic
+  // Filter riders - multiselect logic + favorieten
   const filteredRiders = useMemo(() => {
     if (!riders) return []
     
     return riders.filter(rider => {
+      // Favorites filter - als showOnlyFavorites aan staat, alleen favorieten tonen
+      if (showOnlyFavorites && !favorites.includes(rider.rider_id)) {
+        return false
+      }
+      
       // Category filter - if categories selected, rider must be in list
       if (filterCategories.length > 0 && !filterCategories.includes(rider.zp_category || '')) {
         return false
@@ -271,13 +281,25 @@ export default function RacingDataMatrix() {
       
       return true
     })
-  }, [riders, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks])
+  }, [riders, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, showOnlyFavorites, favorites])
 
   // Sorteer riders
   const sortedRiders = useMemo(() => {
     const sorted = [...filteredRiders].sort((a, b) => {
-      const aVal = a[sortBy] ?? 0
-      const bVal = b[sortBy] ?? 0
+      // Special case: W/kg moet berekend worden als zFTP / weight
+      let aVal: number
+      let bVal: number
+      
+      if (sortBy === 'watts_per_kg') {
+        aVal = (a.zp_ftp && a.weight) ? a.zp_ftp / a.weight : 0
+        bVal = (b.zp_ftp && b.weight) ? b.zp_ftp / b.weight : 0
+      } else {
+        const aRaw = a[sortBy]
+        const bRaw = b[sortBy]
+        aVal = typeof aRaw === 'number' ? aRaw : 0
+        bVal = typeof bRaw === 'number' ? bRaw : 0
+      }
+      
       return sortDesc ? (bVal > aVal ? 1 : -1) : (aVal > bVal ? 1 : -1)
     })
     return sorted
@@ -344,6 +366,25 @@ export default function RacingDataMatrix() {
             selectedValues={filterVelo30dayRanks}
             onChange={setFilterVelo30dayRanks}
           />
+          
+          {/* Favorites Toggle */}
+          <button
+            onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+            className={`px-3 py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-2 ${
+              showOnlyFavorites 
+                ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+            title={showOnlyFavorites ? 'Toon alle riders' : 'Toon alleen favorieten'}
+          >
+            <span className="text-base">{showOnlyFavorites ? '⭐' : '☆'}</span>
+            <span>{showOnlyFavorites ? 'Favorieten' : 'Alle Riders'}</span>
+            {showOnlyFavorites && favorites.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-white/30 rounded text-xs">
+                {favorites.length}
+              </span>
+            )}
+          </button>
           
           {/* Clear Filters Button */}
           {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
@@ -495,6 +536,9 @@ export default function RacingDataMatrix() {
               <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white sticky top-0 z-10">
                 {/* Group Headers Row */}
                 <tr className="border-b border-slate-600">
+                  <th rowSpan={2} className="px-2 py-1.5 text-center text-xs font-bold border-r border-slate-600" title="Favoriet">
+                    ⭐
+                  </th>
                   <th rowSpan={2} className="px-2 py-1.5 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('rider_id')}>
                     Rider ID
                   </th>
@@ -576,6 +620,15 @@ export default function RacingDataMatrix() {
                       key={rider.rider_id} 
                       className={`hover:bg-gray-50 transition-colors ${veloLiveTier?.bgColor || ''}`}
                     >
+                      <td className="px-2 py-1.5 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => toggleFavorite(rider.rider_id)}
+                          className="text-lg hover:scale-125 transition-transform"
+                          title={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
+                        >
+                          {isFavorite(rider.rider_id) ? '⭐' : '☆'}
+                        </button>
+                      </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-gray-700 font-mono text-xs">
                         {rider.rider_id}
                       </td>
@@ -601,7 +654,7 @@ export default function RacingDataMatrix() {
                         {rider.zp_ftp || '-'}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right font-bold text-indigo-700 text-sm">
-                        {rider.watts_per_kg ? rider.watts_per_kg.toFixed(2) : '-'}
+                        {rider.zp_ftp && rider.weight ? (rider.zp_ftp / rider.weight).toFixed(2) : '-'}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right text-gray-700">
                         {rider.weight ? `${rider.weight.toFixed(1)}kg` : '-'}

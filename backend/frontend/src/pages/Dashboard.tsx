@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { useFavorites } from '../hooks/useFavorites'
 
 interface HealthCheck {
   status: string
@@ -14,6 +15,7 @@ interface TeamRider {
   name: string
   zp_category: string | null
   zp_ftp: number | null
+  weight: number | null
   race_current_rating: number | null
   race_wins: number
   watts_per_kg: number | null
@@ -22,6 +24,8 @@ interface TeamRider {
 const API_BASE = ''; // Empty = same origin (production)
 
 export default function Dashboard() {
+  const { toggleFavorite, isFavorite } = useFavorites()
+  
   const { data: health } = useQuery<HealthCheck>({
     queryKey: ['health'],
     queryFn: async () => {
@@ -183,11 +187,20 @@ export default function Dashboard() {
                       {index + 1}
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900">{rider.name}</div>
+                      <div className="font-semibold text-gray-900 flex items-center gap-2">
+                        {rider.name}
+                        <button
+                          onClick={() => toggleFavorite(rider.rider_id)}
+                          className="text-xl hover:scale-110 transition-transform"
+                          title={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
+                        >
+                          {isFavorite(rider.rider_id) ? '⭐' : '☆'}
+                        </button>
+                      </div>
                       <div className="text-sm text-gray-500">
                         Cat: {rider.zp_category || '?'} | 
                         FTP: {rider.zp_ftp || '-'}W |
-                        W/kg: {rider.watts_per_kg?.toFixed(2) || '-'}
+                        W/kg: {rider.zp_ftp && rider.weight ? (rider.zp_ftp / rider.weight).toFixed(2) : '-'}
                       </div>
                     </div>
                   </div>
