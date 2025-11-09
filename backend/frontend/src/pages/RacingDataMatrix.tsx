@@ -438,7 +438,6 @@ export default function RacingDataMatrix() {
               <tbody className="divide-y divide-gray-200">
                 {sortedRiders.map((rider) => {
                   const veloLiveTier = getVeloTier(rider.race_last_rating)
-                  const velo30dayTier = getVeloTier(rider.race_max30_rating)
                   const zpCategory = rider.zp_category as keyof typeof ZP_CATEGORIES | null
                   
                   return (
