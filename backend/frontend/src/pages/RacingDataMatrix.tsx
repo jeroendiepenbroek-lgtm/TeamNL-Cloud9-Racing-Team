@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 
 interface MatrixRider {
   rider_id: number
@@ -118,6 +118,90 @@ const VeloBadge = ({ rating }: { rating: number | null }) => {
   )
 }
 
+// Multi-select Dropdown Component
+interface MultiSelectDropdownProps<T extends string | number> {
+  label: string
+  options: { value: T; label: string; icon?: string }[]
+  selectedValues: T[]
+  onChange: (values: T[]) => void
+}
+
+function MultiSelectDropdown<T extends string | number>({ 
+  label, 
+  options, 
+  selectedValues, 
+  onChange 
+}: MultiSelectDropdownProps<T>) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const toggleOption = (value: T) => {
+    if (selectedValues.includes(value)) {
+      onChange(selectedValues.filter(v => v !== value))
+    } else {
+      onChange([...selectedValues, value])
+    }
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 bg-white hover:bg-gray-50 transition-colors min-w-[160px] flex items-center justify-between"
+      >
+        <span className="font-medium text-gray-700">
+          {label}
+          {selectedValues.length > 0 && (
+            <span className="ml-1.5 px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold">
+              {selectedValues.length}
+            </span>
+          )}
+        </span>
+        <svg
+          className={`w-4 h-4 ml-2 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(option.value)}
+                onChange={() => toggleOption(option.value)}
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              />
+              <span className="ml-2 text-xs text-gray-700">
+                {option.icon && <span className="mr-1.5">{option.icon}</span>}
+                {option.label}
+              </span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function RacingDataMatrix() {
   const [showLegend, setShowLegend] = useState(false)
   const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_last_rating')
@@ -216,74 +300,43 @@ export default function RacingDataMatrix() {
         </div>
         
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Category Filter - Multiselect */}
-          <div className="relative">
-            <select
-              multiple
-              value={filterCategories}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, option => option.value)
-                setFilterCategories(selected)
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
-              size={6}
-            >
-              <option value="A+">A+</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
-            <div className="absolute -top-6 left-0 text-xs font-medium text-gray-600">
-              Categories {filterCategories.length > 0 && `(${filterCategories.length})`}
-            </div>
-          </div>
+          {/* Category Filter - Dropdown */}
+          <MultiSelectDropdown
+            label="Categories"
+            options={[
+              { value: 'A+', label: 'A+' },
+              { value: 'A', label: 'A' },
+              { value: 'B', label: 'B' },
+              { value: 'C', label: 'C' },
+              { value: 'D', label: 'D' },
+            ]}
+            selectedValues={filterCategories}
+            onChange={setFilterCategories}
+          />
 
-          {/* vELO Live Filter - Multiselect */}
-          <div className="relative">
-            <select
-              multiple
-              value={filterVeloLiveRanks.map(String)}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, option => Number(option.value))
-                setFilterVeloLiveRanks(selected)
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
-              size={9}
-            >
-              {VELO_TIERS.map(tier => (
-                <option key={tier.rank} value={tier.rank}>
-                  {tier.icon} {tier.name} ({tier.rank})
-                </option>
-              ))}
-            </select>
-            <div className="absolute -top-6 left-0 text-xs font-medium text-gray-600">
-              vELO Live {filterVeloLiveRanks.length > 0 && `(${filterVeloLiveRanks.length})`}
-            </div>
-          </div>
+          {/* vELO Live Filter - Dropdown */}
+          <MultiSelectDropdown
+            label="vELO Live"
+            options={VELO_TIERS.map(tier => ({
+              value: tier.rank,
+              label: `${tier.name} (${tier.rank})`,
+              icon: tier.icon,
+            }))}
+            selectedValues={filterVeloLiveRanks}
+            onChange={setFilterVeloLiveRanks}
+          />
 
-          {/* vELO 30-day Filter - Multiselect */}
-          <div className="relative">
-            <select
-              multiple
-              value={filterVelo30dayRanks.map(String)}
-              onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, option => Number(option.value))
-                setFilterVelo30dayRanks(selected)
-              }}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 min-w-[180px]"
-              size={9}
-            >
-              {VELO_TIERS.map(tier => (
-                <option key={tier.rank} value={tier.rank}>
-                  {tier.icon} {tier.name} ({tier.rank})
-                </option>
-              ))}
-            </select>
-            <div className="absolute -top-6 left-0 text-xs font-medium text-gray-600">
-              vELO 30-day {filterVelo30dayRanks.length > 0 && `(${filterVelo30dayRanks.length})`}
-            </div>
-          </div>
+          {/* vELO 30-day Filter - Dropdown */}
+          <MultiSelectDropdown
+            label="vELO 30-day"
+            options={VELO_TIERS.map(tier => ({
+              value: tier.rank,
+              label: `${tier.name} (${tier.rank})`,
+              icon: tier.icon,
+            }))}
+            selectedValues={filterVelo30dayRanks}
+            onChange={setFilterVelo30dayRanks}
+          />
           
           {/* Clear Filters Button */}
           {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
