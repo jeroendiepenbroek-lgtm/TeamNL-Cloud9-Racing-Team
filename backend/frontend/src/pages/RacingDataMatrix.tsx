@@ -8,7 +8,7 @@ interface MatrixRider {
   zp_ftp: number | null
   weight: number | null
   race_current_rating: number | null
-  rating_30day_avg: number | null  // vELO 30-day average
+  race_max30_rating: number | null  // vELO 30-day (max rating last 30 days)
   race_wins: number
   race_podiums: number | null
   race_finishes: number
@@ -75,6 +75,49 @@ const calculateWkg = (watts: number | null, weight: number | null): number | nul
   return watts / weight
 }
 
+// Bereken progress binnen tier range
+const getTierProgress = (rating: number, tier: typeof VELO_TIERS[0]): number => {
+  if (!tier.max) return 100 // Diamond heeft geen max
+  const range = tier.max - tier.min
+  const progress = rating - tier.min
+  return Math.min(100, Math.max(0, (progress / range) * 100))
+}
+
+// Moderne vELO Badge Component
+const VeloBadge = ({ rating }: { rating: number | null }) => {
+  if (!rating) return <span className="text-gray-400">-</span>
+  
+  const tier = getVeloTier(rating)
+  if (!tier) return <span className="text-gray-400">{Math.round(rating)}</span>
+  
+  const progress = getTierProgress(rating, tier)
+  
+  return (
+    <div className="flex items-center gap-2">
+      {/* Rank Circle Badge */}
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-md`}>
+        {tier.rank}
+      </div>
+      
+      {/* Rating with Progress Bar */}
+      <div className="flex flex-col min-w-[80px]">
+        <div className="font-bold text-gray-900 text-sm">
+          {Math.round(rating)}
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-1.5 mt-0.5">
+          <div 
+            className={`h-1.5 rounded-full bg-gradient-to-r ${tier.color}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="text-[10px] text-gray-500 mt-0.5">
+          {tier.name}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function RacingDataMatrix() {
   const [showLegend, setShowLegend] = useState(false)
   const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_current_rating')
@@ -129,7 +172,7 @@ export default function RacingDataMatrix() {
       
       // vELO 30-day rank filter
       if (filterVelo30day !== 'all') {
-        const tier = getVeloTier(rider.rating_30day_avg)
+        const tier = getVeloTier(rider.race_max30_rating)
         if (!tier || tier.rank !== filterVelo30day) {
           return false
         }
@@ -319,73 +362,83 @@ export default function RacingDataMatrix() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white sticky top-0 z-10">
-                <tr>
-                  <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('rider_id')}>
+                {/* Group Headers Row */}
+                <tr className="border-b border-slate-600">
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
                     Rider ID
                   </th>
-                  <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('race_current_rating')}>
-                    vELO Live {sortBy === 'race_current_rating' && (sortDesc ? '↓' : '↑')}
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
+                    vELO Live
                   </th>
-                  <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('rating_30day_avg')}>
-                    vELO 30-day {sortBy === 'rating_30day_avg' && (sortDesc ? '↓' : '↑')}
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
+                    vELO 30-day
                   </th>
-                  <th className="px-4 py-4 text-left text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('name')}>
+                  <th rowSpan={2} className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600">
                     Rider Name
                   </th>
-                  <th className="px-4 py-4 text-center text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('zp_category')}>
+                  <th rowSpan={2} className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider border-r border-slate-600">
                     Category
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('zp_ftp')}>
-                    FTP
+                  <th colSpan={2} className="px-4 py-2 text-center text-xs font-bold uppercase tracking-wider bg-green-700 border-r border-slate-600">
+                    zFTP
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('watts_per_kg')}>
-                    W/kg
-                  </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('weight')}>
+                  <th rowSpan={2} className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wider border-r border-slate-600">
                     Weight
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
+                  <th colSpan={4} className="px-4 py-2 text-center text-xs font-bold uppercase tracking-wider bg-slate-600 border-r border-slate-600">
+                    Race Stats
+                  </th>
+                  <th colSpan={7} className="px-4 py-2 text-center text-xs font-bold uppercase tracking-wider bg-indigo-700">
+                    Power Intervals (W/kg)
+                  </th>
+                </tr>
+                {/* Individual Column Headers Row */}
+                <tr>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap" onClick={() => handleSort('zp_ftp')}>
+                    FTP (W)
+                  </th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('watts_per_kg')}>
+                    W/kg
+                  </th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
                     Finishes
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
                     Wins
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
                     Podiums
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('race_dnfs')}>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
                     DNFs
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w5')}>
-                    5s {sortBy === 'power_w5' && (sortDesc ? '↓' : '↑')}
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w5')}>
+                    5s
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w15')}>
-                    15s {sortBy === 'power_w15' && (sortDesc ? '↓' : '↑')}
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w15')}>
+                    15s
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w30')}>
-                    30s {sortBy === 'power_w30' && (sortDesc ? '↓' : '↑')}
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w30')}>
+                    30s
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w60')}>
-                    1m {sortBy === 'power_w60' && (sortDesc ? '↓' : '↑')}
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w60')}>
+                    1m
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w120')}>
-                    2m {sortBy === 'power_w120' && (sortDesc ? '↓' : '↑')}
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w120')}>
+                    2m
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w300')}>
-                    5m {sortBy === 'power_w300' && (sortDesc ? '↓' : '↑')}
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w300')}>
+                    5m
                   </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w1200')}>
-                    20m {sortBy === 'power_w1200' && (sortDesc ? '↓' : '↑')}
-                  </th>
-                  <th className="px-4 py-4 text-right text-sm font-bold uppercase tracking-wider cursor-pointer hover:bg-slate-600 whitespace-nowrap" onClick={() => handleSort('watts_per_kg')}>
-                    W/kg
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w1200')}>
+                    20m
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {sortedRiders.map((rider) => {
                   const veloLiveTier = getVeloTier(rider.race_current_rating)
-                  const velo30dayTier = getVeloTier(rider.rating_30day_avg)
+                  const velo30dayTier = getVeloTier(rider.race_max30_rating)
                   const zpCategory = rider.zp_category as keyof typeof ZP_CATEGORIES | null
                   
                   return (
@@ -397,28 +450,10 @@ export default function RacingDataMatrix() {
                         {rider.rider_id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {veloLiveTier ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">{veloLiveTier.icon}</span>
-                            <span className={`px-3 py-1.5 rounded-lg font-bold text-base bg-gradient-to-r ${veloLiveTier.color} ${veloLiveTier.textColor} shadow-md`}>
-                              {Math.round(rider.race_current_rating || 0)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                        <VeloBadge rating={rider.race_current_rating} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {velo30dayTier && rider.rating_30day_avg ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">{velo30dayTier.icon}</span>
-                            <span className={`px-3 py-1.5 rounded-lg font-bold text-base bg-gradient-to-r ${velo30dayTier.color} ${velo30dayTier.textColor} shadow-md`}>
-                              {Math.round(rider.rating_30day_avg)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
+                        <VeloBadge rating={rider.race_max30_rating} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900">
                         {rider.name}
