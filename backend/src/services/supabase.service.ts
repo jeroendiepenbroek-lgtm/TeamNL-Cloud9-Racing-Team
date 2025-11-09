@@ -188,13 +188,63 @@ export class SupabaseService {
   // ========== MY TEAM MEMBERS ==========
   // Query via VIEW (niet direct riders tabel!)
   async getMyTeamMembers(): Promise<any[]> {
-    const { data, error } = await this.client
+    // First get base team data from view
+    const { data: teamData, error: teamError } = await this.client
       .from('view_my_team')
       .select('*')
       .order('ranking', { ascending: true, nullsFirst: false });
 
-    if (error) throw error;
-    return data || [];
+    if (teamError) throw teamError;
+    if (!teamData) return [];
+
+    // Calculate 30-day averages for each rider
+    const riderIds = teamData.map(r => r.rider_id);
+    
+    // Get last 30 days of rating history for all riders
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data: historyData, error: historyError } = await this.client
+      .from('rider_history')
+      .select('rider_id, race_current_rating, snapshot_date')
+      .in('rider_id', riderIds)
+      .gte('snapshot_date', thirtyDaysAgo.toISOString())
+      .order('rider_id')
+      .order('snapshot_date', { ascending: false });
+
+    if (historyError) {
+      console.warn('Failed to fetch rider history for 30-day averages:', historyError);
+      // Continue without 30-day averages
+      return teamData.map(r => ({ ...r, rating_30day_avg: null }));
+    }
+
+    // Calculate averages per rider
+    const avgMap = new Map<number, number>();
+    if (historyData) {
+      const groupedByRider = new Map<number, number[]>();
+      
+      for (const record of historyData) {
+        if (!record.race_current_rating) continue;
+        
+        if (!groupedByRider.has(record.rider_id)) {
+          groupedByRider.set(record.rider_id, []);
+        }
+        groupedByRider.get(record.rider_id)!.push(record.race_current_rating);
+      }
+      
+      for (const [riderId, ratings] of groupedByRider.entries()) {
+        if (ratings.length > 0) {
+          const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
+          avgMap.set(riderId, Math.round(avg));
+        }
+      }
+    }
+
+    // Merge 30-day averages into team data
+    return teamData.map(rider => ({
+      ...rider,
+      rating_30day_avg: avgMap.get(rider.rider_id) || rider.race_current_rating || null,
+    }));
   }
 
   async addMyTeamMember(riderId: number): Promise<any> {
