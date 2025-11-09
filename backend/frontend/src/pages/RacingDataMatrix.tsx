@@ -466,11 +466,28 @@ export default function RacingDataMatrix() {
               Reload Page
             </button>
           </div>
+        ) : !riders || riders.length === 0 ? (
+          <div className="p-12 text-center max-w-2xl mx-auto">
+            <div className="text-6xl mb-4">🚴</div>
+            <p className="text-gray-800 text-xl font-bold mb-2">Geen riders in database</p>
+            <p className="text-gray-600 text-sm mb-6">
+              De database moet eerst gesynchroniseerd worden met ZwiftRacing.app data.
+            </p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+              <p className="text-sm font-medium text-blue-900 mb-2">📋 Synchronisatie stappen:</p>
+              <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                <li>Ga naar de <a href="/sync" className="underline font-medium">Sync pagina</a></li>
+                <li>Klik op "Sync Riders" om TeamNL Cloud9 riders op te halen</li>
+                <li>Wacht tot synchronisatie voltooid is</li>
+                <li>Kom terug naar deze Matrix pagina</li>
+              </ol>
+            </div>
+          </div>
         ) : sortedRiders.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="text-6xl mb-4">🚴</div>
-            <p className="text-gray-600 text-lg font-medium mb-2">No riders found</p>
-            <p className="text-gray-500 text-sm">Database is empty or filters exclude all riders</p>
+            <div className="text-6xl mb-4">🔍</div>
+            <p className="text-gray-600 text-lg font-medium mb-2">Geen riders gevonden</p>
+            <p className="text-gray-500 text-sm">Probeer andere filter instellingen of klik "Clear Filters"</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
