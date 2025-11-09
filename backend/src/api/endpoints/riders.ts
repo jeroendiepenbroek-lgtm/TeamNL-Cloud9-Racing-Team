@@ -32,13 +32,26 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/riders/team - Haal alle riders op (simpele fallback)
 router.get('/team', async (req: Request, res: Response) => {
   try {
-    // Simpele query: haal alle riders op
+    console.log('[/api/riders/team] Fetching riders...');
     const riders = await supabase.getRiders();
+    console.log(`[/api/riders/team] ✅ Fetched ${riders.length} riders`);
+    
+    // Als geen riders, return lege array (niet 500 error)
+    if (!riders || riders.length === 0) {
+      console.warn('[/api/riders/team] ⚠️ No riders found in database');
+      return res.json([]);
+    }
     
     res.json(riders);
   } catch (error) {
-    console.error('Error fetching team riders:', error);
-    res.status(500).json({ error: 'Fout bij ophalen team riders' });
+    console.error('[/api/riders/team] ❌ Error:', error);
+    // Meer gedetailleerde error info
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ 
+      error: 'Fout bij ophalen team riders',
+      details: errorMessage,
+      riders: [] // Fallback voor frontend
+    });
   }
 });
 

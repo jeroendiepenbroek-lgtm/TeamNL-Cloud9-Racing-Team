@@ -212,14 +212,21 @@ export default function RacingDataMatrix() {
   const [filterVeloLiveRanks, setFilterVeloLiveRanks] = useState<number[]>([])
   const [filterVelo30dayRanks, setFilterVelo30dayRanks] = useState<number[]>([])
 
-  const { data: riders, isLoading } = useQuery<MatrixRider[]>({
+  const { data: riders, isLoading, error } = useQuery<MatrixRider[]>({
     queryKey: ['matrixRiders'],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/riders/team`)
-      if (!res.ok) throw new Error('Failed to fetch riders')
-      return res.json()
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        console.error('API Error:', errorData)
+        throw new Error(errorData.error || 'Failed to fetch riders')
+      }
+      const data = await res.json()
+      // Handle zowel array als object met riders property
+      return Array.isArray(data) ? data : (data.riders || [])
     },
     refetchInterval: 60000,
+    retry: 3,
   })
 
   // Bereken team bests voor elk interval (voor highlighting)
@@ -447,10 +454,23 @@ export default function RacingDataMatrix() {
             <div className="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
             <p className="text-gray-600">Loading racing data...</p>
           </div>
+        ) : error ? (
+          <div className="p-12 text-center">
+            <div className="text-6xl mb-4">⚠️</div>
+            <p className="text-red-600 text-lg font-medium mb-2">Error loading data</p>
+            <p className="text-gray-600 text-sm">{error instanceof Error ? error.message : 'Unknown error'}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              Reload Page
+            </button>
+          </div>
         ) : sortedRiders.length === 0 ? (
           <div className="p-12 text-center">
             <div className="text-6xl mb-4">🚴</div>
-            <p className="text-gray-600 text-lg">No riders in database yet</p>
+            <p className="text-gray-600 text-lg font-medium mb-2">No riders found</p>
+            <p className="text-gray-500 text-sm">Database is empty or filters exclude all riders</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
