@@ -427,14 +427,20 @@ export default function RacingDataMatrix() {
                 <span className="mr-2">🏆</span>
                 vELO Tiers
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {VELO_TIERS.map(tier => (
-                  <div key={tier.name} className="flex items-center space-x-2">
-                    <div className={`w-4 h-4 rounded bg-gradient-to-r ${tier.color}`}></div>
-                    <span className="text-xs font-medium">{tier.name}</span>
-                    <span className="text-xs text-gray-600">
-                      {tier.min}{tier.max ? `-${tier.max}` : '+'}
-                    </span>
+                  <div key={tier.name} className="flex items-center space-x-3">
+                    {/* Rank Badge met tier kleuren */}
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-md`}>
+                      {tier.rank}
+                    </div>
+                    {/* Tier info */}
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-gray-900">{tier.name}</span>
+                      <span className="text-[10px] text-gray-600">
+                        {tier.min}{tier.max ? `-${tier.max}` : '+'} vELO
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

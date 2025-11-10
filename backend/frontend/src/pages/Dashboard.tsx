@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useFavorites } from '../hooks/useFavorites'
+import { useAuth } from '../contexts/AuthContext'
 
 interface HealthCheck {
   status: string
@@ -27,6 +28,7 @@ const API_BASE = ''; // Empty = same origin (production)
 export default function Dashboard() {
   const { favorites, toggleFavorite, isFavorite } = useFavorites()
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
+  const { user } = useAuth()
   
   const { data: health } = useQuery<HealthCheck>({
     queryKey: ['health'],
@@ -245,28 +247,35 @@ export default function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Link 
-          to="/riders"
-          className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"
-        >
-          <div className="text-center">
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">👥</div>
-            <h3 className="text-lg font-semibold text-gray-900">Manage Riders</h3>
-            <p className="mt-2 text-sm text-gray-600">Add, sync, and view all team members</p>
-          </div>
-        </Link>
+        {/* Manage Riders - alleen zichtbaar voor admins */}
+        {user && (
+          <Link 
+            to="/riders"
+            className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"
+          >
+            <div className="text-center">
+              <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">👥</div>
+              <h3 className="text-lg font-semibold text-gray-900">Manage Riders</h3>
+              <p className="mt-2 text-sm text-gray-600">Add, sync, and view all team members</p>
+            </div>
+          </Link>
+        )}
 
-        <Link 
-          to="/sync"
-          className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"
-        >
-          <div className="text-center">
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">🔄</div>
-            <h3 className="text-lg font-semibold text-gray-900">Sync Data</h3>
-            <p className="mt-2 text-sm text-gray-600">Update rider stats from ZwiftRacing API</p>
-          </div>
-        </Link>
+        {/* Sync - alleen zichtbaar voor admins */}
+        {user && (
+          <Link 
+            to="/sync"
+            className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"
+          >
+            <div className="text-center">
+              <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">🔄</div>
+              <h3 className="text-lg font-semibold text-gray-900">Sync Data</h3>
+              <p className="mt-2 text-sm text-gray-600">Update rider stats from ZwiftRacing API</p>
+            </div>
+          </Link>
+        )}
 
+        {/* Events - altijd zichtbaar */}
         <Link 
           to="/events"
           className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"

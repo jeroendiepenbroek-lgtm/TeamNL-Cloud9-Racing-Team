@@ -42,3 +42,4 @@ temp/
 *.tmp
 .backup/
 
+backend/frontend/.env.local
