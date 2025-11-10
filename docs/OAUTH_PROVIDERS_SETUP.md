@@ -1,3 +1,4 @@
+````markdown
 # Multi-Provider OAuth Setup voor TeamNL Cloud9 Dashboard
 
 ## Overzicht
@@ -283,3 +284,5 @@ Als Google OAuth niet werkt, kun je nog steeds inloggen met:
 - [Supabase Google OAuth Docs](https://supabase.com/docs/guides/auth/social-login/auth-google)
 - [Google OAuth Setup](https://support.google.com/cloud/answer/6158849)
 - [Supabase Auth Helpers](https://supabase.com/docs/guides/auth/auth-helpers)
+
+````

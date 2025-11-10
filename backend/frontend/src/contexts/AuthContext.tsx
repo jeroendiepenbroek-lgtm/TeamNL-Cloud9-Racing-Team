@@ -8,6 +8,9 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signInWithGoogle: () => Promise<{ error: Error | null }>
+  signInWithDiscord: () => Promise<{ error: Error | null }>
+  signInWithGithub: () => Promise<{ error: Error | null }>
+  signInWithAzure: () => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
 }
 
@@ -93,6 +96,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const signInWithDiscord = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      })
+      return { error }
+    } catch (error) {
+      console.error('Discord signIn error:', error)
+      return { error: error as Error }
+    }
+  }
+
+  const signInWithGithub = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      })
+      return { error }
+    } catch (error) {
+      console.error('GitHub signIn error:', error)
+      return { error: error as Error }
+    }
+  }
+
+  const signInWithAzure = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'azure',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          scopes: 'email openid profile',
+        }
+      })
+      return { error }
+    } catch (error) {
+      console.error('Azure signIn error:', error)
+      return { error: error as Error }
+    }
+  }
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
@@ -107,6 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signInWithGoogle,
+    signInWithDiscord,
+    signInWithGithub,
+    signInWithAzure,
     signOut,
   }
 
