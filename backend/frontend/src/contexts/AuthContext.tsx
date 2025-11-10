@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  signInWithGoogle: () => Promise<{ error: Error | null }>
   signOut: () => Promise<void>
 }
 
@@ -18,35 +19,86 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Haal huidige sessie op
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
+    console.log('[AuthContext] Initializing...')
+    
+    // Timeout fallback - als auth na 3 seconden niet reageert, gewoon doorgaan
+    const timeout = setTimeout(() => {
+      console.warn('[AuthContext] Timeout - continuing without auth')
       setLoading(false)
-    })
+    }, 3000)
+
+    // Haal huidige sessie op met error handling
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        clearTimeout(timeout)
+        console.log('[AuthContext] Session loaded:', !!session)
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+      .catch((error) => {
+        clearTimeout(timeout)
+        console.error('[AuthContext] Session error:', error)
+        setLoading(false)
+        // Continue zonder auth als Supabase niet bereikbaar is
+      })
 
     // Luister naar auth veranderingen
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    try {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        console.log('[AuthContext] Auth state changed:', _event, !!session)
+        setSession(session)
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
 
-    return () => subscription.unsubscribe()
+      return () => {
+        clearTimeout(timeout)
+        subscription.unsubscribe()
+      }
+    } catch (error) {
+      clearTimeout(timeout)
+      console.error('[AuthContext] Listener error:', error)
+      setLoading(false)
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return { error }
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      return { error }
+    } catch (error) {
+      console.error('Supabase signIn error:', error)
+      return { error: error as Error }
+    }
+  }
+
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        }
+      })
+      return { error }
+    } catch (error) {
+      console.error('Google signIn error:', error)
+      return { error: error as Error }
+    }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('Supabase signOut error:', error)
+    }
   }
 
   const value = {
@@ -54,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     signIn,
+    signInWithGoogle,
     signOut,
   }
 

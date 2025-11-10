@@ -6,6 +6,7 @@ import Riders from './pages/Riders'
 import Events from './pages/Events'
 import Sync from './pages/Sync'
 import RacingDataMatrix from './pages/RacingDataMatrix'
+import Debug from './pages/Debug'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -93,6 +94,7 @@ function AppContent() {
           <Route path="/matrix" element={<RacingDataMatrix />} />
           <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><Events /></div>} />
+          <Route path="/debug" element={<Debug />} />
           
           {/* Protected Routes */}
           <Route 
