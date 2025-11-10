@@ -342,10 +342,16 @@ npx tsx src/server.ts  # Serves static files + API
 
 ### US1: Authorisatie voor Rider Management
 ✅ **Status**: Compleet
-- Supabase authentication
+- **Multi-provider authentication**: Email/Password + OAuth ready
+- **OAuth Providers** (code klaar, configuratie vereist):
+  - Discord 🎮
+  - Google 🔍
+  - GitHub 🐙
+  - Microsoft Azure 🪟
 - Protected routes (`/riders`, `/sync`)
 - Login/logout functionaliteit
 - Role-based access (admin)
+- **Setup guide**: [docs/DISCORD_OAUTH_SETUP.md](docs/DISCORD_OAUTH_SETUP.md)
 
 ### US2: Matrix Publiek Toegankelijk
 ✅ **Status**: Compleet

@@ -7,6 +7,7 @@ import Events from './pages/Events'
 import Sync from './pages/Sync'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import Debug from './pages/Debug'
+import { AccessRequests } from './pages/AccessRequests'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -110,6 +111,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <div className="max-w-7xl mx-auto"><Sync /></div>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/access-requests" 
+            element={
+              <ProtectedRoute>
+                <AccessRequests />
               </ProtectedRoute>
             } 
           />

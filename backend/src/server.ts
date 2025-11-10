@@ -17,6 +17,8 @@ import resultsRouter from './api/endpoints/results.js';
 import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import autoSyncRouter from './api/endpoints/auto-sync.js';
+import accessRequestsRouter from './api/endpoints/access-requests.js';
+import userAccessRouter from './api/endpoints/user-access.js';
 
 // US7 + US8: Auto-sync service
 import { autoSyncService } from './services/auto-sync.service.js';
@@ -52,7 +54,7 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// API Routes - 6 Endpoints (BEFORE static files!)
+// API Routes (BEFORE static files!)
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
 app.use('/api/events', eventsRouter);
@@ -60,6 +62,10 @@ app.use('/api/results', resultsRouter);
 app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
+
+// Access management endpoints (Discord OAuth approval flow)
+app.use('/api/admin/access-requests', accessRequestsRouter);
+app.use('/api/user', userAccessRouter);
 
 // Static files (AFTER API routes to avoid conflicts)
 // Serve React frontend build (Vite builds to backend/public/dist/)
