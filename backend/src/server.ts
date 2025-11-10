@@ -32,21 +32,23 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors());
 app.use(express.json());
 
-// Logging middleware (early for all requests)
+// Request logging middleware
 app.use((req: Request, res: Response, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const timestamp = new Date().toLocaleString('nl-NL');
+  console.log(`[${timestamp}] ${req.method} ${req.path}`);
   next();
 });
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-  console.log('Health check received');
+  console.log('❤️  Health check ontvangen');
   res.status(200).json({
     status: 'ok',
-    service: 'TeamNL Cloud9 Backend',
+    service: 'TeamNL Cloud9 Racing Dashboard',
     timestamp: new Date().toISOString(),
-    version: '2.0.0-clean',
+    version: '1.0.0-mvp',
     port: PORT,
+    environment: process.env.NODE_ENV || 'development',
   });
 });
 
@@ -60,9 +62,6 @@ app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
 
 // Static files (AFTER API routes to avoid conflicts)
-// Serve Firebase legacy site
-app.use('/legacy', express.static(path.join(__dirname, '../frontend/public/legacy')));
-
 // Serve React frontend build (Vite builds to backend/public/dist/)
 app.use(express.static(path.join(__dirname, '../public/dist')));
 
@@ -90,20 +89,20 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
 });
 
 // Start server
-console.log(`Starting server on port ${PORT}...`);
-console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-console.log(`Binding to: 0.0.0.0:${PORT}`);
+console.log(`⏳ Server opstart...`);
+console.log(`📍 Omgeving: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🌐 Binding: 0.0.0.0:${PORT}`);
 
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server successfully started!`);
+  console.log(`✅ Server succesvol gestart!\n`);
   console.log(`
 ╔════════════════════════════════════════════════╗
-║  TeamNL Cloud9 Racing Team - Backend v2.0     ║
+║  TeamNL Cloud9 Racing Dashboard - MVP v1.0    ║
 ╠════════════════════════════════════════════════╣
-║  🚀 Server running on port ${PORT}               ║
-║  📍 Health: http://0.0.0.0:${PORT}/health        ║
+║  🚀 Server draait op poort ${PORT}               ║
+║  ❤️  Health check: http://0.0.0.0:${PORT}/health ║
 ║                                                ║
-║  🔗 6 API Endpoints:                           ║
+║  � 6 API Endpoints:                           ║
 ║  • GET  /api/clubs/:id                         ║
 ║  • GET  /api/riders                            ║
 ║  • GET  /api/events                            ║
@@ -119,30 +118,31 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  • POST /api/history/:riderId/sync             ║
 ║  • POST /api/sync-logs/full-sync               ║
 ║                                                ║
-║  ⏰ Auto-Sync (US8):                           ║
-║  • Enabled: ${syncConfig.enabled ? 'YES' : 'NO'}                              ║
-║  • Interval: Every ${syncConfig.intervalHours}h                      ║
+║  ⏰ Auto-Sync:                                 ║
+║  • Status: ${syncConfig.enabled ? 'Ingeschakeld' : 'Uitgeschakeld'}                        ║
+║  • Interval: Elke ${syncConfig.intervalHours} uur                    ║
 ╚════════════════════════════════════════════════╝
   `);
   
-  // US7 + US8: Start auto-sync scheduler
+  // Start auto-sync scheduler (indien enabled)
   autoSyncService.start();
 });
 
 // Server error handling
 server.on('error', (error: any) => {
-  console.error('❌ Server error:', error);
+  console.error('❌ Server fout:', error);
   if (error.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use`);
+    console.error(`❌ Poort ${PORT} is al in gebruik`);
+    console.error(`💡 Tip: Kill het proces met: lsof -ti:${PORT} | xargs kill -9`);
   }
   process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  console.log('🛑 SIGTERM ontvangen - server wordt afgesloten...');
   server.close(() => {
-    console.log('HTTP server closed');
+    console.log('✅ Server netjes afgesloten');
   });
 });
 
