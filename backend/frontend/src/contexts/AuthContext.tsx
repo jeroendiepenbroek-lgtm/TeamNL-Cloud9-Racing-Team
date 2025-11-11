@@ -40,53 +40,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessLoading(true)
       console.log('[AuthContext] Checking access status for user:', userId)
       
-      // Simplified: Just check if user has a role in Supabase
-      // For now, assume all logged-in users are admins (can be refined later)
-      const { data: roles, error } = await supabase
+      // STEP 1: Check if user has roles in user_roles table
+      const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
       
-      if (error) {
-        console.error('[AuthContext] Role check failed:', error)
-        // If no roles table or error, assume approved (backward compatibility)
-        setAccessStatus({
-          has_access: true,
-          status: 'approved',
-          message: 'Access granted',
-          roles: ['admin'],
-          is_admin: true
-        })
-        return
+      if (rolesError) {
+        console.error('[AuthContext] Role check failed:', rolesError)
       }
       
       const userRoles = roles?.map(r => r.role) || []
       const isAdmin = userRoles.includes('admin')
       
-      console.log('[AuthContext] User roles:', userRoles)
+      console.log('[AuthContext] User roles from user_roles:', userRoles)
       
+      // STEP 2: If no roles, check if user is a rider in the riders table
+      if (userRoles.length === 0) {
+        console.log('[AuthContext] No roles found, checking if user is a team rider...')
+        
+        // Get user's email from Supabase auth
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        const userEmail = authUser?.email
+        
+        console.log('[AuthContext] User email:', userEmail)
+        
+        // Check if email matches a rider in the database
+        // Special case: jeroen.diepenbroek@gmail.com = rider 150437
+        if (userEmail === 'jeroen.diepenbroek@gmail.com') {
+          console.log('[AuthContext] ✅ Recognized team member: Jeroen (rider 150437)')
+          
+          // Auto-grant admin role
+          const { error: insertError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: userId,
+              role: 'admin',
+              granted_by: userId,
+              granted_at: new Date().toISOString()
+            })
+          
+          if (insertError && insertError.code !== '23505') { // Ignore duplicate errors
+            console.error('[AuthContext] Failed to auto-grant admin role:', insertError)
+          } else {
+            console.log('[AuthContext] ✅ Auto-granted admin role!')
+          }
+          
+          setAccessStatus({
+            has_access: true,
+            status: 'approved',
+            message: 'Team member access granted',
+            roles: ['admin'],
+            is_admin: true
+          })
+          return
+        }
+        
+        // TODO: Add more rider email checks or link to rider_id
+        // For now, deny access if not in user_roles and not recognized rider
+        console.log('[AuthContext] ❌ Not a recognized team member')
+        setAccessStatus({
+          has_access: false,
+          status: 'pending',
+          message: 'Alleen teamleden hebben toegang. Neem contact op met de admin.',
+          roles: [],
+          is_admin: false
+        })
+        
+        // Redirect to pending page
+        window.location.href = '/auth/pending'
+        return
+      }
+      
+      // User has roles - grant access
       setAccessStatus({
-        has_access: userRoles.length > 0,
-        status: userRoles.length > 0 ? 'approved' : 'pending',
-        message: userRoles.length > 0 ? 'Access granted' : 'Access pending',
+        has_access: true,
+        status: 'approved',
+        message: 'Access granted',
         roles: userRoles,
         is_admin: isAdmin
       })
       
-      // If no roles, show pending page
-      if (userRoles.length === 0) {
-        console.log('[AuthContext] No roles found, may need approval')
-        // Don't auto-redirect - let user see they're logged in
-      }
     } catch (error) {
       console.error('[AuthContext] Access status error:', error)
-      // On error, be permissive - grant access
+      // On error, deny access for security
       setAccessStatus({
-        has_access: true,
-        status: 'approved',
-        message: 'Access granted (error fallback)',
-        roles: ['admin'],
-        is_admin: true
+        has_access: false,
+        status: 'pending',
+        message: 'Error checking access',
+        roles: [],
+        is_admin: false
       })
     } finally {
       setAccessLoading(false)
