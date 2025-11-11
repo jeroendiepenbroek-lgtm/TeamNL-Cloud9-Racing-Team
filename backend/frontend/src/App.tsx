@@ -7,6 +7,7 @@ import Events from './pages/Events'
 import Sync from './pages/Sync'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import Debug from './pages/Debug'
+import AuthDebug from './pages/AuthDebug'
 import { AccessRequests } from './pages/AccessRequests'
 import PendingAccess from './pages/PendingAccess'
 import UserManagement from './pages/UserManagement'
@@ -71,6 +72,10 @@ function Navigation() {
                   <Link to="/admin/dashboard" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
                     ⚙️ Admin Dashboard
                   </Link>
+                  {/* DEBUG INFO */}
+                  <span className="text-xs text-gray-400 px-2">
+                    {user.email}
+                  </span>
                 </>
               )}
 
@@ -115,6 +120,7 @@ function AppContent() {
           <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><Events /></div>} />
           <Route path="/debug" element={<Debug />} />
+          <Route path="/auth/debug" element={<AuthDebug />} />
           
           {/* Admin Dashboard */}
           <Route 
