@@ -46,26 +46,26 @@ function Navigation() {
             {/* Nav Links */}
             <div className="flex items-center space-x-6">
               <Link to="/" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-cyan-300 border-b-2 border-transparent hover:border-cyan-400 transition">
-                🏠 Dashboard
-              </Link>
-              <Link to="/matrix" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
-                📊 Matrix
+                📊 Racing Matrix
               </Link>
               <Link to="/clubs" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
                 🏢 Clubs
               </Link>
               <Link to="/events" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
-                🏆 Events
+                � Events
               </Link>
               
-              {/* Protected Routes - Only visible when logged in */}
+              {/* Admin Routes - Only visible when logged in */}
               {user && (
                 <>
-                  <Link to="/riders" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
-                    👥 Riders
+                  <Link to="/riders" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
+                    👥 Team Management
                   </Link>
-                  <Link to="/sync" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
-                    🔄 Sync
+                  <Link to="/sync" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
+                    � Sync Status
+                  </Link>
+                  <Link to="/admin/dashboard" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
+                    ⚙️ Admin Dashboard
                   </Link>
                 </>
               )}
@@ -104,11 +104,23 @@ function AppContent() {
       {/* Content */}
       <main className="mx-auto py-6 px-4">
         <Routes>
-          <Route path="/" element={<div className="max-w-7xl mx-auto"><Dashboard /></div>} />
-          <Route path="/matrix" element={<RacingDataMatrix />} />
+          {/* Landing Page - Matrix */}
+          <Route path="/" element={<RacingDataMatrix />} />
+          
+          {/* Public Pages */}
           <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><Events /></div>} />
           <Route path="/debug" element={<Debug />} />
+          
+          {/* Admin Dashboard */}
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <ProtectedRoute>
+                <div className="max-w-7xl mx-auto"><Dashboard /></div>
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Protected Routes */}
           <Route 
