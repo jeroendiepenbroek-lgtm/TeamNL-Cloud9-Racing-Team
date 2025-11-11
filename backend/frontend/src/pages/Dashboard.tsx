@@ -1,8 +1,4 @@
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
-import { useFavorites } from '../hooks/useFavorites'
-import { useAuth } from '../contexts/AuthContext'
 
 interface HealthCheck {
   status: string
@@ -12,280 +8,116 @@ interface HealthCheck {
   port: number
 }
 
-interface TeamRider {
-  rider_id: number
-  name: string
-  zp_category: string | null
-  zp_ftp: number | null
-  weight: number | null
-  race_current_rating: number | null
-  race_wins: number
-  watts_per_kg: number | null
-}
-
-const API_BASE = ''; // Empty = same origin (production)
+const API_BASE = ''; // Empty = same origin (production), of http://localhost:3000 voor dev
 
 export default function Dashboard() {
-  const { favorites, toggleFavorite, isFavorite } = useFavorites()
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
-  const { user } = useAuth()
-  
-  const { data: health } = useQuery<HealthCheck>({
+  const { data: health, isLoading } = useQuery<HealthCheck>({
     queryKey: ['health'],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/health`)
       if (!res.ok) throw new Error('Health check failed')
       return res.json()
     },
-    refetchInterval: 30000,
+    refetchInterval: 30000, // Elke 30 sec
     retry: 3,
   })
 
-  const { data: riders, isLoading: ridersLoading } = useQuery<TeamRider[]>({
-    queryKey: ['teamRiders'],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/riders/team`)
-      if (!res.ok) throw new Error('Failed to fetch riders')
-      return res.json()
-    },
-    refetchInterval: 60000,
-  })
-
-  const teamStats = riders ? {
-    totalRiders: riders.length,
-    avgRating: Math.floor(riders.reduce((sum, r) => sum + (r.race_current_rating || 0), 0) / riders.length) || 0,
-    avgFTP: Math.round(riders.filter(r => r.zp_ftp).reduce((sum, r) => sum + (r.zp_ftp || 0), 0) / riders.filter(r => r.zp_ftp).length) || 0,
-    totalWins: riders.reduce((sum, r) => sum + r.race_wins, 0),
-    categoryA: riders.filter(r => r.zp_category === 'A').length,
-    categoryB: riders.filter(r => r.zp_category === 'B').length,
-    categoryC: riders.filter(r => r.zp_category === 'C').length,
-  } : null
-
-  // Filter riders based on showOnlyFavorites toggle
-  const filteredRiders = riders 
-    ? (showOnlyFavorites 
-        ? riders.filter(r => favorites.includes(r.rider_id))
-        : riders)
-    : []
-  
-  const topRiders = filteredRiders
-    .sort((a, b) => (b.race_current_rating || 0) - (a.race_current_rating || 0))
-    .slice(0, 5)
+  const endpoints = [
+    { name: 'Clubs', path: '/api/clubs/11818', method: 'GET' },
+    { name: 'Riders', path: '/api/riders', method: 'GET' },
+    { name: 'Events', path: '/api/events', method: 'GET' },
+    { name: 'Results', path: '/api/results', method: 'GET' },
+    { name: 'Rider History', path: '/api/rider-history', method: 'GET' },
+    { name: 'Sync Logs', path: '/api/sync-logs', method: 'GET' },
+  ]
 
   return (
     <div className="space-y-6">
-      {/* Hero Header met CloudRacer branding */}
-      <div className="bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-700 shadow-xl rounded-lg p-8 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tight">CLOUDRACER COMMAND CENTER</h1>
-            <p className="mt-3 text-blue-100 text-lg">
-              🚴 TeamNL Cloud9 Racing | Real-time Performance Analytics
-            </p>
+      {/* Header */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h1 className="text-2xl font-bold text-gray-900">TeamNL Cloud9 Racing Dashboard</h1>
+        <p className="mt-2 text-gray-600">
+          Real-time monitoring van ZwiftRacing API integratie
+        </p>
+      </div>
+
+      {/* Health Status */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">System Status</h2>
+        {isLoading ? (
+          <div className="animate-pulse">Loading...</div>
+        ) : health ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Status:</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                health.status === 'ok' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}>
+                {health.status === 'ok' ? '🟢 Online' : '🔴 Offline'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Service:</span>
+              <span className="text-gray-900 font-medium">{health.service}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Version:</span>
+              <span className="text-gray-900 font-medium">{health.version}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Port:</span>
+              <span className="text-gray-900 font-medium">{health.port}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Last Check:</span>
+              <span className="text-gray-900 font-medium">
+                {new Date(health.timestamp).toLocaleTimeString('nl-NL')}
+              </span>
+            </div>
           </div>
-          <div className="text-6xl">⚡</div>
-        </div>
-        {health && (
-          <div className="mt-4 flex items-center space-x-4 text-sm">
-            <span className="flex items-center space-x-2">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              <span>System Online</span>
-            </span>
-            <span className="opacity-75">|</span>
-            <span>v{health.version}</span>
-            <span className="opacity-75">|</span>
-            <span>{new Date(health.timestamp).toLocaleTimeString('nl-NL')}</span>
-          </div>
+        ) : (
+          <div className="text-red-600">❌ Kan verbinding niet maken</div>
         )}
       </div>
 
-      {/* Team Stats Cards - Modern glassmorphism design */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-shadow border-t-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-gray-600">Team Riders</div>
-              <div className="mt-2 text-3xl font-bold text-gray-900">
-                {ridersLoading ? '...' : teamStats?.totalRiders || 0}
-              </div>
-            </div>
-            <div className="text-4xl">🚴</div>
-          </div>
-          <div className="mt-3 text-xs text-gray-500">
-            A: {teamStats?.categoryA || 0} | B: {teamStats?.categoryB || 0} | C: {teamStats?.categoryC || 0}
-          </div>
-        </div>
-
-        <div className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-shadow border-t-4 border-green-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-gray-600">Avg Rating</div>
-              <div className="mt-2 text-3xl font-bold text-gray-900">
-                {ridersLoading ? '...' : teamStats?.avgRating || '-'}
-              </div>
-            </div>
-            <div className="text-4xl">📊</div>
-          </div>
-          <div className="mt-3 text-xs text-gray-500">ZwiftPower ranking</div>
-        </div>
-
-        <div className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-shadow border-t-4 border-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-gray-600">Avg FTP</div>
-              <div className="mt-2 text-3xl font-bold text-gray-900">
-                {ridersLoading ? '...' : teamStats?.avgFTP || '-'}
-                <span className="text-lg text-gray-500">W</span>
-              </div>
-            </div>
-            <div className="text-4xl">⚡</div>
-          </div>
-          <div className="mt-3 text-xs text-gray-500">Team average power</div>
-        </div>
-
-        <div className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-shadow border-t-4 border-yellow-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-gray-600">Total Wins</div>
-              <div className="mt-2 text-3xl font-bold text-yellow-600">
-                {ridersLoading ? '...' : teamStats?.totalWins || 0}
-              </div>
-            </div>
-            <div className="text-4xl">🏆</div>
-          </div>
-          <div className="mt-3 text-xs text-gray-500">Combined victories</div>
-        </div>
-      </div>
-
-      {/* Top Riders Leaderboard */}
-      <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white flex items-center">
-              <span className="mr-2">🏅</span>
-              Top 5 Riders by Rating
-            </h2>
-            <button
-              onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-              className={`px-3 py-1.5 rounded-lg transition-colors text-sm font-medium flex items-center gap-2 ${
-                showOnlyFavorites 
-                  ? 'bg-white text-blue-600' 
-                  : 'bg-blue-700 text-white hover:bg-blue-800'
-              }`}
-              title={showOnlyFavorites ? 'Toon alle riders' : 'Toon alleen favorieten'}
+      {/* API Endpoints */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">API Endpoints</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {endpoints.map((endpoint) => (
+            <div
+              key={endpoint.path}
+              className="border border-gray-200 rounded-lg p-4 hover:border-blue-500 transition-colors"
             >
-              <span>{showOnlyFavorites ? '⭐' : '☆'}</span>
-              <span>{showOnlyFavorites ? 'Favorieten' : 'Alle'}</span>
-              {showOnlyFavorites && favorites.length > 0 && (
-                <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white rounded text-xs">
-                  {favorites.length}
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-medium text-gray-900">{endpoint.name}</h3>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">
+                  {endpoint.method}
                 </span>
-              )}
-            </button>
-          </div>
-        </div>
-        <div className="p-6">
-          {ridersLoading ? (
-            <div className="text-center py-8 text-gray-500">Loading riders...</div>
-          ) : topRiders.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="text-gray-400 text-5xl mb-4">🚴</div>
-              <p className="text-gray-600">No riders yet</p>
-              <Link 
-                to="/riders" 
-                className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Add First Rider
-              </Link>
+              </div>
+              <code className="text-xs text-gray-600 break-all">{endpoint.path}</code>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {topRiders.map((rider, index) => (
-                <div 
-                  key={rider.rider_id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`text-2xl font-bold ${
-                      index === 0 ? 'text-yellow-500' :
-                      index === 1 ? 'text-gray-400' :
-                      index === 2 ? 'text-orange-600' :
-                      'text-gray-300'
-                    }`}>
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900 flex items-center gap-2">
-                        {rider.name}
-                        <button
-                          onClick={() => toggleFavorite(rider.rider_id)}
-                          className="text-xl hover:scale-110 transition-transform"
-                          title={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
-                        >
-                          {isFavorite(rider.rider_id) ? '⭐' : '☆'}
-                        </button>
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        Cat: {rider.zp_category || '?'} | 
-                        FTP: {rider.zp_ftp || '-'}W |
-                        W/kg: {rider.zp_ftp && rider.weight ? (rider.zp_ftp / rider.weight).toFixed(2) : '-'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {rider.race_current_rating ? Math.floor(rider.race_current_rating) : '-'}
-                    </div>
-                    <div className="text-xs text-gray-500">Rating</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Manage Riders - alleen zichtbaar voor admins */}
-        {user && (
-          <Link 
-            to="/riders"
-            className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"
-          >
-            <div className="text-center">
-              <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">👥</div>
-              <h3 className="text-lg font-semibold text-gray-900">Manage Riders</h3>
-              <p className="mt-2 text-sm text-gray-600">Add, sync, and view all team members</p>
-            </div>
-          </Link>
-        )}
-
-        {/* Sync - alleen zichtbaar voor admins */}
-        {user && (
-          <Link 
-            to="/sync"
-            className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"
-          >
-            <div className="text-center">
-              <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">🔄</div>
-              <h3 className="text-lg font-semibold text-gray-900">Sync Data</h3>
-              <p className="mt-2 text-sm text-gray-600">Update rider stats from ZwiftRacing API</p>
-            </div>
-          </Link>
-        )}
-
-        {/* Events - altijd zichtbaar */}
-        <Link 
-          to="/events"
-          className="bg-white shadow-lg rounded-xl p-6 hover:shadow-xl transition-all hover:scale-105 cursor-pointer group"
-        >
-          <div className="text-center">
-            <div className="text-5xl mb-3 group-hover:scale-110 transition-transform">🏁</div>
-            <h3 className="text-lg font-semibold text-gray-900">Events & Results</h3>
-            <p className="mt-2 text-sm text-gray-600">Track race history and performance</p>
-          </div>
-        </Link>
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="text-sm font-medium text-gray-600">Total Riders</div>
+          <div className="mt-2 text-3xl font-bold text-gray-900">-</div>
+          <div className="mt-2 text-xs text-gray-500">Sync data om te vullen</div>
+        </div>
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="text-sm font-medium text-gray-600">Events Tracked</div>
+          <div className="mt-2 text-3xl font-bold text-gray-900">-</div>
+          <div className="mt-2 text-xs text-gray-500">Sync data om te vullen</div>
+        </div>
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="text-sm font-medium text-gray-600">Last Sync</div>
+          <div className="mt-2 text-3xl font-bold text-gray-900">-</div>
+          <div className="mt-2 text-xs text-gray-500">Geen sync logs nog</div>
+        </div>
       </div>
     </div>
   )

@@ -17,8 +17,6 @@ import resultsRouter from './api/endpoints/results.js';
 import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import autoSyncRouter from './api/endpoints/auto-sync.js';
-import accessRequestsRouter from './api/endpoints/access-requests.js';
-import userAccessRouter from './api/endpoints/user-access.js';
 
 // US7 + US8: Auto-sync service
 import { autoSyncService } from './services/auto-sync.service.js';
@@ -34,27 +32,37 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors());
 app.use(express.json());
 
-// Request logging middleware
+// Serve React frontend build (producti)
+app.use(express.static(path.join(__dirname, '../public/dist')));
+
+// Fallback: serve old public/index.html (development)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Logging middleware
 app.use((req: Request, res: Response, next) => {
-  const timestamp = new Date().toLocaleString('nl-NL');
-  console.log(`[${timestamp}] ${req.method} ${req.path}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
-  console.log('❤️  Health check ontvangen');
+  console.log('Health check received');
   res.status(200).json({
     status: 'ok',
-    service: 'TeamNL Cloud9 Racing Dashboard',
+    service: 'TeamNL Cloud9 Backend',
     timestamp: new Date().toISOString(),
-    version: '1.0.0-mvp',
+    version: '2.0.0-clean',
     port: PORT,
-    environment: process.env.NODE_ENV || 'development',
   });
 });
 
-// API Routes (BEFORE static files!)
+// Root route - Serve React app
+app.get('/', (req: Request, res: Response) => {
+  console.log('Root route accessed - serving React app');
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+});
+
+// API Routes - 6 Endpoints
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
 app.use('/api/events', eventsRouter);
@@ -63,24 +71,16 @@ app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
 
-// Access management endpoints (Discord OAuth approval flow)
-app.use('/api/admin/access-requests', accessRequestsRouter);
-app.use('/api/user', userAccessRouter);
-
-// Static files (AFTER API routes to avoid conflicts)
-// Serve React frontend build (Vite builds to backend/public/dist/)
-app.use(express.static(path.join(__dirname, '../public/dist')));
-
-// SPA Fallback - LAST route (catch-all for client-side routing)
-app.get('*', (req: Request, res: Response) => {
-  // If API call that wasn't caught, return JSON error
+// 404 handler
+app.use((req: Request, res: Response) => {
+  // If API call, return JSON error
   if (req.path.startsWith('/api/')) {
     res.status(404).json({
       error: 'Endpoint niet gevonden',
       path: req.path,
     });
   } else {
-    // Otherwise, serve React app index.html (SPA fallback)
+    // Otherwise, serve React app (SPA fallback for client-side routing)
     res.sendFile(path.join(__dirname, '../public/dist/index.html'));
   }
 });
@@ -95,20 +95,20 @@ app.use((err: Error, req: Request, res: Response, next: any) => {
 });
 
 // Start server
-console.log(`⏳ Server opstart...`);
-console.log(`📍 Omgeving: ${process.env.NODE_ENV || 'development'}`);
-console.log(`🌐 Binding: 0.0.0.0:${PORT}`);
+console.log(`Starting server on port ${PORT}...`);
+console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`Binding to: 0.0.0.0:${PORT}`);
 
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Server succesvol gestart!\n`);
+  console.log(`✅ Server successfully started!`);
   console.log(`
 ╔════════════════════════════════════════════════╗
-║  TeamNL Cloud9 Racing Dashboard - MVP v1.0    ║
+║  TeamNL Cloud9 Racing Team - Backend v2.0     ║
 ╠════════════════════════════════════════════════╣
-║  🚀 Server draait op poort ${PORT}               ║
-║  ❤️  Health check: http://0.0.0.0:${PORT}/health ║
+║  🚀 Server running on port ${PORT}               ║
+║  📍 Health: http://0.0.0.0:${PORT}/health        ║
 ║                                                ║
-║  � 6 API Endpoints:                           ║
+║  🔗 6 API Endpoints:                           ║
 ║  • GET  /api/clubs/:id                         ║
 ║  • GET  /api/riders                            ║
 ║  • GET  /api/events                            ║
@@ -124,31 +124,30 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  • POST /api/history/:riderId/sync             ║
 ║  • POST /api/sync-logs/full-sync               ║
 ║                                                ║
-║  ⏰ Auto-Sync:                                 ║
-║  • Status: ${syncConfig.enabled ? 'Ingeschakeld' : 'Uitgeschakeld'}                        ║
-║  • Interval: Elke ${syncConfig.intervalHours} uur                    ║
+║  ⏰ Auto-Sync (US8):                           ║
+║  • Enabled: ${syncConfig.enabled ? 'YES' : 'NO'}                              ║
+║  • Interval: Every ${syncConfig.intervalHours}h                      ║
 ╚════════════════════════════════════════════════╝
   `);
   
-  // Start auto-sync scheduler (indien enabled)
+  // US7 + US8: Start auto-sync scheduler
   autoSyncService.start();
 });
 
 // Server error handling
 server.on('error', (error: any) => {
-  console.error('❌ Server fout:', error);
+  console.error('❌ Server error:', error);
   if (error.code === 'EADDRINUSE') {
-    console.error(`❌ Poort ${PORT} is al in gebruik`);
-    console.error(`💡 Tip: Kill het proces met: lsof -ti:${PORT} | xargs kill -9`);
+    console.error(`Port ${PORT} is already in use`);
   }
   process.exit(1);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM ontvangen - server wordt afgesloten...');
+  console.log('SIGTERM signal received: closing HTTP server');
   server.close(() => {
-    console.log('✅ Server netjes afgesloten');
+    console.log('HTTP server closed');
   });
 });
 

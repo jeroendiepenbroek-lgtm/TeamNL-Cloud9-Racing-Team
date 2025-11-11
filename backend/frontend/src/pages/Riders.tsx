@@ -9,7 +9,6 @@ import {
   createColumnHelper,
   SortingState,
 } from '@tanstack/react-table';
-import { useFavorites } from '../hooks/useFavorites';
 
 // Types based on view_my_team + migration 007 (61 API fields)
 interface TeamRider {
@@ -104,7 +103,6 @@ const API_BASE = '';
 
 export default function Riders() {
   const queryClient = useQueryClient();
-  const { toggleFavorite, isFavorite } = useFavorites();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -124,6 +122,21 @@ export default function Riders() {
   const riders: TeamRider[] = data || [];
 
   // Mutations
+  const toggleFavorite = useMutation({
+    mutationFn: async ({ zwiftId, isFavorite }: { zwiftId: number; isFavorite: boolean }) => {
+      const res = await fetch(`${API_BASE}/api/riders/team/${zwiftId}/favorite`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite }),
+      });
+      if (!res.ok) throw new Error('Failed to update favorite');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teamRiders'] });
+    },
+  });
+
   const deleteRider = useMutation({
     mutationFn: async (zwiftId: number) => {
       const res = await fetch(`${API_BASE}/api/riders/team/${zwiftId}`, {
@@ -206,16 +219,17 @@ export default function Riders() {
         <span className="font-semibold text-yellow-600">{info.getValue() || 0}</span>
       ),
     }),
-    columnHelper.display({
-      id: 'favorite',
+    columnHelper.accessor('is_favorite', {
       header: '⭐',
       cell: (info) => (
         <button
-          onClick={() => toggleFavorite(info.row.original.rider_id)}
+          onClick={() => toggleFavorite.mutate({ 
+            zwiftId: info.row.original.rider_id,  // Fixed: rider_id
+            isFavorite: !info.getValue() 
+          })}
           className="text-2xl hover:scale-110 transition-transform"
-          title={isFavorite(info.row.original.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
         >
-          {isFavorite(info.row.original.rider_id) ? '⭐' : '☆'}
+          {info.getValue() ? '⭐' : '☆'}
         </button>
       ),
     }),
@@ -255,10 +269,8 @@ export default function Riders() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
-          CLOUDRACER - Team Riders
-        </h1>
-        <p className="text-gray-600 mt-2">🚴 Beheer je team members en track performance 📊</p>
+        <h1 className="text-3xl font-bold text-gray-800">TeamNL Cloud9 - Riders</h1>
+        <p className="text-gray-600 mt-2">Beheer je team members en track performance</p>
       </div>
 
       {/* Stats Cards */}

@@ -24,13 +24,9 @@ RUN npm ci
 # Copy backend code
 COPY backend/src ./src
 
-# Copy frontend build to public/dist (matches vite.config.ts outDir)
+# Create public/dist and copy frontend build
 RUN mkdir -p public/dist
 COPY --from=frontend-builder /frontend-dist/ ./public/dist/
-
-# Copy legacy firebase static assets
-RUN mkdir -p frontend/public/legacy
-COPY backend/frontend/public/legacy/ ./frontend/public/legacy/
 
 # Environment
 ENV NODE_ENV=production
