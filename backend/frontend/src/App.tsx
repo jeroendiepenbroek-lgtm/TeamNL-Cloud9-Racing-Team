@@ -30,7 +30,7 @@ function Navigation() {
     <>
       <nav className="bg-gradient-to-r from-gray-900 to-blue-900 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-20">
+          <div className="flex justify-between h-28">
             {/* Logo + Brand - Clickable */}
             <button 
               onClick={handleLogoClick}
