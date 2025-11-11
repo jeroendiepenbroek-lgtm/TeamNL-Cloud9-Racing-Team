@@ -11,12 +11,11 @@ interface SyncStatus {
 
 interface SyncLog {
   id: number;
-  started_at: string;
-  completed_at: string | null;
-  status: 'success' | 'error' | 'running';
-  riders_synced: number;
-  errors_count: number;
+  endpoint: string;
+  status: 'success' | 'error' | 'running' | 'partial';
+  records_processed: number;
   error_message: string | null;
+  created_at: string;
 }
 
 export default function Sync() {
@@ -93,12 +92,6 @@ export default function Sync() {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const formatDuration = (started: string, completed: string | null) => {
-    if (!completed) return 'Bezig...';
-    const ms = new Date(completed).getTime() - new Date(started).getTime();
-    return `${(ms / 1000).toFixed(1)}s`;
   };
 
   if (loading) {
@@ -193,10 +186,9 @@ export default function Sync() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duur</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timestamp</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Endpoint</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Riders</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Errors</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
                 </tr>
               </thead>
@@ -206,26 +198,27 @@ export default function Sync() {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         log.status === 'success' ? 'bg-green-100 text-green-800' :
+                        log.status === 'partial' ? 'bg-yellow-100 text-yellow-800' :
                         log.status === 'error' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
+                        'bg-blue-100 text-blue-800'
                       }`}>
                         {log.status === 'success' ? '✓ Succes' :
+                         log.status === 'partial' ? '⚠ Partial' :
                          log.status === 'error' ? '✗ Fout' :
                          '⏳ Bezig'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(log.started_at)}
+                      {formatDate(log.created_at)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      {formatDuration(log.started_at, log.completed_at)}
+                    <td className="px-4 py-3 text-sm text-gray-700 font-mono">
+                      <div className="max-w-md truncate" title={log.endpoint}>
+                        {log.endpoint}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                      {log.riders_synced}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <span className={log.errors_count > 0 ? 'text-red-600 font-medium' : 'text-gray-400'}>
-                        {log.errors_count}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      <span className="font-semibold text-gray-900">
+                        {log.records_processed}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
@@ -234,7 +227,7 @@ export default function Sync() {
                           {log.error_message}
                         </span>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-green-600">✓ OK</span>
                       )}
                     </td>
                   </tr>

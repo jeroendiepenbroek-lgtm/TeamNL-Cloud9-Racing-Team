@@ -185,6 +185,18 @@ export class SupabaseService {
     return data;
   }
 
+  async updateSyncLog(id: number, updates: Partial<DbSyncLog>): Promise<DbSyncLog> {
+    const { data, error } = await this.client
+      .from('sync_logs')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   // ========== MY TEAM MEMBERS ==========
   // Query via VIEW (niet direct riders tabel!)
   async getMyTeamMembers(): Promise<any[]> {

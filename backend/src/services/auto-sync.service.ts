@@ -29,6 +29,8 @@ export class AutoSyncService {
     
     this.isRunning = true;
     const startTime = Date.now();
+    let endpointUsed = '';
+    let syncLogId: number | null = null;
     
     try {
       console.log('[AutoSync] 🔄 Starting team sync...');
@@ -44,13 +46,22 @@ export class AutoSyncService {
       
       console.log(`[AutoSync] 📊 Syncing ${riderIds.length} riders...`);
       
-  let ridersData: any[] = [];
-  const errorMessages: string[] = [];
+      let ridersData: any[] = [];
+      const errorMessages: string[] = [];
       
       // Strategy: Use GET for small teams (< 10 riders, 5/min rate)
       //           Use POST bulk for larger teams (1/15min rate, max 1000)
       if (riderIds.length <= 10) {
+        endpointUsed = `GET /public/rider/:id (${riderIds.length} calls)`;
         console.log('[AutoSync] 📡 Using individual GET calls (small team, 5/min rate)');
+        
+        // Create sync log
+        const syncLog = await supabase.createSyncLog({
+          endpoint: endpointUsed,
+          status: 'running',
+          records_processed: 0,
+        });
+        syncLogId = syncLog.id;
         
         for (const riderId of riderIds) {
           try {
@@ -67,13 +78,25 @@ export class AutoSyncService {
           }
         }
       } else {
+        endpointUsed = `POST /public/riders (bulk: ${riderIds.length} riders)`;
         console.log('[AutoSync] 📡 Using bulk POST API (large team, 1/15min rate)');
+        
+        // Create sync log
+        const syncLog = await supabase.createSyncLog({
+          endpoint: endpointUsed,
+          status: 'running',
+          records_processed: 0,
+        });
+        syncLogId = syncLog.id;
         
         try {
           // Bulk fetch van ZwiftRacing API (max 1000, rate: 1/15min)
           ridersData = await zwiftClient.getBulkRiders(riderIds);
         } catch (error: any) {
           console.error('[AutoSync] ❌ Bulk POST failed, falling back to GET:', error.message);
+          
+          // Update endpoint info - fallback
+          endpointUsed = `POST /public/riders (failed) → GET /public/rider/:id (${riderIds.length} fallback calls)`;
           
           // Fallback: individual GET calls
           for (const riderId of riderIds) {
@@ -91,6 +114,16 @@ export class AutoSyncService {
       
       if (ridersData.length === 0) {
         console.log('[AutoSync] ⚠️ No rider data received from API');
+        
+        // Update sync log - failed
+        if (syncLogId) {
+          await supabase.updateSyncLog(syncLogId, {
+            status: 'error',
+            records_processed: 0,
+            error_message: errorMessages.join('; ') || 'No data received from API',
+          });
+        }
+        
         return { success: 0, errors: 1, skipped: 0, errorMessages };
       }
       
@@ -174,9 +207,18 @@ export class AutoSyncService {
       
       console.log(`[AutoSync] ✅ Sync completed in ${duration}s - ${ridersData.length} riders updated`);
       
+      // Update sync log - success
+      if (syncLogId) {
+        await supabase.updateSyncLog(syncLogId, {
+          status: errorMessages.length > 0 ? 'partial' : 'success',
+          records_processed: ridersData.length,
+          error_message: errorMessages.length > 0 ? errorMessages.join('; ') : undefined,
+        });
+      }
+      
       return {
         success: ridersData.length,
-        errors: 0,
+        errors: errorMessages.length,
         skipped: riderIds.length - ridersData.length,
         errorMessages: errorMessages.length ? errorMessages : undefined,
       };
@@ -184,6 +226,15 @@ export class AutoSyncService {
     } catch (error: any) {
       const duration = ((Date.now() - startTime) / 1000).toFixed(2);
       console.error(`[AutoSync] ❌ Sync failed after ${duration}s:`, error.message);
+      
+      // Update sync log - error
+      if (syncLogId) {
+        await supabase.updateSyncLog(syncLogId, {
+          status: 'error',
+          records_processed: 0,
+          error_message: error.message,
+        }).catch(err => console.error('[AutoSync] Failed to update sync log:', err));
+      }
       
       return {
         success: 0,
