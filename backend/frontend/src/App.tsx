@@ -9,6 +9,7 @@ import RacingDataMatrix from './pages/RacingDataMatrix'
 import Debug from './pages/Debug'
 import { AccessRequests } from './pages/AccessRequests'
 import PendingAccess from './pages/PendingAccess'
+import UserManagement from './pages/UserManagement'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -62,7 +63,10 @@ function Navigation() {
                     👥 Team Management
                   </Link>
                   <Link to="/sync" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
-                    � Sync Status
+                    🔄 Sync Status
+                  </Link>
+                  <Link to="/admin/users" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
+                    👤 Gebruikersbeheer
                   </Link>
                   <Link to="/admin/dashboard" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
                     ⚙️ Admin Dashboard
@@ -136,6 +140,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <div className="max-w-7xl mx-auto"><Sync /></div>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/users" 
+            element={
+              <ProtectedRoute>
+                <UserManagement />
               </ProtectedRoute>
             } 
           />
