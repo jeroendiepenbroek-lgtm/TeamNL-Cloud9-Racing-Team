@@ -191,7 +191,7 @@ export class SupabaseService {
     const { data, error } = await this.client
       .from('view_my_team')
       .select('*')
-      .order('ranking', { ascending: true, nullsFirst: false });
+      .order('race_current_rating', { ascending: false, nullsFirst: false }); // DESC = hoogste rating eerst
 
     if (error) throw error;
     return data || [];

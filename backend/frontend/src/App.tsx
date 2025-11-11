@@ -33,7 +33,7 @@ function Navigation() {
               className="flex items-center space-x-3 hover:opacity-80 transition"
             >
               <img 
-                src="/legacy/Cloudracer-logo.png" 
+                src="/Cloudracer-logo.png" 
                 alt="CloudRacer" 
                 className="h-14 w-14 rounded-full border-2 border-cyan-400 shadow-lg"
               />
@@ -57,6 +57,18 @@ function Navigation() {
               <Link to="/events" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
                 🏆 Events
               </Link>
+              
+              {/* Protected Routes - Only visible when logged in */}
+              {user && (
+                <>
+                  <Link to="/riders" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
+                    👥 Riders
+                  </Link>
+                  <Link to="/sync" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
+                    🔄 Sync
+                  </Link>
+                </>
+              )}
 
               {/* Login/Logout Button */}
               {user ? (
