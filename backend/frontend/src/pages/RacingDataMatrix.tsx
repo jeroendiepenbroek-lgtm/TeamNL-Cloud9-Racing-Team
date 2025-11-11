@@ -502,7 +502,7 @@ export default function RacingDataMatrix() {
       )}
 
       {/* Matrix Table */}
-      <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200">
+      <div className="bg-white shadow-xl rounded-xl border border-gray-200 overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center">
             <div className="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -544,9 +544,9 @@ export default function RacingDataMatrix() {
             <p className="text-gray-500 text-sm">Probeer andere filter instellingen of klik "Clear Filters"</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[calc(100vh-280px)] overflow-y-auto">
             <table className="w-full text-[11px]">
-              <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white sticky top-0 z-10">
+              <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white sticky top-0 z-20 shadow-md">
                 {/* Group Headers Row */}
                 <tr className="border-b border-slate-600">
                   <th rowSpan={2} className="px-2 py-1.5 text-center text-xs font-bold border-r border-slate-600" title="Favoriet">

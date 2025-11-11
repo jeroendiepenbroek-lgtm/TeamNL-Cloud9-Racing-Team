@@ -532,7 +532,7 @@ function AddRiderModal({ onClose }: { onClose: () => void }) {
 // ============================================================================
 function BulkUploadModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [parsedRiders, setParsedRiders] = useState<Array<{ zwiftId: number; name: string }>>([]);
+  const [parsedRiders, setParsedRiders] = useState<Array<{ zwiftId: number; name?: string }>>([]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -553,8 +553,8 @@ function BulkUploadModal({ onClose }: { onClose: () => void }) {
         // Support formats: "zwiftId,name" or just "zwiftId"
         const parts = line.split(',').map((p) => p.trim());
         const zwiftId = parseInt(parts[0]);
-        const name = parts[1] || `Rider ${zwiftId}`;
-        return { zwiftId, name };
+        // Stuur alleen zwiftId - backend haalt echte naam op van ZwiftRacing API
+        return { zwiftId };
       })
       .filter((r) => !isNaN(r.zwiftId));
 
@@ -601,7 +601,7 @@ function BulkUploadModal({ onClose }: { onClose: () => void }) {
                 Upload CSV or TXT file
               </span>
               <span className="text-sm text-gray-500">
-                Format: zwiftId,name (one per line)
+                Format: één Zwift ID per regel (naam wordt automatisch opgehaald van ZwiftRacing API)
               </span>
             </label>
           </div>
@@ -612,21 +612,24 @@ function BulkUploadModal({ onClose }: { onClose: () => void }) {
               <h3 className="font-medium mb-2">
                 Preview ({parsedRiders.length} riders)
               </h3>
+              <div className="text-xs text-gray-500 mb-2">
+                ℹ️ Namen worden opgehaald van ZwiftRacing API tijdens upload
+              </div>
               <div className="border rounded-lg max-h-64 overflow-y-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
                       <th className="px-4 py-2 text-left">#</th>
                       <th className="px-4 py-2 text-left">Zwift ID</th>
-                      <th className="px-4 py-2 text-left">Name</th>
+                      <th className="px-4 py-2 text-left">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {parsedRiders.map((r, i) => (
                       <tr key={i} className="border-t">
                         <td className="px-4 py-2">{i + 1}</td>
-                        <td className="px-4 py-2">{r.zwiftId}</td>
-                        <td className="px-4 py-2">{r.name}</td>
+                        <td className="px-4 py-2 font-mono">{r.zwiftId}</td>
+                        <td className="px-4 py-2 text-green-600">✓ Klaar voor upload</td>
                       </tr>
                     ))}
                   </tbody>

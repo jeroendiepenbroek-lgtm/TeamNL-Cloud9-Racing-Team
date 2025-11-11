@@ -285,39 +285,56 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
           results.synced = zwiftRidersData.length;
           console.log(`[Bulk Import] ✅ Synced ${zwiftRidersData.length} riders via POST`);
         } catch (apiError: any) {
-          console.warn('[Bulk Import] ⚠️ POST bulk failed, falling back to GET calls:', apiError.message);
+          console.error('[Bulk Import] ❌ POST bulk failed:', apiError.message);
+          console.warn('[Bulk Import] ⚠️ Falling back to individual GET calls (this will take time)...');
           
           // Fallback: individual GET calls (5/min rate)
-          for (const zwiftId of newRiderIds) {
+          // KRITIEK: Dit duurt lang voor > 10 riders (12 sec per rider)
+          let successCount = 0;
+          let errorCount = 0;
+          
+          for (let i = 0; i < newRiderIds.length; i++) {
+            const zwiftId = newRiderIds[i];
             try {
+              console.log(`[Bulk Import] Fetching rider ${i + 1}/${newRiderIds.length}: ${zwiftId}...`);
               const rider = await zwiftClient.getRider(zwiftId);
               zwiftRidersData.push(rider);
+              successCount++;
               results.synced++;
               
               // Rate limit: 5/min = 12 sec between calls
-              if (newRiderIds.indexOf(zwiftId) < newRiderIds.length - 1) {
+              if (i < newRiderIds.length - 1) {
+                console.log(`[Bulk Import] Rate limiting: waiting 12s before next rider...`);
                 await new Promise(resolve => setTimeout(resolve, 12000));
               }
             } catch (err: any) {
-              console.warn(`[Bulk Import] Failed to fetch rider ${zwiftId}:`, err.message);
+              errorCount++;
+              console.error(`[Bulk Import] ❌ Failed to fetch rider ${zwiftId}:`, err.message);
+              results.errors.push({ zwiftId, error: err.message });
             }
           }
+          console.log(`[Bulk Import] GET fallback complete: ${successCount} success, ${errorCount} errors`);
         }
       } else {
         // Voor kleine imports: gebruik GET (5/min rate, sneller dan POST voor < 10 riders)
-        console.log(`[Bulk Import] Fetching ${newRiderIds.length} riders via GET calls (5/min rate)...`);
-        for (const zwiftId of newRiderIds) {
+        console.log(`[Bulk Import] Fetching ${newRiderIds.length} riders via individual GET calls (5/min rate)...`);
+        
+        for (let i = 0; i < newRiderIds.length; i++) {
+          const zwiftId = newRiderIds[i];
           try {
+            console.log(`[Bulk Import] Fetching rider ${i + 1}/${newRiderIds.length}: ${zwiftId}...`);
             const rider = await zwiftClient.getRider(zwiftId);
             zwiftRidersData.push(rider);
             results.synced++;
             
             // Rate limit: 5/min = 12 sec between calls
-            if (newRiderIds.indexOf(zwiftId) < newRiderIds.length - 1) {
+            if (i < newRiderIds.length - 1) {
+              console.log(`[Bulk Import] Rate limiting: waiting 12s...`);
               await new Promise(resolve => setTimeout(resolve, 12000));
             }
           } catch (err: any) {
-            console.warn(`[Bulk Import] Failed to fetch rider ${zwiftId}:`, err.message);
+            console.error(`[Bulk Import] ❌ Failed to fetch rider ${zwiftId}:`, err.message);
+            results.errors.push({ zwiftId, error: err.message });
           }
         }
         console.log(`[Bulk Import] ✅ Synced ${zwiftRidersData.length} riders via GET`);
@@ -401,14 +418,18 @@ router.post('/team/bulk', async (req: Request, res: Response) => {
             club_name: zwiftData.club?.name,
           }]);
           results.created++;
-        } else if (riderInput.name) {
-          // Fallback: manual name alleen
-          await supabase.upsertRiders([{ rider_id: zwiftId, name: riderInput.name }]);
-          results.created++;
         } else {
+          // Geen ZwiftRacing data - voeg rider toe met minimale info
+          // Dit kan gebeuren bij rate limiting of als rider niet in ZwiftRacing DB zit
+          console.warn(`[Bulk Import] ⚠️ No Zwift data for rider ${zwiftId}, adding with minimal info`);
+          await supabase.upsertRiders([{ 
+            rider_id: zwiftId, 
+            name: riderInput.name || `Rider ${zwiftId}` // Fallback naam
+          }]);
+          results.created++;
           results.errors.push({ 
             zwiftId, 
-            error: 'Rider niet gevonden in ZwiftRacing API en geen name opgegeven' 
+            error: 'Geen ZwiftRacing data beschikbaar - rider toegevoegd met minimale info' 
           });
           continue;
         }
