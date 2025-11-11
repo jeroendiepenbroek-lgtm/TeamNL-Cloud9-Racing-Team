@@ -8,6 +8,7 @@ import Sync from './pages/Sync'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import Debug from './pages/Debug'
 import { AccessRequests } from './pages/AccessRequests'
+import PendingAccess from './pages/PendingAccess'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -122,6 +123,7 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
+          <Route path="/auth/pending" element={<PendingAccess />} />
         </Routes>
       </main>
     </div>
