@@ -33,38 +33,49 @@ export default function UserManagement() {
     try {
       setLoading(true)
       
-      // Haal alle users op
-      const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers()
-      
-      if (authError) {
-        console.error('Error fetching users:', authError)
-        return
-      }
-
-      // Haal alle user roles op
-      const { data: userRoles, error: rolesError } = await supabase
+      // Haal user_roles op met user info via JOIN
+      const { data: userRolesData, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role')
+        .select('user_id, role, granted_at')
       
       if (rolesError) {
         console.error('Error fetching roles:', rolesError)
+        return
       }
 
-      // Combineer data
-      const usersWithRoles: UserWithRole[] = (authUsers?.users || []).map(u => {
-        const roles = (userRoles || [])
-          .filter(r => r.user_id === u.id)
-          .map(r => r.role)
-        
-        return {
-          id: u.id,
-          email: u.email || 'No email',
-          created_at: u.created_at,
-          last_sign_in_at: u.last_sign_in_at,
-          roles,
-          is_admin: roles.includes('admin')
+      // Haal auth.users metadata op via RPC of view
+      // Voor nu: groepeer per user_id
+      const userMap = new Map<string, { roles: string[], granted_at: string }>()
+      
+      userRolesData?.forEach(r => {
+        if (!userMap.has(r.user_id)) {
+          userMap.set(r.user_id, { roles: [], granted_at: r.granted_at })
         }
+        userMap.get(r.user_id)!.roles.push(r.role)
       })
+
+      // Voor demo: gebruik alleen users met roles
+      // TODO: Add RPC function om alle auth.users op te halen
+      const usersWithRoles: UserWithRole[] = Array.from(userMap.entries()).map(([userId, data]) => ({
+        id: userId,
+        email: user?.id === userId ? user.email! : 'User ' + userId.slice(0, 8),
+        created_at: data.granted_at,
+        last_sign_in_at: null,
+        roles: data.roles,
+        is_admin: data.roles.includes('admin')
+      }))
+
+      // Voeg huidige user toe als die nog niet in lijst staat
+      if (user && !userMap.has(user.id)) {
+        usersWithRoles.push({
+          id: user.id,
+          email: user.email!,
+          created_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          roles: [],
+          is_admin: false
+        })
+      }
 
       setUsers(usersWithRoles)
     } catch (error) {
