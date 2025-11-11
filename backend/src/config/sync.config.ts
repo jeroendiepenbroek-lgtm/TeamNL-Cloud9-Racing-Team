@@ -19,7 +19,7 @@ export function getSyncConfig(): SyncConfig {
   const enabled = process.env.SYNC_ENABLED === 'true' || 
                   (process.env.SYNC_ENABLED !== 'false' && process.env.NODE_ENV === 'production');
   
-  const intervalHours = parseInt(process.env.SYNC_INTERVAL_HOURS || '6', 10);
+  const intervalHours = parseInt(process.env.SYNC_INTERVAL_HOURS || '1', 10);  // Default: 1 uur
   const startDelayMinutes = parseInt(process.env.SYNC_START_DELAY_MINUTES || '5', 10);
   
   // Genereer cron expression: elke N uur
