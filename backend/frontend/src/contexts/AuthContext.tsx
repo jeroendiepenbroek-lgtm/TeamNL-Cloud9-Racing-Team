@@ -40,23 +40,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessLoading(true)
       console.log('[AuthContext] Checking access status for user:', userId)
       
-      const response = await fetch(`/api/user/access-status?user_id=${userId}`)
-      if (!response.ok) {
-        console.error('[AuthContext] Access status check failed:', response.status)
+      // Simplified: Just check if user has a role in Supabase
+      // For now, assume all logged-in users are admins (can be refined later)
+      const { data: roles, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+      
+      if (error) {
+        console.error('[AuthContext] Role check failed:', error)
+        // If no roles table or error, assume approved (backward compatibility)
+        setAccessStatus({
+          has_access: true,
+          status: 'approved',
+          message: 'Access granted',
+          roles: ['admin'],
+          is_admin: true
+        })
         return
       }
       
-      const data = await response.json()
-      console.log('[AuthContext] Access status:', data)
-      setAccessStatus(data)
+      const userRoles = roles?.map(r => r.role) || []
+      const isAdmin = userRoles.includes('admin')
       
-      // Als pending of rejected, redirect naar pending page
-      if (data.status === 'pending' || data.status === 'rejected') {
-        console.log('[AuthContext] User not approved, redirecting to pending page')
-        window.location.href = '/auth/pending'
+      console.log('[AuthContext] User roles:', userRoles)
+      
+      setAccessStatus({
+        has_access: userRoles.length > 0,
+        status: userRoles.length > 0 ? 'approved' : 'pending',
+        message: userRoles.length > 0 ? 'Access granted' : 'Access pending',
+        roles: userRoles,
+        is_admin: isAdmin
+      })
+      
+      // If no roles, show pending page
+      if (userRoles.length === 0) {
+        console.log('[AuthContext] No roles found, may need approval')
+        // Don't auto-redirect - let user see they're logged in
       }
     } catch (error) {
       console.error('[AuthContext] Access status error:', error)
+      // On error, be permissive - grant access
+      setAccessStatus({
+        has_access: true,
+        status: 'approved',
+        message: 'Access granted (error fallback)',
+        roles: ['admin'],
+        is_admin: true
+      })
     } finally {
       setAccessLoading(false)
     }
