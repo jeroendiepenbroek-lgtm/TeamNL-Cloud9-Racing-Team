@@ -234,27 +234,6 @@ export default function RacingDataMatrix() {
     retry: 3,
   })
 
-  // Bereken team bests voor elk interval in W/kg (voor highlighting)
-  const teamBests = useMemo(() => {
-    if (!riders || riders.length === 0) return null
-    
-    // Helper functie om W/kg te berekenen
-    const getWkg = (power: number | null, weight: number | null) => {
-      if (!power || !weight || weight === 0) return 0
-      return power / weight
-    }
-    
-    return {
-      power_w5: Math.max(...riders.map(r => getWkg(r.power_w5, r.weight))),
-      power_w15: Math.max(...riders.map(r => getWkg(r.power_w15, r.weight))),
-      power_w30: Math.max(...riders.map(r => getWkg(r.power_w30, r.weight))),
-      power_w60: Math.max(...riders.map(r => getWkg(r.power_w60, r.weight))),
-      power_w120: Math.max(...riders.map(r => getWkg(r.power_w120, r.weight))),
-      power_w300: Math.max(...riders.map(r => getWkg(r.power_w300, r.weight))),
-      power_w1200: Math.max(...riders.map(r => getWkg(r.power_w1200, r.weight))),
-    }
-  }, [riders])
-
   // Filter riders - multiselect logic + favorieten
   const filteredRiders = useMemo(() => {
     if (!riders) return []
@@ -289,6 +268,27 @@ export default function RacingDataMatrix() {
       return true
     })
   }, [riders, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, showOnlyFavorites, favorites])
+
+  // Bereken team bests voor elk interval in W/kg (voor highlighting) - dynamisch gebaseerd op gefilterde riders
+  const teamBests = useMemo(() => {
+    if (!filteredRiders || filteredRiders.length === 0) return null
+    
+    // Helper functie om W/kg te berekenen
+    const getWkg = (power: number | null, weight: number | null) => {
+      if (!power || !weight || weight === 0) return 0
+      return power / weight
+    }
+    
+    return {
+      power_w5: Math.max(...filteredRiders.map(r => getWkg(r.power_w5, r.weight))),
+      power_w15: Math.max(...filteredRiders.map(r => getWkg(r.power_w15, r.weight))),
+      power_w30: Math.max(...filteredRiders.map(r => getWkg(r.power_w30, r.weight))),
+      power_w60: Math.max(...filteredRiders.map(r => getWkg(r.power_w60, r.weight))),
+      power_w120: Math.max(...filteredRiders.map(r => getWkg(r.power_w120, r.weight))),
+      power_w300: Math.max(...filteredRiders.map(r => getWkg(r.power_w300, r.weight))),
+      power_w1200: Math.max(...filteredRiders.map(r => getWkg(r.power_w1200, r.weight))),
+    }
+  }, [filteredRiders])
 
   // Sorteer riders
   const sortedRiders = useMemo(() => {
@@ -427,27 +427,31 @@ export default function RacingDataMatrix() {
         </div>
       </div>
 
-      {/* Legend Panel - collapsible */}
+      {/* Legend Panel - Professional & Subtle */}
       {showLegend && (
-        <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-6 shadow-lg border border-indigo-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* vELO Tiers Legend */}
+        <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
+          {/* Info banner */}
+          <div className="mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-800 flex items-start">
+            <span className="mr-2">ℹ️</span>
+            <span>Highlights zijn relatief aan <strong>zichtbare riders</strong>. Bij gebruik van filters worden gold/silver/bronze posities dynamisch herberekend.</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* vELO Rankings */}
             <div>
-              <h3 className="font-bold text-indigo-900 mb-3 flex items-center">
-                <span className="mr-2">🏆</span>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
+                <span className="mr-1.5 text-base">🏆</span>
                 vELO Tiers
               </h3>
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {VELO_TIERS.map(tier => (
-                  <div key={tier.name} className="flex items-center space-x-3">
-                    {/* Rank Badge met tier kleuren */}
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-md`}>
+                  <div key={tier.name} className="flex items-center space-x-2">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm`}>
                       {tier.rank}
                     </div>
-                    {/* Tier info */}
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-900">{tier.name}</span>
-                      <span className="text-[10px] text-gray-600">
+                      <span className="text-[11px] font-semibold text-gray-800">{tier.name}</span>
+                      <span className="text-[10px] text-gray-500">
                         {tier.min}{tier.max ? `-${tier.max}` : '+'} vELO
                       </span>
                     </div>
@@ -456,54 +460,57 @@ export default function RacingDataMatrix() {
               </div>
             </div>
 
-            {/* ZP Categories Legend */}
+            {/* ZP Categories */}
             <div>
-              <h3 className="font-bold text-indigo-900 mb-3 flex items-center">
-                <span className="mr-2">🚴</span>
+              <h3 className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
+                <span className="mr-1.5 text-base">🚴</span>
                 ZP Categories
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {Object.entries(ZP_CATEGORIES).map(([cat, style]) => (
                   <div key={cat} className="flex items-center space-x-2">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded border ${style.color}`}>
+                    <span className={`px-2 py-0.5 text-[10px] font-medium rounded border ${style.color}`}>
                       {style.label}
                     </span>
-                    <span className="text-xs text-gray-700">Category {cat}</span>
+                    <span className="text-[11px] text-gray-600">Category {cat}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Interval Highlights Legend */}
+            {/* Power Interval Highlights */}
             <div>
-              <h3 className="font-bold text-indigo-900 mb-3 flex items-center">
-                <span className="mr-2">⚡</span>
-                Interval Highlights (Team-Relative)
+              <h3 className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
+                <span className="mr-1.5 text-base">⚡</span>
+                Power Highlights
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center space-x-2">
-                  <div className="w-12 h-6 bg-yellow-300 rounded"></div>
+                  <div className="w-10 h-5 bg-yellow-300 rounded-sm shadow-sm"></div>
                   <div>
-                    <div className="text-xs font-medium">Gold</div>
-                    <div className="text-xs text-gray-600">100% - Team Best voor dit interval</div>
+                    <div className="text-[11px] font-medium text-gray-800">Gold</div>
+                    <div className="text-[10px] text-gray-500">100% - Beste in groep</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-12 h-6 bg-gray-300 rounded"></div>
+                  <div className="w-10 h-5 bg-gray-300 rounded-sm shadow-sm"></div>
                   <div>
-                    <div className="text-xs font-medium">Silver</div>
-                    <div className="text-xs text-gray-600">95-99% van team best</div>
+                    <div className="text-[11px] font-medium text-gray-800">Silver</div>
+                    <div className="text-[10px] text-gray-500">95-99% van groepsbest</div>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-12 h-6 bg-orange-300 rounded"></div>
+                  <div className="w-10 h-5 bg-orange-300 rounded-sm shadow-sm"></div>
                   <div>
-                    <div className="text-xs font-medium">Bronze</div>
-                    <div className="text-xs text-gray-600">90-94% van team best</div>
+                    <div className="text-[11px] font-medium text-gray-800">Bronze</div>
+                    <div className="text-[10px] text-gray-500">90-94% van groepsbest</div>
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-gray-600 italic">
-                  💡 Hover over interval values to see absolute watts
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <div className="text-[10px] text-gray-500 italic flex items-start">
+                    <span className="mr-1">💡</span>
+                    <span>Hover over waardes voor absolute watts</span>
+                  </div>
                 </div>
               </div>
             </div>
