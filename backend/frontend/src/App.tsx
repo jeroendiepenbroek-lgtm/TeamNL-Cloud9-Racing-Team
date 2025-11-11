@@ -55,7 +55,7 @@ function Navigation() {
                 🏢 Clubs
               </Link>
               <Link to="/events" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
-                � Events
+                🏁 Events
               </Link>
               
               {/* Admin Button - Only visible when logged in */}
