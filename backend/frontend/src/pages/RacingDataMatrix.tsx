@@ -597,16 +597,16 @@ export default function RacingDataMatrix() {
                   <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('watts_per_kg')}>
                     W/kg
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
+                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
                     Finishes
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
+                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
                     Wins
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
+                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
                     Podiums
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
+                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
                     DNFs
                   </th>
                   <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w5')}>
@@ -660,7 +660,7 @@ export default function RacingDataMatrix() {
                       <td className="px-2 py-0.5 whitespace-nowrap">
                         <VeloBadge rating={rider.race_max30_rating} />
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap font-medium text-gray-900">
+                      <td className="px-2 py-0.5 whitespace-nowrap font-semibold text-gray-900 text-sm">
                         {rider.name}
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-center">
@@ -681,16 +681,16 @@ export default function RacingDataMatrix() {
                       <td className="px-2 py-0.5 whitespace-nowrap text-right text-gray-700">
                         {rider.weight ? `${rider.weight.toFixed(1)}kg` : '-'}
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap text-right text-gray-700 font-semibold">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-right text-gray-700 font-semibold">
                         {rider.race_finishes || 0}
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap text-right font-bold text-green-700">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-right font-bold text-green-700">
                         {rider.race_wins || 0}
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap text-right font-semibold text-blue-700">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-right font-semibold text-blue-700">
                         {rider.race_podiums || 0}
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap text-right text-red-700">
+                      <td className="px-1 py-0.5 whitespace-nowrap text-right text-red-700">
                         {rider.race_dnfs || 0}
                       </td>
                       
