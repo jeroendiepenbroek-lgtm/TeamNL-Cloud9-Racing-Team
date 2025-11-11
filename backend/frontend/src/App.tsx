@@ -8,6 +8,7 @@ import Sync from './pages/Sync'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
+import AdminHome from './pages/AdminHome'
 import { AccessRequests } from './pages/AccessRequests'
 import PendingAccess from './pages/PendingAccess'
 import UserManagement from './pages/UserManagement'
@@ -57,26 +58,14 @@ function Navigation() {
                 � Events
               </Link>
               
-              {/* Admin Routes - Only visible when logged in */}
+              {/* Admin Button - Only visible when logged in */}
               {user && (
-                <>
-                  <Link to="/riders" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
-                    👥 Team Management
-                  </Link>
-                  <Link to="/sync" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
-                    🔄 Sync Status
-                  </Link>
-                  <Link to="/admin/users" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
-                    👤 Gebruikersbeheer
-                  </Link>
-                  <Link to="/admin/dashboard" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-amber-300 hover:text-amber-100 border-b-2 border-transparent hover:border-amber-400 transition">
-                    ⚙️ Admin Dashboard
-                  </Link>
-                  {/* DEBUG INFO */}
-                  <span className="text-xs text-gray-400 px-2">
-                    {user.email}
-                  </span>
-                </>
+                <Link 
+                  to="/admin" 
+                  className="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:from-amber-600 hover:to-orange-600 shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  ⚙️ Admin
+                </Link>
               )}
 
               {/* Login/Logout Button */}
@@ -122,7 +111,17 @@ function AppContent() {
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
           
-          {/* Admin Dashboard */}
+          {/* Admin Home - Dashboard met tegels */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <AdminHome />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Admin Dashboard (System Status) */}
           <Route 
             path="/admin/dashboard" 
             element={

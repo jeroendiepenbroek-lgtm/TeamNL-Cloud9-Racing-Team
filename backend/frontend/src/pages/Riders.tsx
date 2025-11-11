@@ -167,67 +167,74 @@ export default function Riders() {
     },
   });
 
-  // Table columns
+  // Table columns - Geoptimaliseerd voor breedte
   const columnHelper = createColumnHelper<TeamRider>();
   const columns = [
     columnHelper.accessor('rider_id', {
-      header: 'Rider ID',
-      cell: (info) => info.getValue(),
+      header: 'ID',
+      size: 80,
+      cell: (info) => <span className="text-gray-500 text-xs">{info.getValue()}</span>,
     }),
     columnHelper.accessor('name', {
       header: 'Naam',
-      cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+      size: 200,
+      cell: (info) => <span className="font-semibold text-gray-800">{info.getValue()}</span>,
     }),
     columnHelper.accessor('club_name', {
       header: 'Club',
-      cell: (info) => info.getValue() || '-',
+      size: 100,
+      cell: (info) => <span className="text-sm text-gray-600">{info.getValue() || 'TeamNL'}</span>,
     }),
     columnHelper.accessor('race_current_rating', {
       header: 'Ranking',
+      size: 90,
       cell: (info) => {
         const val = info.getValue();
-        return val ? Math.round(val) : '-';
+        return val ? <span className="font-medium text-green-600">{Math.round(val)}</span> : '-';
       },
     }),
     columnHelper.accessor('zp_category', {
       header: 'Cat',
+      size: 60,
       cell: (info) => (
-        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
+        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">
           {info.getValue() || '?'}
         </span>
       ),
     }),
     columnHelper.accessor('zp_ftp', {
       header: 'FTP',
-      cell: (info) => (info.getValue() ? `${info.getValue()}W` : '-'),
-    }),
-    columnHelper.accessor('weight', {
-      header: 'Weight',
-      cell: (info) => (info.getValue() ? `${info.getValue()}kg` : '-'),
+      size: 80,
+      cell: (info) => (info.getValue() ? <span className="text-sm">{info.getValue()}W</span> : '-'),
     }),
     columnHelper.accessor('watts_per_kg', {
       header: 'W/kg',
-      cell: (info) => (info.getValue() ? `${Number(info.getValue()).toFixed(2)}` : '-'),
+      size: 70,
+      cell: (info) => (info.getValue() ? <span className="text-sm font-medium text-purple-600">{Number(info.getValue()).toFixed(2)}</span> : '-'),
     }),
     columnHelper.accessor('race_finishes', {
       header: 'Races',
-      cell: (info) => info.getValue() || 0,
+      size: 70,
+      cell: (info) => <span className="text-sm text-gray-600">{info.getValue() || 0}</span>,
     }),
     columnHelper.accessor('race_wins', {
       header: 'Wins',
+      size: 70,
       cell: (info) => (
-        <span className="font-semibold text-yellow-600">{info.getValue() || 0}</span>
+        <span className="font-bold text-yellow-600">{info.getValue() || 0}</span>
       ),
     }),
     columnHelper.accessor('is_favorite', {
       header: '⭐',
+      size: 50,
       cell: (info) => (
         <button
           onClick={() => toggleFavorite.mutate({ 
-            zwiftId: info.row.original.rider_id,  // Fixed: rider_id
+            zwiftId: info.row.original.rider_id,
             isFavorite: !info.getValue() 
           })}
-          className="text-2xl hover:scale-110 transition-transform"
+          className="text-xl hover:scale-125 transition-transform"
+          title={info.getValue() ? 'Remove from favorites' : 'Add to favorites'}
         >
           {info.getValue() ? '⭐' : '☆'}
         </button>
@@ -235,18 +242,20 @@ export default function Riders() {
     }),
     columnHelper.display({
       id: 'actions',
-      header: 'Actions',
+      header: 'Acties',
+      size: 80,
       cell: (info) => (
         <button
           onClick={() => {
-            if (window.confirm(`Weet je zeker dat je ${info.row.original.name} wilt verwijderen?`)) {
-              deleteRider.mutate(info.row.original.rider_id);  // Fixed: rider_id
+            if (window.confirm(`Weet je zeker dat je ${info.row.original.name} wilt verwijderen uit het team?`)) {
+              deleteRider.mutate(info.row.original.rider_id);
             }
           }}
-          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+          className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs font-medium"
           disabled={deleteRider.isPending}
+          title="Verwijder uit team"
         >
-          {deleteRider.isPending ? '...' : '🗑️ Delete'}
+          {deleteRider.isPending ? '...' : '🗑️'}
         </button>
       ),
     }),
@@ -267,78 +276,57 @@ export default function Riders() {
   });
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">TeamNL Cloud9 - Riders</h1>
-        <p className="text-gray-600 mt-2">Beheer je team members en track performance</p>
+        <h1 className="text-3xl font-bold text-gray-800">👥 Team Management</h1>
+        <p className="text-gray-600 mt-2">Beheer je team leden - voeg riders toe of verwijder ze</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-gray-500 text-sm">Total Riders</div>
-          <div className="text-2xl font-bold text-blue-600">{riders.length}</div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-gray-500 text-sm">Avg Ranking</div>
-          <div className="text-2xl font-bold text-green-600">
-            {riders.length > 0
-              ? Math.round(
-                  riders.reduce((sum, r) => sum + (r.race_current_rating || 0), 0) / riders.length
-                )
-              : '-'}
+      {/* Stats Card - Alleen aantal riders */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 mb-6 text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-blue-100 text-sm font-medium uppercase tracking-wide">Team Grootte</div>
+            <div className="text-5xl font-bold mt-2">{riders.length}</div>
+            <div className="text-blue-100 text-sm mt-1">actieve team leden</div>
           </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-gray-500 text-sm">Avg FTP</div>
-          <div className="text-2xl font-bold text-purple-600">
-            {riders.filter((r) => r.zp_ftp).length > 0
-              ? Math.round(
-                  riders.filter((r) => r.zp_ftp).reduce((sum, r) => sum + (r.zp_ftp || 0), 0) /
-                    riders.filter((r) => r.zp_ftp).length
-                )
-              : '-'}
-            W
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="text-gray-500 text-sm">Total Wins</div>
-          <div className="text-2xl font-bold text-yellow-600">
-            {riders.reduce((sum, r) => sum + (r.race_wins || 0), 0)}
+          <div className="text-6xl opacity-20">
+            👥
           </div>
         </div>
       </div>
 
       {/* Actions Bar */}
-      <div className="bg-white rounded-lg shadow p-4 mb-4">
-        <div className="flex flex-col md:flex-row gap-4 justify-between">
+      <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
           {/* Search */}
           <input
             type="text"
             placeholder="🔍 Zoek op naam of Zwift ID..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
           />
 
           {/* Buttons */}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+              className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md"
             >
               <span>➕</span> Add Rider
             </button>
             <button
               onClick={() => setShowBulkModal(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
+              className="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md"
             >
               <span>📤</span> Bulk Upload
             </button>
             <button
               onClick={() => triggerManualSync.mutate()}
               disabled={triggerManualSync.isPending || riders.length === 0}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium shadow-sm hover:shadow-md"
               title={riders.length === 0 ? 'Voeg eerst riders toe om te synchen' : 'Sync alle team members met ZwiftRacing API'}
             >
               <span>🔄</span> {triggerManualSync.isPending ? 'Syncing...' : 'Sync All'}
@@ -348,7 +336,7 @@ export default function Riders() {
                 const csv = generateCSV(riders);
                 downloadCSV(csv, 'teamnl-cloud9-riders.csv');
               }}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2"
+              className="px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md"
             >
               <span>📥</span> Export CSV
             </button>
@@ -357,40 +345,63 @@ export default function Riders() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-gray-500">Loading riders...</div>
+          <div className="p-12 text-center">
+            <div className="text-4xl mb-4">⏳</div>
+            <div className="text-gray-500">Loading team members...</div>
+          </div>
         ) : error ? (
-          <div className="p-8 text-center text-red-500">Error loading riders</div>
+          <div className="p-12 text-center">
+            <div className="text-4xl mb-4">❌</div>
+            <div className="text-red-500 font-medium">Error loading riders</div>
+          </div>
+        ) : riders.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="text-6xl mb-4">👥</div>
+            <div className="text-xl font-semibold text-gray-700 mb-2">Nog geen team leden</div>
+            <div className="text-gray-500 mb-6">Voeg je eerste rider toe om te beginnen</div>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition inline-flex items-center gap-2"
+            >
+              <span>➕</span> Add First Rider
+            </button>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
                     {headerGroup.headers.map((header) => (
                       <th
                         key={header.id}
-                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition"
                         onClick={header.column.getToggleSortingHandler()}
+                        style={{ width: header.getSize() }}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           {flexRender(header.column.columnDef.header, header.getContext())}
                           {{
-                            asc: '▲',
-                            desc: '▼',
-                          }[header.column.getIsSorted() as string] ?? null}
+                            asc: ' ▲',
+                            desc: ' ▼',
+                          }[header.column.getIsSorted() as string] ?? ''}
                         </div>
                       </th>
                     ))}
                   </tr>
                 ))}
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id} className="hover:bg-gray-50">
+                  <tr key={row.id} className="hover:bg-blue-50 transition">
                     {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td 
+                        key={cell.id} 
+                        className="px-4 py-3 whitespace-nowrap text-sm"
+                        style={{ width: cell.column.getSize() }}
+                      >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
