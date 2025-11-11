@@ -33,7 +33,7 @@ function Navigation() {
               className="flex items-center space-x-4 hover:opacity-90 transition-all duration-200"
             >
               <img 
-                src="/Cloudracer-logo.png" 
+                src="/CloudRacer9.png" 
                 alt="CloudRacer" 
                 className="h-16 w-auto object-contain drop-shadow-2xl"
               />
