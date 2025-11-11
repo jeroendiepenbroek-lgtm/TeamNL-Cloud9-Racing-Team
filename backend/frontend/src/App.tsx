@@ -89,7 +89,7 @@ function Navigation() {
                   onClick={() => setShowLoginModal(true)}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
                 >
-                  � Admin Login
+                  👤 Admin Login
                 </button>
               )}
             </div>
