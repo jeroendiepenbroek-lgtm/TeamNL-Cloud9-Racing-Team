@@ -30,16 +30,16 @@ function Navigation() {
             {/* Logo + Brand - Clickable */}
             <button 
               onClick={handleLogoClick}
-              className="flex items-center space-x-3 hover:opacity-80 transition"
+              className="flex items-center space-x-4 hover:opacity-90 transition-all duration-200"
             >
               <img 
                 src="/Cloudracer-logo.png" 
                 alt="CloudRacer" 
-                className="h-14 w-14 rounded-full border-2 border-cyan-400 shadow-lg"
+                className="h-16 w-auto object-contain drop-shadow-2xl"
               />
               <div className="text-left">
-                <h1 className="text-xl font-bold text-white tracking-wide">CLOUDRACER</h1>
-                <p className="text-xs text-cyan-300">TeamNL Cloud9 Racing</p>
+                <h1 className="text-2xl font-bold text-white tracking-wide">CLOUDRACER</h1>
+                <p className="text-sm text-cyan-300 font-medium">TeamNL Cloud9 Racing</p>
               </div>
             </button>
 
