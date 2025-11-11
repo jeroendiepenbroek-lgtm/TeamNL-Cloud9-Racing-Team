@@ -457,91 +457,53 @@ export default function RacingDataMatrix() {
         </div>
       </div>
 
-      {/* Legend Panel - Professional & Subtle */}
+      {/* Legend Panel - Compact */}
       {showLegend && (
-        <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-200">
-          {/* Info banner */}
-          <div className="mb-4 px-3 py-2 bg-blue-50 border border-blue-100 rounded text-xs text-blue-800 flex items-start">
-            <span className="mr-2">ℹ️</span>
-            <span>Highlights zijn relatief aan <strong>zichtbare riders</strong>. Bij gebruik van filters worden gold/silver/bronze posities dynamisch herberekend.</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* vELO Rankings */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
-                <span className="mr-1.5 text-base">🏆</span>
-                vELO Tiers
-              </h3>
-              <div className="space-y-2">
-                {VELO_TIERS.map(tier => (
-                  <div key={tier.name} className="flex items-center space-x-2">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm`}>
-                      {tier.rank}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-semibold text-gray-800">{tier.name}</span>
-                      <span className="text-[10px] text-gray-500">
-                        {tier.min}{tier.max ? `-${tier.max}` : '+'} vELO
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        <div className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px]">
+            {/* Info */}
+            <div className="flex items-center text-blue-700 bg-blue-50 px-2 py-1 rounded">
+              <span className="mr-1">ℹ️</span>
+              <span>Highlights relatief aan zichtbare riders</span>
             </div>
 
-            {/* ZP Categories */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
-                <span className="mr-1.5 text-base">🚴</span>
-                ZP Categories
-              </h3>
-              <div className="space-y-1.5">
-                {Object.entries(ZP_CATEGORIES).map(([cat, style]) => (
-                  <div key={cat} className="flex items-center space-x-2">
-                    <span className={`px-2 py-0.5 text-[10px] font-medium rounded border ${style.color}`}>
-                      {style.label}
-                    </span>
-                    <span className="text-[11px] text-gray-600">Category {cat}</span>
+            {/* vELO Tiers - inline */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-700">🏆 vELO:</span>
+              {VELO_TIERS.map(tier => (
+                <div key={tier.name} className="flex items-center gap-1">
+                  <div className={`w-4 h-4 rounded-full flex items-center justify-center font-bold text-[8px] bg-gradient-to-br ${tier.color} ${tier.textColor}`}>
+                    {tier.rank}
                   </div>
-                ))}
-              </div>
+                  <span className="text-gray-600">{tier.name}</span>
+                </div>
+              ))}
             </div>
 
-            {/* Power Interval Highlights */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-2.5 flex items-center">
-                <span className="mr-1.5 text-base">⚡</span>
-                Power Highlights
-              </h3>
-              <div className="space-y-1.5">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-5 bg-yellow-300 rounded-sm shadow-sm"></div>
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-800">Gold</div>
-                    <div className="text-[10px] text-gray-500">100% - Beste in groep</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-5 bg-gray-300 rounded-sm shadow-sm"></div>
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-800">Silver</div>
-                    <div className="text-[10px] text-gray-500">95-99% van groepsbest</div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-5 bg-orange-300 rounded-sm shadow-sm"></div>
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-800">Bronze</div>
-                    <div className="text-[10px] text-gray-500">90-94% van groepsbest</div>
-                  </div>
-                </div>
-                <div className="mt-2 pt-2 border-t border-gray-100">
-                  <div className="text-[10px] text-gray-500 italic flex items-start">
-                    <span className="mr-1">💡</span>
-                    <span>Hover over waardes voor absolute watts</span>
-                  </div>
-                </div>
+            {/* ZP Categories - inline */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-700">🚴 ZP:</span>
+              {Object.entries(ZP_CATEGORIES).map(([cat, style]) => (
+                <span key={cat} className={`px-1.5 py-0.5 text-[9px] font-semibold rounded border ${style.color}`}>
+                  {style.label}
+                </span>
+              ))}
+            </div>
+
+            {/* Power Highlights - inline */}
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-gray-700">⚡ Power:</span>
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-3 bg-yellow-300 rounded-sm"></div>
+                <span className="text-gray-600">Gold (100%)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-3 bg-gray-300 rounded-sm"></div>
+                <span className="text-gray-600">Silver (95-99%)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-6 h-3 bg-orange-300 rounded-sm"></div>
+                <span className="text-gray-600">Bronze (90-94%)</span>
               </div>
             </div>
           </div>
