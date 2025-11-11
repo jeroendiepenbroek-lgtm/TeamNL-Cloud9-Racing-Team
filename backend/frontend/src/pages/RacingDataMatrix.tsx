@@ -328,7 +328,7 @@ export default function RacingDataMatrix() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <span className="mr-3">📊</span>
-            RACING DATA MATRIX
+            TEAM DASHBOARD | TEAMNL CLOUD9
           </h1>
           <p className="mt-1 text-xs text-gray-600">
             Showing {sortedRiders.length} of {riders?.length || 0} riders
