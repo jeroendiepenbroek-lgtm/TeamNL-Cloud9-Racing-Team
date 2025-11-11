@@ -433,19 +433,29 @@ export default function RacingDataMatrix() {
             )}
           </button>
           
-          {/* Clear Filters Button */}
-          {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
-            <button
-              onClick={() => {
-                setFilterCategories([])
-                setFilterVeloLiveRanks([])
-                setFilterVelo30dayRanks([])
-              }}
-              className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-xs font-medium"
-            >
-              Clear Filters
-            </button>
-          )}
+          {/* Clear Filters Button - always visible */}
+          <button
+            onClick={() => {
+              setFilterCategories([])
+              setFilterVeloLiveRanks([])
+              setFilterVelo30dayRanks([])
+            }}
+            disabled={filterCategories.length === 0 && filterVeloLiveRanks.length === 0 && filterVelo30dayRanks.length === 0}
+            className={`px-3 py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-2 ${
+              filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0
+                ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+            title="Verwijder alle filters"
+          >
+            <span className="text-base">🗑️</span>
+            <span>Clear Filters</span>
+            {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
+              <span className="ml-1 px-1.5 py-0.5 bg-white/30 rounded text-xs font-bold">
+                {filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length}
+              </span>
+            )}
+          </button>
           
           <button
             onClick={() => setShowLegend(!showLegend)}
