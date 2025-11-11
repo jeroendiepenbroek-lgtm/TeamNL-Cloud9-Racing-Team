@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (userEmail === 'jeroen.diepenbroek@gmail.com') {
           console.log('[AuthContext] ✅ Recognized team member: Jeroen (rider 150437)')
           
-          // Auto-grant admin role
+          // Try to auto-grant admin role (will fail if table doesn't exist yet)
           const { error: insertError } = await supabase
             .from('user_roles')
             .insert({
@@ -80,16 +80,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               granted_at: new Date().toISOString()
             })
           
-          if (insertError && insertError.code !== '23505') { // Ignore duplicate errors
-            console.error('[AuthContext] Failed to auto-grant admin role:', insertError)
+          if (insertError) {
+            if (insertError.code === '23505') {
+              console.log('[AuthContext] Admin role already exists')
+            } else if (insertError.code === '42P01') {
+              console.warn('[AuthContext] ⚠️ user_roles table does not exist yet!')
+              console.warn('[AuthContext] Please run SETUP_SAFE.sql in Supabase')
+              // STILL GRANT ACCESS - table will be created later
+            } else {
+              console.error('[AuthContext] Failed to auto-grant admin role:', insertError)
+            }
           } else {
-            console.log('[AuthContext] ✅ Auto-granted admin role!')
+            console.log('[AuthContext] ✅ Auto-granted admin role in database!')
           }
           
+          // ALWAYS grant access for Jeroen, regardless of database state
           setAccessStatus({
             has_access: true,
             status: 'approved',
-            message: 'Team member access granted',
+            message: 'Team member access granted (admin)',
             roles: ['admin'],
             is_admin: true
           })
