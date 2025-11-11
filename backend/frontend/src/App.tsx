@@ -34,13 +34,20 @@ function Navigation() {
             {/* Logo + Brand - Clickable */}
             <button 
               onClick={handleLogoClick}
-              className="flex items-center space-x-4 hover:opacity-90 transition-all duration-200"
+              className="flex items-center space-x-4 hover:opacity-90 transition-all duration-200 group"
             >
-              <img 
-                src="/CloudRacer9.png" 
-                alt="CloudRacer" 
-                className="h-16 w-auto object-contain drop-shadow-2xl"
-              />
+              {/* Logo met TeamNL Oranje Kader */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full blur-sm opacity-75 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative bg-white rounded-full p-1 ring-4 ring-orange-500 shadow-xl group-hover:ring-orange-400 transition-all">
+                  <img 
+                    src="/CloudRacer9.png" 
+                    alt="CloudRacer" 
+                    className="h-20 w-20 object-contain rounded-full"
+                  />
+                </div>
+              </div>
+              
               <div className="text-left">
                 <h1 className="text-2xl font-bold text-white tracking-wide">CLOUDRACER</h1>
                 <p className="text-sm text-cyan-300 font-medium">TeamNL Cloud9 Racing</p>
