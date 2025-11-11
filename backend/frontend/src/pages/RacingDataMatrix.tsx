@@ -293,14 +293,24 @@ export default function RacingDataMatrix() {
   // Sorteer riders
   const sortedRiders = useMemo(() => {
     const sorted = [...filteredRiders].sort((a, b) => {
-      // Special case: W/kg moet berekend worden als zFTP / weight
       let aVal: number
       let bVal: number
       
+      // Special case: W/kg moet berekend worden
       if (sortBy === 'watts_per_kg') {
         aVal = (a.zp_ftp && a.weight) ? a.zp_ftp / a.weight : 0
         bVal = (b.zp_ftp && b.weight) ? b.zp_ftp / b.weight : 0
-      } else {
+      } 
+      // Power intervals: sorteer op W/kg in plaats van absolute watts
+      else if (sortBy === 'power_w5' || sortBy === 'power_w15' || sortBy === 'power_w30' || 
+               sortBy === 'power_w60' || sortBy === 'power_w120' || sortBy === 'power_w300' || 
+               sortBy === 'power_w1200') {
+        const aPower = a[sortBy as keyof MatrixRider] as number | null
+        const bPower = b[sortBy as keyof MatrixRider] as number | null
+        aVal = (aPower && a.weight) ? aPower / a.weight : 0
+        bVal = (bPower && b.weight) ? bPower / b.weight : 0
+      } 
+      else {
         const aRaw = a[sortBy]
         const bRaw = b[sortBy]
         aVal = typeof aRaw === 'number' ? aRaw : 0
