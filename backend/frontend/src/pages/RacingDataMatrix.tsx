@@ -154,6 +154,37 @@ function MultiSelectDropdown<T extends string | number>({
     }
   }
 
+  // Helper om badge te renderen voor vELO tiers
+  const renderVeloBadge = (option: { value: T; label: string; icon?: string }) => {
+    const tier = VELO_TIERS.find(t => t.rank === option.value)
+    if (!tier) return null
+    
+    return (
+      <div className="flex items-center gap-2">
+        <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm`}>
+          {tier.rank}
+        </div>
+        <span className="text-xs font-medium text-gray-800">{tier.name}</span>
+      </div>
+    )
+  }
+
+  // Helper om badge te renderen voor ZP categories
+  const renderCategoryBadge = (option: { value: T; label: string; icon?: string }) => {
+    const categoryStyle = ZP_CATEGORIES[option.value as keyof typeof ZP_CATEGORIES]
+    if (!categoryStyle) return null
+    
+    return (
+      <span className={`px-2 py-0.5 text-[11px] font-semibold rounded border ${categoryStyle.color}`}>
+        {categoryStyle.label}
+      </span>
+    )
+  }
+
+  // Bepaal of dit een vELO of Category dropdown is
+  const isVeloDropdown = label.includes('vELO')
+  const isCategoryDropdown = label.includes('ZP-category')
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -191,10 +222,11 @@ function MultiSelectDropdown<T extends string | number>({
                 onChange={() => toggleOption(option.value)}
                 className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
               />
-              <span className="ml-2 text-xs text-gray-700">
-                {option.icon && <span className="mr-1.5">{option.icon}</span>}
-                {option.label}
-              </span>
+              <div className="ml-2">
+                {isVeloDropdown ? renderVeloBadge(option) : 
+                 isCategoryDropdown ? renderCategoryBadge(option) : 
+                 <span className="text-xs text-gray-700">{option.label}</span>}
+              </div>
             </label>
           ))}
         </div>
@@ -346,9 +378,9 @@ export default function RacingDataMatrix() {
         </div>
         
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Category Filter - Dropdown */}
+          {/* ZP Category Filter - Dropdown met badge icons */}
           <MultiSelectDropdown
-            label="Categories"
+            label="ZP-category"
             options={[
               { value: 'A+', label: 'A+' },
               { value: 'A', label: 'A' },
@@ -360,25 +392,23 @@ export default function RacingDataMatrix() {
             onChange={setFilterCategories}
           />
 
-          {/* vELO Live Filter - Dropdown */}
+          {/* vELO Live Filter - Dropdown met tier badges */}
           <MultiSelectDropdown
             label="vELO Live"
             options={VELO_TIERS.map(tier => ({
               value: tier.rank,
-              label: `${tier.name} (${tier.rank})`,
-              icon: tier.icon,
+              label: tier.name,
             }))}
             selectedValues={filterVeloLiveRanks}
             onChange={setFilterVeloLiveRanks}
           />
 
-          {/* vELO 30-day Filter - Dropdown */}
+          {/* vELO 30-day Filter - Dropdown met tier badges */}
           <MultiSelectDropdown
             label="vELO 30-day"
             options={VELO_TIERS.map(tier => ({
               value: tier.rank,
-              label: `${tier.name} (${tier.rank})`,
-              icon: tier.icon,
+              label: tier.name,
             }))}
             selectedValues={filterVelo30dayRanks}
             onChange={setFilterVelo30dayRanks}
