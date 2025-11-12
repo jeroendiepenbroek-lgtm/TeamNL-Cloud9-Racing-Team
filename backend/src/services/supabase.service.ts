@@ -109,6 +109,102 @@ export class SupabaseService {
     return data || [];
   }
 
+  // Feature 1: Get upcoming events (within X hours)
+  async getUpcomingEvents(hours: number = 48, hasTeamRiders: boolean = false): Promise<any[]> {
+    try {
+      if (hasTeamRiders) {
+        // Use view that filters for team riders
+        const { data, error } = await this.client
+          .from('view_team_events')
+          .select('*')
+          .order('event_date', { ascending: true });
+        
+        if (error) throw error;
+        return data || [];
+      } else {
+        // Use simple upcoming events view
+        const { data, error } = await this.client
+          .from('view_upcoming_events')
+          .select('*')
+          .order('event_date', { ascending: true });
+        
+        if (error) throw error;
+        return data || [];
+      }
+    } catch (viewError) {
+      // Fallback to manual query if views don't exist
+      console.warn('Views not available, using fallback query:', viewError);
+      
+      const now = new Date();
+      const future = new Date(now.getTime() + hours * 60 * 60 * 1000);
+      
+      const { data, error } = await this.client
+        .from('events')
+        .select('*')
+        .gte('event_date', now.toISOString())
+        .lte('event_date', future.toISOString())
+        .order('event_date', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  }
+
+  // Feature 1: Get single event by ID
+  async getEvent(eventId: number): Promise<any | null> {
+    const { data, error } = await this.client
+      .from('events')
+      .select('*')
+      .eq('event_id', eventId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      throw error;
+    }
+    return data;
+  }
+
+  // Feature 1: Get event signups
+  async getEventSignups(eventId: number): Promise<any[]> {
+    const { data, error } = await this.client
+      .from('event_signups')
+      .select(`
+        *,
+        rider:riders(
+          rider_id,
+          name,
+          zp_category,
+          zp_ftp,
+          weight,
+          race_last_rating
+        )
+      `)
+      .eq('event_id', eventId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data || [];
+  }
+
+  // Feature 1: Upsert event signup
+  async upsertEventSignup(signup: {
+    event_id: number;
+    rider_id: number;
+    category?: string;
+    status?: string;
+    team_name?: string;
+    notes?: string;
+  }): Promise<any> {
+    const { data, error } = await this.client
+      .from('event_signups')
+      .upsert(signup, { onConflict: 'event_id,rider_id' })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  }
+
   async upsertEvents(events: Partial<DbEvent>[]): Promise<DbEvent[]> {
     const { data, error } = await this.client
       .from('events')

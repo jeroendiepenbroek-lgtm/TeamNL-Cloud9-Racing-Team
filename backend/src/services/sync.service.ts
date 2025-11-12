@@ -213,6 +213,110 @@ export class SyncService {
     
     console.log('✅ Full sync completed!');
   }
+
+  /**
+   * Feature 1: Sync upcoming events for all riders in database
+   * Scans each rider for their upcoming events and stores signups
+   */
+  async syncRiderUpcomingEvents(hours: number = 48): Promise<{
+    riders_scanned: number;
+    events_found: number;
+    signups_created: number;
+    errors: number;
+  }> {
+    console.log(`🔄 Syncing upcoming events for all riders (${hours}h lookforward)...`);
+    
+    try {
+      // Get all active riders
+      const riders = await supabase.getRiders();
+      console.log(`📋 Found ${riders.length} riders to scan`);
+      
+      let eventsFound = 0;
+      let signupsCreated = 0;
+      let errors = 0;
+      
+      // Process in batches to avoid rate limits
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < riders.length; i += BATCH_SIZE) {
+        const batch = riders.slice(i, i + BATCH_SIZE);
+        
+        await Promise.all(batch.map(async (rider) => {
+          try {
+            console.log(`  Scanning rider ${rider.rider_id} (${rider.name})...`);
+            
+            // Get rider's upcoming events from ZwiftRacing API
+            const riderEvents = await zwiftClient.getRiderUpcomingEvents(rider.rider_id);
+            
+            if (riderEvents && riderEvents.length > 0) {
+              eventsFound += riderEvents.length;
+              
+              // Store events
+              const events = riderEvents.map(event => ({
+                event_id: event.id,
+                name: event.name,
+                event_date: event.eventDate,
+                event_type: event.type || 'race',
+                description: event.description,
+                event_url: event.url,
+                route: event.route,
+                distance_meters: event.distanceInMeters,
+                organizer: event.organizer,
+                zwift_event_id: event.id,
+                last_synced: new Date().toISOString(),
+              }));
+              
+              await supabase.upsertEvents(events);
+              
+              // Store signups
+              for (const event of riderEvents) {
+                await supabase.upsertEventSignup({
+                  event_id: event.id,
+                  rider_id: rider.rider_id,
+                  category: rider.zp_category || undefined,
+                  status: 'confirmed',
+                });
+                signupsCreated++;
+              }
+              
+              console.log(`    ✓ Found ${riderEvents.length} events for ${rider.name}`);
+            }
+          } catch (error) {
+            errors++;
+            console.warn(`    ✗ Error scanning rider ${rider.rider_id}:`, error);
+          }
+        }));
+        
+        // Rate limiting: wait between batches
+        if (i + BATCH_SIZE < riders.length) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // 2s delay
+        }
+      }
+      
+      await supabase.createSyncLog({
+        endpoint: 'rider_upcoming_events',
+        status: errors > 0 ? 'partial' : 'success',
+        records_processed: signupsCreated,
+        error_message: errors > 0 ? `${errors} riders failed to sync` : undefined,
+      });
+      
+      console.log(`✅ Sync complete: ${eventsFound} events found, ${signupsCreated} signups created, ${errors} errors`);
+      
+      return {
+        riders_scanned: riders.length,
+        events_found: eventsFound,
+        signups_created: signupsCreated,
+        errors,
+      };
+    } catch (error) {
+      await supabase.createSyncLog({
+        endpoint: 'rider_upcoming_events',
+        status: 'error',
+        records_processed: 0,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
 }
 
 export const syncService = new SyncService();

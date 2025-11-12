@@ -1,5 +1,6 @@
 /**
  * Endpoint 3: Events - GET /api/events
+ * Feature 1: Events Page (48h lookforward)
  */
 
 import { Request, Response, Router } from 'express';
@@ -24,6 +25,81 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/events/upcoming - Haal aankomende events op (binnen 48 uur)
+// Feature 1: Events Page - Main endpoint
+router.get('/upcoming', async (req: Request, res: Response) => {
+  try {
+    const hours = req.query.hours ? parseInt(req.query.hours as string) : 48;
+    const hasTeamRiders = req.query.hasTeamRiders === 'true';
+    
+    const events = await supabase.getUpcomingEvents(hours, hasTeamRiders);
+    
+    res.json({
+      count: events.length,
+      lookforward_hours: hours,
+      has_team_riders_only: hasTeamRiders,
+      events,
+    });
+  } catch (error) {
+    console.error('Error fetching upcoming events:', error);
+    res.status(500).json({ error: 'Fout bij ophalen aankomende events' });
+  }
+});
+
+// GET /api/events/:eventId - Haal details van specifiek event op
+// Feature 1: Event details page
+router.get('/:eventId', async (req: Request, res: Response) => {
+  try {
+    const eventId = parseInt(req.params.eventId);
+    
+    if (isNaN(eventId)) {
+      return res.status(400).json({ error: 'Ongeldige event ID' });
+    }
+    
+    const event = await supabase.getEvent(eventId);
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event niet gevonden' });
+    }
+    
+    // Include signups
+    const signups = await supabase.getEventSignups(eventId);
+    
+    res.json({
+      ...event,
+      signups: {
+        count: signups.length,
+        riders: signups,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching event details:', error);
+    res.status(500).json({ error: 'Fout bij ophalen event details' });
+  }
+});
+
+// GET /api/events/:eventId/signups - Haal inschrijvingen voor event op
+router.get('/:eventId/signups', async (req: Request, res: Response) => {
+  try {
+    const eventId = parseInt(req.params.eventId);
+    
+    if (isNaN(eventId)) {
+      return res.status(400).json({ error: 'Ongeldige event ID' });
+    }
+    
+    const signups = await supabase.getEventSignups(eventId);
+    
+    res.json({
+      event_id: eventId,
+      count: signups.length,
+      signups,
+    });
+  } catch (error) {
+    console.error('Error fetching event signups:', error);
+    res.status(500).json({ error: 'Fout bij ophalen event inschrijvingen' });
+  }
+});
+
 // POST /api/events/sync - Sync events vanaf ZwiftRacing API
 router.post('/sync', async (req: Request, res: Response) => {
   try {
@@ -38,6 +114,23 @@ router.post('/sync', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error syncing events:', error);
     res.status(500).json({ error: 'Fout bij synchroniseren events' });
+  }
+});
+
+// POST /api/events/sync/rider-events - Sync events voor alle riders (Feature 1)
+// Scans all riders for their upcoming events
+router.post('/sync/rider-events', async (req: Request, res: Response) => {
+  try {
+    const hours = req.body.hours || 48;
+    const result = await syncService.syncRiderUpcomingEvents(hours);
+    
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error('Error syncing rider events:', error);
+    res.status(500).json({ error: 'Fout bij synchroniseren rider events' });
   }
 });
 

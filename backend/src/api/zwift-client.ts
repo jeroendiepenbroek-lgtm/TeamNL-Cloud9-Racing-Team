@@ -193,6 +193,19 @@ export class ZwiftApiClient {
     console.warn('[ZwiftAPI] getRiderHistory() is niet beschikbaar in API');
     throw new Error('Endpoint /public/riders/{id}/history does not exist');
   }
+
+  /**
+   * Feature 1: Get rider upcoming events
+   * NOTE: ZwiftRacing API doesn't have direct endpoint for this
+   * TODO: Implement by scraping rider profile page or finding alternative
+   */
+  async getRiderUpcomingEvents(riderId: number): Promise<any[]> {
+    console.warn('[ZwiftAPI] getRiderUpcomingEvents() - endpoint not available, returning empty array');
+    // Return empty array for now
+    // In real implementation, this would need to scrape zwiftracing.app/riders/{id}
+    // or use alternative data source
+    return [];
+  }
 }
 
 export const zwiftClient = new ZwiftApiClient();
