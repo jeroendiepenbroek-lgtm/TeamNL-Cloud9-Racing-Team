@@ -32,20 +32,20 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/riders/team - Haal "Mijn Team" riders op via VIEW
 router.get('/team', async (req: Request, res: Response) => {
   try {
-    // Query via view_my_team (combineert my_team_members + riders + clubs)
-    const riders = await supabase.getMyTeamMembers();
-    
-    // Extract unique clubs (automatisch uit riders.club_id)
-    const uniqueClubs = [...new Set(
-      riders
-        .map(r => r.club_name)
-        .filter(Boolean)
-    )];
+    // Try view_my_team first, fallback to club_members if view doesn't exist
+    let riders;
+    try {
+      riders = await supabase.getMyTeamMembers();
+    } catch (viewError) {
+      console.warn('view_my_team not available, falling back to club members:', viewError);
+      // Fallback: get all riders from club 11818 (TeamNL Cloud9)
+      riders = await supabase.getRiders(11818);
+    }
     
     res.json(riders);
   } catch (error) {
-    console.error('Error fetching my team riders:', error);
-    res.status(500).json({ error: 'Fout bij ophalen team riders' });
+    console.error('Error fetching team riders:', error);
+    res.status(500).json({ error: 'Fout bij ophalen team riders', details: error instanceof Error ? error.message : String(error) });
   }
 });
 
