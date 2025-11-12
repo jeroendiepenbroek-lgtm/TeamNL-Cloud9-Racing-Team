@@ -9,7 +9,9 @@
     "start": "npx tsx src/server.ts",
     "dev": "nodemon --watch src --exec npx tsx src/server.ts",
     "build": "cd frontend && npm install && npm run build",
-    "build:frontend": "cd frontend && npm run build"
+    "build:frontend": "cd frontend && npm run build",
+    "sync:event-signups": "npx tsx ../scripts/sync-event-signups.ts",
+    "import:events": "npx tsx ../scripts/import-events.ts"
   },
   "keywords": ["zwift", "racing", "api", "supabase"],
   "author": "TeamNL Cloud9",
