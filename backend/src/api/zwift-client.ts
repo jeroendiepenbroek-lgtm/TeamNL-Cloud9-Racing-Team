@@ -158,16 +158,33 @@ export class ZwiftApiClient {
   }
 
   // ============================================================================
-  // EVENTS - Rate limit: Unknown (gebruik voorzichtig)
+  // EVENTS (RESULTS) - Rate limit: Unknown (gebruik voorzichtig)
+  // ============================================================================
+  // ⚠️  BELANGRIJK: /api/events is een RESULTS endpoint, geen upcoming events!
+  // - Retourneert events waar results al beschikbaar zijn (= afgelopen events)
+  // - from/to parameters worden GENEGEERD door de API
+  // - Alle events zijn in het VERLEDEN (meestal laatste 1-2 uur)
+  // - Geen API endpoint beschikbaar voor echte "upcoming events"
+  // 
+  // Voor upcoming events: Gebruik test data of alternatieve bron
+  // Zie: docs/EVENT_DISCOVERY_SOLUTION.md
   // ============================================================================
 
   /**
    * GET /api/events
-   * Returns list of upcoming events with pagination
-   * Query params: from (unix timestamp), to (unix timestamp), limit, skip
+   * ⚠️  RESULTS ENDPOINT: Returns events with available results (PAST events only!)
+   * 
+   * NOTE: Despite the name, this endpoint does NOT return upcoming events.
+   * - from/to parameters are IGNORED by the API
+   * - Always returns recent finished events (last ~2 hours)
+   * - Sorted by descending time (newest first)
+   * 
+   * Query params: from, to, limit, skip (from/to are ignored!)
    * Response: { events: ZwiftEvent[], totalResults: number }
+   * 
+   * @deprecated For results, use getEventResults(eventId) instead
    */
-  async getUpcomingEvents(options?: {
+  async getEventsWithResults(options?: {
     from?: number;
     to?: number;
     limit?: number;
@@ -183,25 +200,41 @@ export class ZwiftApiClient {
     const url = `/api/events${params.toString() ? `?${params.toString()}` : ''}`;
     const response = await this.client.get(url);
     
+    console.log(`[ZwiftAPI] ⚠️  /api/events returned ${response.data.events.length} PAST events (results available)`);
+    
     return response.data;
   }
 
   /**
-   * GET /api/events (with 48h time window)
-   * Convenience method voor Feature 1: upcoming events in volgende 48 uur
+   * @deprecated DOES NOT WORK: API returns past events only
+   * 
+   * Original implementation assumed /api/events returns upcoming events,
+   * but testing revealed it only returns events with results (past events).
+   * 
+   * Use test data or alternative event discovery method instead.
+   * See: scripts/seed-test-events.ts
    */
   async getEvents48Hours(): Promise<ZwiftEvent[]> {
+    console.warn('[ZwiftAPI] ⚠️  getEvents48Hours() is broken - API only returns PAST events!');
+    console.warn('[ZwiftAPI] Use test data (scripts/seed-test-events.ts) for upcoming events');
+    
     const now = Math.floor(Date.now() / 1000);
     const in48Hours = now + (48 * 60 * 60);
     
-    const result = await this.getUpcomingEvents({
+    const result = await this.getEventsWithResults({
       from: now,
       to: in48Hours,
-      limit: 1000, // Haal maximaal 1000 events op
+      limit: 1000,
     });
     
-    console.log(`[ZwiftAPI] ℹ️ Found ${result.events.length} events in next 48h (total: ${result.totalResults})`);
-    return result.events;
+    // Filter events that are actually in the future (will be empty!)
+    const futureEvents = result.events.filter(e => e.time > now);
+    
+    console.log(`[ZwiftAPI] ℹ️ API returned ${result.events.length} total events`);
+    console.log(`[ZwiftAPI] ℹ️ Future events: ${futureEvents.length} (expected: 0)`);
+    console.log(`[ZwiftAPI] ℹ️ Past events: ${result.events.length - futureEvents.length}`);
+    
+    return futureEvents; // Will be empty array
   }
 
   /**
