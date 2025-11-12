@@ -1,48 +1,49 @@
 # Railway Dockerfile - TeamNL Cloud9 Backend
-# Build backend + frontend, deploy backend server
+# Build backend + frontend, serve as single deployment
 
 FROM node:22-alpine AS base
 
 # === FRONTEND BUILD ===
 FROM base AS frontend-builder
-WORKDIR /build
+WORKDIR /frontend
 COPY backend/frontend/package*.json ./
-RUN npm ci
+RUN npm ci --production=false
 COPY backend/frontend/ ./
-# Vite builds to ../public/dist (relative to frontend/)
-# But we're in /build, so it will fail. Let's override:
-RUN npm run build -- --outDir=/frontend-dist
+# Build frontend (outputs to ../public/dist relative to frontend dir)
+# Since we're in /frontend, it will write to /public/dist
+# Override to write to /frontend-dist instead
+RUN npm run build -- --outDir /frontend-dist
 
 # === BACKEND RUNTIME ===
 FROM base AS final
 WORKDIR /app
 
-# Install backend dependencies (include tsx for runtime!)
+# Install backend dependencies
 COPY backend/package*.json ./
-RUN npm ci
+RUN npm ci --production=false
 
-# Copy backend code
+# Copy backend source code
 COPY backend/src ./src
+COPY backend/tsconfig.json ./tsconfig.json
 
-# Create public/dist and copy frontend build
+# Create public directory and copy frontend build
 RUN mkdir -p public/dist
 COPY --from=frontend-builder /frontend-dist/ ./public/dist/
 
-# Environment
+# Copy Railway startup script
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+
+# Environment defaults
 ENV NODE_ENV=production
-# Railway sets PORT dynamically, but fallback to 3000
 ENV PORT=3000
 
-# Expose port
-EXPOSE 3000
-
-# Copy startup script
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+# Expose port (Railway overrides with $PORT)
+EXPOSE ${PORT}
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:'+process.env.PORT+'/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start server with debug script
-CMD ["/app/start.sh"]
+# Start with debug script
+CMD ["./start.sh"]
