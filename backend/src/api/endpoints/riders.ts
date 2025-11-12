@@ -32,6 +32,19 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/riders/team - Haal "Mijn Team" riders op via VIEW
 router.get('/team', async (req: Request, res: Response) => {
   try {
+    // DEBUG: Check what tables exist and have data
+    const { data: clubMembersCount } = await (supabase as any).client
+      .from('club_members')
+      .select('*', { count: 'exact', head: true });
+    
+    const { data: ridersCount } = await (supabase as any).client
+      .from('riders')
+      .select('*', { count: 'exact', head: true });
+      
+    console.log('📊 Database check:');
+    console.log(`  - club_members: ${JSON.stringify(clubMembersCount)}`);
+    console.log(`  - riders: ${JSON.stringify(ridersCount)}`);
+    
     // Try multiple sources in order of preference
     let riders;
     
@@ -46,12 +59,12 @@ router.get('/team', async (req: Request, res: Response) => {
       console.warn('Views not available:', viewError);
     }
     
-    // 2. Fallback: Direct query club_members table
-    console.log('Falling back to direct club_members query');
+    // 2. Fallback: Direct query club_members table (ANY club_id)
+    console.log('Falling back to direct club_members query (all clubs)');
     const { data, error } = await (supabase as any).client
       .from('club_members')
       .select('*')
-      .eq('club_id', 11818);
+      .limit(100);
     
     if (error) throw error;
     

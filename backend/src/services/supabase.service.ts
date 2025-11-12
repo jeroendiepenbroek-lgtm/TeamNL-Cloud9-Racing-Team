@@ -213,11 +213,24 @@ export class SupabaseService {
       console.warn('view_racing_data_matrix not available, trying view_my_team:', matrixError);
     }
 
-    // Fallback to view_my_team
+    // Fallback to view_my_team (without problematic sort)
+    try {
+      const { data, error } = await this.client
+        .from('view_my_team')
+        .select('*');
+
+      if (error) throw error;
+      if (data && data.length > 0) return data;
+    } catch (viewError) {
+      console.warn('Views not available:', viewError);
+    }
+
+    // Final fallback: direct riders table
+    console.log('Falling back to riders table');
     const { data, error } = await this.client
-      .from('view_my_team')
+      .from('riders')
       .select('*')
-      .order('race_current_rating', { ascending: false, nullsFirst: false }); // DESC = hoogste rating eerst
+      .order('zwift_id', { ascending: true });
 
     if (error) throw error;
     return data || [];
