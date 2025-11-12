@@ -32,20 +32,38 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/riders/team - Haal "Mijn Team" riders op via VIEW
 router.get('/team', async (req: Request, res: Response) => {
   try {
-    // Try view_my_team first, fallback to club_members if view doesn't exist
+    // Try multiple sources in order of preference
     let riders;
+    
+    // 1. Try view_racing_data_matrix (best: has all racing stats)
     try {
       riders = await supabase.getMyTeamMembers();
+      if (riders && riders.length > 0) {
+        console.log(`✅ Loaded ${riders.length} riders from views`);
+        return res.json(riders);
+      }
     } catch (viewError) {
-      console.warn('view_my_team not available, falling back to club members:', viewError);
-      // Fallback: get all riders from club 11818 (TeamNL Cloud9)
-      riders = await supabase.getRiders(11818);
+      console.warn('Views not available:', viewError);
     }
     
-    res.json(riders);
+    // 2. Fallback: Direct query club_members table
+    console.log('Falling back to direct club_members query');
+    const { data, error } = await (supabase as any).client
+      .from('club_members')
+      .select('*')
+      .eq('club_id', 11818);
+    
+    if (error) throw error;
+    
+    console.log(`✅ Loaded ${data?.length || 0} riders from club_members table`);
+    res.json(data || []);
+    
   } catch (error) {
     console.error('Error fetching team riders:', error);
-    res.status(500).json({ error: 'Fout bij ophalen team riders', details: error instanceof Error ? error.message : String(error) });
+    res.status(500).json({ 
+      error: 'Fout bij ophalen team riders', 
+      details: error instanceof Error ? error.message : String(error) 
+    });
   }
 });
 
