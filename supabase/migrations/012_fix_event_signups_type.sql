@@ -50,7 +50,21 @@ END $$;
 -- View: Upcoming events with signup counts
 CREATE OR REPLACE VIEW view_upcoming_events AS
 SELECT 
-  e.*,
+  e.id,
+  e.event_id,
+  e.mongo_id,
+  e.time_unix,
+  e.title,
+  e.event_type,
+  e.sub_type,
+  e.distance_meters,
+  e.elevation_meters,
+  e.route_name,
+  e.route_world,
+  e.organizer,
+  e.category_enforcement,
+  e.created_at,
+  e.updated_at,
   COUNT(DISTINCT es.rider_id) FILTER (WHERE es.status = 'confirmed') as confirmed_signups,
   COUNT(DISTINCT es.rider_id) FILTER (WHERE es.status = 'tentative') as tentative_signups,
   COUNT(DISTINCT es.rider_id) as total_signups
@@ -58,13 +72,29 @@ FROM zwift_api_events e
 LEFT JOIN event_signups es ON e.event_id = es.event_id
 WHERE TO_TIMESTAMP(e.time_unix) > NOW() 
   AND TO_TIMESTAMP(e.time_unix) <= (NOW() + INTERVAL '48 hours')
-GROUP BY e.id
+GROUP BY e.id, e.event_id, e.mongo_id, e.time_unix, e.title, e.event_type, 
+         e.sub_type, e.distance_meters, e.elevation_meters, e.route_name, 
+         e.route_world, e.organizer, e.category_enforcement, e.created_at, e.updated_at
 ORDER BY e.time_unix ASC;
 
 -- View: Events with team riders signed up
 CREATE OR REPLACE VIEW view_team_events AS
 SELECT 
-  e.*,
+  e.id,
+  e.event_id,
+  e.mongo_id,
+  e.time_unix,
+  e.title,
+  e.event_type,
+  e.sub_type,
+  e.distance_meters,
+  e.elevation_meters,
+  e.route_name,
+  e.route_world,
+  e.organizer,
+  e.category_enforcement,
+  e.created_at,
+  e.updated_at,
   ARRAY_AGG(
     DISTINCT jsonb_build_object(
       'rider_id', r.rider_id,
@@ -84,7 +114,9 @@ INNER JOIN riders r ON es.rider_id = r.rider_id
 WHERE TO_TIMESTAMP(e.time_unix) > NOW() 
   AND TO_TIMESTAMP(e.time_unix) <= (NOW() + INTERVAL '48 hours')
   AND es.status IN ('confirmed', 'tentative')
-GROUP BY e.id
+GROUP BY e.id, e.event_id, e.mongo_id, e.time_unix, e.title, e.event_type, 
+         e.sub_type, e.distance_meters, e.elevation_meters, e.route_name, 
+         e.route_world, e.organizer, e.category_enforcement, e.created_at, e.updated_at
 ORDER BY e.time_unix ASC;
 
 COMMENT ON VIEW view_upcoming_events IS 'Upcoming events (next 48h) with signup counts';
