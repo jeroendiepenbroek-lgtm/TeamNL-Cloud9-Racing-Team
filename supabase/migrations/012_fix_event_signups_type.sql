@@ -10,18 +10,32 @@
 DROP VIEW IF EXISTS view_upcoming_events CASCADE;
 DROP VIEW IF EXISTS view_team_events CASCADE;
 
--- 2. Fix event_signups.event_id type
-ALTER TABLE event_signups 
-  ALTER COLUMN event_id TYPE TEXT USING event_id::TEXT;
+-- 2. Drop unique constraint (we'll recreate it after type change)
+ALTER TABLE event_signups DROP CONSTRAINT IF EXISTS event_signups_event_id_rider_id_key;
 
--- 3. Update indexes
+-- 3. Clear any existing data (incompatible with type change)
+TRUNCATE event_signups;
+
+-- 4. Fix event_signups.event_id type
+ALTER TABLE event_signups 
+  ALTER COLUMN event_id TYPE TEXT;
+
+-- 5. Recreate unique constraint
+ALTER TABLE event_signups 
+  ADD CONSTRAINT event_signups_event_id_rider_id_key UNIQUE(event_id, rider_id);
+
+-- 5. Recreate unique constraint
+ALTER TABLE event_signups 
+  ADD CONSTRAINT event_signups_event_id_rider_id_key UNIQUE(event_id, rider_id);
+
+-- 6. Update indexes
 DROP INDEX IF EXISTS idx_event_signups_event_id;
 CREATE INDEX idx_event_signups_event_id ON event_signups(event_id);
 
 DROP INDEX IF EXISTS idx_event_signups_event_status;
 CREATE INDEX idx_event_signups_event_status ON event_signups(event_id, status);
 
--- 4. Add pen columns if not exists
+-- 7. Add pen columns if not exists
 DO $$ 
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
@@ -35,7 +49,7 @@ BEGIN
   END IF;
 END $$;
 
--- 5. Recreate views with correct event_id type (TEXT)
+-- 8. Recreate views with correct event_id type (TEXT)
 
 -- View: Upcoming events with signup counts
 CREATE OR REPLACE VIEW view_upcoming_events AS
@@ -80,20 +94,8 @@ ORDER BY e.time_unix ASC;
 COMMENT ON VIEW view_upcoming_events IS 'Upcoming events (next 48h) with signup counts';
 COMMENT ON VIEW view_team_events IS 'Upcoming events with our team riders signed up';
 
--- Add pen_name column to event_signups if not exists
-DO $$ 
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                 WHERE table_name='event_signups' AND column_name='pen_name') THEN
-    ALTER TABLE event_signups ADD COLUMN pen_name TEXT;
-  END IF;
-  
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                 WHERE table_name='event_signups' AND column_name='pen_range_label') THEN
-    ALTER TABLE event_signups ADD COLUMN pen_range_label TEXT;
-  END IF;
-END $$;
-
 -- ============================================================================
 -- MIGRATION COMPLETE
+-- NOTE: event_signups table has been truncated. Data will be repopulated
+--       on next event sync (automatic after backend restart)
 -- ============================================================================
