@@ -65,8 +65,9 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_events_event_id ON events(event_id);
 CREATE INDEX IF NOT EXISTS idx_events_date ON events(event_date DESC);
 CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
-CREATE INDEX IF NOT EXISTS idx_events_upcoming ON events(event_date) WHERE event_date > NOW();
-CREATE INDEX IF NOT EXISTS idx_events_recent ON events(event_date) WHERE event_date < NOW();
+
+-- Note: Partial indexes with NOW() removed due to immutability requirements
+-- Query performance for upcoming/recent events is still good with date index
 
 -- Row Level Security
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
