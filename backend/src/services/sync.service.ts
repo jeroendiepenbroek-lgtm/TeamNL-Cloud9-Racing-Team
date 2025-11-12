@@ -89,41 +89,11 @@ export class SyncService {
 
   /**
    * 3. Sync club events
+   * @deprecated Club events endpoint doesn't exist. Use bulkImportUpcomingEvents() instead.
    */
   async syncEvents(clubId: number = TEAM_CLUB_ID): Promise<DbEvent[]> {
-    console.log(`🔄 Syncing events for club ${clubId}...`);
-    
-    try {
-      const eventsData = await zwiftClient.getClubEvents(clubId);
-      
-      const events = eventsData.map(event => ({
-        zwift_event_id: event.id,
-        name: event.name,
-        event_date: event.eventDate,
-        event_type: event.type,
-        club_id: clubId,
-        last_synced: new Date().toISOString(),
-      }));
-
-      const syncedEvents = await supabase.upsertEvents(events);
-
-      await supabase.createSyncLog({
-        endpoint: 'events',
-        status: 'success',
-        records_processed: syncedEvents.length,
-      });
-
-      console.log(`✅ Synced ${syncedEvents.length} events`);
-      return syncedEvents;
-    } catch (error) {
-      await supabase.createSyncLog({
-        endpoint: 'events',
-        status: 'error',
-        records_processed: 0,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
+    console.warn('⚠️  syncEvents() is deprecated - use bulkImportUpcomingEvents() instead');
+    throw new Error('Club events endpoint not available. Use bulkImportUpcomingEvents() for Feature 1.');
   }
 
   /**
@@ -317,6 +287,129 @@ export class SyncService {
       throw error;
     }
   }
+
+  /**
+   * FEATURE 1: Bulk import upcoming events (48h window)
+   * US1: Upcoming events in de komende 48 uur ophalen
+   * US2: Event highlighten waar één van onze rijders aan deelneemt
+   * US3: Aantal van onze deelnemende riders toevoegen
+   */
+  async bulkImportUpcomingEvents(): Promise<{
+    events_imported: number;
+    signups_matched: number;
+    team_events: number;
+    errors: number;
+  }> {
+    console.log('🔄 [BulkImport] Starting 48h events import...');
+    
+    try {
+      // 1. Haal alle events op voor komende 48 uur
+      const events = await zwiftClient.getEvents48Hours();
+      console.log(`ℹ️  [BulkImport] Found ${events.length} events in next 48h`);
+      
+      // 2. Haal onze riders op uit database
+      const ourRiders = await supabase.getRiders();
+      const riderMap = new Map(ourRiders.map((r: DbRider) => [r.rider_id, r]));
+      console.log(`ℹ️  [BulkImport] Loaded ${ourRiders.length} team riders`);
+      
+      let eventsImported = 0;
+      let signupsMatched = 0;
+      let teamEvents = 0;
+      let errors = 0;
+
+      // 3. Process events batch
+      const eventsBatch: Partial<DbEvent>[] = [];
+      
+      for (const event of events) {
+        try {
+          // Parse event data voor database
+          const eventData: Partial<DbEvent> = {
+            zwift_event_id: parseInt(event.eventId),
+            name: event.title,
+            event_date: new Date(event.time * 1000).toISOString(),
+            event_type: event.type?.toLowerCase() || 'race',
+            last_synced: new Date().toISOString(),
+          };
+
+          eventsBatch.push(eventData);
+
+          // 4. Check for participants (pens) en match met onze riders
+          let hasTeamRiders = false;
+          if (event.pens && Array.isArray(event.pens)) {
+            for (const pen of event.pens) {
+              // Check results array binnen pen voor signups
+              if (pen.results?.signups && Array.isArray(pen.results.signups)) {
+                for (const signup of pen.results.signups) {
+                  const riderId = signup.riderId || signup.rider_id;
+                  if (riderId && riderMap.has(riderId)) {
+                    // Match found!
+                    try {
+                      await supabase.upsertEventSignup({
+                        event_id: parseInt(event.eventId),
+                        rider_id: riderId,
+                        category: pen.name || signup.category || undefined,
+                        status: 'confirmed',
+                        team_name: signup.team || undefined,
+                      });
+                      signupsMatched++;
+                      hasTeamRiders = true;
+                    } catch (signupError) {
+                      console.warn(`  ⚠️  Failed to create signup for rider ${riderId}:`, signupError);
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if (hasTeamRiders) {
+            teamEvents++;
+          }
+
+        } catch (eventError) {
+          console.error(`❌ [BulkImport] Error processing event ${event.eventId}:`, eventError);
+          errors++;
+        }
+      }
+
+      // 5. Bulk insert events (veel sneller!)
+      if (eventsBatch.length > 0) {
+        try {
+          await supabase.upsertEvents(eventsBatch);
+          eventsImported = eventsBatch.length;
+        } catch (bulkError) {
+          console.error(`❌ [BulkImport] Bulk upsert failed:`, bulkError);
+          throw bulkError;
+        }
+      }
+
+      // Log success
+      await supabase.createSyncLog({
+        endpoint: 'bulk_import_upcoming_events',
+        status: 'success',
+        records_processed: eventsImported,
+      });
+
+      console.log(`✅ [BulkImport] Complete: ${eventsImported} events, ${signupsMatched} signups, ${teamEvents} team events`);
+
+      return {
+        events_imported: eventsImported,
+        signups_matched: signupsMatched,
+        team_events: teamEvents,
+        errors,
+      };
+
+    } catch (error) {
+      await supabase.createSyncLog({
+        endpoint: 'bulk_import_upcoming_events',
+        status: 'error',
+        records_processed: 0,
+        error_message: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
 }
 
 export const syncService = new SyncService();
+

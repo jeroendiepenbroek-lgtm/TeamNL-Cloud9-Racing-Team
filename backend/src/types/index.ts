@@ -133,7 +133,55 @@ export interface ZwiftRider {
   points?: number;
 }
 
+// Extended ZwiftEvent interface voor /api/events response
 export interface ZwiftEvent {
+  _id?: string;
+  eventId: string;
+  time: number; // Unix timestamp
+  title: string;
+  type: string; // "Race", "Group Ride", etc.
+  subType?: string; // "Scratch", "Time Trial", etc.
+  distance?: number;
+  elevation?: number;
+  numLaps?: number;
+  route?: {
+    _id?: string;
+    routeId?: string;
+    name: string;
+    world?: string;
+    distance?: number;
+    elevation?: number;
+    profile?: string;
+  };
+  pens?: Array<{
+    id: string;
+    order: number;
+    name: string; // "A", "B", "C", etc.
+    rangeLabel?: string;
+    startTime?: number;
+    results?: {
+      count?: number;
+      averageRating?: number;
+      signups?: Array<{
+        riderId?: number;
+        rider_id?: number;
+        name?: string;
+        category?: string;
+        team?: string;
+      }>;
+    };
+  }>;
+  categoryEnforcement?: string;
+  organizer?: string;
+  staggeredStart?: boolean;
+  categories?: string;
+  source?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Legacy simple event interface (deprecated)
+export interface ZwiftEventSimple {
   id: number;
   name: string;
   eventDate: string;

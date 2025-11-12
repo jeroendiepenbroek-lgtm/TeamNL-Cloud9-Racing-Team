@@ -22,6 +22,9 @@ import autoSyncRouter from './api/endpoints/auto-sync.js';
 import { autoSyncService } from './services/auto-sync.service.js';
 import { syncConfig } from './config/sync.config.js';
 
+// Feature 1: Event scheduler service (US4 + US5)
+import { eventScheduler } from './services/event-scheduler.service.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -127,11 +130,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  ⏰ Auto-Sync (US8):                           ║
 ║  • Enabled: ${syncConfig.enabled ? 'YES' : 'NO'}                              ║
 ║  • Interval: Every ${syncConfig.intervalHours}h                      ║
+║                                                ║
+║  🗓️  Event Scheduler (Feature 1):              ║
+║  • Hourly: Full 48h event sync                 ║
+║  • 10min: Urgent events (<1h)                  ║
 ╚════════════════════════════════════════════════╝
   `);
   
   // US7 + US8: Start auto-sync scheduler
   autoSyncService.start();
+  
+  // Feature 1: Start event scheduler (US4 + US5)
+  eventScheduler.start();
 });
 
 // Server error handling

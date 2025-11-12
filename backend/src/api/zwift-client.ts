@@ -158,6 +158,62 @@ export class ZwiftApiClient {
   }
 
   // ============================================================================
+  // EVENTS - Rate limit: Unknown (gebruik voorzichtig)
+  // ============================================================================
+
+  /**
+   * GET /api/events
+   * Returns list of upcoming events with pagination
+   * Query params: from (unix timestamp), to (unix timestamp), limit, skip
+   * Response: { events: ZwiftEvent[], totalResults: number }
+   */
+  async getUpcomingEvents(options?: {
+    from?: number;
+    to?: number;
+    limit?: number;
+    skip?: number;
+  }): Promise<{ events: ZwiftEvent[]; totalResults: number }> {
+    const params = new URLSearchParams();
+    
+    if (options?.from) params.append('from', options.from.toString());
+    if (options?.to) params.append('to', options.to.toString());
+    if (options?.limit) params.append('limit', options.limit.toString());
+    if (options?.skip) params.append('skip', options.skip.toString());
+
+    const url = `/api/events${params.toString() ? `?${params.toString()}` : ''}`;
+    const response = await this.client.get(url);
+    
+    return response.data;
+  }
+
+  /**
+   * GET /api/events (with 48h time window)
+   * Convenience method voor Feature 1: upcoming events in volgende 48 uur
+   */
+  async getEvents48Hours(): Promise<ZwiftEvent[]> {
+    const now = Math.floor(Date.now() / 1000);
+    const in48Hours = now + (48 * 60 * 60);
+    
+    const result = await this.getUpcomingEvents({
+      from: now,
+      to: in48Hours,
+      limit: 1000, // Haal maximaal 1000 events op
+    });
+    
+    console.log(`[ZwiftAPI] ℹ️ Found ${result.events.length} events in next 48h (total: ${result.totalResults})`);
+    return result.events;
+  }
+
+  /**
+   * GET /api/events/{eventId}
+   * Returns detailed event data including participants (pens)
+   */
+  async getEventDetails(eventId: number): Promise<ZwiftEvent> {
+    const response = await this.client.get(`/api/events/${eventId}`);
+    return response.data;
+  }
+
+  // ============================================================================
   // LEGACY / DEPRECATED METHODS (behouden voor backwards compatibility)
   // ============================================================================
 
@@ -195,15 +251,12 @@ export class ZwiftApiClient {
   }
 
   /**
+   * @deprecated Use getEvents48Hours() instead - direct events API available!
    * Feature 1: Get rider upcoming events
-   * NOTE: ZwiftRacing API doesn't have direct endpoint for this
-   * TODO: Implement by scraping rider profile page or finding alternative
+   * NOTE: ZwiftRacing API now HAS a direct /api/events endpoint
    */
   async getRiderUpcomingEvents(riderId: number): Promise<any[]> {
-    console.warn('[ZwiftAPI] getRiderUpcomingEvents() - endpoint not available, returning empty array');
-    // Return empty array for now
-    // In real implementation, this would need to scrape zwiftracing.app/riders/{id}
-    // or use alternative data source
+    console.warn('[ZwiftAPI] getRiderUpcomingEvents() is deprecated - use getEvents48Hours() instead');
     return [];
   }
 }
