@@ -24,10 +24,6 @@ ALTER TABLE event_signups
 ALTER TABLE event_signups 
   ADD CONSTRAINT event_signups_event_id_rider_id_key UNIQUE(event_id, rider_id);
 
--- 5. Recreate unique constraint
-ALTER TABLE event_signups 
-  ADD CONSTRAINT event_signups_event_id_rider_id_key UNIQUE(event_id, rider_id);
-
 -- 6. Update indexes
 DROP INDEX IF EXISTS idx_event_signups_event_id;
 CREATE INDEX idx_event_signups_event_id ON event_signups(event_id);
