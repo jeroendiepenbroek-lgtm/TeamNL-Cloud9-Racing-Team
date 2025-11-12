@@ -36,9 +36,6 @@ CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
 CREATE INDEX IF NOT EXISTS idx_events_upcoming ON events(event_date) WHERE event_date > NOW();
 CREATE INDEX IF NOT EXISTS idx_events_recent ON events(event_date) WHERE event_date < NOW();
 
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE events;
-
 -- Row Level Security
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 
@@ -62,6 +59,9 @@ CREATE TRIGGER trigger_events_updated_at
   BEFORE UPDATE ON events
   FOR EACH ROW
   EXECUTE FUNCTION update_events_updated_at();
+
+-- Enable Realtime (after table is fully created)
+ALTER PUBLICATION supabase_realtime ADD TABLE events;
 
 COMMENT ON TABLE events IS 'Zwift racing events (races, group rides, workouts)';
 
