@@ -34,7 +34,7 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     let events;
     
-    // Direct table query with explicit time calculation
+    // Calculate time window
     const now = Math.floor(Date.now() / 1000);
     const future = now + (hours * 60 * 60);
     
@@ -43,12 +43,29 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       future,
       now_date: new Date(now * 1000).toISOString(),
       future_date: new Date(future * 1000).toISOString(),
-      hours
+      hours,
+      hasTeamRiders
     });
     
+    // Query with signup counts via LEFT JOIN
     const { data, error } = await supabase['client']
       .from('zwift_api_events')
-      .select('*')
+      .select(`
+        *,
+        event_signups (
+          rider_id,
+          status,
+          pen_name,
+          category,
+          riders (
+            rider_id,
+            name,
+            zp_category,
+            zp_ftp,
+            weight
+          )
+        )
+      `)
       .gte('time_unix', now)
       .lte('time_unix', future)
       .order('time_unix', { ascending: true });
@@ -59,7 +76,28 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     }
     
     console.log(`[Events/Upcoming] Found ${data?.length || 0} events`);
-    events = data || [];
+    
+    // Process events and calculate signup counts
+    let processedEvents = (data || []).map((event: any) => {
+      const signups = event.event_signups || [];
+      const teamRiders = signups.filter((s: any) => s.riders).map((s: any) => s.riders);
+      
+      return {
+        ...event,
+        confirmed_signups: signups.filter((s: any) => s.status === 'confirmed').length,
+        tentative_signups: signups.filter((s: any) => s.status === 'tentative').length,
+        total_signups: signups.length,
+        team_rider_count: teamRiders.length,
+        team_riders: teamRiders,
+      };
+    });
+    
+    // Filter for team events if requested
+    if (hasTeamRiders) {
+      processedEvents = processedEvents.filter((e: any) => e.team_rider_count > 0);
+    }
+    
+    events = processedEvents;
     
     // Transform time_unix to event_date for frontend compatibility
     const transformedEvents = events.map((event: any) => ({
