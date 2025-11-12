@@ -32,7 +32,21 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     const hours = req.query.hours ? parseInt(req.query.hours as string) : 48;
     const hasTeamRiders = req.query.hasTeamRiders === 'true';
     
-    const events = await supabase.getUpcomingEvents(hours, hasTeamRiders);
+    let events;
+    
+    // TEMP FIX: Direct table query bypasses view time issues
+    const now = Math.floor(Date.now() / 1000);
+    const future = now + (hours * 60 * 60);
+    
+    const { data, error } = await supabase['client']
+      .from('zwift_api_events')
+      .select('*')
+      .gte('time_unix', now)
+      .lte('time_unix', future)
+      .order('time_unix', { ascending: true });
+    
+    if (error) throw error;
+    events = data || [];
     
     // Transform time_unix to event_date for frontend compatibility
     const transformedEvents = events.map((event: any) => ({
