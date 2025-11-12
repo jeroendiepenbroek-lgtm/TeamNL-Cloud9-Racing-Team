@@ -34,9 +34,17 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     let events;
     
-    // TEMP FIX: Direct table query bypasses view time issues
+    // Direct table query with explicit time calculation
     const now = Math.floor(Date.now() / 1000);
     const future = now + (hours * 60 * 60);
+    
+    console.log(`[Events/Upcoming] Query params:`, {
+      now,
+      future,
+      now_date: new Date(now * 1000).toISOString(),
+      future_date: new Date(future * 1000).toISOString(),
+      hours
+    });
     
     const { data, error } = await supabase['client']
       .from('zwift_api_events')
@@ -45,7 +53,12 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       .lte('time_unix', future)
       .order('time_unix', { ascending: true });
     
-    if (error) throw error;
+    if (error) {
+      console.error('[Events/Upcoming] Query error:', error);
+      throw error;
+    }
+    
+    console.log(`[Events/Upcoming] Found ${data?.length || 0} events`);
     events = data || [];
     
     // Transform time_unix to event_date for frontend compatibility
@@ -65,6 +78,38 @@ router.get('/upcoming', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
     res.status(500).json({ error: 'Fout bij ophalen aankomende events' });
+  }
+});
+
+// DEBUG: GET /api/events/debug - Toon ALL events in database
+router.get('/debug', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase['client']
+      .from('zwift_api_events')
+      .select('event_id, title, time_unix')
+      .order('time_unix', { ascending: true })
+      .limit(50);
+    
+    if (error) throw error;
+    
+    const now = Math.floor(Date.now() / 1000);
+    
+    const eventsWithTime = (data || []).map((e: any) => ({
+      ...e,
+      time_date: new Date(e.time_unix * 1000).toISOString(),
+      hours_until: ((e.time_unix - now) / 3600).toFixed(1),
+      in_past: e.time_unix < now
+    }));
+    
+    res.json({
+      current_time_unix: now,
+      current_time: new Date(now * 1000).toISOString(),
+      total_in_db: eventsWithTime.length,
+      events: eventsWithTime
+    });
+  } catch (error) {
+    console.error('Error fetching debug events:', error);
+    res.status(500).json({ error: 'Fout bij ophalen debug events' });
   }
 });
 
