@@ -66,23 +66,8 @@ CREATE TRIGGER trigger_event_signups_updated_at
   EXECUTE FUNCTION update_event_signups_updated_at();
 
 -- ============================================================================
--- Extend events table with additional fields for Feature 1
--- ============================================================================
-
--- Add missing fields to events table
-ALTER TABLE events ADD COLUMN IF NOT EXISTS event_type TEXT; -- race, group_ride, workout
-ALTER TABLE events ADD COLUMN IF NOT EXISTS description TEXT;
-ALTER TABLE events ADD COLUMN IF NOT EXISTS event_url TEXT;
-ALTER TABLE events ADD COLUMN IF NOT EXISTS category_enforcement BOOLEAN DEFAULT false;
-ALTER TABLE events ADD COLUMN IF NOT EXISTS organizer TEXT;
-ALTER TABLE events ADD COLUMN IF NOT EXISTS zwift_event_id BIGINT; -- Original Zwift event ID
-
--- Index for filtering by event type
-CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type);
-
--- Index for upcoming events (most common query)
-CREATE INDEX IF NOT EXISTS idx_events_upcoming ON events(event_date) WHERE event_date > NOW();
-
+-- Note: events table already created in migration 009
+-- This migration only adds event_signups and views
 -- ============================================================================
 -- Helper Views
 -- ============================================================================
@@ -90,7 +75,24 @@ CREATE INDEX IF NOT EXISTS idx_events_upcoming ON events(event_date) WHERE event
 -- View: Upcoming events with signup counts
 CREATE OR REPLACE VIEW view_upcoming_events AS
 SELECT 
-  e.*,
+  e.id,
+  e.event_id,
+  e.zwift_event_id,
+  e.name,
+  e.event_date,
+  e.event_type,
+  e.route,
+  e.laps,
+  e.distance_meters,
+  e.total_elevation,
+  e.category,
+  e.description,
+  e.event_url,
+  e.category_enforcement,
+  e.organizer,
+  e.last_synced,
+  e.created_at,
+  e.updated_at,
   COUNT(DISTINCT es.rider_id) FILTER (WHERE es.status = 'confirmed') as confirmed_signups,
   COUNT(DISTINCT es.rider_id) FILTER (WHERE es.status = 'tentative') as tentative_signups,
   COUNT(DISTINCT es.rider_id) as total_signups
@@ -98,15 +100,32 @@ FROM events e
 LEFT JOIN event_signups es ON e.event_id = es.event_id
 WHERE e.event_date > NOW() 
   AND e.event_date <= (NOW() + INTERVAL '48 hours')
-GROUP BY e.id, e.event_id, e.name, e.event_date, e.route, e.laps, e.distance_meters, 
-         e.total_elevation, e.category, e.last_synced, e.created_at, e.event_type, 
-         e.description, e.event_url, e.category_enforcement, e.organizer, e.zwift_event_id
+GROUP BY e.id, e.event_id, e.zwift_event_id, e.name, e.event_date, e.event_type, e.route, 
+         e.laps, e.distance_meters, e.total_elevation, e.category, e.description, 
+         e.event_url, e.category_enforcement, e.organizer, e.last_synced, e.created_at, e.updated_at
 ORDER BY e.event_date ASC;
 
 -- View: Events with team riders signed up
 CREATE OR REPLACE VIEW view_team_events AS
 SELECT 
-  e.*,
+  e.id,
+  e.event_id,
+  e.zwift_event_id,
+  e.name,
+  e.event_date,
+  e.event_type,
+  e.route,
+  e.laps,
+  e.distance_meters,
+  e.total_elevation,
+  e.category,
+  e.description,
+  e.event_url,
+  e.category_enforcement,
+  e.organizer,
+  e.last_synced,
+  e.created_at,
+  e.updated_at,
   ARRAY_AGG(
     DISTINCT jsonb_build_object(
       'rider_id', r.rider_id,
@@ -124,9 +143,9 @@ INNER JOIN riders r ON es.rider_id = r.rider_id
 WHERE e.event_date > NOW() 
   AND e.event_date <= (NOW() + INTERVAL '48 hours')
   AND es.status IN ('confirmed', 'tentative')
-GROUP BY e.id, e.event_id, e.name, e.event_date, e.route, e.laps, e.distance_meters, 
-         e.total_elevation, e.category, e.last_synced, e.created_at, e.event_type, 
-         e.description, e.event_url, e.category_enforcement, e.organizer, e.zwift_event_id
+GROUP BY e.id, e.event_id, e.zwift_event_id, e.name, e.event_date, e.event_type, e.route, 
+         e.laps, e.distance_meters, e.total_elevation, e.category, e.description, 
+         e.event_url, e.category_enforcement, e.organizer, e.last_synced, e.created_at, e.updated_at
 ORDER BY e.event_date ASC;
 
 COMMENT ON TABLE event_signups IS 'Tracks rider registrations/signups for events';
