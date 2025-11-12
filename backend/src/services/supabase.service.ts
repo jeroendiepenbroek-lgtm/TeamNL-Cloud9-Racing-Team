@@ -186,10 +186,12 @@ export class SupabaseService {
     return data || [];
   }
 
-  // Feature 1: Upsert event signup
+    // Feature 1: Upsert event signup (TEXT event_id!)
   async upsertEventSignup(signup: {
-    event_id: number;
+    event_id: string;  // Changed to TEXT
     rider_id: number;
+    pen_name?: string;
+    pen_range_label?: string;
     category?: string;
     status?: string;
     team_name?: string;
@@ -205,10 +207,24 @@ export class SupabaseService {
     return data;
   }
 
-  async upsertEvents(events: Partial<DbEvent>[]): Promise<DbEvent[]> {
+  // Feature 1: Upsert RAW API events into sourcing table
+  async upsertZwiftApiEvents(events: any[]): Promise<any[]> {
     const { data, error } = await this.client
-      .from('events')
-      .upsert(events, { onConflict: 'zwift_event_id' })
+      .from('zwift_api_events')
+      .upsert(events, { onConflict: 'event_id' })
+      .select();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Legacy: Keep for backwards compatibility (will use view)
+  async upsertEvents(events: Partial<DbEvent>[]): Promise<DbEvent[]> {
+    // This now points to zwift_api_events via the 'events' view
+    console.warn('[Supabase] upsertEvents() is deprecated, use upsertZwiftApiEvents()');
+    const { data, error } = await this.client
+      .from('zwift_api_events')
+      .upsert(events, { onConflict: 'event_id' })
       .select();
 
     if (error) throw error;

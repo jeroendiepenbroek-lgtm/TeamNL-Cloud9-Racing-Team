@@ -293,6 +293,8 @@ export class SyncService {
    * US1: Upcoming events in de komende 48 uur ophalen
    * US2: Event highlighten waar één van onze rijders aan deelneemt
    * US3: Aantal van onze deelnemende riders toevoegen
+   * 
+   * 1:1 API Mapping: Stores RAW API response in zwift_api_events table
    */
   async bulkImportUpcomingEvents(): Promise<{
     events_imported: number;
@@ -317,21 +319,32 @@ export class SyncService {
       let teamEvents = 0;
       let errors = 0;
 
-      // 3. Process events batch
-      const eventsBatch: Partial<DbEvent>[] = [];
+      // 3. Store RAW API data in sourcing table (1:1 mapping)
+      const apiEventsBatch: any[] = [];
       
       for (const event of events) {
         try {
-          // Parse event data voor database
-          const eventData: Partial<DbEvent> = {
-            zwift_event_id: parseInt(event.eventId),
-            name: event.title,
-            event_date: new Date(event.time * 1000).toISOString(),
-            event_type: event.type?.toLowerCase() || 'race',
+          // 1:1 API mapping - store exactly what API returns
+          const apiEventData = {
+            mongo_id: event._id || null,
+            event_id: event.eventId,  // Keep as STRING
+            time_unix: event.time,
+            title: event.title,
+            event_type: event.type,
+            sub_type: event.subType || null,
+            distance_meters: event.distance || null,
+            elevation_meters: event.elevation || null,
+            route_name: event.route?.name || null,
+            route_world: event.route?.world || null,
+            organizer: event.organizer || null,
+            category_enforcement: event.categoryEnforcement || null,
+            pens: event.pens ? JSON.stringify(event.pens) : null,  // Store as JSONB
+            route_full: event.route ? JSON.stringify(event.route) : null,
+            raw_response: JSON.stringify(event),  // Full API response backup
             last_synced: new Date().toISOString(),
           };
 
-          eventsBatch.push(eventData);
+          apiEventsBatch.push(apiEventData);
 
           // 4. Check for participants (pens) en match met onze riders
           let hasTeamRiders = false;
@@ -345,9 +358,11 @@ export class SyncService {
                     // Match found!
                     try {
                       await supabase.upsertEventSignup({
-                        event_id: parseInt(event.eventId),
+                        event_id: event.eventId,  // TEXT format!
                         rider_id: riderId,
-                        category: pen.name || signup.category || undefined,
+                        pen_name: pen.name || undefined,
+                        pen_range_label: pen.rangeLabel || undefined,
+                        category: signup.category || undefined,
                         status: 'confirmed',
                         team_name: signup.team || undefined,
                       });
@@ -359,7 +374,7 @@ export class SyncService {
                         signupError.message.includes('relation "event_signups" does not exist');
                       
                       if (isTableMissing) {
-                        console.warn(`  ⚠️  event_signups table not found - run migration 009 first`);
+                        console.warn(`  ⚠️  event_signups table not found - run migration 010 first`);
                         break; // Stop trying to insert signups
                       } else {
                         console.warn(`  ⚠️  Failed to create signup for rider ${riderId}:`, signupError);
@@ -381,11 +396,11 @@ export class SyncService {
         }
       }
 
-      // 5. Bulk insert events (veel sneller!)
-      if (eventsBatch.length > 0) {
+      // 5. Bulk insert RAW API events into sourcing table
+      if (apiEventsBatch.length > 0) {
         try {
-          await supabase.upsertEvents(eventsBatch);
-          eventsImported = eventsBatch.length;
+          await supabase.upsertZwiftApiEvents(apiEventsBatch);
+          eventsImported = apiEventsBatch.length;
         } catch (bulkError) {
           console.error(`❌ [BulkImport] Bulk upsert failed:`, bulkError);
           throw bulkError;
