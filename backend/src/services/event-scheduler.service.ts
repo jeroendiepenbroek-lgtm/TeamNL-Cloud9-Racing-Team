@@ -104,7 +104,7 @@ export class EventSchedulerService {
     
     // Filter voor events binnen 1 uur
     const urgentEvents = allUpcomingEvents.filter((event: any) => {
-      const eventDate = new Date(event.event_date);
+      const eventDate = new Date(event.time_unix * 1000);  // Unix timestamp to Date
       return eventDate >= now && eventDate <= oneHourFromNow;
     });
 
@@ -120,10 +120,10 @@ export class EventSchedulerService {
       try {
         // Haal verse signups op via external API indien beschikbaar
         // Voor nu: loggen we alleen
-        const minutesUntilStart = Math.floor((new Date(event.event_date).getTime() - now.getTime()) / 60000);
-        console.log(`  📍 Event ${event.zwift_event_id} "${event.name}" starts in ${minutesUntilStart} minutes`);
+        const minutesUntilStart = Math.floor((new Date(event.time_unix * 1000).getTime() - now.getTime()) / 60000);
+        console.log(`  📍 Event ${event.event_id} "${event.title}" starts in ${minutesUntilStart} minutes`);
       } catch (error) {
-        console.error(`  ❌ Failed to update event ${event.zwift_event_id}:`, error);
+        console.error(`  ❌ Failed to update event ${event.event_id}:`, error);
       }
     }
   }

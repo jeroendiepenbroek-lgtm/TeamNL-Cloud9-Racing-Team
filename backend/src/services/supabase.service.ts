@@ -117,7 +117,7 @@ export class SupabaseService {
         const { data, error } = await this.client
           .from('view_team_events')
           .select('*')
-          .order('event_date', { ascending: true });
+          .order('time_unix', { ascending: true });
         
         if (error) throw error;
         return data || [];
@@ -126,7 +126,7 @@ export class SupabaseService {
         const { data, error } = await this.client
           .from('view_upcoming_events')
           .select('*')
-          .order('event_date', { ascending: true });
+          .order('time_unix', { ascending: true });
         
         if (error) throw error;
         return data || [];
@@ -135,15 +135,15 @@ export class SupabaseService {
       // Fallback to manual query if views don't exist
       console.warn('Views not available, using fallback query:', viewError);
       
-      const now = new Date();
-      const future = new Date(now.getTime() + hours * 60 * 60 * 1000);
+      const now = Math.floor(Date.now() / 1000);
+      const future = now + (hours * 60 * 60);
       
       const { data, error } = await this.client
-        .from('events')
+        .from('zwift_api_events')
         .select('*')
-        .gte('event_date', now.toISOString())
-        .lte('event_date', future.toISOString())
-        .order('event_date', { ascending: true });
+        .gte('time_unix', now)
+        .lte('time_unix', future)
+        .order('time_unix', { ascending: true });
       
       if (error) throw error;
       return data || [];
