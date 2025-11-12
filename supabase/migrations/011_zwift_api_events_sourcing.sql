@@ -6,9 +6,13 @@
 -- Principle: Every API endpoint needs a dedicated sourcing table
 -- ============================================================================
 
--- Drop old incomplete events table if it exists
+-- Clean up any existing events structures (table, view, or backup)
+DROP VIEW IF EXISTS events CASCADE;
+DROP VIEW IF EXISTS view_upcoming_events CASCADE;
+DROP VIEW IF EXISTS view_team_events CASCADE;
 DROP TABLE IF EXISTS events CASCADE;
 DROP TABLE IF EXISTS events_old_backup_20251112 CASCADE;
+DROP TABLE IF EXISTS zwift_api_events CASCADE;
 
 -- Raw events data from /api/events endpoint (1:1 with API response)
 CREATE TABLE zwift_api_events (
