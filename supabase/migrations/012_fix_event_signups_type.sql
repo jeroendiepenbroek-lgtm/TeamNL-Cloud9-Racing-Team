@@ -6,20 +6,36 @@
 -- Reason: ZwiftRacing API returns event IDs as strings ("5129235")
 -- ============================================================================
 
--- Fix event_signups.event_id type
+-- 1. Drop views first (they depend on event_signups.event_id)
+DROP VIEW IF EXISTS view_upcoming_events CASCADE;
+DROP VIEW IF EXISTS view_team_events CASCADE;
+
+-- 2. Fix event_signups.event_id type
 ALTER TABLE event_signups 
   ALTER COLUMN event_id TYPE TEXT USING event_id::TEXT;
 
--- Update indexes
+-- 3. Update indexes
 DROP INDEX IF EXISTS idx_event_signups_event_id;
 CREATE INDEX idx_event_signups_event_id ON event_signups(event_id);
 
 DROP INDEX IF EXISTS idx_event_signups_event_status;
 CREATE INDEX idx_event_signups_event_status ON event_signups(event_id, status);
 
--- Update views to use TEXT event_id
-DROP VIEW IF EXISTS view_upcoming_events;
-DROP VIEW IF EXISTS view_team_events;
+-- 4. Add pen columns if not exists
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='event_signups' AND column_name='pen_name') THEN
+    ALTER TABLE event_signups ADD COLUMN pen_name TEXT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='event_signups' AND column_name='pen_range_label') THEN
+    ALTER TABLE event_signups ADD COLUMN pen_range_label TEXT;
+  END IF;
+END $$;
+
+-- 5. Recreate views with correct event_id type (TEXT)
 
 -- View: Upcoming events with signup counts
 CREATE OR REPLACE VIEW view_upcoming_events AS
