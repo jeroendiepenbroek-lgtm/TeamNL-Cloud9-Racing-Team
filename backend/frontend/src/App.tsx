@@ -20,6 +20,7 @@ import { LoginModal } from './components/LoginModal'
 function Navigation() {
   const { user, signOut } = useAuth()
   const [showLoginModal, setShowLoginModal] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const navigate = useNavigate()
 
   const handleLogoClick = () => {
@@ -30,32 +31,32 @@ function Navigation() {
     <>
       <nav className="bg-gradient-to-r from-gray-900 to-blue-900 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-28">
-            {/* Logo + Brand - Clickable */}
+          <div className="flex justify-between items-center h-20 lg:h-28">
+            {/* Logo + Brand - Responsive sizing */}
             <button 
               onClick={handleLogoClick}
-              className="flex items-center space-x-4 hover:opacity-90 transition-all duration-200 group"
+              className="flex items-center space-x-2 lg:space-x-4 hover:opacity-90 transition-all duration-200 group"
             >
-              {/* Logo met TeamNL Oranje Kader */}
+              {/* Logo met TeamNL Oranje Kader - Smaller on mobile */}
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full blur-sm opacity-75 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white rounded-full p-1 ring-4 ring-orange-500 shadow-xl group-hover:ring-orange-400 transition-all">
+                <div className="relative bg-white rounded-full p-0.5 lg:p-1 ring-2 lg:ring-4 ring-orange-500 shadow-xl group-hover:ring-orange-400 transition-all">
                   <img 
                     src="/CloudRacer9.png" 
                     alt="CloudRacer" 
-                    className="h-20 w-20 object-contain rounded-full"
+                    className="h-12 w-12 lg:h-20 lg:w-20 object-contain rounded-full"
                   />
                 </div>
               </div>
               
               <div className="text-left">
-                <h1 className="text-2xl font-bold text-white tracking-wide">CLOUDRACER</h1>
-                <p className="text-sm text-cyan-300 font-medium">TeamNL Cloud9 Racing</p>
+                <h1 className="text-lg lg:text-2xl font-bold text-white tracking-wide">CLOUDRACER</h1>
+                <p className="text-xs lg:text-sm text-cyan-300 font-medium hidden sm:block">TeamNL Cloud9 Racing</p>
               </div>
             </button>
 
-            {/* Nav Links */}
-            <div className="flex items-center space-x-6">
+            {/* Desktop Nav Links - Hidden on mobile */}
+            <div className="hidden lg:flex items-center space-x-6">
               <Link to="/" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-cyan-300 border-b-2 border-transparent hover:border-cyan-400 transition">
                 📊 Racing Matrix
               </Link>
@@ -93,7 +94,83 @@ function Navigation() {
                 </button>
               )}
             </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-md text-white hover:bg-gray-800 transition-colors"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
           </div>
+
+          {/* Mobile Menu - Dropdown */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden border-t border-gray-700 py-4 space-y-2">
+              <Link 
+                to="/" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-base font-medium text-white hover:bg-gray-800 rounded-md transition"
+              >
+                📊 Racing Matrix
+              </Link>
+              <Link 
+                to="/clubs" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition"
+              >
+                🏢 Clubs
+              </Link>
+              <Link 
+                to="/events" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition"
+              >
+                🏁 Events
+              </Link>
+              
+              {user && (
+                <Link 
+                  to="/admin" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-base font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-md hover:from-amber-600 hover:to-orange-600 transition"
+                >
+                  ⚙️ Admin
+                </Link>
+              )}
+
+              {user ? (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    signOut();
+                  }}
+                  className="w-full text-left px-4 py-3 text-base font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition"
+                >
+                  🔒 Logout
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowLoginModal(true);
+                  }}
+                  className="w-full text-left px-4 py-3 text-base font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition"
+                >
+                  👤 Admin Login
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </nav>
 
@@ -102,9 +179,67 @@ function Navigation() {
   )
 }
 
+function BottomNavigation() {
+  const { user } = useAuth()
+  const location = window.location.pathname
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+      <div className="grid grid-cols-4 h-16">
+        <Link 
+          to="/" 
+          className={`flex flex-col items-center justify-center space-y-1 ${
+            location === '/' ? 'text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <span className="text-xl">📊</span>
+          <span className="text-xs font-medium">Matrix</span>
+        </Link>
+        
+        <Link 
+          to="/clubs" 
+          className={`flex flex-col items-center justify-center space-y-1 ${
+            location === '/clubs' ? 'text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <span className="text-xl">🏢</span>
+          <span className="text-xs font-medium">Clubs</span>
+        </Link>
+        
+        <Link 
+          to="/events" 
+          className={`flex flex-col items-center justify-center space-y-1 ${
+            location === '/events' ? 'text-blue-600' : 'text-gray-600'
+          }`}
+        >
+          <span className="text-xl">🏁</span>
+          <span className="text-xs font-medium">Events</span>
+        </Link>
+        
+        {user ? (
+          <Link 
+            to="/admin" 
+            className={`flex flex-col items-center justify-center space-y-1 ${
+              location.startsWith('/admin') ? 'text-orange-600' : 'text-gray-600'
+            }`}
+          >
+            <span className="text-xl">⚙️</span>
+            <span className="text-xs font-medium">Admin</span>
+          </Link>
+        ) : (
+          <div className="flex flex-col items-center justify-center space-y-1 text-gray-400">
+            <span className="text-xl">👤</span>
+            <span className="text-xs font-medium">Login</span>
+          </div>
+        )}
+      </div>
+    </nav>
+  )
+}
+
 function AppContent() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-0">
       <Navigation />
 
       {/* Content */}
@@ -175,6 +310,9 @@ function AppContent() {
           <Route path="/auth/pending" element={<PendingAccess />} />
         </Routes>
       </main>
+
+      {/* Bottom Navigation - Mobile only */}
+      <BottomNavigation />
     </div>
   )
 }

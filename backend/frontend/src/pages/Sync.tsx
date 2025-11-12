@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 interface SyncStatus {
   isEnabled: boolean;
@@ -23,6 +24,7 @@ export default function Sync() {
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [isTriggering, setIsTriggering] = useState(false);
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Haal sync status en logs op
   const fetchData = async () => {
@@ -55,6 +57,15 @@ export default function Sync() {
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Pull to refresh (mobile only)
+  usePullToRefresh(containerRef, {
+    onRefresh: async () => {
+      toast.loading('Verversing...', { duration: 1000 });
+      await fetchData();
+    },
+    disabled: loading || isTriggering,
+  });
 
   // Manual trigger
   const handleManualSync = async () => {
@@ -107,7 +118,7 @@ export default function Sync() {
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="space-y-6 transition-transform duration-300">
       {/* Status Card */}
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-start mb-6">

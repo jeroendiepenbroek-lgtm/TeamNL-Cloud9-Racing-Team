@@ -723,8 +723,9 @@ export default function RacingDataMatrix() {
                       <td className="px-2 py-0.5 whitespace-nowrap text-center">
                         <button
                           onClick={() => handleToggleFavorite(rider.rider_id, rider.name)}
-                          className="text-lg hover:scale-125 transition-transform"
+                          className="text-xl sm:text-lg p-2 -m-2 hover:scale-125 transition-transform touch-manipulation"
                           title={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
+                          aria-label={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
                         >
                           {isFavorite(rider.rider_id) ? '⭐' : '☆'}
                         </button>
