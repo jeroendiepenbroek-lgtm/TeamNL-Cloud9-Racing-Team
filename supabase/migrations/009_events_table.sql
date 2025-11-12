@@ -11,23 +11,55 @@
 CREATE TABLE IF NOT EXISTS events (
   id BIGSERIAL PRIMARY KEY,
   event_id BIGINT NOT NULL UNIQUE, -- Zwift event ID
-  zwift_event_id BIGINT, -- Alternative Zwift event ID (if different)
   name TEXT NOT NULL,
   event_date TIMESTAMPTZ NOT NULL,
-  event_type TEXT, -- race, group_ride, workout
   route TEXT,
   laps INTEGER,
   distance_meters INTEGER,
   total_elevation INTEGER,
   category TEXT, -- A/B/C/D or Mixed
-  description TEXT,
-  event_url TEXT,
-  category_enforcement BOOLEAN DEFAULT false,
-  organizer TEXT,
   last_synced TIMESTAMPTZ DEFAULT NOW(),
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add new columns if they don't exist (for existing tables)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='events' AND column_name='zwift_event_id') THEN
+    ALTER TABLE events ADD COLUMN zwift_event_id BIGINT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='events' AND column_name='event_type') THEN
+    ALTER TABLE events ADD COLUMN event_type TEXT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='events' AND column_name='description') THEN
+    ALTER TABLE events ADD COLUMN description TEXT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='events' AND column_name='event_url') THEN
+    ALTER TABLE events ADD COLUMN event_url TEXT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='events' AND column_name='category_enforcement') THEN
+    ALTER TABLE events ADD COLUMN category_enforcement BOOLEAN DEFAULT false;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='events' AND column_name='organizer') THEN
+    ALTER TABLE events ADD COLUMN organizer TEXT;
+  END IF;
+  
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                 WHERE table_name='events' AND column_name='updated_at') THEN
+    ALTER TABLE events ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+  END IF;
+END $$;
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_events_event_id ON events(event_id);
