@@ -125,13 +125,11 @@ router.get('/:eventId/signups', async (req: Request, res: Response) => {
 // POST /api/events/sync - Sync events vanaf ZwiftRacing API
 router.post('/sync', async (req: Request, res: Response) => {
   try {
-    const clubId = req.body.clubId || 11818;
-    const events = await syncService.syncEvents(clubId);
+    const result = await syncService.bulkImportUpcomingEvents();
     
     res.json({
       success: true,
-      count: events.length,
-      events,
+      ...result,
     });
   } catch (error) {
     console.error('Error syncing events:', error);
