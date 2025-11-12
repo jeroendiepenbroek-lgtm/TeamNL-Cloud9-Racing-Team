@@ -34,11 +34,19 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     const events = await supabase.getUpcomingEvents(hours, hasTeamRiders);
     
+    // Transform time_unix to event_date for frontend compatibility
+    const transformedEvents = events.map((event: any) => ({
+      ...event,
+      event_id: parseInt(event.event_id) || event.event_id,  // Try parse to number for compatibility
+      name: event.title || event.name,  // Use title as name
+      event_date: new Date(event.time_unix * 1000).toISOString(),  // Convert Unix to ISO
+    }));
+    
     res.json({
-      count: events.length,
+      count: transformedEvents.length,
       lookforward_hours: hours,
       has_team_riders_only: hasTeamRiders,
-      events,
+      events: transformedEvents,
     });
   } catch (error) {
     console.error('Error fetching upcoming events:', error);
