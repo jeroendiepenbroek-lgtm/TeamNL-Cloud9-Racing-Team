@@ -11,8 +11,9 @@ DROP VIEW IF EXISTS events CASCADE;              -- From migration 011 (has BIGI
 DROP VIEW IF EXISTS view_upcoming_events CASCADE;
 DROP VIEW IF EXISTS view_team_events CASCADE;
 
--- 2. Drop unique constraint (we'll recreate it after type change)
+-- 2. Drop constraints (we'll recreate unique constraint after type change)
 ALTER TABLE event_signups DROP CONSTRAINT IF EXISTS event_signups_event_id_rider_id_key;
+ALTER TABLE event_signups DROP CONSTRAINT IF EXISTS fk_event;  -- CHECK (event_id > 0) fails with TEXT!
 
 -- 3. Clear any existing data (incompatible with type change)
 TRUNCATE event_signups;
@@ -21,9 +22,13 @@ TRUNCATE event_signups;
 ALTER TABLE event_signups 
   ALTER COLUMN event_id TYPE TEXT;
 
--- 5. Recreate unique constraint
+-- 5. Recreate constraints (TEXT-compatible)
 ALTER TABLE event_signups 
   ADD CONSTRAINT event_signups_event_id_rider_id_key UNIQUE(event_id, rider_id);
+
+-- Add TEXT-compatible check constraint (event_id should not be empty)
+ALTER TABLE event_signups
+  ADD CONSTRAINT fk_event_text CHECK (event_id != '' AND LENGTH(event_id) > 0);
 
 -- 6. Update indexes
 DROP INDEX IF EXISTS idx_event_signups_event_id;
