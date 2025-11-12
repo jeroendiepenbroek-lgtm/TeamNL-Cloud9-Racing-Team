@@ -44,10 +44,12 @@ CREATE TABLE zwift_api_events (
 -- Indexes for performance
 CREATE INDEX idx_zwift_events_event_id ON zwift_api_events(event_id);
 CREATE INDEX idx_zwift_events_time ON zwift_api_events(time_unix);
-CREATE INDEX idx_zwift_events_time_future ON zwift_api_events(time_unix) WHERE time_unix > EXTRACT(EPOCH FROM NOW());
 CREATE INDEX idx_zwift_events_type ON zwift_api_events(event_type);
 CREATE INDEX idx_zwift_events_organizer ON zwift_api_events(organizer);
 CREATE INDEX idx_zwift_events_pens_gin ON zwift_api_events USING GIN(pens);  -- JSONB search
+
+-- Note: Partial index with NOW() removed (not immutable)
+-- Query performance is still good with time_unix index
 
 -- RLS Policies
 ALTER TABLE zwift_api_events ENABLE ROW LEVEL SECURITY;
