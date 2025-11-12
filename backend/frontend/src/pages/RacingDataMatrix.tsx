@@ -655,10 +655,10 @@ export default function RacingDataMatrix() {
                   <th colSpan={2} className="px-2 py-0.5 text-center text-xs font-bold uppercase tracking-wider bg-green-700 border-r border-slate-600">
                     zFTP
                   </th>
-                  <th rowSpan={2} className="px-2 py-0.5 text-right text-xs font-bold uppercase tracking-wider border-r border-slate-600">
+                  <th rowSpan={2} className="px-3 py-1 text-right text-sm font-bold uppercase tracking-wider border-r border-slate-600">
                     Weight
                   </th>
-                  <th colSpan={4} className="px-2 py-0.5 text-center text-xs font-bold uppercase tracking-wider bg-slate-600 border-r border-slate-600">
+                  <th colSpan={4} className="px-3 py-1 text-center text-sm font-bold uppercase tracking-wider bg-slate-600 border-r border-slate-600">
                     Race Stats
                   </th>
                   <th colSpan={7} className="px-2 py-0.5 text-center text-xs font-bold uppercase tracking-wider bg-indigo-700">
@@ -673,16 +673,16 @@ export default function RacingDataMatrix() {
                   <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('watts_per_kg')}>
                     W/kg
                   </th>
-                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
+                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
                     Finishes
                   </th>
-                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
+                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
                     Wins
                   </th>
-                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
+                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
                     Podiums
                   </th>
-                  <th className="px-1 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
+                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
                     DNFs
                   </th>
                   <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w5')}>
@@ -773,19 +773,19 @@ export default function RacingDataMatrix() {
                       <td className="px-2 py-0.5 whitespace-nowrap text-right font-bold text-indigo-700 text-sm">
                         {rider.zp_ftp && rider.weight ? (rider.zp_ftp / rider.weight).toFixed(2) : '-'}
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap text-right text-gray-700">
+                      <td className="px-3 py-1.5 whitespace-nowrap text-right text-gray-700 text-sm font-medium">
                         {rider.weight ? `${rider.weight.toFixed(1)}kg` : '-'}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-right text-gray-700 font-semibold">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right text-gray-700 font-semibold text-sm">
                         {rider.race_finishes || 0}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-right font-bold text-green-700">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-bold text-green-700 text-sm">
                         {rider.race_wins || 0}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-right font-semibold text-blue-700">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-semibold text-blue-700 text-sm">
                         {rider.race_podiums || 0}
                       </td>
-                      <td className="px-1 py-0.5 whitespace-nowrap text-right text-red-700">
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right text-red-700 text-sm">
                         {rider.race_dnfs || 0}
                       </td>
                       
