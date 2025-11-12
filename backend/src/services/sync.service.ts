@@ -354,7 +354,16 @@ export class SyncService {
                       signupsMatched++;
                       hasTeamRiders = true;
                     } catch (signupError) {
-                      console.warn(`  ⚠️  Failed to create signup for rider ${riderId}:`, signupError);
+                      // Skip if event_signups table doesn't exist yet
+                      const isTableMissing = signupError instanceof Error && 
+                        signupError.message.includes('relation "event_signups" does not exist');
+                      
+                      if (isTableMissing) {
+                        console.warn(`  ⚠️  event_signups table not found - run migration 009 first`);
+                        break; // Stop trying to insert signups
+                      } else {
+                        console.warn(`  ⚠️  Failed to create signup for rider ${riderId}:`, signupError);
+                      }
                     }
                   }
                 }
@@ -400,12 +409,21 @@ export class SyncService {
       };
 
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
+      console.error('❌ [BulkImport] FATAL ERROR:', errorMessage);
+      if (errorStack) {
+        console.error('Stack trace:', errorStack);
+      }
+      
       await supabase.createSyncLog({
         endpoint: 'bulk_import_upcoming_events',
         status: 'error',
         records_processed: 0,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
+        error_message: errorMessage,
       });
+      
       throw error;
     }
   }
