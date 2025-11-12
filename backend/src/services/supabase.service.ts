@@ -200,6 +200,20 @@ export class SupabaseService {
   // ========== MY TEAM MEMBERS ==========
   // Query via VIEW (niet direct riders tabel!)
   async getMyTeamMembers(): Promise<any[]> {
+    // Try view_racing_data_matrix first (has all the racing stats)
+    try {
+      const { data, error } = await this.client
+        .from('view_racing_data_matrix')
+        .select('*')
+        .order('race_last_rating', { ascending: false, nullsFirst: false }); // DESC = hoogste rating eerst
+
+      if (error) throw error;
+      if (data && data.length > 0) return data;
+    } catch (matrixError) {
+      console.warn('view_racing_data_matrix not available, trying view_my_team:', matrixError);
+    }
+
+    // Fallback to view_my_team
     const { data, error } = await this.client
       .from('view_my_team')
       .select('*')
