@@ -75,24 +75,7 @@ CREATE TRIGGER trigger_event_signups_updated_at
 -- View: Upcoming events with signup counts
 CREATE OR REPLACE VIEW view_upcoming_events AS
 SELECT 
-  e.id,
-  e.event_id,
-  e.zwift_event_id,
-  e.name,
-  e.event_date,
-  e.event_type,
-  e.route,
-  e.laps,
-  e.distance_meters,
-  e.total_elevation,
-  e.category,
-  e.description,
-  e.event_url,
-  e.category_enforcement,
-  e.organizer,
-  e.last_synced,
-  e.created_at,
-  e.updated_at,
+  e.*,
   COUNT(DISTINCT es.rider_id) FILTER (WHERE es.status = 'confirmed') as confirmed_signups,
   COUNT(DISTINCT es.rider_id) FILTER (WHERE es.status = 'tentative') as tentative_signups,
   COUNT(DISTINCT es.rider_id) as total_signups
@@ -100,32 +83,13 @@ FROM events e
 LEFT JOIN event_signups es ON e.event_id = es.event_id
 WHERE e.event_date > NOW() 
   AND e.event_date <= (NOW() + INTERVAL '48 hours')
-GROUP BY e.id, e.event_id, e.zwift_event_id, e.name, e.event_date, e.event_type, e.route, 
-         e.laps, e.distance_meters, e.total_elevation, e.category, e.description, 
-         e.event_url, e.category_enforcement, e.organizer, e.last_synced, e.created_at, e.updated_at
+GROUP BY e.id
 ORDER BY e.event_date ASC;
 
 -- View: Events with team riders signed up
 CREATE OR REPLACE VIEW view_team_events AS
 SELECT 
-  e.id,
-  e.event_id,
-  e.zwift_event_id,
-  e.name,
-  e.event_date,
-  e.event_type,
-  e.route,
-  e.laps,
-  e.distance_meters,
-  e.total_elevation,
-  e.category,
-  e.description,
-  e.event_url,
-  e.category_enforcement,
-  e.organizer,
-  e.last_synced,
-  e.created_at,
-  e.updated_at,
+  e.*,
   ARRAY_AGG(
     DISTINCT jsonb_build_object(
       'rider_id', r.rider_id,
@@ -143,9 +107,7 @@ INNER JOIN riders r ON es.rider_id = r.rider_id
 WHERE e.event_date > NOW() 
   AND e.event_date <= (NOW() + INTERVAL '48 hours')
   AND es.status IN ('confirmed', 'tentative')
-GROUP BY e.id, e.event_id, e.zwift_event_id, e.name, e.event_date, e.event_type, e.route, 
-         e.laps, e.distance_meters, e.total_elevation, e.category, e.description, 
-         e.event_url, e.category_enforcement, e.organizer, e.last_synced, e.created_at, e.updated_at
+GROUP BY e.id
 ORDER BY e.event_date ASC;
 
 COMMENT ON TABLE event_signups IS 'Tracks rider registrations/signups for events';
