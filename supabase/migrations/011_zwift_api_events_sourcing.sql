@@ -6,11 +6,9 @@
 -- Principle: Every API endpoint needs a dedicated sourcing table
 -- ============================================================================
 
--- Drop old incomplete events table (backup eerst als je data hebt!)
--- DROP TABLE IF EXISTS events CASCADE;
-
--- Rename old events to backup
-ALTER TABLE IF EXISTS events RENAME TO events_old_backup_20251112;
+-- Drop old incomplete events table if it exists
+DROP TABLE IF EXISTS events CASCADE;
+DROP TABLE IF EXISTS events_old_backup_20251112 CASCADE;
 
 -- Raw events data from /api/events endpoint (1:1 with API response)
 CREATE TABLE zwift_api_events (
