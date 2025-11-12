@@ -6,7 +6,8 @@
 -- Reason: ZwiftRacing API returns event IDs as strings ("5129235")
 -- ============================================================================
 
--- 1. Drop views first (they depend on event_signups.event_id)
+-- 1. Drop ALL views first (they depend on event_signups.event_id or reference events)
+DROP VIEW IF EXISTS events CASCADE;              -- From migration 011 (has BIGINT cast!)
 DROP VIEW IF EXISTS view_upcoming_events CASCADE;
 DROP VIEW IF EXISTS view_team_events CASCADE;
 
@@ -121,6 +122,31 @@ ORDER BY e.time_unix ASC;
 
 COMMENT ON VIEW view_upcoming_events IS 'Upcoming events (next 48h) with signup counts';
 COMMENT ON VIEW view_team_events IS 'Upcoming events with our team riders signed up';
+
+-- 9. Recreate events VIEW without BIGINT cast (use TEXT event_id)
+CREATE OR REPLACE VIEW events AS
+SELECT 
+  id,
+  event_id,                           -- Keep as TEXT (no cast!)
+  title as name,                      -- Rename to 'name' for existing code
+  TO_TIMESTAMP(time_unix) as event_date,
+  event_type,
+  sub_type,
+  distance_meters,
+  elevation_meters,
+  route_name as route,
+  route_world,
+  organizer,
+  category_enforcement,
+  NULL::INTEGER as laps,              -- Not in API, set to NULL
+  NULL::TEXT as description,          -- Not in API
+  NULL::TEXT as event_url,            -- Not in API
+  last_synced,
+  created_at,
+  updated_at
+FROM zwift_api_events;
+
+COMMENT ON VIEW events IS 'Application-friendly view of zwift_api_events (TEXT event_id)';
 
 -- ============================================================================
 -- MIGRATION COMPLETE
