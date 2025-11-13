@@ -26,6 +26,9 @@ import { syncConfig } from './config/sync.config.js';
 // Feature 1: Event scheduler service (US4 + US5)
 import { eventScheduler } from './services/event-scheduler.service.js';
 
+// US6 + US7: Signup scheduler service
+import { signupScheduler } from './services/signup-scheduler.service.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -136,6 +139,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  🗓️  Event Scheduler (Feature 1):              ║
 ║  • Hourly: Full 48h event sync                 ║
 ║  • 10min: Urgent events (<1h)                  ║
+║                                                ║
+║  📊 Signup Scheduler (US6/US7):                ║
+║  • Enabled: YES                                ║
+║  • Hourly: Events 1-48h                        ║
+║  • 10min: Events <=1h                          ║
 ╚════════════════════════════════════════════════╝
   `);
   
@@ -148,6 +156,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // TEMPORARY DISABLED: scheduler blocks on startup
   console.log('[EventScheduler] ⚠️  Scheduler DISABLED to debug hang issue');
   // eventScheduler.start();
+  
+  // US6 + US7: Start signup scheduler
+  console.log('[SignupScheduler] 🚀 Starting signup scheduler...');
+  signupScheduler.start();
 });
 
 // Server error handling
