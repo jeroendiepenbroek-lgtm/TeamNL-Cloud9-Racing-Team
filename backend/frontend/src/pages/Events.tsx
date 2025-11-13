@@ -4,15 +4,18 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Clock, Calendar, MapPin, Users, ExternalLink, TrendingUp } from 'lucide-react';
+import { Clock, Calendar, MapPin, Users, ExternalLink, TrendingUp, UserCheck } from 'lucide-react';
 
 interface Event {
   event_id: number;
   name: string;
   event_date: string;
   event_type?: string;
+  sub_type?: string; // US9
   description?: string;
   route?: string;
+  route_name?: string; // US10
+  route_world?: string; // US10
   distance_meters?: number;
   distance_km?: string | null; // US3
   elevation_m?: number | null; // US3
@@ -31,8 +34,7 @@ interface Event {
 interface TeamSignup {
   rider_id: number;
   rider_name: string;
-  power_wkg5?: number;
-  race_rating?: number;
+  // US8: Removed power_wkg5 and race_rating
 }
 
 export default function Events() {
@@ -43,23 +45,39 @@ export default function Events() {
 
   useEffect(() => {
     fetchUpcomingEvents();
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Refresh data every 5 minutes
+    const dataInterval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
+    
+    // US5: Refresh timers every minute (forces re-render)
+    const timerInterval = setInterval(() => {
+      setEvents(prev => [...prev]); // Force re-render to update timers
+    }, 60 * 1000);
+    
+    return () => {
+      clearInterval(dataInterval);
+      clearInterval(timerInterval);
+    };
   }, [filter]);
 
   const fetchUpcomingEvents = async () => {
     try {
       setLoading(true);
-      const hasTeamRiders = filter === 'team';
-      const response = await fetch(`/api/events/upcoming?hasTeamRiders=${hasTeamRiders}`);
+      // US2: Fetch all events but apply filter client-side
+      const response = await fetch(`/api/events/upcoming?hours=48`);
       
       if (!response.ok) {
         throw new Error('Fout bij ophalen events');
       }
       
       const data = await response.json();
-      setEvents(data.events || []);
+      let allEvents = data.events || [];
+      
+      // Apply filter client-side
+      if (filter === 'team') {
+        allEvents = allEvents.filter((e: Event) => (e.team_rider_count || 0) > 0);
+      }
+      
+      setEvents(allEvents);
       setError(null);
     } catch (err) {
       console.error('Error fetching events:', err);
@@ -246,11 +264,11 @@ function EventCard({ event, timeUntil, formattedDate, distance, elevation }: Eve
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-orange-200">
       {/* Card Header */}
       <div className="p-6">
         {/* Time Until Event */}
-        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-bold mb-3 ${
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold mb-3 ${
           isStartingSoon()
             ? 'bg-red-100 text-red-700 animate-pulse'
             : 'bg-orange-100 text-orange-700'
@@ -277,53 +295,71 @@ function EventCard({ event, timeUntil, formattedDate, distance, elevation }: Eve
               {event.event_type}
             </span>
           )}
-          {event.route && (
+          {/* US9: Sub type badge */}
+          {event.sub_type && (
+            <span className="text-xs px-2 py-1 rounded-full border bg-purple-100 text-purple-800 border-purple-200 font-semibold">
+              {event.sub_type}
+            </span>
+          )}
+          {/* US10: Route with world */}
+          {(event.route || event.route_name) && (
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <MapPin className="w-3 h-3" />
-              {event.route}
+              {event.route_name || event.route}
+              {event.route_world && (
+                <span className="text-gray-400">• {event.route_world}</span>
+              )}
             </div>
           )}
           {distance !== '-' && (
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <TrendingUp className="w-3 h-3" />
               {distance}
-              {elevation && (
-                <span className="text-gray-500">• {elevation}</span>
+              {elevation && elevation !== '-' && (
+                <span className="text-gray-500">↑ {elevation}</span>
               )}
             </div>
           )}
         </div>
 
-        {/* Signups */}
-        {(event.total_signups || 0) > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span className="font-semibold text-gray-700">
-                {event.total_signups} ingeschreven
-              </span>
-              {event.team_rider_count && event.team_rider_count > 0 && (
-                <span className="text-orange-600 font-bold">
-                  ({event.team_rider_count} team)
+        {/* US2/US4: Signups with icons */}
+        <div className="space-y-2">
+          {(event.total_signups || 0) > 0 && (
+            <div className="flex items-center gap-3">
+              {/* US4: Total signups with icon */}
+              <div className="flex items-center gap-1.5 text-sm">
+                <Users className="w-4 h-4 text-gray-500" />
+                <span className="font-semibold text-gray-700">
+                  {event.total_signups}
                 </span>
+              </div>
+              
+              {/* US3: Team riders with orange icon */}
+              {event.team_rider_count && event.team_rider_count > 0 && (
+                <div className="flex items-center gap-1.5 text-sm">
+                  <UserCheck className="w-4 h-4 text-orange-600" />
+                  <span className="font-bold text-orange-600">
+                    {event.team_rider_count}
+                  </span>
+                </div>
               )}
             </div>
+          )}
             
-            {/* US1: Signups per categorie */}
-            {event.signups_by_category && Object.keys(event.signups_by_category).length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {Object.entries(event.signups_by_category).map(([cat, count]) => (
-                  <span
-                    key={cat}
-                    className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-semibold"
-                  >
-                    {cat}: {count}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+          {/* US1: Signups per categorie */}
+          {event.signups_by_category && Object.keys(event.signups_by_category).length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(event.signups_by_category).map(([cat, count]) => (
+                <span
+                  key={cat}
+                  className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-semibold"
+                >
+                  {cat}: {count}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* US2: Team Riders per Categorie */}
         {event.team_signups_by_category && Object.keys(event.team_signups_by_category).length > 0 && (
@@ -341,17 +377,10 @@ function EventCard({ event, timeUntil, formattedDate, distance, elevation }: Eve
                   <div key={category} className="">
                     <div className="text-xs font-bold text-gray-500 mb-1.5">Categorie {category}</div>
                     <div className="space-y-1.5">
+                      {/* US8: Team riders zonder W/kg en vELO */}
                       {riders.map((rider: TeamSignup) => (
-                        <div key={rider.rider_id} className="text-sm bg-orange-50 rounded p-2">
+                        <div key={rider.rider_id} className="text-sm bg-orange-50 rounded px-3 py-2">
                           <div className="font-semibold text-gray-900">{rider.rider_name}</div>
-                          <div className="flex gap-3 text-xs text-gray-600 mt-1">
-                            {rider.power_wkg5 && (
-                              <span>💪 {rider.power_wkg5.toFixed(2)} W/kg</span>
-                            )}
-                            {rider.race_rating && (
-                              <span>⭐ {Math.round(rider.race_rating)}</span>
-                            )}
-                          </div>
                         </div>
                       ))}
                     </div>
