@@ -295,10 +295,7 @@ export class SyncService {
    * US3: Aantal van onze deelnemende riders toevoegen
    * 
    * 1:1 API Mapping: Stores RAW API response in zwift_api_events table
-   * 
-   * ⚠️  LIMITATION: ZwiftRacing /api/events returns PAST events only (results API)
-   * This method will return 0 events until alternative event source is implemented.
-   * Use test data (scripts/seed-test-events.ts) for UI development.
+   * Source: /api/events/upcoming (filtered for 48h window)
    */
   async bulkImportUpcomingEvents(): Promise<{
     events_imported: number;
@@ -306,13 +303,12 @@ export class SyncService {
     team_events: number;
     errors: number;
   }> {
-    console.log('🔄 [BulkImport] Starting 48h events import...');
-    console.log('⚠️  [BulkImport] Note: API returns PAST events only (see docs)');
+    console.log('🔄 [BulkImport] Starting 48h events import from /api/events/upcoming...');
     
     try {
-      // 1. Haal alle events op voor komende 48 uur (will be empty due to API limitation)
+      // 1. Haal alle events op voor komende 48 uur
       const events = await zwiftClient.getEvents48Hours();
-      console.log(`ℹ️  [BulkImport] Found ${events.length} events in next 48h (expected: 0 due to API limitation)`);
+      console.log(`✅ [BulkImport] Found ${events.length} events in next 48h`);
       
       // 2. Haal onze riders op uit database
       const ourRiders = await supabase.getRiders();

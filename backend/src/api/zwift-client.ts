@@ -158,83 +158,52 @@ export class ZwiftApiClient {
   }
 
   // ============================================================================
-  // EVENTS (RESULTS) - Rate limit: Unknown (gebruik voorzichtig)
+  // EVENTS (UPCOMING) - Rate limit: Unknown
   // ============================================================================
-  // ⚠️  BELANGRIJK: /api/events is een RESULTS endpoint, geen upcoming events!
-  // - Retourneert events waar results al beschikbaar zijn (= afgelopen events)
-  // - from/to parameters worden GENEGEERD door de API
-  // - Alle events zijn in het VERLEDEN (meestal laatste 1-2 uur)
-  // - Geen API endpoint beschikbaar voor echte "upcoming events"
-  // 
-  // Voor upcoming events: Gebruik test data of alternatieve bron
-  // Zie: docs/EVENT_DISCOVERY_SOLUTION.md
+  // ✅ CORRECT ENDPOINT: /api/events/upcoming returns future events!
+  // - Retourneert 800+ upcoming events (sorted by time ascending)
+  // - Simpele array response (geen wrapper object)
+  // - Time range: vanaf NU tot meerdere dagen vooruit
   // ============================================================================
 
   /**
-   * GET /api/events
-   * ⚠️  RESULTS ENDPOINT: Returns events with available results (PAST events only!)
+   * GET /api/events/upcoming
+   * Returns upcoming Zwift events (typically 800+ events)
    * 
-   * NOTE: Despite the name, this endpoint does NOT return upcoming events.
-   * - from/to parameters are IGNORED by the API
-   * - Always returns recent finished events (last ~2 hours)
-   * - Sorted by descending time (newest first)
-   * 
-   * Query params: from, to, limit, skip (from/to are ignored!)
-   * Response: { events: ZwiftEvent[], totalResults: number }
-   * 
-   * @deprecated For results, use getEventResults(eventId) instead
+   * Response: ZwiftEvent[] (array, not wrapped in object!)
+   * Each event has:
+   * - eventId: string (e.g. "5144585")
+   * - time: number (unix timestamp)
+   * - title, routeId, distance, type, subType
+   * - categories, signups (comma-separated strings)
    */
-  async getEventsWithResults(options?: {
-    from?: number;
-    to?: number;
-    limit?: number;
-    skip?: number;
-  }): Promise<{ events: ZwiftEvent[]; totalResults: number }> {
-    const params = new URLSearchParams();
+  async getUpcomingEvents(): Promise<ZwiftEvent[]> {
+    const response = await this.client.get('/api/events/upcoming');
     
-    if (options?.from) params.append('from', options.from.toString());
-    if (options?.to) params.append('to', options.to.toString());
-    if (options?.limit) params.append('limit', options.limit.toString());
-    if (options?.skip) params.append('skip', options.skip.toString());
-
-    const url = `/api/events${params.toString() ? `?${params.toString()}` : ''}`;
-    const response = await this.client.get(url);
+    // Response is direct array, not wrapped in { events: [] }
+    const events = Array.isArray(response.data) ? response.data : [];
     
-    console.log(`[ZwiftAPI] ⚠️  /api/events returned ${response.data.events.length} PAST events (results available)`);
+    console.log(`[ZwiftAPI] ✅ /api/events/upcoming returned ${events.length} upcoming events`);
     
-    return response.data;
+    return events;
   }
 
   /**
-   * @deprecated DOES NOT WORK: API returns past events only
-   * 
-   * Original implementation assumed /api/events returns upcoming events,
-   * but testing revealed it only returns events with results (past events).
-   * 
-   * Use test data or alternative event discovery method instead.
-   * See: scripts/seed-test-events.ts
+   * Get upcoming events in next 48 hours
+   * Filters events from /api/events/upcoming by time range
    */
   async getEvents48Hours(): Promise<ZwiftEvent[]> {
-    console.warn('[ZwiftAPI] ⚠️  getEvents48Hours() is broken - API only returns PAST events!');
-    console.warn('[ZwiftAPI] Use test data (scripts/seed-test-events.ts) for upcoming events');
+    const allEvents = await this.getUpcomingEvents();
     
     const now = Math.floor(Date.now() / 1000);
     const in48Hours = now + (48 * 60 * 60);
     
-    const result = await this.getEventsWithResults({
-      from: now,
-      to: in48Hours,
-      limit: 1000,
-    });
+    const filtered = allEvents.filter(event => 
+      event.time >= now && event.time <= in48Hours
+    );
     
-    // Filter events that are actually in the future (will be empty!)
-    const futureEvents = result.events.filter(e => e.time > now);
-    
-    console.log(`[ZwiftAPI] ℹ️ API returned ${result.events.length} total events`);
-    console.log(`[ZwiftAPI] ℹ️ Future events: ${futureEvents.length} (expected: 0)`);
-    console.log(`[ZwiftAPI] ℹ️ Past events: ${result.events.length - futureEvents.length}`);
-    
-    return futureEvents; // Will be empty array
+    console.log(`[ZwiftAPI] Filtered ${filtered.length}/${allEvents.length} events for next 48h`);
+    return filtered;
   }
 
   /**
@@ -243,6 +212,24 @@ export class ZwiftApiClient {
    */
   async getEventDetails(eventId: number): Promise<ZwiftEvent> {
     const response = await this.client.get(`/api/events/${eventId}`);
+    return response.data;
+  }
+
+  /**
+   * GET /api/events/{eventId}/signups
+   * Returns signups per category (pen) with detailed rider data
+   * 
+   * Response: EventSignups[]
+   * Each pen (A/B/C/D/E) with array of riders including:
+   * - riderId, name, weight, height
+   * - club info
+   * - power data (wkg curves, CP, AWC)
+   * - race stats (rating, wins, podiums)
+   * - phenotype (rider type)
+   */
+  async getEventSignups(eventId: string): Promise<any[]> {
+    const response = await this.client.get(`/api/events/${eventId}/signups`);
+    console.log(`[ZwiftAPI] ✅ /api/events/${eventId}/signups returned ${response.data.length} pens`);
     return response.data;
   }
 
