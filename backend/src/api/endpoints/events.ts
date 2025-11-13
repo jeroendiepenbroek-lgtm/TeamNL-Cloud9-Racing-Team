@@ -56,7 +56,10 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     console.log(`[Events/Upcoming] Team has ${teamRiderIds.length} riders (from view_my_team)`);
     
     // Bulk fetch signup data for ALL events (optimized - 2 queries instead of N×2)
-    const eventIds = baseEvents.map(e => String(e.event_id)); // Convert to string for consistent lookups
+    // Keep as integers for database queries (event_id column is INTEGER type)
+    const eventIds = baseEvents.map(e => parseInt(e.event_id) || e.event_id);
+    const eventIdsStr = eventIds.map(id => String(id)); // String versions for Map lookups
+    
     const signupCounts = await supabase.getSignupCountsForEvents(eventIds);
     const teamSignupsByEvent = await supabase.getTeamSignupsForEvents(eventIds, teamRiderIds);
     
