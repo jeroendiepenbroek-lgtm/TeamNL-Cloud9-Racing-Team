@@ -123,12 +123,6 @@ export default function Events() {
     return '-';
   };
 
-  const formatElevation = (meters?: number | null): string => {
-    // US3: Toon elevation in meters
-    if (!meters) return '-';
-    return `${meters}m`;
-  };
-
   if (loading && events.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
