@@ -387,8 +387,9 @@ export class SyncService {
             title: event.title,
             event_type: event.type,
             sub_type: event.subType || null,
-            distance_meters: event.distance ? Math.round(parseFloat(String(event.distance)) * 1000) : null, // Convert km to meters
+            distance_meters: event.distance ? Math.round(parseFloat(String(event.distance))) : null, // Distance is already in meters
             elevation_meters: event.elevation ? Math.round(parseFloat(String(event.elevation))) : null,
+            laps: event.numLaps ? parseInt(String(event.numLaps)) : null,  // Add laps
             route_id: event.routeId || null,  // Store routeId from API
             route_name: event.route?.name || null,
             route_world: event.route?.world || null,
