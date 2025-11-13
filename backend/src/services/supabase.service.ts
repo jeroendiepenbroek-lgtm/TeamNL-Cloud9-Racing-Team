@@ -468,7 +468,7 @@ export class SupabaseService {
   }
 
   // Bulk get ALL signups by category for multiple events (US1)
-  async getAllSignupsByCategory(eventIds: (string | number)[]): Promise<Map<string, any[]>> {
+  async getAllSignupsByCategory(eventIds: string[]): Promise<Map<string, any[]>> {
     if (eventIds.length === 0) return new Map();
 
     const { data, error } = await this.client
@@ -491,7 +491,7 @@ export class SupabaseService {
   }
 
   // Bulk get signup counts for multiple events (optimized)
-  async getSignupCountsForEvents(eventIds: (string | number)[]): Promise<Map<string, number>> {
+  async getSignupCountsForEvents(eventIds: string[]): Promise<Map<string, number>> {
     if (eventIds.length === 0) return new Map();
 
     const { data, error } = await this.client
@@ -512,7 +512,7 @@ export class SupabaseService {
   }
 
   // Bulk get team signups for multiple events (optimized)
-  async getTeamSignupsForEvents(eventIds: (string | number)[], teamRiderIds: number[]): Promise<Map<string, any[]>> {
+  async getTeamSignupsForEvents(eventIds: string[], teamRiderIds: number[]): Promise<Map<string, any[]>> {
     if (eventIds.length === 0 || teamRiderIds.length === 0) return new Map();
 
     const { data, error } = await this.client
