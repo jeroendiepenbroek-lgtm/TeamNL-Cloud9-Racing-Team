@@ -68,6 +68,16 @@ export class SupabaseService {
     return (data || []).map(r => r.rider_id);
   }
 
+  // Get ALL rider IDs from riders table (our team members)
+  async getAllTeamRiderIds(): Promise<number[]> {
+    const { data, error } = await this.client
+      .from('view_my_team')  // Use view_my_team for all team riders
+      .select('rider_id');
+
+    if (error) throw error;
+    return (data || []).map((r: any) => r.rider_id);
+  }
+
   async getRider(riderId: number): Promise<DbRider | null> {
     const { data, error } = await this.client
       .from('riders')
@@ -455,6 +465,51 @@ export class SupabaseService {
     });
     
     return byCategory;
+  }
+
+  // Bulk get signup counts for multiple events (optimized)
+  async getSignupCountsForEvents(eventIds: string[]): Promise<Map<string, number>> {
+    if (eventIds.length === 0) return new Map();
+
+    const { data, error } = await this.client
+      .from('zwift_api_event_signups')
+      .select('event_id')
+      .in('event_id', eventIds);
+
+    if (error) throw error;
+
+    // Count per event_id
+    const counts = new Map<string, number>();
+    (data || []).forEach((row: any) => {
+      const count = counts.get(row.event_id) || 0;
+      counts.set(row.event_id, count + 1);
+    });
+
+    return counts;
+  }
+
+  // Bulk get team signups for multiple events (optimized)
+  async getTeamSignupsForEvents(eventIds: string[], teamRiderIds: number[]): Promise<Map<string, any[]>> {
+    if (eventIds.length === 0 || teamRiderIds.length === 0) return new Map();
+
+    const { data, error } = await this.client
+      .from('zwift_api_event_signups')
+      .select('event_id, rider_id, rider_name, pen_name, power_wkg5, race_rating')
+      .in('event_id', eventIds)
+      .in('rider_id', teamRiderIds);
+
+    if (error) throw error;
+
+    // Group by event_id
+    const byEvent = new Map<string, any[]>();
+    (data || []).forEach((signup: any) => {
+      if (!byEvent.has(signup.event_id)) {
+        byEvent.set(signup.event_id, []);
+      }
+      byEvent.get(signup.event_id)!.push(signup);
+    });
+
+    return byEvent;
   }
 
   async getSignupsByEventId(eventId: string): Promise<any[]> {

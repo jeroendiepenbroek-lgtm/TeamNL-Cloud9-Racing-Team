@@ -50,50 +50,49 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     console.log(`[Events/Upcoming] Found ${baseEvents.length} events`);
     
-    // Get team rider IDs for detection
-    const teamRiderIds = await supabase.getRiderIdsByClub(11818);
-    console.log(`[Events/Upcoming] Team has ${teamRiderIds.length} riders`);
+    // Get ALL team rider IDs (all riders in our riders table, regardless of club_id)
+    const teamRiderIds = await supabase.getAllTeamRiderIds();
+    console.log(`[Events/Upcoming] Team has ${teamRiderIds.length} riders (from view_my_team)`);
     
-    // Enrich events with signup counts and team rider info
-    const enrichedEvents = await Promise.all(baseEvents.map(async (event: any) => {
-      try {
-        const totalSignups = await supabase.getEventSignupsCount(event.event_id);
-        const teamSignups = teamRiderIds.length > 0 
-          ? await supabase.getTeamSignups(event.event_id, teamRiderIds)
-          : [];
-        
-        // US2: Group team signups by category
-        const teamSignupsByCategory = teamRiderIds.length > 0
-          ? await supabase.getTeamSignupsByCategory(event.event_id, teamRiderIds)
-          : {};
-        
-        const teamRidersInEvent = teamSignups.map(s => ({
+    // Bulk fetch signup data for ALL events (optimized - 2 queries instead of N×2)
+    const eventIds = baseEvents.map(e => e.event_id);
+    const signupCounts = await supabase.getSignupCountsForEvents(eventIds);
+    const teamSignupsByEvent = await supabase.getTeamSignupsForEvents(eventIds, teamRiderIds);
+    
+    console.log(`[Events/Upcoming] Fetched signup data for ${eventIds.length} events`);
+    
+    // Enrich events with signup data
+    const enrichedEvents = baseEvents.map((event: any) => {
+      const totalSignups = signupCounts.get(event.event_id) || 0;
+      const teamSignups = teamSignupsByEvent.get(event.event_id) || [];
+      
+      // Group team signups by category
+      const teamSignupsByCategory: Record<string, any[]> = {};
+      teamSignups.forEach(signup => {
+        const pen = signup.pen_name || 'Unknown';
+        if (!teamSignupsByCategory[pen]) teamSignupsByCategory[pen] = [];
+        teamSignupsByCategory[pen].push({
+          rider_id: signup.rider_id,
+          rider_name: signup.rider_name,
+          power_wkg5: signup.power_wkg5,
+          race_rating: signup.race_rating,
+        });
+      });
+      
+      return {
+        ...event,
+        total_signups: totalSignups,
+        team_rider_count: teamSignups.length,
+        team_riders: teamSignups.map(s => ({
           rider_id: s.rider_id,
           rider_name: s.rider_name,
           pen_name: s.pen_name,
-        }));
-        
-        return {
-          ...event,
-          total_signups: totalSignups,
-          team_rider_count: teamRidersInEvent.length,
-          team_riders: teamRidersInEvent,
-          team_signups_by_category: teamSignupsByCategory,  // US2
-        };
-      } catch (error) {
-        // If enrichment fails, return event without signup data
-        console.error(`[Events/Upcoming] Failed to enrich event ${event.event_id}:`, error);
-        return {
-          ...event,
-          total_signups: 0,
-          team_rider_count: 0,
-          team_riders: [],
-          team_signups_by_category: {},
-        };
-      }
-    }));
+        })),
+        team_signups_by_category: teamSignupsByCategory,
+      };
+    });
     
-    console.log(`[Events/Upcoming] Enriched events with signup counts`);
+    console.log(`[Events/Upcoming] Enriched ${enrichedEvents.length} events with signup data`);
     
     // Filter logic
     let events = enrichedEvents;
