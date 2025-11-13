@@ -469,6 +469,8 @@ export class SupabaseService {
 
   // Bulk get ALL signups by category for multiple events (US1)
   async getAllSignupsByCategory(eventIds: string[]): Promise<Map<string, any[]>> {
+    console.log(`[SupabaseService] getAllSignupsByCategory called with ${eventIds.length} eventIds:`, eventIds.slice(0, 3));
+    
     if (eventIds.length === 0) return new Map();
 
     const { data, error } = await this.client
@@ -476,7 +478,15 @@ export class SupabaseService {
       .select('event_id, pen_name')
       .in('event_id', eventIds);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[SupabaseService] getAllSignupsByCategory error:', error);
+      throw error;
+    }
+
+    console.log(`[SupabaseService] Query returned ${data?.length || 0} signups`);
+    if (data && data.length > 0) {
+      console.log(`[SupabaseService] Sample signup:`, data[0]);
+    }
 
     const signupsByEvent = new Map<string, any[]>();
     (data || []).forEach((signup: any) => {
@@ -487,6 +497,7 @@ export class SupabaseService {
       signupsByEvent.get(eventId)!.push(signup);
     });
 
+    console.log(`[SupabaseService] Returning Map with ${signupsByEvent.size} keys:`, Array.from(signupsByEvent.keys()).slice(0, 3));
     return signupsByEvent;
   }
 
