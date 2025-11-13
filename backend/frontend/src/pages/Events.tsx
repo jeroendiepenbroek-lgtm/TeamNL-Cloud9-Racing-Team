@@ -14,12 +14,25 @@ interface Event {
   description?: string;
   route?: string;
   distance_meters?: number;
+  distance_km?: string | null; // US3
+  elevation_m?: number | null; // US3
   organizer?: string;
   event_url?: string;
   confirmed_signups?: number;
   tentative_signups?: number;
   total_signups?: number;
   team_riders?: any[];
+  team_rider_count?: number;
+  signups_by_category?: Record<string, number>; // US1
+  team_signups_by_category?: Record<string, TeamSignup[]>; // US2
+  categories?: string[];
+}
+
+interface TeamSignup {
+  rider_id: number;
+  rider_name: string;
+  power_wkg5?: number;
+  race_rating?: number;
 }
 
 export default function Events() {
@@ -84,10 +97,20 @@ export default function Events() {
     });
   };
 
-  const formatDistance = (meters?: number): string => {
-    if (!meters) return '-';
-    const km = (meters / 1000).toFixed(1);
-    return `${km} km`;
+  const formatDistance = (event: Event): string => {
+    // US3: Gebruik distance_km als beschikbaar, anders fallback naar distance_meters
+    if (event.distance_km) return `${event.distance_km} km`;
+    if (event.distance_meters) {
+      const km = (event.distance_meters / 1000).toFixed(1);
+      return `${km} km`;
+    }
+    return '-';
+  };
+
+  const formatElevation = (meters?: number | null): string => {
+    // US3: Toon elevation in meters
+    if (!meters) return null;
+    return `${meters}m`;
   };
 
   if (loading && events.length === 0) {
@@ -180,7 +203,8 @@ export default function Events() {
                 event={event}
                 timeUntil={getTimeUntilEvent(event.event_date)}
                 formattedDate={formatEventDate(event.event_date)}
-                distance={formatDistance(event.distance_meters)}
+                distance={formatDistance(event)}
+                elevation={formatElevation(event.elevation_m)}
               />
             ))}
           </div>
@@ -195,9 +219,10 @@ interface EventCardProps {
   timeUntil: string;
   formattedDate: string;
   distance: string;
+  elevation: string | null;
 }
 
-function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps) {
+function EventCard({ event, timeUntil, formattedDate, distance, elevation }: EventCardProps) {
   const [expanded, setExpanded] = useState(false);
   
   const getEventTypeColor = (type?: string) => {
@@ -262,45 +287,74 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <TrendingUp className="w-3 h-3" />
               {distance}
+              {elevation && (
+                <span className="text-gray-500">• {elevation}</span>
+              )}
             </div>
           )}
         </div>
 
         {/* Signups */}
         {(event.total_signups || 0) > 0 && (
-          <div className="flex items-center gap-2 text-sm">
-            <Users className="w-4 h-4 text-gray-500" />
-            <span className="font-semibold text-gray-700">
-              {event.total_signups} ingeschreven
-            </span>
-            {event.team_riders && event.team_riders.length > 0 && (
-              <span className="text-orange-600 font-bold">
-                ({event.team_riders.length} team)
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Users className="w-4 h-4 text-gray-500" />
+              <span className="font-semibold text-gray-700">
+                {event.total_signups} ingeschreven
               </span>
+              {event.team_rider_count && event.team_rider_count > 0 && (
+                <span className="text-orange-600 font-bold">
+                  ({event.team_rider_count} team)
+                </span>
+              )}
+            </div>
+            
+            {/* US1: Signups per categorie */}
+            {event.signups_by_category && Object.keys(event.signups_by_category).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {Object.entries(event.signups_by_category).map(([cat, count]) => (
+                  <span
+                    key={cat}
+                    className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-semibold"
+                  >
+                    {cat}: {count}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         )}
 
-        {/* Team Riders Preview */}
-        {event.team_riders && event.team_riders.length > 0 && (
+        {/* US2: Team Riders per Categorie */}
+        {event.team_signups_by_category && Object.keys(event.team_signups_by_category).length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-100">
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-sm text-orange-600 hover:text-orange-700 font-semibold"
+              className="text-sm text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-1"
             >
-              {expanded ? 'Verberg' : 'Toon'} team riders ({event.team_riders.length})
+              {expanded ? '▼' : '▶'} Team Riders per Categorie ({event.team_rider_count || 0})
             </button>
             
             {expanded && (
-              <div className="mt-2 space-y-1">
-                {event.team_riders.map((rider: any) => (
-                  <div key={rider.rider_id} className="text-sm flex items-center justify-between">
-                    <span className="text-gray-700">{rider.name}</span>
-                    {rider.zp_category && (
-                      <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
-                        Cat {rider.zp_category}
-                      </span>
-                    )}
+              <div className="mt-3 space-y-3">
+                {Object.entries(event.team_signups_by_category).map(([category, riders]) => (
+                  <div key={category} className="">
+                    <div className="text-xs font-bold text-gray-500 mb-1.5">Categorie {category}</div>
+                    <div className="space-y-1.5">
+                      {riders.map((rider: TeamSignup) => (
+                        <div key={rider.rider_id} className="text-sm bg-orange-50 rounded p-2">
+                          <div className="font-semibold text-gray-900">{rider.rider_name}</div>
+                          <div className="flex gap-3 text-xs text-gray-600 mt-1">
+                            {rider.power_wkg5 && (
+                              <span>💪 {rider.power_wkg5.toFixed(2)} W/kg</span>
+                            )}
+                            {rider.race_rating && (
+                              <span>⭐ {Math.round(rider.race_rating)}</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
