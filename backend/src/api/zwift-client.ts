@@ -19,6 +19,9 @@ const TEAM_CLUB_ID = 11818;
 
 export class ZwiftApiClient {
   private client: AxiosInstance;
+  private routesCache: Map<string, any> | null = null; // Cache voor route profiles
+  private routesCacheExpiry: number = 0;
+  private readonly ROUTES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 uur
 
   constructor() {
     this.client = axios.create({
@@ -278,6 +281,113 @@ export class ZwiftApiClient {
   async getRiderUpcomingEvents(riderId: number): Promise<any[]> {
     console.warn('[ZwiftAPI] getRiderUpcomingEvents() is deprecated - use getEvents48Hours() instead');
     return [];
+  }
+
+  // ============================================================================
+  // ROUTES - US11: Route profile data (Flat/Rolling/Hilly/Mountainous)
+  // ============================================================================
+
+  /**
+   * GET /api/routes
+   * Returns all Zwift routes with profile information
+   * Cached for 24 hours (routes change rarely)
+   * 
+   * Route profiles: Flat, Rolling, Hilly, Mountainous
+   */
+  async getAllRoutes(): Promise<any[]> {
+    // Check cache
+    if (this.routesCache && Date.now() < this.routesCacheExpiry) {
+      console.log('[ZwiftAPI] Routes loaded from cache');
+      return Array.from(this.routesCache.values());
+    }
+
+    console.log('[ZwiftAPI] Fetching routes from API...');
+    const response = await this.client.get('/api/routes');
+    const routes = response.data;
+
+    // Build cache Map by routeId for O(1) lookup
+    this.routesCache = new Map();
+    routes.forEach((route: any) => {
+      if (route.routeId) {
+        this.routesCache!.set(route.routeId, route);
+      }
+      // Also index by name for fallback
+      if (route.name) {
+        this.routesCache!.set(route.name.toLowerCase(), route);
+      }
+    });
+
+    this.routesCacheExpiry = Date.now() + this.ROUTES_CACHE_TTL;
+    console.log(`[ZwiftAPI] Cached ${routes.length} routes (expires in 24h)`);
+
+    return routes;
+  }
+
+  /**
+   * Get route profile for a specific route
+   * Returns: "Flat" | "Rolling" | "Hilly" | "Mountainous" | null
+   */
+  async getRouteProfile(routeIdOrName: string): Promise<string | null> {
+    // Ensure cache is loaded
+    if (!this.routesCache || Date.now() >= this.routesCacheExpiry) {
+      await this.getAllRoutes();
+    }
+
+    if (!this.routesCache) return null;
+
+    // Try by routeId first
+    let route = this.routesCache.get(routeIdOrName);
+    
+    // Try by name (case-insensitive)
+    if (!route && typeof routeIdOrName === 'string') {
+      route = this.routesCache.get(routeIdOrName.toLowerCase());
+    }
+
+    return route?.profile || null;
+  }
+
+  /**
+   * US11: Find route profile by distance (km) and optional world
+   * Matches routes within 0.5km tolerance
+   */
+  async getRouteProfileByDistance(distanceKm: number, world?: string): Promise<string | null> {
+    // Ensure cache is loaded
+    if (!this.routesCache || Date.now() >= this.routesCacheExpiry) {
+      await this.getAllRoutes();
+    }
+
+    if (!this.routesCache) return null;
+
+    const routes = Array.from(this.routesCache.values());
+    const tolerance = 0.5; // 500m tolerance
+
+    // Filter routes by distance match
+    const matchingRoutes = routes.filter((route: any) => {
+      if (!route.distance) return false;
+      const diff = Math.abs(route.distance - distanceKm);
+      if (diff > tolerance) return false;
+      
+      // If world provided, must match
+      if (world && route.world && route.world.toLowerCase() !== world.toLowerCase()) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    if (matchingRoutes.length === 0) return null;
+
+    // If multiple matches, prefer exact world match or take first with profile
+    if (world) {
+      const exactMatch = matchingRoutes.find((r: any) => 
+        r.world && r.world.toLowerCase() === world.toLowerCase() && r.profile
+      );
+      if (exactMatch) return exactMatch.profile;
+    }
+
+    // Return first match with profile
+    const withProfile = matchingRoutes.find((r: any) => r.profile);
+    return withProfile?.profile || null;
   }
 }
 

@@ -29,6 +29,9 @@ import { eventScheduler } from './services/event-scheduler.service.js';
 // US6 + US7: Signup scheduler service
 import { signupScheduler } from './services/signup-scheduler.service.js';
 
+// US11: Zwift API client voor route profiles
+import { zwiftClient } from './api/zwift-client.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -160,6 +163,12 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // US6 + US7: Start signup scheduler
   console.log('[SignupScheduler] 🚀 Starting signup scheduler...');
   signupScheduler.start();
+  
+  // US11: Pre-load route profiles cache
+  console.log('[Routes] 🗺️  Pre-loading route profiles...');
+  zwiftClient.getAllRoutes()
+    .then(routes => console.log(`[Routes] ✅ Loaded ${routes.length} routes with profiles`))
+    .catch(err => console.error('[Routes] ❌ Failed to load routes:', err));
 });
 
 // Server error handling

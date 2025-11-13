@@ -6,6 +6,7 @@
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
 import { syncService } from '../../services/sync.service.js';
+import { zwiftClient } from '../zwift-client.js'; // US11
 
 const router = Router();
 
@@ -119,14 +120,28 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     }
     
     // Transform time_unix to event_date for frontend compatibility
-    const transformedEvents = events.map((event: any) => {
+    // US11: Add route profile lookup
+    const transformedEvents = await Promise.all(events.map(async (event: any) => {
+      // Try to get route profile by distance
+      let routeProfile: string | null = null;
+      if (event.distance_km) {
+        const distanceKm = parseFloat(event.distance_km);
+        if (!isNaN(distanceKm)) {
+          routeProfile = await zwiftClient.getRouteProfileByDistance(
+            distanceKm,
+            event.route_world || undefined
+          );
+        }
+      }
+      
       return {
         ...event,
         event_id: parseInt(event.event_id) || event.event_id,
         name: event.title || event.name,
         event_date: new Date(event.time_unix * 1000).toISOString(),
+        route_profile: routeProfile, // US11: Flat, Rolling, Hilly, Mountainous
       };
-    });
+    }));
     
     res.json({
       count: transformedEvents.length,

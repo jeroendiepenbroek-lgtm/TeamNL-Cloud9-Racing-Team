@@ -4,31 +4,29 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Clock, Calendar, MapPin, Users, ExternalLink, TrendingUp, UserCheck } from 'lucide-react';
+import { Clock, Calendar, MapPin, Users, ExternalLink, TrendingUp, UserCheck, Mountain, Minus, Waves } from 'lucide-react';
 
 interface Event {
-  event_id: number;
-  name: string;
+  event_id: string | number;
+  name?: string;
+  title?: string;
   event_date: string;
   event_type?: string;
-  sub_type?: string; // US9
-  description?: string;
+  sub_type?: string;
   route?: string;
-  route_name?: string; // US10
-  route_world?: string; // US10
+  route_name?: string;
+  route_world?: string;
+  route_profile?: string; // US11: Flat, Rolling, Hilly, Mountainous
+  elevation_m?: number; // US5: Hoogtemeters uit database
+  distance_km?: string;
   distance_meters?: number;
-  distance_km?: string | null; // US3
-  elevation_m?: number | null; // US3
-  organizer?: string;
-  event_url?: string;
-  confirmed_signups?: number;
-  tentative_signups?: number;
+  time_unix?: number;
   total_signups?: number;
-  team_riders?: any[];
   team_rider_count?: number;
-  signups_by_category?: Record<string, number>; // US1
-  team_signups_by_category?: Record<string, TeamSignup[]>; // US2
-  categories?: string[];
+  signups_by_category?: Record<string, number>;
+  team_signups_by_category?: Record<string, TeamSignup[]>;
+  event_url?: string;
+  zwift_api_event_signups?: any[];
 }
 
 interface TeamSignup {
@@ -214,7 +212,8 @@ export default function Events() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          /* US4: Grid met fixed rows om mee-expanden te voorkomen */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
             {events.map((event) => (
               <EventCard
                 key={event.event_id}
@@ -222,7 +221,6 @@ export default function Events() {
                 timeUntil={getTimeUntilEvent(event.event_date)}
                 formattedDate={formatEventDate(event.event_date)}
                 distance={formatDistance(event)}
-                elevation={formatElevation(event.elevation_m)}
               />
             ))}
           </div>
@@ -237,11 +235,14 @@ interface EventCardProps {
   timeUntil: string;
   formattedDate: string;
   distance: string;
-  elevation: string | null;
 }
 
-function EventCard({ event, timeUntil, formattedDate, distance, elevation }: EventCardProps) {
+function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps) {
   const [expanded, setExpanded] = useState(false);
+  
+  // US2 & US3: Extract signup counts
+  const teamRiderCount = event.team_rider_count || 0;
+  const totalSignups = event.total_signups || 0;
   
   const getEventTypeColor = (type?: string) => {
     switch (type?.toLowerCase()) {
@@ -253,6 +254,38 @@ function EventCard({ event, timeUntil, formattedDate, distance, elevation }: Eve
         return 'bg-green-100 text-green-800 border-green-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  // US11: Route profile badge color
+  const getRouteProfileColor = (profile?: string) => {
+    switch (profile?.toLowerCase()) {
+      case 'flat':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'rolling':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'hilly':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'mountainous':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  // US1: Route profile icon per type
+  const getRouteProfileIcon = (profile?: string) => {
+    switch (profile?.toLowerCase()) {
+      case 'flat':
+        return <Minus className="w-3 h-3" />;
+      case 'rolling':
+        return <Waves className="w-3 h-3" />;
+      case 'hilly':
+        return <TrendingUp className="w-3 h-3" />;
+      case 'mountainous':
+        return <Mountain className="w-3 h-3" />;
+      default:
+        return <Mountain className="w-3 h-3" />;
     }
   };
 
@@ -301,6 +334,13 @@ function EventCard({ event, timeUntil, formattedDate, distance, elevation }: Eve
               {event.sub_type}
             </span>
           )}
+          {/* US11: Route profile badge */}
+          {event.route_profile && (
+            <span className={`text-xs px-2 py-1 rounded-full border font-semibold flex items-center gap-1 ${getRouteProfileColor(event.route_profile)}`}>
+              {getRouteProfileIcon(event.route_profile)}
+              {event.route_profile}
+            </span>
+          )}
           {/* US10: Route with world */}
           {(event.route || event.route_name) && (
             <div className="flex items-center gap-1 text-xs text-gray-600">
@@ -313,38 +353,38 @@ function EventCard({ event, timeUntil, formattedDate, distance, elevation }: Eve
           )}
           {distance !== '-' && (
             <div className="flex items-center gap-1 text-xs text-gray-600">
-              <TrendingUp className="w-3 h-3" />
+              <MapPin className="w-3 h-3" />
               {distance}
-              {elevation && elevation !== '-' && (
-                <span className="text-gray-500">↑ {elevation}</span>
+              {/* US5: Elevation uit database */}
+              {event.elevation_m && (
+                <span className="text-gray-500 ml-1">↑ {Math.round(event.elevation_m)}m</span>
               )}
             </div>
           )}
         </div>
 
-        {/* US2/US4: Signups with icons */}
+        {/* US2/US3: Signups with icons */}
         <div className="space-y-2">
-          {(event.total_signups || 0) > 0 && (
-            <div className="flex items-center gap-3">
-              {/* US4: Total signups with icon */}
+          {/* US2: Altijd signups tonen, US3: oranje icon alleen bij team riders > 0 */}
+          <div className="flex items-center gap-3">
+            {/* US3: Oranje icon alleen als er team riders zijn */}
+            {teamRiderCount > 0 && (
               <div className="flex items-center gap-1.5 text-sm">
-                <Users className="w-4 h-4 text-gray-500" />
-                <span className="font-semibold text-gray-700">
-                  {event.total_signups}
+                <UserCheck className="w-4 h-4 text-orange-600" />
+                <span className="font-bold text-orange-600">
+                  {teamRiderCount}
                 </span>
               </div>
-              
-              {/* US3: Team riders with orange icon */}
-              {event.team_rider_count && event.team_rider_count > 0 && (
-                <div className="flex items-center gap-1.5 text-sm">
-                  <UserCheck className="w-4 h-4 text-orange-600" />
-                  <span className="font-bold text-orange-600">
-                    {event.team_rider_count}
-                  </span>
-                </div>
-              )}
+            )}
+            
+            {/* US2: Altijd total signups tonen (ook 0) */}
+            <div className="flex items-center gap-1.5 text-sm">
+              <Users className="w-4 h-4 text-gray-500" />
+              <span className="font-semibold text-gray-700">
+                {totalSignups}
+              </span>
             </div>
-          )}
+          </div>
             
           {/* US1: Signups per categorie */}
           {event.signups_by_category && Object.keys(event.signups_by_category).length > 0 && (
