@@ -6,6 +6,16 @@
 import { useEffect, useState } from 'react';
 import { Clock, Calendar, MapPin, Users, ExternalLink, UserCheck } from 'lucide-react';
 
+// US3: ZP Categories met kleuren zoals in matrix
+const ZP_CATEGORIES: Record<string, { color: string; label: string }> = {
+  'A+': { color: 'bg-red-100 text-red-900 border-red-300', label: 'A+' },
+  'A': { color: 'bg-red-50 text-red-800 border-red-200', label: 'A' },
+  'B': { color: 'bg-green-50 text-green-800 border-green-200', label: 'B' },
+  'C': { color: 'bg-blue-50 text-blue-800 border-blue-200', label: 'C' },
+  'D': { color: 'bg-yellow-50 text-yellow-800 border-yellow-200', label: 'D' },
+  'E': { color: 'bg-gray-50 text-gray-800 border-gray-200', label: 'E' },
+};
+
 interface Event {
   event_id: string | number;
   name?: string;
@@ -328,14 +338,16 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
               )}
             </div>
           )}
+          {/* Distance */}
           {distance !== '-' && (
             <div className="flex items-center gap-1 text-xs text-gray-600">
-              <MapPin className="w-3 h-3" />
-              {distance}
-              {/* US5: Elevation uit database */}
-              {event.elevation_m && (
-                <span className="text-gray-500 ml-1">↑ {Math.round(event.elevation_m)}m</span>
-              )}
+              <span className="font-semibold">{distance}</span>
+            </div>
+          )}
+          {/* US1: Elevation apart en prominent */}
+          {event.elevation_m && (
+            <div className="flex items-center gap-1 text-xs text-gray-600">
+              <span className="font-semibold">↑ {Math.round(event.elevation_m)}m</span>
             </div>
           )}
         </div>
@@ -363,19 +375,21 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
             )}
           </div>
             
-          {/* US1: Signups per categorie */}
-          {event.signups_by_category && Object.keys(event.signups_by_category).length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(event.signups_by_category).map(([cat, count]) => (
+          {/* US2 & US3: Signups per categorie - altijd alle categorieën tonen met kleuren */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {['A+', 'A', 'B', 'C', 'D', 'E'].map((cat) => {
+              const count = event.signups_by_category?.[cat] || 0;
+              const categoryStyle = ZP_CATEGORIES[cat] || ZP_CATEGORIES['E'];
+              return (
                 <span
                   key={cat}
-                  className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-semibold"
+                  className={`text-xs px-2 py-0.5 rounded border font-semibold ${categoryStyle.color}`}
                 >
                   {cat}: {count}
                 </span>
-              ))}
-            </div>
-          )}
+              );
+            })}
+          </div>
         </div>
 
         {/* US2: Team Riders per Categorie */}
