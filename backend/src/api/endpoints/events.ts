@@ -56,7 +56,7 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     console.log(`[Events/Upcoming] Team has ${teamRiderIds.length} riders (from view_my_team)`);
     
     // Bulk fetch signup data for ALL events (optimized - 2 queries instead of N×2)
-    const eventIds = baseEvents.map(e => e.event_id);
+    const eventIds = baseEvents.map(e => String(e.event_id)); // Convert to string for consistent lookups
     const signupCounts = await supabase.getSignupCountsForEvents(eventIds);
     const teamSignupsByEvent = await supabase.getTeamSignupsForEvents(eventIds, teamRiderIds);
     
@@ -67,9 +67,10 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     // Enrich events with signup data
     const enrichedEvents = baseEvents.map((event: any) => {
-      const totalSignups = signupCounts.get(event.event_id) || 0;
-      const teamSignups = teamSignupsByEvent.get(event.event_id) || [];
-      const allSignups = allSignupsByEvent.get(event.event_id) || [];
+      const eventIdStr = String(event.event_id); // Consistent string key
+      const totalSignups = signupCounts.get(eventIdStr) || 0;
+      const teamSignups = teamSignupsByEvent.get(eventIdStr) || [];
+      const allSignups = allSignupsByEvent.get(eventIdStr) || [];
       
       // US1: Count signups per category from ALL signups
       const signupsByCategory: Record<string, number> = {};
@@ -120,17 +121,20 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     }
     
     // Transform time_unix to event_date for frontend compatibility
-    // US11: Add route profile lookup
+    // US11 & US4: Add route profile and route info lookup
     const transformedEvents = await Promise.all(events.map(async (event: any) => {
-      // Try to get route profile by distance
+      // US4: Try to get full route info by distance
+      let routeInfo: any = null;
       let routeProfile: string | null = null;
+      
       if (event.distance_km) {
         const distanceKm = parseFloat(event.distance_km);
         if (!isNaN(distanceKm)) {
-          routeProfile = await zwiftClient.getRouteProfileByDistance(
+          routeInfo = await zwiftClient.getRouteByDistance(
             distanceKm,
             event.route_world || undefined
           );
+          routeProfile = routeInfo?.profile || null;
         }
       }
       
@@ -139,6 +143,10 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         event_id: parseInt(event.event_id) || event.event_id,
         name: event.title || event.name,
         event_date: new Date(event.time_unix * 1000).toISOString(),
+        // US4: Add route info if found
+        route_name: routeInfo?.name || event.route_name || null,
+        route_world: routeInfo?.world || event.route_world || null,
+        laps: routeInfo?.laps || event.laps || null,
         route_profile: routeProfile, // US11: Flat, Rolling, Hilly, Mountainous
       };
     }));

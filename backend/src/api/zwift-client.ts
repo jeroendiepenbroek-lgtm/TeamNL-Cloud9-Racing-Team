@@ -347,6 +347,38 @@ export class ZwiftApiClient {
   }
 
   /**
+   * US4: Get route details by distance match
+   * Returns full route object with name, world, profile, laps etc
+   */
+  async getRouteByDistance(distanceKm: number, world?: string): Promise<any | null> {
+    // Ensure cache is loaded
+    if (!this.routesCache || Date.now() >= this.routesCacheExpiry) {
+      await this.getAllRoutes();
+    }
+
+    if (!this.routesCache) return null;
+
+    const routes = Array.from(this.routesCache.values());
+    const tolerance = 0.5; // ±500 meters
+
+    // Filter by distance match
+    const matchingRoutes = routes.filter(route => {
+      if (!route.distance) return false;
+      const diff = Math.abs(route.distance - distanceKm);
+      if (diff > tolerance) return false;
+      
+      // Prefer world match if provided
+      if (world && route.world?.toLowerCase() !== world.toLowerCase()) {
+        return false;
+      }
+      return true;
+    });
+
+    // Return first match with profile
+    return matchingRoutes.find(r => r.profile) || matchingRoutes[0] || null;
+  }
+
+  /**
    * US11: Find route profile by distance (km) and optional world
    * Matches routes within 0.5km tolerance
    */
