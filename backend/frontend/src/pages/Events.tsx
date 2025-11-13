@@ -30,6 +30,7 @@ interface Event {
   elevation_m?: number; // US5: Hoogtemeters uit database
   distance_km?: string;
   distance_meters?: number;
+  laps?: number; // US2: Aantal laps/ronden
   time_unix?: number;
   total_signups?: number;
   team_rider_count?: number;
@@ -328,20 +329,24 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
               {event.route_profile}
             </span>
           )}
-          {/* US10: Route with world */}
-          {(event.route || event.route_name) && (
-            <div className="flex items-center gap-1 text-xs text-gray-600">
-              <MapPin className="w-3 h-3" />
-              {event.route_name || event.route}
-              {event.route_world && (
-                <span className="text-gray-400">• {event.route_world}</span>
-              )}
-            </div>
-          )}
+          {/* US1: Route info altijd tonen (met fallback) */}
+          <div className="flex items-center gap-1 text-xs text-gray-600">
+            <MapPin className="w-3 h-3" />
+            <span>
+              {event.route_name || event.route || event.title || 'Route info niet beschikbaar'}
+            </span>
+            {event.route_world && (
+              <span className="text-gray-400">• {event.route_world}</span>
+            )}
+          </div>
           {/* Distance */}
           {distance !== '-' && (
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <span className="font-semibold">{distance}</span>
+              {/* US2: Laps toevoegen als beschikbaar */}
+              {event.laps && event.laps > 1 && (
+                <span className="text-gray-500">({event.laps} laps)</span>
+              )}
             </div>
           )}
           {/* US1: Elevation apart en prominent */}
