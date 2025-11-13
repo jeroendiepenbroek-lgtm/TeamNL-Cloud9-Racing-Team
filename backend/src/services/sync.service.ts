@@ -10,6 +10,60 @@ const TEAM_CLUB_ID = 11818;
 
 export class SyncService {
   /**
+   * Sync signups voor een specifiek event
+   * Haalt alle signups (per pen) op en slaat ze op in zwift_api_event_signups
+   */
+  async syncEventSignups(eventId: string): Promise<{ total: number, byPen: Record<string, number> }> {
+    console.log(`🔄 Syncing signups for event ${eventId}...`);
+    
+    try {
+      const pens = await zwiftClient.getEventSignups(eventId);
+      const signups: any[] = [];
+      const byPen: Record<string, number> = {};
+
+      // Parse signups per pen (A/B/C/D/E)
+      for (const pen of pens) {
+        const penName = pen.name; // "A", "B", "C", "D", "E"
+        const riders = pen.riders || [];
+        byPen[penName] = riders.length;
+
+        for (const rider of riders) {
+          signups.push({
+            event_id: eventId,
+            pen_name: penName,
+            rider_id: rider.riderId,
+            rider_name: rider.name,
+            weight: rider.weight || null,
+            height: rider.height || null,
+            club_id: rider.club?.clubId || null,
+            club_name: rider.club?.name || null,
+            power_wkg5: rider.power?.wkg5 || null,
+            power_wkg30: rider.power?.wkg30 || null,
+            power_cp: rider.power?.CP || null,
+            race_rating: rider.race?.rating || null,
+            race_finishes: rider.race?.finishes || null,
+            race_wins: rider.race?.wins || null,
+            race_podiums: rider.race?.podiums || null,
+            phenotype: rider.phenotype || null,
+            raw_data: rider,
+          });
+        }
+      }
+
+      // Bulk insert to database
+      const inserted = await supabase.upsertEventSignups(signups);
+
+      console.log(`✅ Synced ${inserted} signups across ${pens.length} pens for event ${eventId}`);
+      console.log(`   By pen: ${JSON.stringify(byPen)}`);
+
+      return { total: inserted, byPen };
+    } catch (error) {
+      console.error(`❌ Failed to sync signups for event ${eventId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * 1. Sync club informatie
    */
   async syncClub(clubId: number = TEAM_CLUB_ID): Promise<DbClub> {

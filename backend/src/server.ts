@@ -17,6 +17,7 @@ import resultsRouter from './api/endpoints/results.js';
 import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import autoSyncRouter from './api/endpoints/auto-sync.js';
+import signupsRouter from './api/endpoints/signups.js';
 
 // US7 + US8: Auto-sync service
 import { autoSyncService } from './services/auto-sync.service.js';
@@ -73,6 +74,7 @@ app.use('/api/results', resultsRouter);
 app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
+app.use('/api/signups', signupsRouter); // Feature 1: Event signups
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -138,10 +140,14 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   `);
   
   // US7 + US8: Start auto-sync scheduler
-  autoSyncService.start();
+  // TEMPORARY DISABLED: blocks on startup
+  console.log('[AutoSync] ⚠️  Auto-sync DISABLED to debug hang issue');
+  // autoSyncService.start();
   
   // Feature 1: Start event scheduler (US4 + US5)
-  eventScheduler.start();
+  // TEMPORARY DISABLED: scheduler blocks on startup
+  console.log('[EventScheduler] ⚠️  Scheduler DISABLED to debug hang issue');
+  // eventScheduler.start();
 });
 
 // Server error handling

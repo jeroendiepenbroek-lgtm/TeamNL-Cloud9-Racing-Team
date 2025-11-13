@@ -387,6 +387,42 @@ export class SupabaseService {
 
     if (error) throw error;
   }
+
+  // ========== EVENT SIGNUPS ==========
+  async upsertEventSignups(signups: any[]): Promise<number> {
+    if (signups.length === 0) return 0;
+
+    const { data, error } = await this.client
+      .from('zwift_api_event_signups')
+      .upsert(signups, { onConflict: 'event_id,pen_name,rider_id' })
+      .select();
+
+    if (error) throw error;
+    return data?.length || 0;
+  }
+
+  async getEventSignupsCount(eventId: string): Promise<number> {
+    const { count, error } = await this.client
+      .from('zwift_api_event_signups')
+      .select('*', { count: 'exact', head: true })
+      .eq('event_id', eventId);
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  async getTeamSignups(eventId: string, teamRiderIds: number[]): Promise<any[]> {
+    if (teamRiderIds.length === 0) return [];
+
+    const { data, error } = await this.client
+      .from('zwift_api_event_signups')
+      .select('*')
+      .eq('event_id', eventId)
+      .in('rider_id', teamRiderIds);
+
+    if (error) throw error;
+    return data || [];
+  }
 }
 
 export const supabase = new SupabaseService();

@@ -32,8 +32,6 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     const hours = req.query.hours ? parseInt(req.query.hours as string) : 48;
     const hasTeamRiders = req.query.hasTeamRiders === 'true';
     
-    let events;
-    
     // Calculate time window
     const now = Math.floor(Date.now() / 1000);
     const future = now + (hours * 60 * 60);
@@ -47,25 +45,10 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       hasTeamRiders
     });
     
-    // Query with signup counts via LEFT JOIN
-    const { data, error } = await supabase['client']
+    // Direct query - no JOIN (signup counts komen later via sync service)
+    const { data, error } = await supabase.client
       .from('zwift_api_events')
-      .select(`
-        *,
-        event_signups (
-          rider_id,
-          status,
-          pen_name,
-          category,
-          riders (
-            rider_id,
-            name,
-            zp_category,
-            zp_ftp,
-            weight
-          )
-        )
-      `)
+      .select('*')
       .gte('time_unix', now)
       .lte('time_unix', future)
       .order('time_unix', { ascending: true });
@@ -77,27 +60,18 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     console.log(`[Events/Upcoming] Found ${data?.length || 0} events`);
     
-    // Process events and calculate signup counts
-    let processedEvents = (data || []).map((event: any) => {
-      const signups = event.event_signups || [];
-      const teamRiders = signups.filter((s: any) => s.riders).map((s: any) => s.riders);
-      
-      return {
-        ...event,
-        confirmed_signups: signups.filter((s: any) => s.status === 'confirmed').length,
-        tentative_signups: signups.filter((s: any) => s.status === 'tentative').length,
-        total_signups: signups.length,
-        team_rider_count: teamRiders.length,
-        team_riders: teamRiders,
-      };
-    });
+    // Return events without signup counts for now
+    let events = (data || []).map((event: any) => ({
+      ...event,
+      total_signups: 0,
+      team_rider_count: 0,
+      team_riders: [],
+    }));
     
-    // Filter for team events if requested
+    // Filter logic (disabled until signup sync implemented)
     if (hasTeamRiders) {
-      processedEvents = processedEvents.filter((e: any) => e.team_rider_count > 0);
+      console.warn('[Events/Upcoming] hasTeamRiders filter not yet implemented');
     }
-    
-    events = processedEvents;
     
     // Transform time_unix to event_date for frontend compatibility
     const transformedEvents = events.map((event: any) => ({
