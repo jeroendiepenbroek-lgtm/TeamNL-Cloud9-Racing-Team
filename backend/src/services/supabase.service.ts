@@ -434,6 +434,29 @@ export class SupabaseService {
     return data || [];
   }
 
+  // US2: Get team signups grouped by category (pen)
+  async getTeamSignupsByCategory(eventId: string, teamRiderIds: number[]): Promise<Record<string, any[]>> {
+    if (teamRiderIds.length === 0) return {};
+
+    const signups = await this.getTeamSignups(eventId, teamRiderIds);
+    
+    // Group by pen_name
+    const byCategory: Record<string, any[]> = {};
+    signups.forEach(signup => {
+      const pen = signup.pen_name || 'Unknown';
+      if (!byCategory[pen]) byCategory[pen] = [];
+      byCategory[pen].push({
+        rider_id: signup.rider_id,
+        rider_name: signup.rider_name,
+        pen_name: signup.pen_name,
+        power_wkg5: signup.power_wkg5,
+        race_rating: signup.race_rating,
+      });
+    });
+    
+    return byCategory;
+  }
+
   async getSignupsByEventId(eventId: string): Promise<any[]> {
     const { data, error } = await this.client
       .from('zwift_api_event_signups')

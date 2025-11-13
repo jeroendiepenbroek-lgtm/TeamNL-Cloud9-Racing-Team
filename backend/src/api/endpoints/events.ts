@@ -46,37 +46,51 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     });
     
     // Get upcoming events from database
-    const data = await supabase.getUpcomingEvents(hours, false);
+    const baseEvents = await supabase.getUpcomingEvents(hours, false);
     
-    console.log(`[Events/Upcoming] Found ${data.length} events`);
+    console.log(`[Events/Upcoming] Found ${baseEvents.length} events`);
     
     // Get team rider IDs for detection
     const teamRiderIds = await supabase.getRiderIdsByClub(11818);
-    const teamRiderSet = new Set(teamRiderIds);
     console.log(`[Events/Upcoming] Team has ${teamRiderIds.length} riders`);
     
-    // Enrich events with signup data
-    const enrichedEvents = await Promise.all((data || []).map(async (event: any) => {
-      // Get signups for this event
-      const signups = await supabase.getSignupsByEventId(event.event_id);
-      
-      const totalSignups = signups.length;
-      
-      // Find team riders in signups
-      const teamRidersInEvent = signups
-        .filter((s: any) => teamRiderSet.has(s.rider_id))
-        .map((s: any) => ({
+    // Enrich events with signup counts and team rider info
+    const enrichedEvents = await Promise.all(baseEvents.map(async (event: any) => {
+      try {
+        const totalSignups = await supabase.getEventSignupsCount(event.event_id);
+        const teamSignups = teamRiderIds.length > 0 
+          ? await supabase.getTeamSignups(event.event_id, teamRiderIds)
+          : [];
+        
+        // US2: Group team signups by category
+        const teamSignupsByCategory = teamRiderIds.length > 0
+          ? await supabase.getTeamSignupsByCategory(event.event_id, teamRiderIds)
+          : {};
+        
+        const teamRidersInEvent = teamSignups.map(s => ({
           rider_id: s.rider_id,
           rider_name: s.rider_name,
           pen_name: s.pen_name,
         }));
-      
-      return {
-        ...event,
-        total_signups: totalSignups,
-        team_rider_count: teamRidersInEvent.length,
-        team_riders: teamRidersInEvent,
-      };
+        
+        return {
+          ...event,
+          total_signups: totalSignups,
+          team_rider_count: teamRidersInEvent.length,
+          team_riders: teamRidersInEvent,
+          team_signups_by_category: teamSignupsByCategory,  // US2
+        };
+      } catch (error) {
+        // If enrichment fails, return event without signup data
+        console.error(`[Events/Upcoming] Failed to enrich event ${event.event_id}:`, error);
+        return {
+          ...event,
+          total_signups: 0,
+          team_rider_count: 0,
+          team_riders: [],
+          team_signups_by_category: {},
+        };
+      }
     }));
     
     console.log(`[Events/Upcoming] Enriched events with signup counts`);
@@ -84,17 +98,45 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     // Filter logic
     let events = enrichedEvents;
     if (hasTeamRiders) {
-      events = enrichedEvents.filter(e => e.team_rider_count > 0);
+      events = enrichedEvents.filter((e: any) => e.team_rider_count > 0);
       console.log(`[Events/Upcoming] Filtered to ${events.length} events with team riders`);
     }
     
     // Transform time_unix to event_date for frontend compatibility
-    const transformedEvents = events.map((event: any) => ({
-      ...event,
-      event_id: parseInt(event.event_id) || event.event_id,  // Try parse to number for compatibility
-      name: event.title || event.name,  // Use title as name
-      event_date: new Date(event.time_unix * 1000).toISOString(),  // Convert Unix to ISO
-    }));
+    const transformedEvents = events.map((event: any) => {
+      // Parse raw_response voor extra details
+      const rawResponse = event.raw_response ? JSON.parse(event.raw_response) : {};
+      
+      // US1: Signups per category (pen)
+      const signupsStr = rawResponse.signups || '';
+      const categoriesStr = rawResponse.categories || '';
+      const signupsArray = signupsStr ? signupsStr.split(',').map(Number) : [];
+      const categoriesArray = categoriesStr ? categoriesStr.split(',') : [];
+      
+      const signupsByCategory: Record<string, number> = {};
+      categoriesArray.forEach((cat: string, idx: number) => {
+        signupsByCategory[cat] = signupsArray[idx] || 0;
+      });
+      
+      // US3: Distance in km, elevation in meters
+      const distanceKm = rawResponse.distance ? (rawResponse.distance / 1000).toFixed(1) : null;
+      const elevationM = event.elevation_meters || rawResponse.elevationGain || null;
+      
+      return {
+        ...event,
+        event_id: parseInt(event.event_id) || event.event_id,
+        name: event.title || event.name,
+        event_date: new Date(event.time_unix * 1000).toISOString(),
+        
+        // US1: Signups per category
+        signups_by_category: signupsByCategory,
+        categories: categoriesArray,
+        
+        // US3: Distance & elevation
+        distance_km: distanceKm,
+        elevation_m: elevationM,
+      };
+    });
     
     res.json({
       count: transformedEvents.length,
