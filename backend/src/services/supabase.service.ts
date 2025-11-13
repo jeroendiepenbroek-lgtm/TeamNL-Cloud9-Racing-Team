@@ -473,51 +473,30 @@ export class SupabaseService {
     
     if (eventIds.length === 0) return new Map();
 
-    // Use raw SQL query to ensure we get the data
-    const eventIdsList = eventIds.map(id => `'${id}'`).join(',');
-    const query = `
-      SELECT event_id, pen_name 
-      FROM zwift_api_event_signups 
-      WHERE event_id IN (${eventIdsList})
-    `;
+    // CRITICAL FIX: Haal ALLE signups op zonder limit (kan > 1000 zijn)
+    // Dan filter in memory omdat .in() queries niet werken
+    console.log('[SupabaseService] Fetching ALL signups (no limit)...');
     
-    const { data, error } = await this.client.rpc('execute_sql', { query });
+    const { data, error, count } = await this.client
+      .from('zwift_api_event_signups')
+      .select('event_id, pen_name', { count: 'exact' });
 
     if (error) {
-      console.error('[SupabaseService] getAllSignupsByCategory SQL error:', error);
-      // Fallback to original query
-      const fallback = await this.client
-        .from('zwift_api_event_signups')
-        .select('event_id, pen_name');
-      
-      if (fallback.error) throw fallback.error;
-      
-      // Filter in memory
-      const filtered = (fallback.data || []).filter((row: any) => 
-        eventIds.includes(String(row.event_id))
-      );
-      
-      console.log(`[SupabaseService] Fallback query returned ${filtered.length} signups`);
-      
-      const signupsByEvent = new Map<string, any[]>();
-      filtered.forEach((signup: any) => {
-        const eventId = String(signup.event_id);
-        if (!signupsByEvent.has(eventId)) {
-          signupsByEvent.set(eventId, []);
-        }
-        signupsByEvent.get(eventId)!.push(signup);
-      });
-      
-      return signupsByEvent;
+      console.error('[SupabaseService] getAllSignupsByCategory error:', error);
+      throw error;
     }
 
-    console.log(`[SupabaseService] SQL query returned ${data?.length || 0} signups`);
-    if (data && data.length > 0) {
-      console.log(`[SupabaseService] Sample signup:`, data[0]);
-    }
+    console.log(`[SupabaseService] Got ${data?.length || 0} signups (total in DB: ${count})`);
+
+    // Filter in memory voor onze event IDs
+    const filtered = (data || []).filter((signup: any) =>
+      eventIds.includes(String(signup.event_id))
+    );
+
+    console.log(`[SupabaseService] After filtering: ${filtered.length} signups for ${eventIds.length} events`);
 
     const signupsByEvent = new Map<string, any[]>();
-    (data || []).forEach((signup: any) => {
+    filtered.forEach((signup: any) => {
       const eventId = String(signup.event_id);
       if (!signupsByEvent.has(eventId)) {
         signupsByEvent.set(eventId, []);
