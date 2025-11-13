@@ -338,13 +338,17 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
               <span className="text-gray-400">• {event.route_world}</span>
             )}
           </div>
-          {/* Distance */}
+          {/* Distance & Elevation */}
           {distance !== '-' && (
             <div className="flex items-center gap-1 text-xs text-gray-600">
               <span className="font-semibold">{distance}</span>
+              {/* Elevation meters */}
+              {event.elevation_m && (
+                <span className="text-gray-500">• {event.elevation_m}m</span>
+              )}
               {/* US2: Laps toevoegen als beschikbaar */}
               {event.laps && event.laps > 1 && (
-                <span className="text-gray-500">({event.laps} laps)</span>
+                <span className="text-gray-500">• {event.laps} laps</span>
               )}
             </div>
           )}
