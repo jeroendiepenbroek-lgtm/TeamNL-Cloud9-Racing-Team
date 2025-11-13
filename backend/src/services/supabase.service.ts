@@ -473,17 +473,45 @@ export class SupabaseService {
     
     if (eventIds.length === 0) return new Map();
 
-    const { data, error } = await this.client
-      .from('zwift_api_event_signups')
-      .select('event_id, pen_name')
-      .in('event_id', eventIds);
+    // Use raw SQL query to ensure we get the data
+    const eventIdsList = eventIds.map(id => `'${id}'`).join(',');
+    const query = `
+      SELECT event_id, pen_name 
+      FROM zwift_api_event_signups 
+      WHERE event_id IN (${eventIdsList})
+    `;
+    
+    const { data, error } = await this.client.rpc('execute_sql', { query });
 
     if (error) {
-      console.error('[SupabaseService] getAllSignupsByCategory error:', error);
-      throw error;
+      console.error('[SupabaseService] getAllSignupsByCategory SQL error:', error);
+      // Fallback to original query
+      const fallback = await this.client
+        .from('zwift_api_event_signups')
+        .select('event_id, pen_name');
+      
+      if (fallback.error) throw fallback.error;
+      
+      // Filter in memory
+      const filtered = (fallback.data || []).filter((row: any) => 
+        eventIds.includes(String(row.event_id))
+      );
+      
+      console.log(`[SupabaseService] Fallback query returned ${filtered.length} signups`);
+      
+      const signupsByEvent = new Map<string, any[]>();
+      filtered.forEach((signup: any) => {
+        const eventId = String(signup.event_id);
+        if (!signupsByEvent.has(eventId)) {
+          signupsByEvent.set(eventId, []);
+        }
+        signupsByEvent.get(eventId)!.push(signup);
+      });
+      
+      return signupsByEvent;
     }
 
-    console.log(`[SupabaseService] Query returned ${data?.length || 0} signups`);
+    console.log(`[SupabaseService] SQL query returned ${data?.length || 0} signups`);
     if (data && data.length > 0) {
       console.log(`[SupabaseService] Sample signup:`, data[0]);
     }
@@ -526,21 +554,29 @@ export class SupabaseService {
   async getTeamSignupsForEvents(eventIds: string[], teamRiderIds: number[]): Promise<Map<string, any[]>> {
     if (eventIds.length === 0 || teamRiderIds.length === 0) return new Map();
 
+    // Get ALL signups and filter in memory (workaround for .in() issues)
     const { data, error } = await this.client
       .from('zwift_api_event_signups')
-      .select('event_id, rider_id, rider_name, pen_name, power_wkg5, race_rating')
-      .in('event_id', eventIds)
-      .in('rider_id', teamRiderIds);
+      .select('event_id, rider_id, rider_name, pen_name, power_wkg5, race_rating');
 
     if (error) throw error;
 
+    // Filter for our events and team riders
+    const filtered = (data || []).filter((signup: any) => 
+      eventIds.includes(String(signup.event_id)) && 
+      teamRiderIds.includes(parseInt(signup.rider_id))
+    );
+
+    console.log(`[SupabaseService] Team signups: filtered ${filtered.length} from ${data?.length || 0} total`);
+
     // Group by event_id
     const byEvent = new Map<string, any[]>();
-    (data || []).forEach((signup: any) => {
-      if (!byEvent.has(signup.event_id)) {
-        byEvent.set(signup.event_id, []);
+    filtered.forEach((signup: any) => {
+      const eventId = String(signup.event_id);
+      if (!byEvent.has(eventId)) {
+        byEvent.set(eventId, []);
       }
-      byEvent.get(signup.event_id)!.push(signup);
+      byEvent.get(eventId)!.push(signup);
     });
 
     return byEvent;
