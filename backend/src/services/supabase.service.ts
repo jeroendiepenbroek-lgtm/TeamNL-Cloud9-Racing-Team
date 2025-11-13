@@ -469,42 +469,44 @@ export class SupabaseService {
 
   // Bulk get ALL signups by category for multiple events (US1)
   async getAllSignupsByCategory(eventIds: string[]): Promise<Map<string, any[]>> {
-    console.log(`[SupabaseService] getAllSignupsByCategory called with ${eventIds.length} eventIds:`, eventIds.slice(0, 3));
+    console.log(`[SupabaseService] getAllSignupsByCategory: ${eventIds.length} events`);
     
     if (eventIds.length === 0) return new Map();
 
-    // CRITICAL FIX: Haal ALLE signups op zonder limit (kan > 1000 zijn)
-    // Dan filter in memory omdat .in() queries niet werken
-    console.log('[SupabaseService] Fetching ALL signups (no limit)...');
+    // STRATEGY: Query .eq() per event (werkt!) ipv .in() bulk query (werkt niet)
+    const signupsByEvent = new Map<string, any[]>();
     
-    const { data, error, count } = await this.client
-      .from('zwift_api_event_signups')
-      .select('event_id, pen_name', { count: 'exact' });
-
-    if (error) {
-      console.error('[SupabaseService] getAllSignupsByCategory error:', error);
-      throw error;
+    // Process in batches van 20 voor snelheid
+    const batchSize = 20;
+    for (let i = 0; i < eventIds.length; i += batchSize) {
+      const batch = eventIds.slice(i, i + batchSize);
+      
+      const promises = batch.map(async (eventId) => {
+        const { data, error } = await this.client
+          .from('zwift_api_event_signups')
+          .select('event_id, pen_name')
+          .eq('event_id', eventId);
+        
+        if (error) {
+          console.error(`Error for event ${eventId}:`, error);
+          return [];
+        }
+        
+        return data || [];
+      });
+      
+      const results = await Promise.all(promises);
+      
+      // Group results by event_id
+      results.forEach((signups, idx) => {
+        if (signups.length > 0) {
+          const eventId = batch[idx];
+          signupsByEvent.set(String(eventId), signups);
+        }
+      });
     }
 
-    console.log(`[SupabaseService] Got ${data?.length || 0} signups (total in DB: ${count})`);
-
-    // Filter in memory voor onze event IDs
-    const filtered = (data || []).filter((signup: any) =>
-      eventIds.includes(String(signup.event_id))
-    );
-
-    console.log(`[SupabaseService] After filtering: ${filtered.length} signups for ${eventIds.length} events`);
-
-    const signupsByEvent = new Map<string, any[]>();
-    filtered.forEach((signup: any) => {
-      const eventId = String(signup.event_id);
-      if (!signupsByEvent.has(eventId)) {
-        signupsByEvent.set(eventId, []);
-      }
-      signupsByEvent.get(eventId)!.push(signup);
-    });
-
-    console.log(`[SupabaseService] Returning Map with ${signupsByEvent.size} keys:`, Array.from(signupsByEvent.keys()).slice(0, 3));
+    console.log(`[SupabaseService] Found signups for ${signupsByEvent.size}/${eventIds.length} events`);
     return signupsByEvent;
   }
 
@@ -533,32 +535,47 @@ export class SupabaseService {
   async getTeamSignupsForEvents(eventIds: string[], teamRiderIds: number[]): Promise<Map<string, any[]>> {
     if (eventIds.length === 0 || teamRiderIds.length === 0) return new Map();
 
-    // Get ALL signups and filter in memory (workaround for .in() issues)
-    const { data, error } = await this.client
-      .from('zwift_api_event_signups')
-      .select('event_id, rider_id, rider_name, pen_name, power_wkg5, race_rating');
+    // Query .eq() per event, filter team riders in memory
+    const teamSignupsByEvent = new Map<string, any[]>();
+    const teamRiderIdSet = new Set(teamRiderIds);
+    
+    // Process in batches
+    const batchSize = 20;
+    for (let i = 0; i < eventIds.length; i += batchSize) {
+      const batch = eventIds.slice(i, i + batchSize);
+      
+      const promises = batch.map(async (eventId) => {
+        const { data, error } = await this.client
+          .from('zwift_api_event_signups')
+          .select('event_id, rider_id, rider_name, pen_name, power_wkg5, race_rating')
+          .eq('event_id', eventId);
+        
+        if (error) {
+          console.error(`Error fetching team signups for event ${eventId}:`, error);
+          return [];
+        }
+        
+        // Filter voor team riders
+        const teamSignups = (data || []).filter((signup: any) =>
+          teamRiderIdSet.has(parseInt(signup.rider_id))
+        );
+        
+        return teamSignups;
+      });
+      
+      const results = await Promise.all(promises);
+      
+      // Group by event_id
+      results.forEach((signups, idx) => {
+        if (signups.length > 0) {
+          const eventId = batch[idx];
+          teamSignupsByEvent.set(String(eventId), signups);
+        }
+      });
+    }
 
-    if (error) throw error;
-
-    // Filter for our events and team riders
-    const filtered = (data || []).filter((signup: any) => 
-      eventIds.includes(String(signup.event_id)) && 
-      teamRiderIds.includes(parseInt(signup.rider_id))
-    );
-
-    console.log(`[SupabaseService] Team signups: filtered ${filtered.length} from ${data?.length || 0} total`);
-
-    // Group by event_id
-    const byEvent = new Map<string, any[]>();
-    filtered.forEach((signup: any) => {
-      const eventId = String(signup.event_id);
-      if (!byEvent.has(eventId)) {
-        byEvent.set(eventId, []);
-      }
-      byEvent.get(eventId)!.push(signup);
-    });
-
-    return byEvent;
+    console.log(`[SupabaseService] Found team signups for ${teamSignupsByEvent.size}/${eventIds.length} events`);
+    return teamSignupsByEvent;
   }
 
   async getSignupsByEventId(eventId: string): Promise<any[]> {
