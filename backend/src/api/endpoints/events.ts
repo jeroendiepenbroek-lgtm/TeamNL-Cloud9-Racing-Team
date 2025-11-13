@@ -45,32 +45,47 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       hasTeamRiders
     });
     
-    // Direct query - no JOIN (signup counts komen later via sync service)
-    const { data, error } = await supabase.client
-      .from('zwift_api_events')
-      .select('*')
-      .gte('time_unix', now)
-      .lte('time_unix', future)
-      .order('time_unix', { ascending: true });
+    // Get upcoming events from database
+    const data = await supabase.getUpcomingEvents(hours, false);
     
-    if (error) {
-      console.error('[Events/Upcoming] Query error:', error);
-      throw error;
-    }
+    console.log(`[Events/Upcoming] Found ${data.length} events`);
     
-    console.log(`[Events/Upcoming] Found ${data?.length || 0} events`);
+    // Get team rider IDs for detection
+    const teamRiderIds = await supabase.getRiderIdsByClub(11818);
+    const teamRiderSet = new Set(teamRiderIds);
+    console.log(`[Events/Upcoming] Team has ${teamRiderIds.length} riders`);
     
-    // Return events without signup counts for now
-    let events = (data || []).map((event: any) => ({
-      ...event,
-      total_signups: 0,
-      team_rider_count: 0,
-      team_riders: [],
+    // Enrich events with signup data
+    const enrichedEvents = await Promise.all((data || []).map(async (event: any) => {
+      // Get signups for this event
+      const signups = await supabase.getSignupsByEventId(event.event_id);
+      
+      const totalSignups = signups.length;
+      
+      // Find team riders in signups
+      const teamRidersInEvent = signups
+        .filter((s: any) => teamRiderSet.has(s.rider_id))
+        .map((s: any) => ({
+          rider_id: s.rider_id,
+          rider_name: s.rider_name,
+          pen_name: s.pen_name,
+        }));
+      
+      return {
+        ...event,
+        total_signups: totalSignups,
+        team_rider_count: teamRidersInEvent.length,
+        team_riders: teamRidersInEvent,
+      };
     }));
     
-    // Filter logic (disabled until signup sync implemented)
+    console.log(`[Events/Upcoming] Enriched events with signup counts`);
+    
+    // Filter logic
+    let events = enrichedEvents;
     if (hasTeamRiders) {
-      console.warn('[Events/Upcoming] hasTeamRiders filter not yet implemented');
+      events = enrichedEvents.filter(e => e.team_rider_count > 0);
+      console.log(`[Events/Upcoming] Filtered to ${events.length} events with team riders`);
     }
     
     // Transform time_unix to event_date for frontend compatibility

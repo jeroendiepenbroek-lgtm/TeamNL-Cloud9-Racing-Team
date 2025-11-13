@@ -58,6 +58,16 @@ export class SupabaseService {
     return data || [];
   }
 
+  async getRiderIdsByClub(clubId: number): Promise<number[]> {
+    const { data, error } = await this.client
+      .from('riders')
+      .select('rider_id')
+      .eq('club_id', clubId);
+
+    if (error) throw error;
+    return (data || []).map(r => r.rider_id);
+  }
+
   async getRider(riderId: number): Promise<DbRider | null> {
     const { data, error } = await this.client
       .from('riders')
@@ -98,7 +108,7 @@ export class SupabaseService {
 
   // ========== EVENTS ==========
   async getEvents(clubId?: number): Promise<DbEvent[]> {
-    let query = this.client.from('events').select('*');
+    let query = this.client.from('zwift_api_events').select('*');
     
     if (clubId) {
       query = query.eq('club_id', clubId);
@@ -419,6 +429,16 @@ export class SupabaseService {
       .select('*')
       .eq('event_id', eventId)
       .in('rider_id', teamRiderIds);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  async getSignupsByEventId(eventId: string): Promise<any[]> {
+    const { data, error } = await this.client
+      .from('zwift_api_event_signups')
+      .select('rider_id, rider_name, pen_name')
+      .eq('event_id', eventId);
 
     if (error) throw error;
     return data || [];
