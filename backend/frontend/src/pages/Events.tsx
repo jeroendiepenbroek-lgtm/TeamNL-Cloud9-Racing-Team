@@ -6,9 +6,8 @@
 import { useEffect, useState } from 'react';
 import { Clock, Calendar, MapPin, Users, ExternalLink, UserCheck } from 'lucide-react';
 
-// US3: ZP Categories met kleuren zoals in matrix
+// US2: ZP Categories met kleuren zoals in matrix (A+ merged into A)
 const ZP_CATEGORIES: Record<string, { color: string; label: string }> = {
-  'A+': { color: 'bg-red-100 text-red-900 border-red-300', label: 'A+' },
   'A': { color: 'bg-red-50 text-red-800 border-red-200', label: 'A' },
   'B': { color: 'bg-green-50 text-green-800 border-green-200', label: 'B' },
   'C': { color: 'bg-blue-50 text-blue-800 border-blue-200', label: 'C' },
@@ -380,9 +379,9 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
             )}
           </div>
             
-          {/* US2 & US3: Signups per categorie - altijd alle categorieën tonen met kleuren */}
+          {/* US2: Signups per categorie - A t/m E (A+ merged into A) */}
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {['A+', 'A', 'B', 'C', 'D', 'E'].map((cat) => {
+            {['A', 'B', 'C', 'D', 'E'].map((cat) => {
               const count = event.signups_by_category?.[cat] || 0;
               const categoryStyle = ZP_CATEGORIES[cat] || ZP_CATEGORIES['E'];
               return (

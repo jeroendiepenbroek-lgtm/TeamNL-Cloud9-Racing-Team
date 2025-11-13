@@ -68,21 +68,28 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     // Enrich events with signup data
     const enrichedEvents = baseEvents.map((event: any) => {
       const eventIdStr = String(event.event_id); // Consistent string key
-      const totalSignups = signupCounts.get(eventIdStr) || 0;
       const teamSignups = teamSignupsByEvent.get(eventIdStr) || [];
       const allSignups = allSignupsByEvent.get(eventIdStr) || [];
       
       // US1: Count signups per category from ALL signups
+      // US2: Merge A+ into A category
       const signupsByCategory: Record<string, number> = {};
       allSignups.forEach(signup => {
-        const pen = signup.pen_name || 'Unknown';
+        let pen = signup.pen_name || 'Unknown';
+        // US2: Merge A+ into A
+        if (pen === 'A+') pen = 'A';
         signupsByCategory[pen] = (signupsByCategory[pen] || 0) + 1;
       });
+      
+      // US1: Total signups = actual count from allSignups
+      const totalSignups = allSignups.length;
       
       // Group team signups by category
       const teamSignupsByCategory: Record<string, any[]> = {};
       teamSignups.forEach(signup => {
-        const pen = signup.pen_name || 'Unknown';
+        let pen = signup.pen_name || 'Unknown';
+        // US2: Merge A+ into A
+        if (pen === 'A+') pen = 'A';
         if (!teamSignupsByCategory[pen]) teamSignupsByCategory[pen] = [];
         teamSignupsByCategory[pen].push({
           rider_id: signup.rider_id,
