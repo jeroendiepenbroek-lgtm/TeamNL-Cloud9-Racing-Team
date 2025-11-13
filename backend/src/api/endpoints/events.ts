@@ -137,11 +137,17 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     // Transform time_unix to event_date for frontend compatibility
     // US11 & US4: Add route profile and route info lookup
     const transformedEvents = await Promise.all(events.map(async (event: any) => {
-      // US4: Try to get full route info by distance
+      // US4: Try to get full route info
       let routeInfo: any = null;
       let routeProfile: string | null = null;
       
-      if (event.distance_km) {
+      // Prioritize route_id lookup (more accurate)
+      if (event.route_id) {
+        routeInfo = await zwiftClient.getRouteById(event.route_id);
+        routeProfile = routeInfo?.profile || null;
+      }
+      // Fallback to distance matching
+      else if (event.distance_km) {
         const distanceKm = parseFloat(event.distance_km);
         if (!isNaN(distanceKm)) {
           routeInfo = await zwiftClient.getRouteByDistance(
@@ -157,7 +163,8 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         event_id: parseInt(event.event_id) || event.event_id,
         name: event.title || event.name,
         event_date: new Date(event.time_unix * 1000).toISOString(),
-        // US4: Add route info if found
+        // US4: Add route info if found (prefer matched data over DB data)
+        route_id: event.route_id || null,
         route_name: routeInfo?.name || event.route_name || null,
         route_world: routeInfo?.world || event.route_world || null,
         laps: routeInfo?.laps || event.laps || null,

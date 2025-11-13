@@ -347,6 +347,25 @@ export class ZwiftApiClient {
   }
 
   /**
+   * US4: Get route details by route ID (most accurate)
+   * Returns full route object with name, world, profile, laps etc
+   */
+  async getRouteById(routeId: string | number): Promise<any | null> {
+    // Ensure cache is loaded
+    if (!this.routesCache || Date.now() >= this.routesCacheExpiry) {
+      await this.getAllRoutes();
+    }
+
+    if (!this.routesCache) return null;
+
+    // Direct lookup by route ID
+    const routeIdStr = String(routeId);
+    const route = this.routesCache.get(routeIdStr);
+    
+    return route || null;
+  }
+
+  /**
    * US4: Get route details by distance match
    * Returns full route object with name, world, profile, laps etc
    */
