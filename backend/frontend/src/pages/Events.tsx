@@ -109,7 +109,7 @@ export default function Events() {
 
   const formatElevation = (meters?: number | null): string => {
     // US3: Toon elevation in meters
-    if (!meters) return null;
+    if (!meters) return '-';
     return `${meters}m`;
   };
 
