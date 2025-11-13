@@ -64,12 +64,17 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     // Bulk fetch ALL signup data for category counts (US1)
     const allSignupsByEvent = await supabase.getAllSignupsByCategory(eventIds);
+    console.log(`[Events/Upcoming] allSignupsByEvent size: ${allSignupsByEvent.size}, sample keys:`, Array.from(allSignupsByEvent.keys()).slice(0, 3));
     
     // Enrich events with signup data
     const enrichedEvents = baseEvents.map((event: any) => {
       const eventIdStr = String(event.event_id); // Consistent string key
       const teamSignups = teamSignupsByEvent.get(eventIdStr) || [];
       const allSignups = allSignupsByEvent.get(eventIdStr) || [];
+      
+      if (allSignups.length > 0) {
+        console.log(`[Events/Upcoming] Event ${eventIdStr} has ${allSignups.length} signups`);
+      }
       
       // US1: Count signups per category from ALL signups
       // US2: Merge A+ into A category
