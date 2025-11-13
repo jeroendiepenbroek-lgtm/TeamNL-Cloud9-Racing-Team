@@ -5,9 +5,11 @@
 
 import { Router, Request, Response } from 'express';
 import { SyncService } from '../../services/sync.service.js';
+import { SupabaseService } from '../../services/supabase.service.js';
 
 const router = Router();
 const syncService = new SyncService();
+const supabaseService = new SupabaseService();
 
 /**
  * POST /api/signups/sync/:eventId
@@ -105,31 +107,25 @@ router.post('/sync-batch', async (req: Request, res: Response) => {
 router.get('/debug/:eventId', async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
-    const { createClient } = await import('@supabase/supabase-js');
-    
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_ANON_KEY!
-    );
 
-    // Get ALL signups zonder filter
-    const { data: allData, error: allError } = await supabase
+    // Direct query via supabase service
+    const allSignups = await supabaseService['client']
       .from('zwift_api_event_signups')
       .select('event_id, rider_name, pen_name')
       .limit(1000);
 
-    if (allError) throw allError;
+    if (allSignups.error) throw allSignups.error;
 
     // Filter voor dit event
-    const forEvent = (allData || []).filter((s: any) => 
+    const forEvent = (allSignups.data || []).filter((s: any) => 
       String(s.event_id) === String(eventId)
     );
 
     res.json({
       eventId,
-      totalInDb: allData?.length || 0,
+      totalInDb: allSignups.data?.length || 0,
       forThisEvent: forEvent.length,
-      sampleAll: allData?.slice(0, 3).map((s: any) => ({
+      sampleAll: allSignups.data?.slice(0, 3).map((s: any) => ({
         event_id: s.event_id,
         event_id_type: typeof s.event_id,
         rider_name: s.rider_name,
