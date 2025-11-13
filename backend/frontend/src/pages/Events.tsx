@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Clock, Calendar, MapPin, Users, ExternalLink, TrendingUp, UserCheck, Mountain, Minus, Waves } from 'lucide-react';
+import { Clock, Calendar, MapPin, Users, ExternalLink, UserCheck } from 'lucide-react';
 
 interface Event {
   event_id: string | number;
@@ -267,22 +267,6 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
     }
   };
 
-  // US1: Route profile icon per type
-  const getRouteProfileIcon = (profile?: string) => {
-    switch (profile?.toLowerCase()) {
-      case 'flat':
-        return <Minus className="w-3 h-3" />;
-      case 'rolling':
-        return <Waves className="w-3 h-3" />;
-      case 'hilly':
-        return <TrendingUp className="w-3 h-3" />;
-      case 'mountainous':
-        return <Mountain className="w-3 h-3" />;
-      default:
-        return <Mountain className="w-3 h-3" />;
-    }
-  };
-
   const isStartingSoon = () => {
     const match = timeUntil.match(/^(\d+)([um])/);
     if (!match) return false;
@@ -330,8 +314,7 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
           )}
           {/* US11: Route profile badge */}
           {event.route_profile && (
-            <span className={`text-xs px-2 py-1 rounded-full border font-semibold flex items-center gap-1 ${getRouteProfileColor(event.route_profile)}`}>
-              {getRouteProfileIcon(event.route_profile)}
+            <span className={`text-xs px-2 py-1 rounded-full border font-semibold ${getRouteProfileColor(event.route_profile)}`}>
               {event.route_profile}
             </span>
           )}
@@ -359,9 +342,17 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
 
         {/* US2/US3: Signups with icons */}
         <div className="space-y-2">
-          {/* US2: Altijd signups tonen, US3: oranje icon alleen bij team riders > 0 */}
+          {/* US3: Altijd total signups tonen (ook 0) */}
           <div className="flex items-center gap-3">
-            {/* US3: Oranje icon alleen als er team riders zijn */}
+            {/* US2: Total signups (inclusief team riders) */}
+            <div className="flex items-center gap-1.5 text-sm">
+              <Users className="w-4 h-4 text-gray-500" />
+              <span className="font-semibold text-gray-700">
+                {totalSignups}
+              </span>
+            </div>
+            
+            {/* US2: Team riders apart weergeven (alleen als > 0) */}
             {teamRiderCount > 0 && (
               <div className="flex items-center gap-1.5 text-sm">
                 <UserCheck className="w-4 h-4 text-orange-600" />
@@ -370,14 +361,6 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
                 </span>
               </div>
             )}
-            
-            {/* US2: Altijd total signups tonen (ook 0) */}
-            <div className="flex items-center gap-1.5 text-sm">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span className="font-semibold text-gray-700">
-                {totalSignups}
-              </span>
-            </div>
           </div>
             
           {/* US1: Signups per categorie */}
