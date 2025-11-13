@@ -98,4 +98,49 @@ router.post('/sync-batch', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/signups/debug/:eventId
+ * Debug endpoint - check raw signup data voor event
+ */
+router.get('/debug/:eventId', async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const supabase = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_ANON_KEY!
+    );
+
+    // Get ALL signups zonder filter
+    const { data: allData, error: allError } = await supabase
+      .from('zwift_api_event_signups')
+      .select('event_id, rider_name, pen_name')
+      .limit(1000);
+
+    if (allError) throw allError;
+
+    // Filter voor dit event
+    const forEvent = (allData || []).filter((s: any) => 
+      String(s.event_id) === String(eventId)
+    );
+
+    res.json({
+      eventId,
+      totalInDb: allData?.length || 0,
+      forThisEvent: forEvent.length,
+      sampleAll: allData?.slice(0, 3).map((s: any) => ({
+        event_id: s.event_id,
+        event_id_type: typeof s.event_id,
+        rider_name: s.rider_name,
+        pen_name: s.pen_name,
+      })),
+      forEvent: forEvent.slice(0, 5),
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ error: String(error) });
+  }
+});
+
 export default router;
