@@ -467,6 +467,29 @@ export class SupabaseService {
     return byCategory;
   }
 
+  // Bulk get ALL signups by category for multiple events (US1)
+  async getAllSignupsByCategory(eventIds: string[]): Promise<Map<string, any[]>> {
+    if (eventIds.length === 0) return new Map();
+
+    const { data, error } = await this.client
+      .from('zwift_api_event_signups')
+      .select('event_id, pen_name')
+      .in('event_id', eventIds);
+
+    if (error) throw error;
+
+    const signupsByEvent = new Map<string, any[]>();
+    (data || []).forEach((signup: any) => {
+      const eventId = String(signup.event_id);
+      if (!signupsByEvent.has(eventId)) {
+        signupsByEvent.set(eventId, []);
+      }
+      signupsByEvent.get(eventId)!.push(signup);
+    });
+
+    return signupsByEvent;
+  }
+
   // Bulk get signup counts for multiple events (optimized)
   async getSignupCountsForEvents(eventIds: string[]): Promise<Map<string, number>> {
     if (eventIds.length === 0) return new Map();

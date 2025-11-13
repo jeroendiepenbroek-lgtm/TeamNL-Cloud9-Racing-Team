@@ -61,10 +61,21 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     console.log(`[Events/Upcoming] Fetched signup data for ${eventIds.length} events`);
     
+    // Bulk fetch ALL signup data for category counts (US1)
+    const allSignupsByEvent = await supabase.getAllSignupsByCategory(eventIds);
+    
     // Enrich events with signup data
     const enrichedEvents = baseEvents.map((event: any) => {
       const totalSignups = signupCounts.get(event.event_id) || 0;
       const teamSignups = teamSignupsByEvent.get(event.event_id) || [];
+      const allSignups = allSignupsByEvent.get(event.event_id) || [];
+      
+      // US1: Count signups per category from ALL signups
+      const signupsByCategory: Record<string, number> = {};
+      allSignups.forEach(signup => {
+        const pen = signup.pen_name || 'Unknown';
+        signupsByCategory[pen] = (signupsByCategory[pen] || 0) + 1;
+      });
       
       // Group team signups by category
       const teamSignupsByCategory: Record<string, any[]> = {};
@@ -89,6 +100,12 @@ router.get('/upcoming', async (req: Request, res: Response) => {
           pen_name: s.pen_name,
         })),
         team_signups_by_category: teamSignupsByCategory,
+        // US1: Signups per category
+        signups_by_category: signupsByCategory,
+        categories: Object.keys(signupsByCategory).sort(),
+        // US3: Distance & elevation from database (distance_meters is already × 1000)
+        distance_km: event.distance_meters ? (event.distance_meters / 1000000).toFixed(1) : null,
+        elevation_m: event.elevation_meters || null,
       };
     });
     
@@ -103,37 +120,11 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     
     // Transform time_unix to event_date for frontend compatibility
     const transformedEvents = events.map((event: any) => {
-      // Parse raw_response voor extra details
-      const rawResponse = event.raw_response ? JSON.parse(event.raw_response) : {};
-      
-      // US1: Signups per category (pen)
-      const signupsStr = rawResponse.signups || '';
-      const categoriesStr = rawResponse.categories || '';
-      const signupsArray = signupsStr ? signupsStr.split(',').map(Number) : [];
-      const categoriesArray = categoriesStr ? categoriesStr.split(',') : [];
-      
-      const signupsByCategory: Record<string, number> = {};
-      categoriesArray.forEach((cat: string, idx: number) => {
-        signupsByCategory[cat] = signupsArray[idx] || 0;
-      });
-      
-      // US3: Distance in km, elevation in meters
-      const distanceKm = rawResponse.distance ? (rawResponse.distance / 1000).toFixed(1) : null;
-      const elevationM = event.elevation_meters || rawResponse.elevationGain || null;
-      
       return {
         ...event,
         event_id: parseInt(event.event_id) || event.event_id,
         name: event.title || event.name,
         event_date: new Date(event.time_unix * 1000).toISOString(),
-        
-        // US1: Signups per category
-        signups_by_category: signupsByCategory,
-        categories: categoriesArray,
-        
-        // US3: Distance & elevation
-        distance_km: distanceKm,
-        elevation_m: elevationM,
       };
     });
     
