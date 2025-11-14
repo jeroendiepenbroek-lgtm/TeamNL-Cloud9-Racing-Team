@@ -82,7 +82,7 @@ export class SyncService {
       });
 
       await supabase.createSyncLog({
-        endpoint: 'clubs',
+        endpoint: 'GET /public/clubs/{id}',
         status: 'success',
         records_processed: 1,
       });
@@ -91,7 +91,7 @@ export class SyncService {
       return club;
     } catch (error) {
       await supabase.createSyncLog({
-        endpoint: 'clubs',
+        endpoint: 'GET /public/clubs/{id}',
         status: 'error',
         records_processed: 0,
         error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -157,7 +157,7 @@ export class SyncService {
         : errorMessage;
       
       await supabase.createSyncLog({
-        endpoint: 'riders',
+        endpoint: 'POST /public/riders (bulk)',
         status: 'error',
         records_processed: 0,
         error_message: detailedMessage,
@@ -197,7 +197,7 @@ export class SyncService {
       const syncedResults = await supabase.upsertResults(results);
 
       await supabase.createSyncLog({
-        endpoint: 'results',
+        endpoint: `GET /public/events/${eventId}/results`,
         status: 'success',
         records_processed: syncedResults.length,
       });
@@ -206,7 +206,7 @@ export class SyncService {
       return syncedResults;
     } catch (error) {
       await supabase.createSyncLog({
-        endpoint: 'results',
+        endpoint: `GET /public/events/${eventId}/results`,
         status: 'error',
         records_processed: 0,
         error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -235,7 +235,7 @@ export class SyncService {
       await supabase.insertRiderHistory(history);
 
       await supabase.createSyncLog({
-        endpoint: 'rider_history',
+        endpoint: `GET /public/riders/${riderId}/history`,
         status: 'success',
         records_processed: history.length,
       });
@@ -243,7 +243,7 @@ export class SyncService {
       console.log(`✅ Synced ${history.length} history snapshots`);
     } catch (error) {
       await supabase.createSyncLog({
-        endpoint: 'rider_history',
+        endpoint: `GET /public/riders/${riderId}/history`,
         status: 'error',
         records_processed: 0,
         error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -344,7 +344,7 @@ export class SyncService {
       }
       
       await supabase.createSyncLog({
-        endpoint: 'rider_upcoming_events',
+        endpoint: 'GET /public/riders/{id}/upcoming-events (bulk scan)',
         status: errors > 0 ? 'partial' : 'success',
         records_processed: signupsCreated,
         error_message: errors > 0 ? `${errors} riders failed to sync` : undefined,
@@ -360,7 +360,7 @@ export class SyncService {
       };
     } catch (error) {
       await supabase.createSyncLog({
-        endpoint: 'rider_upcoming_events',
+        endpoint: 'GET /public/riders/{id}/upcoming-events (bulk scan)',
         status: 'error',
         records_processed: 0,
         error_message: error instanceof Error ? error.message : 'Unknown error',
@@ -520,7 +520,7 @@ export class SyncService {
 
       // Log success
       await supabase.createSyncLog({
-        endpoint: 'bulk_import_upcoming_events',
+        endpoint: 'GET /api/events/upcoming (bulk import)',
         status: 'success',
         records_processed: eventsImported,
       });
@@ -552,7 +552,7 @@ export class SyncService {
       }
       
       await supabase.createSyncLog({
-        endpoint: 'bulk_import_upcoming_events',
+        endpoint: 'GET /api/events/upcoming (bulk import)',
         status: 'error',
         records_processed: 0,
         error_message: detailedMessage,
