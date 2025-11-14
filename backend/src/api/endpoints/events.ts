@@ -129,8 +129,8 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         // US11: Signups per category (A, B, C, D, E)
         signups_by_category: signupsByCategory,
         categories: Object.keys(signupsByCategory).sort(),
-        // US1: Distance correct berekenen (MILLIMETERS → km in database!)
-        distance_km: event.distance_meters ? (event.distance_meters / 1000000).toFixed(1) : null,
+        // US1: Distance correct berekenen (meters → km)
+        distance_km: event.distance_meters ? (event.distance_meters / 1000).toFixed(1) : null,
         // US6: Elevation uit database (elevation_meters kolom)
         elevation_m: event.elevation_meters || null,
       };
