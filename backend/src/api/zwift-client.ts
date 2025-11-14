@@ -46,7 +46,19 @@ export class ZwiftApiClient {
         return response;
       },
       (error) => {
-        console.error(`[ZwiftAPI] ❌ ${error.config?.url} → ${error.response?.status || 'TIMEOUT'}`);
+        const status = error.response?.status || 'TIMEOUT';
+        const url = error.config?.url || 'unknown';
+        
+        if (status === 429) {
+          console.error(`[ZwiftAPI] 🚫 RATE LIMIT (429) ${url} - Too many requests`);
+          error.message = `Rate limit exceeded for ${url}. Please wait before retrying.`;
+        } else if (status === 'TIMEOUT') {
+          console.error(`[ZwiftAPI] ⏱️  TIMEOUT ${url}`);
+          error.message = `Request timeout for ${url}`;
+        } else {
+          console.error(`[ZwiftAPI] ❌ ${url} → ${status}`);
+        }
+        
         throw error;
       }
     );

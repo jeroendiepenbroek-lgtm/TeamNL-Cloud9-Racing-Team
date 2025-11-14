@@ -130,13 +130,24 @@ export class SyncService {
 
       console.log(`✅ Synced ${syncedRiders.length} riders`);
       return syncedRiders;
-    } catch (error) {
+    } catch (error: any) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (typeof error === 'string' ? error : JSON.stringify(error));
+      
+      const status = error.response?.status;
+      const detailedMessage = status === 429 
+        ? `Rate limit exceeded (429) - ${errorMessage}`
+        : errorMessage;
+      
       await supabase.createSyncLog({
         endpoint: 'riders',
         status: 'error',
         records_processed: 0,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
+        error_message: detailedMessage,
       });
+      
+      console.error(`❌ [SyncRiders] Error syncing riders:`, detailedMessage);
       throw error;
     }
   }
@@ -507,11 +518,19 @@ export class SyncService {
         errors,
       };
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
+    } catch (error: any) {
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (typeof error === 'string' ? error : JSON.stringify(error));
       
-      console.error('❌ [BulkImport] FATAL ERROR:', errorMessage);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      const status = error.response?.status;
+      
+      const detailedMessage = status === 429 
+        ? `Rate limit exceeded (429) - ${errorMessage}`
+        : errorMessage;
+      
+      console.error('❌ [BulkImport] FATAL ERROR:', detailedMessage);
       if (errorStack) {
         console.error('Stack trace:', errorStack);
       }
@@ -520,7 +539,7 @@ export class SyncService {
         endpoint: 'bulk_import_upcoming_events',
         status: 'error',
         records_processed: 0,
-        error_message: errorMessage,
+        error_message: detailedMessage,
       });
       
       throw error;
