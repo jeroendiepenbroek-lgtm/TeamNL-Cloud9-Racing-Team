@@ -198,7 +198,31 @@ export default function Events() {
     };
 
     fetchEvents();
-  }, []);
+    
+    // US5: Poll config elke 30 seconden voor lookforwardHours updates
+    const configPollInterval = setInterval(async () => {
+      try {
+        const configResponse = await fetch('/api/sync/config');
+        if (configResponse.ok) {
+          const configData = await configResponse.json();
+          const newHours = configData.lookforwardHours || 36;
+          if (newHours !== lookforwardHours) {
+            setLookforwardHours(newHours);
+            // Refresh events met nieuwe lookforward
+            const response = await fetch(`/api/events/upcoming?hours=${newHours}`);
+            if (response.ok) {
+              const data = await response.json();
+              setEvents(data.events || []);
+            }
+          }
+        }
+      } catch (error) {
+        // Silent fail - config poll is niet kritiek
+      }
+    }, 30000); // Check elke 30 seconden
+    
+    return () => clearInterval(configPollInterval);
+  }, [lookforwardHours]);
 
   // Filter events
   const filteredEvents = useMemo(() => {

@@ -117,15 +117,15 @@ export default function SyncConfig() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-12">
-          <div className="flex items-center gap-4 mb-3">
+          <div className="flex items-center gap-4 mb-4">
             <div className="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg shadow-purple-300">
               <Settings className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent drop-shadow-sm">
+            <h1 className="text-5xl font-extrabold text-slate-900">
               Sync Configuratie
             </h1>
           </div>
-          <p className="text-slate-700 text-lg font-medium ml-1">
+          <p className="text-slate-700 text-lg font-semibold ml-1 pl-1">
             Beheer synchronisatie intervallen en parameters
           </p>
         </div>
