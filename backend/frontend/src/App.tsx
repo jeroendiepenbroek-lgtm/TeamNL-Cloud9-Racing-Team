@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-do
 import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import Dashboard from './pages/Dashboard'
+import DashboardModern from './pages/DashboardModern'
 import Clubs from './pages/Clubs'
 import Riders from './pages/Riders'
 import Events from './pages/Events'
@@ -277,6 +278,16 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <div className="max-w-7xl mx-auto"><Dashboard /></div>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Modern Dashboard POC - State of the Art Design */}
+          <Route 
+            path="/admin/dashboard/modern" 
+            element={
+              <ProtectedRoute>
+                <DashboardModern />
               </ProtectedRoute>
             } 
           />

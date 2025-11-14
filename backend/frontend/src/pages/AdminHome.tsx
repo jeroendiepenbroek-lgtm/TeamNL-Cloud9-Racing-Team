@@ -152,6 +152,14 @@ export default function AdminHome() {
           />
           
           <AdminTile
+            icon="✨"
+            title="Modern Dashboard POC"
+            description="State-of-the-art dashboard design - Nieuw concept met glassmorphism"
+            to="/admin/dashboard/modern"
+            gradient="from-cyan-500 via-blue-500 to-indigo-600"
+          />
+          
+          <AdminTile
             icon="📧"
             title="Access Requests"
             description="Bekijk en goedkeur toegangsaanvragen van nieuwe gebruikers"
