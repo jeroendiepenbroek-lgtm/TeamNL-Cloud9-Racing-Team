@@ -354,51 +354,54 @@ export default function Events() {
                     </div>
                   )}
 
-                  {/* US4: Route Info + Distance & Elevation in header */}
+                  {/* US4: Route Info + Distance & Elevation in header - Mobile responsive */}
                   {event.route_name && (
-                    <div className="flex items-center gap-2 text-white/90 text-sm">
-                      <MapPin className="w-4 h-4" />
-                      <span className="font-medium">{event.route_name}</span>
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-white/90 text-xs sm:text-sm">
+                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                      <span className="font-medium truncate max-w-[150px] sm:max-w-none">{event.route_name}</span>
                       {event.route_world && (
-                        <span className="text-white/70">• {event.route_world}</span>
+                        <span className="text-white/70 hidden sm:inline">•</span>
+                      )}
+                      {event.route_world && (
+                        <span className="text-white/70 truncate max-w-[100px] sm:max-w-none">{event.route_world}</span>
                       )}
                       {event.distance_km && (
-                        <span className="text-white/70">• {event.distance_km}km</span>
+                        <span className="text-white/70 whitespace-nowrap">• {event.distance_km}km</span>
                       )}
                       {event.elevation_m !== undefined && (
-                        <span className="text-white/70">• {event.elevation_m}m</span>
+                        <span className="text-white/70 whitespace-nowrap">• {event.elevation_m}m</span>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Card Body */}
-                <div className="p-6">
+                {/* Card Body - Mobile responsive padding */}
+                <div className="p-4 sm:p-6">
                   {/* Route Profile Badge */}
                   <div className="mb-4">
                     {routeProfile && (
-                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${routeProfile.color} font-medium text-sm`}>
+                      <div className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg ${routeProfile.color} font-medium text-xs sm:text-sm`}>
                         <RouteIcon className="w-4 h-4" />
                         <span>{routeProfile.label}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* US3, US4, US5: Compacte horizontale stats row - alleen iconen + getallen */}
-                  <div className="flex items-center gap-6 mb-6 pb-4 border-b border-slate-200">
+                  {/* US3, US4, US5: Compacte horizontale stats row - alleen iconen + getallen - Mobile responsive */}
+                  <div className="flex items-center gap-3 sm:gap-6 mb-6 pb-4 border-b border-slate-200 overflow-x-auto">
                     {/* Total signups (multi-person icon) */}
                     {event.total_signups !== undefined && (
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Users className="w-5 h-5" />
-                        <span className="text-lg font-bold">{event.total_signups}</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-slate-600">
+                        <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-base sm:text-lg font-bold">{event.total_signups}</span>
                       </div>
                     )}
 
                     {/* Team signups (orange checkmark) */}
                     {event.team_rider_count !== undefined && event.team_rider_count > 0 && (
-                      <div className="flex items-center gap-2 text-orange-600">
-                        <UserCheck2 className="w-5 h-5" />
-                        <span className="text-lg font-bold">{event.team_rider_count}</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-orange-600">
+                        <UserCheck2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="text-base sm:text-lg font-bold">{event.team_rider_count}</span>
                       </div>
                     )}
 

@@ -160,6 +160,14 @@ export default function AdminHome() {
           />
           
           <AdminTile
+            icon="🏆"
+            title="Team Matrix POC"
+            description="State-of-the-art team dashboard - Modern design met alle rider data"
+            to="/team/modern"
+            gradient="from-violet-500 via-purple-500 to-fuchsia-600"
+          />
+          
+          <AdminTile
             icon="📧"
             title="Access Requests"
             description="Bekijk en goedkeur toegangsaanvragen van nieuwe gebruikers"

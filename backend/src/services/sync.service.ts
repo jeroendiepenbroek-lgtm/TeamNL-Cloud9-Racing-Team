@@ -127,7 +127,7 @@ export class SyncService {
       
       const riders = ridersData.map(rider => ({
         zwift_id: rider.riderId,
-        name: rider.name,
+        name: rider.name || `Rider ${rider.riderId}`, // Fallback voor lege names
         category: rider.category,
         ranking: rider.ranking,
         points: rider.points,
