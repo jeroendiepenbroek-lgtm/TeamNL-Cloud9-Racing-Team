@@ -131,43 +131,23 @@ export class SupabaseService {
 
   // Feature 1: Get upcoming events (within X hours)
   async getUpcomingEvents(hours: number = 48, hasTeamRiders: boolean = false): Promise<any[]> {
-    try {
-      if (hasTeamRiders) {
-        // Use view that filters for team riders
-        const { data, error } = await this.client
-          .from('view_team_events')
-          .select('*')
-          .order('time_unix', { ascending: true });
-        
-        if (error) throw error;
-        return data || [];
-      } else {
-        // Use simple upcoming events view
-        const { data, error } = await this.client
-          .from('view_upcoming_events')
-          .select('*')
-          .order('time_unix', { ascending: true });
-        
-        if (error) throw error;
-        return data || [];
-      }
-    } catch (viewError) {
-      // Fallback to manual query if views don't exist
-      console.warn('Views not available, using fallback query:', viewError);
-      
-      const now = Math.floor(Date.now() / 1000);
-      const future = now + (hours * 60 * 60);
-      
-      const { data, error } = await this.client
-        .from('zwift_api_events')
-        .select('*')
-        .gte('time_unix', now)
-        .lte('time_unix', future)
-        .order('time_unix', { ascending: true });
-      
-      if (error) throw error;
-      return data || [];
+    // ALWAYS use direct table query to ensure all columns (route_name, elevation_meters, etc.)
+    const now = Math.floor(Date.now() / 1000);
+    const future = now + (hours * 60 * 60);
+    
+    const { data, error } = await this.client
+      .from('zwift_api_events')
+      .select('*')
+      .gte('time_unix', now)
+      .lte('time_unix', future)
+      .order('time_unix', { ascending: true });
+    
+    if (error) {
+      console.error('[SupabaseService] Error fetching upcoming events:', error);
+      throw error;
     }
+    
+    return data || [];
   }
 
   // Feature 1: Get single event by ID

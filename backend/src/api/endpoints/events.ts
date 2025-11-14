@@ -121,8 +121,9 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         // US11: Signups per category (A, B, C, D, E)
         signups_by_category: signupsByCategory,
         categories: Object.keys(signupsByCategory).sort(),
-        // US3: Distance & elevation from database
-        distance_km: event.distance_meters ? (event.distance_meters / 1000).toFixed(1) : null,
+              // US1: Distance correct berekenen (meters → km)
+      distance_km: event.distance_meters ? (event.distance_meters / 1000).toFixed(1) : null,
+        // US6: Elevation uit database (elevation_meters kolom)
         elevation_m: event.elevation_meters || null,
       };
     });
@@ -161,18 +162,18 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       
       return {
         ...event,
-        // US2: Event ID consistency (keep as number for frontend)
+        // US2: Event ID consistency
         event_id: event.event_id,
         name: event.title || event.name,
         // US5: Event date for 48h window calculation
         event_date: new Date(event.time_unix * 1000).toISOString(),
-        // US3: Route info (prefer API matched data over DB data)
+        // US2: Route info - ALTIJD uit database tonen
         route_id: event.route_id || null,
-        route_name: routeInfo?.name || event.route_name || null,
-        route_world: routeInfo?.world || event.route_world || null,
-        laps: routeInfo?.laps || event.laps || null,
+        route_name: event.route_name || routeInfo?.name || null,
+        route_world: event.route_world || routeInfo?.world || null,
+        laps: event.laps || routeInfo?.laps || null,
         // US10: Route profile badge
-        route_profile: routeProfile,
+        route_profile: routeProfile || null,
       };
     }));
     

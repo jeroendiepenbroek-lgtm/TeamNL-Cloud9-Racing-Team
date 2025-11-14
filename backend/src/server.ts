@@ -161,8 +161,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // eventScheduler.start();
   
   // US6 + US7: Start signup scheduler
-  console.log('[SignupScheduler] 🚀 Starting signup scheduler...');
-  signupScheduler.start();
+  // TEMPORARY DISABLED: blocks API requests during initial sync
+  console.log('[SignupScheduler] ⚠️  Signup scheduler DISABLED to test API fixes');
+  // signupScheduler.start();
   
   // US11: Pre-load route profiles cache
   console.log('[Routes] 🗺️  Pre-loading route profiles...');

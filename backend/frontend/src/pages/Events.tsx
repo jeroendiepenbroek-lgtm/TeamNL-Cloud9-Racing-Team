@@ -41,11 +41,11 @@ const ZP_CATEGORIES: Record<string, { color: string; label: string; bgClass: str
     borderClass: 'border-yellow-200'
   },
   'E': { 
-    color: 'bg-gray-50 text-gray-800 border-gray-200', 
+    color: 'bg-purple-50 text-purple-800 border-purple-200', 
     label: 'E',
-    bgClass: 'bg-gray-50',
-    textClass: 'text-gray-800',
-    borderClass: 'border-gray-200'
+    bgClass: 'bg-purple-50',
+    textClass: 'text-purple-800',
+    borderClass: 'border-purple-200'
   },
 };
 
