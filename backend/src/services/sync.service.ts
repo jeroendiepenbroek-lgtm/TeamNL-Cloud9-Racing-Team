@@ -101,13 +101,29 @@ export class SyncService {
   }
 
   /**
-   * 2. Sync club riders
+   * 2. Sync club riders (using bulk POST to avoid rate limits)
+   * Step 1: GET club members (returns rider IDs) - 1/60min limit
+   * Step 2: POST bulk rider data (max 1000 riders) - 1/15min limit
    */
   async syncRiders(clubId: number = TEAM_CLUB_ID): Promise<DbRider[]> {
     console.log(`🔄 Syncing riders for club ${clubId}...`);
     
     try {
-      const ridersData = await zwiftClient.getClubRiders(clubId);
+      // Step 1: Get club members (lightweight - just IDs)
+      console.log(`[SyncRiders] Step 1: Fetching club member IDs...`);
+      const clubMembers = await zwiftClient.getClubMembers(clubId);
+      const riderIds = clubMembers.map(m => m.riderId);
+      
+      console.log(`[SyncRiders] Found ${riderIds.length} club members`);
+      
+      if (riderIds.length === 0) {
+        console.warn(`[SyncRiders] No riders found for club ${clubId}`);
+        return [];
+      }
+      
+      // Step 2: Bulk fetch full rider data (efficient - 1 POST call)
+      console.log(`[SyncRiders] Step 2: Fetching full rider data via bulk POST...`);
+      const ridersData = await zwiftClient.getBulkRiders(riderIds);
       
       const riders = ridersData.map(rider => ({
         zwift_id: rider.riderId,
@@ -123,12 +139,12 @@ export class SyncService {
       const syncedRiders = await supabase.upsertRiders(riders);
 
       await supabase.createSyncLog({
-        endpoint: 'riders',
+        endpoint: 'POST /public/riders (bulk: ' + syncedRiders.length + ' riders)',
         status: 'success',
         records_processed: syncedRiders.length,
       });
 
-      console.log(`✅ Synced ${syncedRiders.length} riders`);
+      console.log(`✅ Synced ${syncedRiders.length} riders via bulk POST`);
       return syncedRiders;
     } catch (error: any) {
       const errorMessage = error instanceof Error 
