@@ -388,15 +388,42 @@ export class SyncService {
             event_type: event.type,
             sub_type: event.subType || null,
             distance_meters: event.distance ? Math.round(parseFloat(String(event.distance))) : null, // Distance is already in meters
-            elevation_meters: event.elevation ? Math.round(parseFloat(String(event.elevation))) : null,
+            // Elevation: probeer eerst van event, daarna van cached route
+            elevation_meters: (() => {
+              if (event.elevation) return Math.round(parseFloat(String(event.elevation)));
+              const routeId = (event as any).routeId || (event as any).route_id;
+              if (routeId) {
+                const cachedRoute = zwiftClient.getCachedRouteById(routeId);
+                return cachedRoute?.elevation || null;
+              }
+              return null;
+            })(),
             laps: event.numLaps ? parseInt(String(event.numLaps)) : null,  // Add laps
-            route_id: event.routeId || null,  // Store routeId from API
-            route_name: event.route?.name || null,
-            route_world: event.route?.world || null,
+            route_id: (event as any).routeId || (event as any).route_id || null,  // Store routeId from API
+            // Route info: gebruik cached route data als event.route NULL is
+            route_name: (() => {
+              if (event.route?.name) return event.route.name;
+              const routeId = (event as any).routeId || (event as any).route_id;
+              return routeId ? (zwiftClient.getCachedRouteById(routeId)?.name || null) : null;
+            })(),
+            route_world: (() => {
+              if (event.route?.world) return event.route.world;
+              const routeId = (event as any).routeId || (event as any).route_id;
+              return routeId ? (zwiftClient.getCachedRouteById(routeId)?.world || null) : null;
+            })(),
             organizer: event.organizer || null,
             category_enforcement: event.categoryEnforcement || null,
             pens: event.pens ? JSON.stringify(event.pens) : null,  // Store as JSONB
-            route_full: event.route ? JSON.stringify(event.route) : null,
+            // Route full: gebruik cached route als fallback
+            route_full: (() => {
+              if (event.route) return JSON.stringify(event.route);
+              const routeId = (event as any).routeId || (event as any).route_id;
+              if (routeId) {
+                const cachedRoute = zwiftClient.getCachedRouteById(routeId);
+                return cachedRoute ? JSON.stringify(cachedRoute) : null;
+              }
+              return null;
+            })(),
             raw_response: JSON.stringify(event),  // Full API response backup
             last_synced: new Date().toISOString(),
           };
