@@ -76,9 +76,6 @@ function Navigation() {
               <Link to="/" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-white hover:text-cyan-300 border-b-2 border-transparent hover:border-cyan-400 transition">
                 📊 Racing Matrix
               </Link>
-              <Link to="/clubs" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
-                🏢 Clubs
-              </Link>
               <Link to="/events" className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-300 hover:text-white border-b-2 border-transparent hover:border-cyan-400 transition">
                 🏁 Events
               </Link>
@@ -138,13 +135,6 @@ function Navigation() {
                 className="block px-4 py-3 text-base font-medium text-white hover:bg-gray-800 rounded-md transition"
               >
                 📊 Racing Matrix
-              </Link>
-              <Link 
-                to="/clubs" 
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-3 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition"
-              >
-                🏢 Clubs
               </Link>
               <Link 
                 to="/events" 

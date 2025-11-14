@@ -33,10 +33,8 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     const hours = req.query.hours ? parseInt(req.query.hours as string) : 36;
     const hasTeamRiders = req.query.hasTeamRiders === 'true';
     
-    // PERFORMANCE: Paginering parameters
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 50; // Max 50 events per page
-    const offset = (page - 1) * limit;
+    // US1: Pagination restrictie verwijderd - toon alle events in lookforward periode
+    // Frontend gebruikt nu volledige dataset zonder limit
     
     // Calculate time window
     const now = Math.floor(Date.now() / 1000);
@@ -48,21 +46,14 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       now_date: new Date(now * 1000).toISOString(),
       future_date: new Date(future * 1000).toISOString(),
       hours,
-      hasTeamRiders,
-      page,
-      limit,
-      offset
+      hasTeamRiders
     });
     
-    // Get upcoming events from database (ALL - for accurate total count)
-    const allBaseEvents = await supabase.getUpcomingEvents(hours, false);
-    const totalEvents = allBaseEvents.length;
+    // Get upcoming events from database (ALL events in lookforward period)
+    const baseEvents = await supabase.getUpcomingEvents(hours, false);
+    const totalEvents = baseEvents.length;
     
-    console.log(`[Events/Upcoming] Found ${totalEvents} total events`);
-    
-    // PERFORMANCE: Apply pagination to limit processing
-    const baseEvents = allBaseEvents.slice(offset, offset + limit);
-    console.log(`[Events/Upcoming] Processing page ${page}: ${baseEvents.length} events (offset ${offset})`);
+    console.log(`[Events/Upcoming] Found ${totalEvents} total events - processing ALL`);
     
     
     // Get ALL team rider IDs (all riders in our riders table, regardless of club_id)
@@ -197,15 +188,10 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       };
     });
     
-    // Response met paginering metadata
+    // US1: Response zonder pagination - alle events
     res.json({
       count: transformedEvents.length,
       total: totalEvents,
-      page,
-      limit,
-      total_pages: Math.ceil(totalEvents / limit),
-      has_next: (page * limit) < totalEvents,
-      has_prev: page > 1,
       hours,
       events: transformedEvents,
     });
