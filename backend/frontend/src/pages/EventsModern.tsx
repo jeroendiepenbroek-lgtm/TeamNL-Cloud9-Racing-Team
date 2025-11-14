@@ -4,23 +4,26 @@
  */
 
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, MapPin, UserCheck, TrendingUp, Mountain, Activity, Timer } from 'lucide-react';
+import { 
+  Calendar, MapPin, UserCheck, Timer, Users, UserCheck2,
+  Minus, TrendingUp, ChevronUp, ChevronDown, Mountain
+} from 'lucide-react';
 
 // ZP Categories met correcte kleuren
-const ZP_CATEGORIES: Record<string, { label: string; bgClass: string; textClass: string; borderClass: string }> = {
-  'A': { label: 'A', bgClass: 'bg-red-50', textClass: 'text-red-800', borderClass: 'border-red-200' },
-  'B': { label: 'B', bgClass: 'bg-green-50', textClass: 'text-green-800', borderClass: 'border-green-200' },
-  'C': { label: 'C', bgClass: 'bg-blue-50', textClass: 'text-blue-800', borderClass: 'border-blue-200' },
-  'D': { label: 'D', bgClass: 'bg-yellow-50', textClass: 'text-yellow-800', borderClass: 'border-yellow-200' },
-  'E': { label: 'E', bgClass: 'bg-purple-50', textClass: 'text-purple-800', borderClass: 'border-purple-200' },
+const ZP_CATEGORIES: Record<string, { label: string; bgClass: string; textClass: string; iconBg: string; iconText: string }> = {
+  'A': { label: 'A', bgClass: 'bg-red-50', textClass: 'text-red-800', iconBg: 'bg-red-100', iconText: 'text-red-700' },
+  'B': { label: 'B', bgClass: 'bg-green-50', textClass: 'text-green-800', iconBg: 'bg-green-100', iconText: 'text-green-700' },
+  'C': { label: 'C', bgClass: 'bg-blue-50', textClass: 'text-blue-800', iconBg: 'bg-blue-100', iconText: 'text-blue-700' },
+  'D': { label: 'D', bgClass: 'bg-yellow-50', textClass: 'text-yellow-800', iconBg: 'bg-yellow-100', iconText: 'text-yellow-700' },
+  'E': { label: 'E', bgClass: 'bg-purple-50', textClass: 'text-purple-800', iconBg: 'bg-purple-100', iconText: 'text-purple-700' },
 };
 
-// Route Profile Badges
+// US2: Betere route profile badges met specifieke iconen
 const ROUTE_PROFILES: Record<string, { icon: any; color: string; label: string }> = {
-  'Flat': { icon: Activity, color: 'bg-emerald-100 text-emerald-700 border-emerald-300', label: 'Flat' },
-  'Rolling': { icon: TrendingUp, color: 'bg-blue-100 text-blue-700 border-blue-300', label: 'Rolling' },
-  'Hilly': { icon: Mountain, color: 'bg-orange-100 text-orange-700 border-orange-300', label: 'Hilly' },
-  'Mountainous': { icon: Mountain, color: 'bg-red-100 text-red-700 border-red-300', label: 'Mountainous' },
+  'Flat': { icon: Minus, color: 'bg-emerald-50 text-emerald-700', label: 'Flat' },
+  'Rolling': { icon: TrendingUp, color: 'bg-blue-50 text-blue-700', label: 'Rolling' },
+  'Hilly': { icon: ChevronUp, color: 'bg-orange-50 text-orange-700', label: 'Hilly' },
+  'Mountainous': { icon: Mountain, color: 'bg-red-50 text-red-700', label: 'Mountainous' },
 };
 
 interface TeamRider {
@@ -80,6 +83,57 @@ function formatTimeUntil(unix: number): { text: string; urgent: boolean; veryUrg
     urgent: false,
     veryUrgent: false
   };
+}
+
+// US6: Collapsible Category Team Section Component
+function CategoryTeamSection({ 
+  category, 
+  riders, 
+  catStyle 
+}: { 
+  category: string; 
+  riders: TeamRider[]; 
+  catStyle: { label: string; bgClass: string; textClass: string; iconBg: string; iconText: string } 
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="border border-slate-200 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-7 h-7 flex items-center justify-center rounded-md ${catStyle.iconBg} ${catStyle.iconText} font-bold text-sm`}>
+            {category}
+          </div>
+          <span className="text-sm font-medium text-slate-700">
+            {riders.length} Team {riders.length === 1 ? 'Rider' : 'Riders'}
+          </span>
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="w-4 h-4 text-slate-400" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-slate-400" />
+        )}
+      </button>
+
+      {isExpanded && (
+        <div className="px-3 pb-3 pt-1">
+          <div className="flex flex-wrap gap-2">
+            {riders.map((rider) => (
+              <div
+                key={rider.rider_id}
+                className="px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-md text-xs font-medium"
+              >
+                {rider.rider_name}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Events() {
@@ -211,7 +265,7 @@ export default function Events() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredEvents.map((event) => {
             const timeInfo = event.time_unix ? formatTimeUntil(event.time_unix) : null;
-            const RouteIcon = event.route_profile ? ROUTE_PROFILES[event.route_profile]?.icon : Activity;
+            const RouteIcon = event.route_profile ? ROUTE_PROFILES[event.route_profile]?.icon : Minus;
             const routeProfile = event.route_profile ? ROUTE_PROFILES[event.route_profile] : null;
 
             return (
@@ -261,88 +315,71 @@ export default function Events() {
 
                 {/* Card Body */}
                 <div className="p-6">
-                  {/* Route Profile Badge + Total Signups */}
-                  <div className="flex items-center justify-between mb-6">
+                  {/* Route Profile Badge */}
+                  <div className="mb-4">
                     {routeProfile && (
-                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 ${routeProfile.color} font-semibold text-sm`}>
+                      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${routeProfile.color} font-medium text-sm`}>
                         <RouteIcon className="w-4 h-4" />
-                        {routeProfile.label}
-                      </div>
-                    )}
-                    {event.total_signups !== undefined && (
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-slate-800">{event.total_signups}</div>
-                        <div className="text-xs text-slate-500 font-medium">Total Signups</div>
+                        <span>{routeProfile.label}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* US1: Team Riders Count (prominent) */}
-                  {event.team_rider_count !== undefined && event.team_rider_count > 0 && (
-                    <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                      <div className="flex items-center gap-2 mb-2">
-                        <UserCheck className="w-5 h-5 text-blue-600" />
-                        <span className="text-lg font-bold text-blue-800">
-                          {event.team_rider_count} Team {event.team_rider_count === 1 ? 'Rider' : 'Riders'}
-                        </span>
+                  {/* US3, US4, US5: Compacte horizontale stats row - alleen iconen + getallen */}
+                  <div className="flex items-center gap-6 mb-6 pb-4 border-b border-slate-200">
+                    {/* Total signups (multi-person icon) */}
+                    {event.total_signups !== undefined && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Users className="w-5 h-5" />
+                        <span className="text-lg font-bold">{event.total_signups}</span>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* US3: Category Breakdown - All Signups + Team Signups */}
-                  {event.signups_by_category && Object.keys(event.signups_by_category).length > 0 && (
-                    <div className="mb-6">
-                      <div className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">
-                        Signups by Category
+                    {/* Team signups (orange checkmark) */}
+                    {event.team_rider_count !== undefined && event.team_rider_count > 0 && (
+                      <div className="flex items-center gap-2 text-orange-600">
+                        <UserCheck2 className="w-5 h-5" />
+                        <span className="text-lg font-bold">{event.team_rider_count}</span>
                       </div>
-                      <div className="space-y-2">
+                    )}
+
+                    {/* Category badges met counts */}
+                    {event.signups_by_category && (
+                      <div className="flex items-center gap-2 ml-auto">
                         {['A', 'B', 'C', 'D', 'E'].map((cat) => {
-                          const totalCount = event.signups_by_category?.[cat] || 0;
-                          const teamRiders = event.team_signups_by_category?.[cat] || [];
-                          
-                          if (totalCount === 0) return null;
-                          
+                          const count = event.signups_by_category?.[cat] || 0;
+                          if (count === 0) return null;
                           const catStyle = ZP_CATEGORIES[cat];
                           return (
-                            <div key={cat} className={`p-3 rounded-lg border-2 ${catStyle.bgClass} ${catStyle.borderClass}`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-8 h-8 flex items-center justify-center rounded-full ${catStyle.bgClass} border-2 ${catStyle.borderClass}`}>
-                                    <span className={`font-bold ${catStyle.textClass}`}>{cat}</span>
-                                  </div>
-                                  <div>
-                                    <div className={`font-bold ${catStyle.textClass}`}>
-                                      Category {cat}
-                                    </div>
-                                    <div className="text-xs text-slate-600">
-                                      {totalCount} {totalCount === 1 ? 'rider' : 'riders'}
-                                      {teamRiders.length > 0 && (
-                                        <span className="font-semibold text-blue-700"> • {teamRiders.length} from team</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {/* US2 & US3: Team riders in this category */}
-                              {teamRiders.length > 0 && (
-                                <div className="mt-2 pt-2 border-t-2 border-white/50">
-                                  <div className="flex flex-wrap gap-2">
-                                    {teamRiders.map((rider) => (
-                                      <div
-                                        key={rider.rider_id}
-                                        className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-semibold shadow-sm"
-                                      >
-                                        {rider.rider_name}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                            <div 
+                              key={cat} 
+                              className={`px-2 py-1 rounded-md text-xs font-bold ${catStyle.iconBg} ${catStyle.iconText}`}
+                              title={`Category ${cat}: ${count} riders`}
+                            >
+                              {cat}:{count}
                             </div>
                           );
                         })}
                       </div>
+                    )}
+                  </div>
+
+                  {/* US6: Collapsible team member sections per category */}
+                  {event.team_signups_by_category && Object.keys(event.team_signups_by_category).length > 0 && (
+                    <div className="space-y-2">
+                      {Object.entries(event.team_signups_by_category)
+                        .filter(([_, riders]) => riders.length > 0)
+                        .map(([cat, riders]) => {
+                          const catStyle = ZP_CATEGORIES[cat];
+                          return (
+                            <CategoryTeamSection 
+                              key={cat}
+                              category={cat}
+                              riders={riders}
+                              catStyle={catStyle}
+                            />
+                          );
+                        })}
                     </div>
                   )}
 
