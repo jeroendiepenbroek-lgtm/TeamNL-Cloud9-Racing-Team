@@ -33,6 +33,11 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     const hours = req.query.hours ? parseInt(req.query.hours as string) : 48;
     const hasTeamRiders = req.query.hasTeamRiders === 'true';
     
+    // PERFORMANCE: Paginering parameters
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50; // Max 50 events per page
+    const offset = (page - 1) * limit;
+    
     // Calculate time window
     const now = Math.floor(Date.now() / 1000);
     const future = now + (hours * 60 * 60);
@@ -43,13 +48,22 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       now_date: new Date(now * 1000).toISOString(),
       future_date: new Date(future * 1000).toISOString(),
       hours,
-      hasTeamRiders
+      hasTeamRiders,
+      page,
+      limit,
+      offset
     });
     
-    // Get upcoming events from database
-    const baseEvents = await supabase.getUpcomingEvents(hours, false);
+    // Get upcoming events from database (ALL - for accurate total count)
+    const allBaseEvents = await supabase.getUpcomingEvents(hours, false);
+    const totalEvents = allBaseEvents.length;
     
-    console.log(`[Events/Upcoming] Found ${baseEvents.length} events`);
+    console.log(`[Events/Upcoming] Found ${totalEvents} total events`);
+    
+    // PERFORMANCE: Apply pagination to limit processing
+    const baseEvents = allBaseEvents.slice(offset, offset + limit);
+    console.log(`[Events/Upcoming] Processing page ${page}: ${baseEvents.length} events (offset ${offset})`);
+    
     
     // Get ALL team rider IDs (all riders in our riders table, regardless of club_id)
     const teamRiderIds = await supabase.getAllTeamRiderIds();
@@ -121,8 +135,8 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         // US11: Signups per category (A, B, C, D, E)
         signups_by_category: signupsByCategory,
         categories: Object.keys(signupsByCategory).sort(),
-              // US1: Distance correct berekenen (meters → km)
-      distance_km: event.distance_meters ? (event.distance_meters / 1000).toFixed(1) : null,
+        // US1: Distance correct berekenen (MILLIMETERS → km in database!)
+        distance_km: event.distance_meters ? (event.distance_meters / 1000000).toFixed(1) : null,
         // US6: Elevation uit database (elevation_meters kolom)
         elevation_m: event.elevation_meters || null,
       };
@@ -137,27 +151,24 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       console.log(`[Events/Upcoming] Filtered to ${events.length} events with team riders`);
     }
     
-    // Transform events for frontend with route info enrichment
-    const transformedEvents = await Promise.all(events.map(async (event: any) => {
-      // US10: Route profile lookup (Flat, Rolling, Hilly, Mountainous)
-      let routeInfo: any = null;
+    // PERFORMANCE FIX: Route info uit DATABASE, geen externe API calls per event
+    // Route profiles zijn al gecached in memory via zwiftClient.getAllRoutes()
+    const transformedEvents = events.map((event: any) => {
+      // US10: Route profile lookup uit cache (geen async calls!)
       let routeProfile: string | null = null;
       
-      // Prioritize route_id lookup (more accurate)
+      // Gebruik gecachede route data (geladen bij server startup)
       if (event.route_id) {
-        routeInfo = await zwiftClient.getRouteById(event.route_id);
-        routeProfile = routeInfo?.profile || null;
+        const cachedRoute = zwiftClient.getCachedRouteById(event.route_id);
+        routeProfile = cachedRoute?.profile || null;
       }
-      // Fallback to distance matching
-      else if (event.distance_km) {
-        const distanceKm = parseFloat(event.distance_km);
-        if (!isNaN(distanceKm)) {
-          routeInfo = await zwiftClient.getRouteByDistance(
-            distanceKm,
-            event.route_world || undefined
-          );
-          routeProfile = routeInfo?.profile || null;
-        }
+      // Fallback: bereken profile op basis van elevation/distance ratio
+      if (!routeProfile && event.elevation_m && event.distance_km) {
+        const elevationPerKm = event.elevation_m / parseFloat(event.distance_km);
+        if (elevationPerKm < 5) routeProfile = 'flat';
+        else if (elevationPerKm < 10) routeProfile = 'rolling';
+        else if (elevationPerKm < 15) routeProfile = 'hilly';
+        else routeProfile = 'mountainous';
       }
       
       return {
@@ -167,20 +178,35 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         name: event.title || event.name,
         // US5: Event date for 48h window calculation
         event_date: new Date(event.time_unix * 1000).toISOString(),
-        // US2: Route info - ALTIJD uit database tonen
+        // US2: Route info - Database first (geen API fallback meer)
         route_id: event.route_id || null,
-        route_name: event.route_name || routeInfo?.name || null,
-        route_world: event.route_world || routeInfo?.world || null,
-        laps: event.laps || routeInfo?.laps || null,
-        // US10: Route profile badge
+        route_name: event.route_name || null,
+        route_world: event.route_world || null,
+        laps: event.laps || null,
+        // US10: Route profile badge (uit cache of berekend)
         route_profile: routeProfile || null,
+        // Data fields
+        distance_km: event.distance_km,
+        elevation_m: event.elevation_m,
+        total_signups: event.total_signups,
+        team_rider_count: event.team_rider_count,
+        team_riders: event.team_riders,
+        team_signups_by_category: event.team_signups_by_category,
+        signups_by_category: event.signups_by_category,
+        categories: event.categories,
       };
-    }));
+    });
     
+    // Response met paginering metadata
     res.json({
       count: transformedEvents.length,
-      lookforward_hours: hours,
-      has_team_riders_only: hasTeamRiders,
+      total: totalEvents,
+      page,
+      limit,
+      total_pages: Math.ceil(totalEvents / limit),
+      has_next: (page * limit) < totalEvents,
+      has_prev: page > 1,
+      hours,
       events: transformedEvents,
     });
   } catch (error) {

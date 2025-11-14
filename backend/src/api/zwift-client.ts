@@ -347,6 +347,18 @@ export class ZwiftApiClient {
   }
 
   /**
+   * SYNC: Get cached route by ID without async call (PERFORMANCE)
+   * Returns null if cache not loaded yet
+   */
+  getCachedRouteById(routeId: string | number): any | null {
+    if (!this.routesCache || Date.now() >= this.routesCacheExpiry) {
+      return null; // Cache expired or not loaded
+    }
+    const routeIdStr = String(routeId);
+    return this.routesCache.get(routeIdStr) || null;
+  }
+
+  /**
    * US4: Get route details by route ID (most accurate)
    * Returns full route object with name, world, profile, laps etc
    */
