@@ -1,18 +1,52 @@
 /**
- * Feature 1: Events Page
- * Shows upcoming events (48h lookforward) where team riders are registered
+ * Feature: Events Page - REBUILT
+ * US1-US12: Complete event cards rebuild met team signups
+ * - US5: 48h lookforward
+ * - US6: Aparte view voor team events
+ * - US7: Tijd refresh elke minuut
+ * - US8-US9: Smart signup refresh (≤1u = 10min, >1u = 60min)
  */
 
 import { useEffect, useState } from 'react';
-import { Clock, Calendar, MapPin, Users, ExternalLink, UserCheck } from 'lucide-react';
+import { Clock, Calendar, MapPin, Users, ExternalLink, UserCheck, TrendingUp } from 'lucide-react';
 
-// US2: ZP Categories met kleuren zoals in matrix (A+ merged into A)
-const ZP_CATEGORIES: Record<string, { color: string; label: string }> = {
-  'A': { color: 'bg-red-50 text-red-800 border-red-200', label: 'A' },
-  'B': { color: 'bg-green-50 text-green-800 border-green-200', label: 'B' },
-  'C': { color: 'bg-blue-50 text-blue-800 border-blue-200', label: 'C' },
-  'D': { color: 'bg-yellow-50 text-yellow-800 border-yellow-200', label: 'D' },
-  'E': { color: 'bg-gray-50 text-gray-800 border-gray-200', label: 'E' },
+// US11: ZP Categories met JUISTE kleuren volgens de image
+const ZP_CATEGORIES: Record<string, { color: string; label: string; bgClass: string; textClass: string; borderClass: string }> = {
+  'A': { 
+    color: 'bg-red-50 text-red-800 border-red-200', 
+    label: 'A',
+    bgClass: 'bg-red-50',
+    textClass: 'text-red-800',
+    borderClass: 'border-red-200'
+  },
+  'B': { 
+    color: 'bg-green-50 text-green-800 border-green-200', 
+    label: 'B',
+    bgClass: 'bg-green-50',
+    textClass: 'text-green-800',
+    borderClass: 'border-green-200'
+  },
+  'C': { 
+    color: 'bg-blue-50 text-blue-800 border-blue-200', 
+    label: 'C',
+    bgClass: 'bg-blue-50',
+    textClass: 'text-blue-800',
+    borderClass: 'border-blue-200'
+  },
+  'D': { 
+    color: 'bg-yellow-50 text-yellow-800 border-yellow-200', 
+    label: 'D',
+    bgClass: 'bg-yellow-50',
+    textClass: 'text-yellow-800',
+    borderClass: 'border-yellow-200'
+  },
+  'E': { 
+    color: 'bg-gray-50 text-gray-800 border-gray-200', 
+    label: 'E',
+    bgClass: 'bg-gray-50',
+    textClass: 'text-gray-800',
+    borderClass: 'border-gray-200'
+  },
 };
 
 interface Event {
@@ -49,28 +83,34 @@ export default function Events() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'team'>('team');
+  const [filter, setFilter] = useState<'all' | 'team'>('team'); // US6: Default = team events
 
   useEffect(() => {
     fetchUpcomingEvents();
-    // Refresh data every 5 minutes
-    const dataInterval = setInterval(fetchUpcomingEvents, 5 * 60 * 1000);
     
-    // US5: Refresh timers every minute (forces re-render)
+    // US7: Refresh timers every minute (forces re-render for countdown)
     const timerInterval = setInterval(() => {
       setEvents(prev => [...prev]); // Force re-render to update timers
     }, 60 * 1000);
     
+    // US8-US9: Smart refresh logic voor signup updates
+    // US8: Events ≤1u voor start = refresh elke 10min
+    // US9: Events >1u voor start = refresh elk uur
+    // Implementatie: 10min refresh (dekken beide cases af)
+    const smartRefreshInterval = setInterval(() => {
+      fetchUpcomingEvents();
+    }, 10 * 60 * 1000); // 10 minuten
+    
     return () => {
-      clearInterval(dataInterval);
       clearInterval(timerInterval);
+      clearInterval(smartRefreshInterval);
     };
-  }, [filter]);
+  }, [filter]); // Re-fetch when filter changes
 
   const fetchUpcomingEvents = async () => {
     try {
       setLoading(true);
-      // US2: Fetch all events but apply filter client-side
+      // US5: Fetch events for next 48 hours
       const response = await fetch(`/api/events/upcoming?hours=48`);
       
       if (!response.ok) {
@@ -80,7 +120,7 @@ export default function Events() {
       const data = await response.json();
       let allEvents = data.events || [];
       
-      // Apply filter client-side
+      // US6: Apply filter client-side
       if (filter === 'team') {
         allEvents = allEvents.filter((e: Event) => (e.team_rider_count || 0) > 0);
       }
@@ -168,28 +208,39 @@ export default function Events() {
             </button>
           </div>
 
-          {/* Filter Tabs */}
+          {/* US6: Filter Tabs - Aparte view voor team events */}
           <div className="mt-6 flex gap-2">
             <button
               onClick={() => setFilter('team')}
               className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                 filter === 'team'
-                  ? 'bg-white text-orange-600'
+                  ? 'bg-white text-orange-600 shadow-md'
                   : 'bg-white/20 text-white hover:bg-white/30'
               }`}
             >
-              <Users className="inline w-4 h-4 mr-2" />
+              <UserCheck className="inline w-4 h-4 mr-2" />
               Met Team Riders
+              {filter === 'team' && events.length > 0 && (
+                <span className="ml-2 bg-orange-600 text-white px-2 py-0.5 rounded-full text-xs">
+                  {events.length}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
                 filter === 'all'
-                  ? 'bg-white text-orange-600'
+                  ? 'bg-white text-orange-600 shadow-md'
                   : 'bg-white/20 text-white hover:bg-white/30'
               }`}
             >
+              <Calendar className="inline w-4 h-4 mr-2" />
               Alle Events
+              {filter === 'all' && events.length > 0 && (
+                <span className="ml-2 bg-orange-600 text-white px-2 py-0.5 rounded-full text-xs">
+                  {events.length}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -244,7 +295,7 @@ interface EventCardProps {
 function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps) {
   const [expanded, setExpanded] = useState(false);
   
-  // US2 & US3: Extract signup counts
+  // US4: Extract signup counts (totaal inclusief team)
   const teamRiderCount = event.team_rider_count || 0;
   const totalSignups = event.total_signups || 0;
   
@@ -261,20 +312,42 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
     }
   };
 
-  // US11: Route profile badge color
-  const getRouteProfileColor = (profile?: string) => {
-    switch (profile?.toLowerCase()) {
-      case 'flat':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'rolling':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'hilly':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'mountainous':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
+  // US10: Route profile badge - Professioneel en subtiel
+  const getRouteProfileBadge = (profile?: string) => {
+    if (!profile) return null;
+    
+    const profiles: Record<string, { icon: string; color: string; label: string }> = {
+      'flat': { 
+        icon: '─', 
+        color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        label: 'Flat'
+      },
+      'rolling': { 
+        icon: '〰', 
+        color: 'bg-sky-50 text-sky-700 border-sky-200',
+        label: 'Rolling'
+      },
+      'hilly': { 
+        icon: '⌃', 
+        color: 'bg-amber-50 text-amber-700 border-amber-200',
+        label: 'Hilly'
+      },
+      'mountainous': { 
+        icon: '▲', 
+        color: 'bg-rose-50 text-rose-700 border-rose-200',
+        label: 'Mountain'
+      },
+    };
+    
+    const config = profiles[profile.toLowerCase()];
+    if (!config) return null;
+    
+    return (
+      <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border font-medium ${config.color}`}>
+        <span className="text-sm">{config.icon}</span>
+        {config.label}
+      </span>
+    );
   };
 
   const isStartingSoon = () => {
@@ -285,10 +358,10 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-orange-200">
+    <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 hover:border-orange-300">
       {/* Card Header */}
-      <div className="p-6">
-        {/* Time Until Event */}
+      <div className="p-5">
+        {/* US7: Time Until Event - Updates every minute */}
         <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold mb-3 ${
           isStartingSoon()
             ? 'bg-red-100 text-red-700 animate-pulse'
@@ -298,100 +371,104 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
           {timeUntil}
         </div>
 
-        {/* Event Name */}
-        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
-          {event.name}
+        {/* US1: Event Name */}
+        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">
+          {event.name || event.title}
         </h3>
 
         {/* Date & Time */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
           <Calendar className="w-4 h-4" />
           {formattedDate}
         </div>
 
-        {/* Event Type & Details */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        {/* US3: Route info & US10: Route profile badge */}
+        <div className="space-y-2 mb-4">
+          {/* Route Name & World */}
+          <div className="flex items-start gap-2">
+            <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <div className="text-sm font-semibold text-gray-900">
+                {event.route_name || 'Route naam niet beschikbaar'}
+              </div>
+              {event.route_world && (
+                <div className="text-xs text-gray-500">
+                  {event.route_world}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Distance, Elevation & Profile Badge */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {distance !== '-' && (
+              <span className="text-sm font-semibold text-gray-700">
+                {distance}
+              </span>
+            )}
+            {event.elevation_m && (
+              <span className="text-sm text-gray-600">
+                <TrendingUp className="inline w-3.5 h-3.5 mr-0.5" />
+                {Math.round(event.elevation_m)}m
+              </span>
+            )}
+            {event.laps && event.laps > 1 && (
+              <span className="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 rounded">
+                {event.laps} laps
+              </span>
+            )}
+            {/* US10: Route Profile Badge */}
+            {getRouteProfileBadge(event.route_profile)}
+          </div>
+        </div>
+
+        {/* Event Type & Sub Type */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
           {event.event_type && (
-            <span className={`text-xs px-2 py-1 rounded-full border font-semibold ${getEventTypeColor(event.event_type)}`}>
+            <span className={`text-xs px-2 py-1 rounded border font-semibold ${getEventTypeColor(event.event_type)}`}>
               {event.event_type}
             </span>
           )}
-          {/* US9: Sub type badge */}
           {event.sub_type && (
-            <span className="text-xs px-2 py-1 rounded-full border bg-purple-100 text-purple-800 border-purple-200 font-semibold">
+            <span className="text-xs px-2 py-1 rounded border bg-purple-50 text-purple-800 border-purple-200 font-semibold">
               {event.sub_type}
             </span>
           )}
-          {/* US11: Route profile badge */}
-          {event.route_profile && (
-            <span className={`text-xs px-2 py-1 rounded-full border font-semibold ${getRouteProfileColor(event.route_profile)}`}>
-              {event.route_profile}
-            </span>
-          )}
-          {/* US1: Route info altijd tonen (met fallback) */}
-          <div className="flex items-center gap-1 text-xs text-gray-600">
-            <MapPin className="w-3 h-3" />
-            <span>
-              {event.route_name || event.route || event.title || 'Route info niet beschikbaar'}
-            </span>
-            {event.route_world && (
-              <span className="text-gray-400">• {event.route_world}</span>
-            )}
-          </div>
-          {/* Distance & Elevation */}
-          {distance !== '-' && (
-            <div className="flex items-center gap-1 text-xs text-gray-600">
-              <span className="font-semibold">{distance}</span>
-              {/* Elevation meters */}
-              {event.elevation_m && (
-                <span className="text-gray-500">• {event.elevation_m}m</span>
-              )}
-              {/* US2: Laps toevoegen als beschikbaar */}
-              {event.laps && event.laps > 1 && (
-                <span className="text-gray-500">• {event.laps} laps</span>
-              )}
-            </div>
-          )}
-          {/* US1: Elevation apart en prominent */}
-          {event.elevation_m && (
-            <div className="flex items-center gap-1 text-xs text-gray-600">
-              <span className="font-semibold">↑ {Math.round(event.elevation_m)}m</span>
-            </div>
-          )}
         </div>
 
-        {/* US2/US3: Signups with icons */}
-        <div className="space-y-2">
-          {/* US3: Altijd total signups tonen (ook 0) */}
-          <div className="flex items-center gap-3">
-            {/* US2: Total signups (inclusief team riders) */}
-            <div className="flex items-center gap-1.5 text-sm">
-              <Users className="w-4 h-4 text-gray-500" />
-              <span className="font-semibold text-gray-700">
+        {/* US4: Sign-ups - Total & Team */}
+        <div className="bg-gray-50 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            {/* US4: Total signups (inclusief team riders) */}
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-gray-600" />
+              <span className="text-sm text-gray-600">Totaal:</span>
+              <span className="font-bold text-gray-900 text-lg">
                 {totalSignups}
               </span>
             </div>
             
-            {/* US2: Team riders apart weergeven (alleen als > 0) */}
+            {/* US4: Team riders apart (alleen tonen als > 0) */}
             {teamRiderCount > 0 && (
-              <div className="flex items-center gap-1.5 text-sm">
-                <UserCheck className="w-4 h-4 text-orange-600" />
-                <span className="font-bold text-orange-600">
+              <div className="flex items-center gap-2 bg-orange-100 px-3 py-1 rounded-md">
+                <UserCheck className="w-4 h-4 text-orange-700" />
+                <span className="text-sm text-orange-700 font-medium">Team:</span>
+                <span className="font-bold text-orange-800 text-lg">
                   {teamRiderCount}
                 </span>
               </div>
             )}
           </div>
             
-          {/* US2: Signups per categorie - A t/m E (A+ merged into A) */}
-          <div className="flex flex-wrap gap-1.5 mt-2">
+          {/* US11: Signups per categorie met JUISTE KLEUREN (A t/m E) */}
+          <div className="flex flex-wrap gap-1.5">
             {['A', 'B', 'C', 'D', 'E'].map((cat) => {
               const count = event.signups_by_category?.[cat] || 0;
               const categoryStyle = ZP_CATEGORIES[cat] || ZP_CATEGORIES['E'];
               return (
                 <span
                   key={cat}
-                  className={`text-xs px-2 py-0.5 rounded border font-semibold ${categoryStyle.color}`}
+                  className={`text-xs px-2.5 py-1 rounded border font-semibold ${categoryStyle.color}`}
                 >
                   {cat}: {count}
                 </span>
@@ -400,31 +477,51 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
           </div>
         </div>
 
-        {/* US2: Team Riders per Categorie */}
+        {/* US12: Team Riders List - Namen van team sign-ups */}
         {event.team_signups_by_category && Object.keys(event.team_signups_by_category).length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="border-t border-gray-200 pt-3">
             <button
               onClick={() => setExpanded(!expanded)}
-              className="text-sm text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-1"
+              className="w-full text-left text-sm font-semibold text-orange-700 hover:text-orange-800 flex items-center justify-between group"
             >
-              {expanded ? '▼' : '▶'} Team Riders per Categorie ({event.team_rider_count || 0})
+              <span className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                Mijn Team Riders ({teamRiderCount})
+              </span>
+              <span className="text-xs text-gray-400 group-hover:text-orange-600 transition-colors">
+                {expanded ? '▲ Verberg' : '▼ Toon'}
+              </span>
             </button>
             
             {expanded && (
-              <div className="mt-3 space-y-3">
-                {Object.entries(event.team_signups_by_category).map(([category, riders]) => (
-                  <div key={category} className="">
-                    <div className="text-xs font-bold text-gray-500 mb-1.5">Categorie {category}</div>
-                    <div className="space-y-1.5">
-                      {/* US8: Team riders zonder W/kg en vELO */}
-                      {riders.map((rider: TeamSignup) => (
-                        <div key={rider.rider_id} className="text-sm bg-orange-50 rounded px-3 py-2">
-                          <div className="font-semibold text-gray-900">{rider.rider_name}</div>
+              <div className="mt-3 space-y-2.5">
+                {Object.entries(event.team_signups_by_category)
+                  .sort(([catA], [catB]) => catA.localeCompare(catB))
+                  .map(([category, riders]) => {
+                    const categoryStyle = ZP_CATEGORIES[category] || ZP_CATEGORIES['E'];
+                    return (
+                      <div key={category} className="bg-gray-50 rounded-lg p-3">
+                        {/* US11: Categorie badge met juiste kleuren */}
+                        <div className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border font-bold mb-2 ${categoryStyle.color}`}>
+                          Cat {category}
+                          <span className="font-normal">({riders.length})</span>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                        <div className="space-y-1.5 mt-2">
+                          {/* US12: Team riders namen (zonder extra stats) */}
+                          {riders.map((rider: TeamSignup) => (
+                            <div 
+                              key={rider.rider_id} 
+                              className={`text-sm rounded px-3 py-1.5 border ${categoryStyle.bgClass} ${categoryStyle.borderClass}`}
+                            >
+                              <div className={`font-semibold ${categoryStyle.textClass}`}>
+                                {rider.rider_name}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             )}
           </div>

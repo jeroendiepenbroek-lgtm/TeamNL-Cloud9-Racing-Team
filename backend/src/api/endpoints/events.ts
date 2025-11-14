@@ -55,16 +55,18 @@ router.get('/upcoming', async (req: Request, res: Response) => {
     const teamRiderIds = await supabase.getAllTeamRiderIds();
     console.log(`[Events/Upcoming] Team has ${teamRiderIds.length} riders (from view_my_team)`);
     
-    // Bulk fetch signup data for ALL events (optimized - 2 queries instead of N×2)
-    // IMPORTANT: event_id is stored as STRING in zwift_api_event_signups table
+    // US2: Bulk fetch signup data for ALL events (optimized - 2 queries instead of N×2)
+    // CRITICAL: event_id consistency - zwift_api_events en zwift_api_event_signups beide gebruiken TEXT
     const eventIds = baseEvents.map((e: any) => String(e.event_id));
+    
+    console.log(`[Events/Upcoming] Processing ${eventIds.length} event IDs (sample):`, eventIds.slice(0, 3));
     
     const signupCounts = await supabase.getSignupCountsForEvents(eventIds);
     const teamSignupsByEvent = await supabase.getTeamSignupsForEvents(eventIds, teamRiderIds);
     
     console.log(`[Events/Upcoming] Fetched signup data for ${eventIds.length} events`);
     
-    // Bulk fetch ALL signup data for category counts (US1)
+    // US4 & US11: Bulk fetch ALL signup data for category counts
     const allSignupsByEvent = await supabase.getAllSignupsByCategory(eventIds);
     console.log(`[Events/Upcoming] allSignupsByEvent size: ${allSignupsByEvent.size}, sample keys:`, Array.from(allSignupsByEvent.keys()).slice(0, 3));
     
@@ -78,36 +80,35 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         console.log(`[Events/Upcoming] Event ${eventIdStr} has ${allSignups.length} signups`);
       }
       
-      // US1: Count signups per category from ALL signups
-      // US2: Merge A+ into A category
+      // US11: Count signups per category from ALL signups
+      // Merge A+ into A category
       const signupsByCategory: Record<string, number> = {};
       allSignups.forEach(signup => {
         let pen = signup.pen_name || 'Unknown';
-        // US2: Merge A+ into A
+        // Merge A+ into A
         if (pen === 'A+') pen = 'A';
         signupsByCategory[pen] = (signupsByCategory[pen] || 0) + 1;
       });
       
-      // US1: Total signups = actual count from allSignups
+      // US4: Total signups = actual count from allSignups (inclusief team riders)
       const totalSignups = allSignups.length;
       
-      // Group team signups by category
+      // US12: Group team signups by category (alleen namen, geen stats)
       const teamSignupsByCategory: Record<string, any[]> = {};
       teamSignups.forEach(signup => {
         let pen = signup.pen_name || 'Unknown';
-        // US2: Merge A+ into A
+        // Merge A+ into A
         if (pen === 'A+') pen = 'A';
         if (!teamSignupsByCategory[pen]) teamSignupsByCategory[pen] = [];
         teamSignupsByCategory[pen].push({
           rider_id: signup.rider_id,
           rider_name: signup.rider_name,
-          power_wkg5: signup.power_wkg5,
-          race_rating: signup.race_rating,
         });
       });
       
       return {
         ...event,
+        // US4: Signups (totaal inclusief team)
         total_signups: totalSignups,
         team_rider_count: teamSignups.length,
         team_riders: teamSignups.map(s => ({
@@ -115,12 +116,13 @@ router.get('/upcoming', async (req: Request, res: Response) => {
           rider_name: s.rider_name,
           pen_name: s.pen_name,
         })),
+        // US12: Team signups gegroepeerd per categorie
         team_signups_by_category: teamSignupsByCategory,
-        // US1: Signups per category
+        // US11: Signups per category (A, B, C, D, E)
         signups_by_category: signupsByCategory,
         categories: Object.keys(signupsByCategory).sort(),
-        // US3: Distance & elevation from database (distance_meters is already × 1000)
-        distance_km: event.distance_meters ? (event.distance_meters / 1000000).toFixed(1) : null,
+        // US3: Distance & elevation from database
+        distance_km: event.distance_meters ? (event.distance_meters / 1000).toFixed(1) : null,
         elevation_m: event.elevation_meters || null,
       };
     });
@@ -134,10 +136,9 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       console.log(`[Events/Upcoming] Filtered to ${events.length} events with team riders`);
     }
     
-    // Transform time_unix to event_date for frontend compatibility
-    // US11 & US4: Add route profile and route info lookup
+    // Transform events for frontend with route info enrichment
     const transformedEvents = await Promise.all(events.map(async (event: any) => {
-      // US4: Try to get full route info
+      // US10: Route profile lookup (Flat, Rolling, Hilly, Mountainous)
       let routeInfo: any = null;
       let routeProfile: string | null = null;
       
@@ -160,15 +161,18 @@ router.get('/upcoming', async (req: Request, res: Response) => {
       
       return {
         ...event,
-        event_id: parseInt(event.event_id) || event.event_id,
+        // US2: Event ID consistency (keep as number for frontend)
+        event_id: event.event_id,
         name: event.title || event.name,
+        // US5: Event date for 48h window calculation
         event_date: new Date(event.time_unix * 1000).toISOString(),
-        // US4: Add route info if found (prefer matched data over DB data)
+        // US3: Route info (prefer API matched data over DB data)
         route_id: event.route_id || null,
         route_name: routeInfo?.name || event.route_name || null,
         route_world: routeInfo?.world || event.route_world || null,
         laps: routeInfo?.laps || event.laps || null,
-        route_profile: routeProfile, // US11: Flat, Rolling, Hilly, Mountainous
+        // US10: Route profile badge
+        route_profile: routeProfile,
       };
     }));
     
