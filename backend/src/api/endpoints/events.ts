@@ -173,7 +173,6 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         route_id: event.route_id || null,
         route_name: event.route_name || null,
         route_world: event.route_world || null,
-        laps: event.laps || null,
         // US10: Route profile badge (uit cache of berekend)
         route_profile: routeProfile || null,
         // Data fields

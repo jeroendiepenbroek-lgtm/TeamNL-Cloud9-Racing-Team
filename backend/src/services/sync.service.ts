@@ -425,7 +425,6 @@ export class SyncService {
               }
               return null;
             })(),
-            laps: event.numLaps ? parseInt(String(event.numLaps)) : null,  // Add laps
             route_id: (event as any).routeId || (event as any).route_id || null,  // Store routeId from API
             // Route info: gebruik cached route data als event.route NULL is
             route_name: (() => {
