@@ -10,6 +10,7 @@ import EventsModern from './pages/EventsModern'
 import Sync from './pages/Sync'
 import SyncConfig from './pages/SyncConfig'
 import RacingDataMatrix from './pages/RacingDataMatrix'
+import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
 import AdminHome from './pages/AdminHome'
@@ -254,6 +255,9 @@ function AppContent() {
         <Routes>
           {/* Landing Page - Matrix */}
           <Route path="/" element={<RacingDataMatrix />} />
+          
+          {/* Modern Matrix POC - State of the Art Team Dashboard */}
+          <Route path="/team/modern" element={<RacingDataMatrixModern />} />
           
           {/* Public Pages */}
           <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
