@@ -33,6 +33,9 @@ import { signupScheduler } from './services/signup-scheduler.service.js';
 // US3 + US4: Smart event sync (intelligent intervals)
 import { smartEventSync } from './schedulers/smart-event-sync.js';
 
+// Rider sync scheduler
+import { riderSyncScheduler } from './schedulers/rider-sync.js';
+
 // US11: Zwift API client voor route profiles
 import { zwiftClient } from './api/zwift-client.js';
 
@@ -170,6 +173,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // US3 + US4: Start smart event sync (>1h = 1h, <=1h = 10min)
   console.log('[SmartEventSync] 🧠 Starting intelligent event sync...');
   smartEventSync.start();
+  
+  // Rider Sync: Start rider sync scheduler (configureerbaar interval)
+  console.log('[RiderSync] 🏃 Starting rider sync scheduler...');
+  riderSyncScheduler.start();
   
   // US11: Pre-load route profiles cache
   console.log('[Routes] 🗺️  Pre-loading route profiles...');

@@ -6,6 +6,7 @@
 import { Request, Response, Router } from 'express';
 import { syncConfigService } from '../../services/sync-config.service.js';
 import { smartEventSync } from '../../schedulers/smart-event-sync.js';
+import { riderSyncScheduler } from '../../schedulers/rider-sync.js';
 
 const router = Router();
 
@@ -61,12 +62,15 @@ router.put('/config', async (req: Request, res: Response) => {
     // Update configuratie
     const newConfig = syncConfigService.updateConfig(updates);
     
-    // Restart scheduler met nieuwe configuratie
+    // Restart schedulers met nieuwe configuratie
     console.log('[SyncConfig API] Restarting smartEventSync with new config...');
     smartEventSync.restart();
     
+    console.log('[SyncConfig API] Restarting riderSyncScheduler with new config...');
+    riderSyncScheduler.restart();
+    
     res.json({
-      message: 'Configuratie succesvol bijgewerkt en scheduler herstart',
+      message: 'Configuratie succesvol bijgewerkt en schedulers herstart',
       config: newConfig
     });
   } catch (error: any) {
@@ -80,17 +84,42 @@ router.post('/config/reset', async (req: Request, res: Response) => {
   try {
     const config = syncConfigService.resetToDefaults();
     
-    // Restart scheduler
+    // Restart schedulers
     console.log('[SyncConfig API] Restarting smartEventSync with default config...');
     smartEventSync.restart();
     
+    console.log('[SyncConfig API] Restarting riderSyncScheduler with default config...');
+    riderSyncScheduler.restart();
+    
     res.json({
-      message: 'Configuratie gereset naar standaardwaarden en scheduler herstart',
+      message: 'Configuratie gereset naar standaardwaarden en schedulers herstart',
       config
     });
   } catch (error) {
     console.error('Error resetting sync config:', error);
     res.status(500).json({ error: 'Fout bij resetten configuratie' });
+  }
+});
+
+// POST /api/sync/riders/now - Trigger rider sync handmatig
+router.post('/riders/now', async (req: Request, res: Response) => {
+  try {
+    console.log('[SyncConfig API] Manual rider sync triggered...');
+    const result = await riderSyncScheduler.syncNow();
+    
+    if (result.success) {
+      res.json({
+        message: `Riders succesvol gesynchroniseerd: ${result.count} riders`,
+        count: result.count
+      });
+    } else {
+      res.status(500).json({
+        error: result.error || 'Rider sync gefaald'
+      });
+    }
+  } catch (error: any) {
+    console.error('Error triggering rider sync:', error);
+    res.status(500).json({ error: error.message || 'Fout bij rider sync' });
   }
 });
 
