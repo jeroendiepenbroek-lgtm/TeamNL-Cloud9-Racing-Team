@@ -23,6 +23,12 @@ const ROUTE_PROFILES: Record<string, { icon: any; color: string; label: string }
   'Mountainous': { icon: Mountain, color: 'bg-red-100 text-red-700 border-red-300', label: 'Mountainous' },
 };
 
+interface TeamRider {
+  rider_id: number;
+  rider_name: string;
+  pen_name: string;
+}
+
 interface Event {
   event_id: string | number;
   title?: string;
@@ -35,15 +41,10 @@ interface Event {
   time_unix?: number;
   total_signups?: number;
   team_rider_count?: number;
-  signups?: {
-    total?: number;
-    A?: number;
-    B?: number;
-    C?: number;
-    D?: number;
-    E?: number;
-  };
-  team_signups?: Array<{ rider_name: string; pen_name: string }>;
+  team_riders?: TeamRider[];
+  signups_by_category?: Record<string, number>;
+  team_signups_by_category?: Record<string, TeamRider[]>;
+  categories?: string[];
 }
 
 // US5: Countdown formatter - elke minuut refresh
@@ -240,13 +241,19 @@ export default function Events() {
                     )}
                   </div>
 
-                  {/* Route Info */}
+                  {/* US4: Route Info + Distance & Elevation in header */}
                   {event.route_name && (
-                    <div className="flex items-center gap-2 text-white/90">
+                    <div className="flex items-center gap-2 text-white/90 text-sm">
                       <MapPin className="w-4 h-4" />
                       <span className="font-medium">{event.route_name}</span>
                       {event.route_world && (
                         <span className="text-white/70">• {event.route_world}</span>
+                      )}
+                      {event.distance_km && (
+                        <span className="text-white/70">• {event.distance_km}km</span>
+                      )}
+                      {event.elevation_m !== undefined && (
+                        <span className="text-white/70">• {event.elevation_m}m</span>
                       )}
                     </div>
                   )}
@@ -254,54 +261,84 @@ export default function Events() {
 
                 {/* Card Body */}
                 <div className="p-6">
-                  {/* Stats Row */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    {event.distance_km && (
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-slate-800">{event.distance_km}</div>
-                        <div className="text-xs text-slate-500 font-medium">Distance (km)</div>
-                      </div>
-                    )}
-                    {event.elevation_m !== undefined && (
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-slate-800">{event.elevation_m}m</div>
-                        <div className="text-xs text-slate-500 font-medium">Elevation</div>
+                  {/* Route Profile Badge + Total Signups */}
+                  <div className="flex items-center justify-between mb-6">
+                    {routeProfile && (
+                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 ${routeProfile.color} font-semibold text-sm`}>
+                        <RouteIcon className="w-4 h-4" />
+                        {routeProfile.label}
                       </div>
                     )}
                     {event.total_signups !== undefined && (
-                      <div className="text-center">
+                      <div className="text-right">
                         <div className="text-2xl font-bold text-slate-800">{event.total_signups}</div>
-                        <div className="text-xs text-slate-500 font-medium">Signups</div>
+                        <div className="text-xs text-slate-500 font-medium">Total Signups</div>
                       </div>
                     )}
                   </div>
 
-                  {/* Route Profile Badge */}
-                  {routeProfile && (
-                    <div className="mb-4">
-                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 ${routeProfile.color} font-semibold`}>
-                        <RouteIcon className="w-4 h-4" />
-                        {routeProfile.label}
+                  {/* US1: Team Riders Count (prominent) */}
+                  {event.team_rider_count !== undefined && event.team_rider_count > 0 && (
+                    <div className="mb-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <UserCheck className="w-5 h-5 text-blue-600" />
+                        <span className="text-lg font-bold text-blue-800">
+                          {event.team_rider_count} Team {event.team_rider_count === 1 ? 'Rider' : 'Riders'}
+                        </span>
                       </div>
                     </div>
                   )}
 
-                  {/* Category Badges */}
-                  {event.signups && (
-                    <div className="mb-4">
-                      <div className="text-xs font-semibold text-slate-500 mb-2">CATEGORIES</div>
-                      <div className="flex flex-wrap gap-2">
+                  {/* US3: Category Breakdown - All Signups + Team Signups */}
+                  {event.signups_by_category && Object.keys(event.signups_by_category).length > 0 && (
+                    <div className="mb-6">
+                      <div className="text-xs font-semibold text-slate-500 mb-3 uppercase tracking-wide">
+                        Signups by Category
+                      </div>
+                      <div className="space-y-2">
                         {['A', 'B', 'C', 'D', 'E'].map((cat) => {
-                          const count = event.signups?.[cat as keyof typeof event.signups] || 0;
-                          if (count === 0) return null;
+                          const totalCount = event.signups_by_category?.[cat] || 0;
+                          const teamRiders = event.team_signups_by_category?.[cat] || [];
+                          
+                          if (totalCount === 0) return null;
                           
                           const catStyle = ZP_CATEGORIES[cat];
                           return (
-                            <div
-                              key={cat}
-                              className={`px-3 py-1.5 rounded-lg border-2 ${catStyle.bgClass} ${catStyle.textClass} ${catStyle.borderClass} font-bold text-sm`}
-                            >
-                              {cat}: {count}
+                            <div key={cat} className={`p-3 rounded-lg border-2 ${catStyle.bgClass} ${catStyle.borderClass}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 flex items-center justify-center rounded-full ${catStyle.bgClass} border-2 ${catStyle.borderClass}`}>
+                                    <span className={`font-bold ${catStyle.textClass}`}>{cat}</span>
+                                  </div>
+                                  <div>
+                                    <div className={`font-bold ${catStyle.textClass}`}>
+                                      Category {cat}
+                                    </div>
+                                    <div className="text-xs text-slate-600">
+                                      {totalCount} {totalCount === 1 ? 'rider' : 'riders'}
+                                      {teamRiders.length > 0 && (
+                                        <span className="font-semibold text-blue-700"> • {teamRiders.length} from team</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* US2 & US3: Team riders in this category */}
+                              {teamRiders.length > 0 && (
+                                <div className="mt-2 pt-2 border-t-2 border-white/50">
+                                  <div className="flex flex-wrap gap-2">
+                                    {teamRiders.map((rider) => (
+                                      <div
+                                        key={rider.rider_id}
+                                        className="px-3 py-1 bg-blue-600 text-white rounded-full text-xs font-semibold shadow-sm"
+                                      >
+                                        {rider.rider_name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
@@ -309,23 +346,23 @@ export default function Events() {
                     </div>
                   )}
 
-                  {/* Team Riders */}
-                  {event.team_signups && event.team_signups.length > 0 && (
+                  {/* US2: All Team Riders (fallback if no category breakdown) */}
+                  {event.team_riders && event.team_riders.length > 0 && !event.team_signups_by_category && (
                     <div className="pt-4 border-t border-slate-200">
                       <div className="flex items-center gap-2 mb-3">
                         <UserCheck className="w-4 h-4 text-blue-600" />
                         <span className="text-sm font-semibold text-slate-700">
-                          Team Riders ({event.team_signups.length})
+                          Team Riders ({event.team_riders.length})
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {event.team_signups.map((signup, idx) => (
+                        {event.team_riders.map((rider) => (
                           <div
-                            key={idx}
+                            key={rider.rider_id}
                             className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 text-sm font-medium"
                           >
-                            {signup.rider_name}
-                            {signup.pen_name && ` • ${signup.pen_name}`}
+                            {rider.rider_name}
+                            {rider.pen_name && ` • ${rider.pen_name}`}
                           </div>
                         ))}
                       </div>

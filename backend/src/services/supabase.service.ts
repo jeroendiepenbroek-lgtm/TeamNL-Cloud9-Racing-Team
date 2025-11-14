@@ -129,6 +129,26 @@ export class SupabaseService {
     return data || [];
   }
 
+  // Get raw upcoming events (for schedulers) - alleen event_id, title, time_unix
+  async getUpcomingEventsRaw(hours: number): Promise<Array<{ event_id: string; title: string; time_unix: number }>> {
+    const now = Math.floor(Date.now() / 1000);
+    const future = now + (hours * 60 * 60);
+    
+    const { data, error } = await this.client
+      .from('zwift_api_events')
+      .select('event_id, title, time_unix')
+      .gte('time_unix', now)
+      .lte('time_unix', future)
+      .order('time_unix', { ascending: true });
+    
+    if (error) {
+      console.error('[SupabaseService] Failed to fetch raw events:', error);
+      return [];
+    }
+    
+    return data || [];
+  }
+
   // Feature 1: Get upcoming events (within X hours)
   async getUpcomingEvents(hours: number = 36, hasTeamRiders: boolean = false): Promise<any[]> {
     try {

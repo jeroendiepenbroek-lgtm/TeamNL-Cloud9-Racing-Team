@@ -2,29 +2,37 @@
  * Smart Event Sync Scheduler
  * US3: Events >1h syncen elk uur
  * US4: Events <=1h syncen elke 10 min
+ * Configureerbaar via syncConfigService
  */
 
 import { syncService } from '../services/sync.service.js';
 import { supabase } from '../services/supabase.service.js';
+import { syncConfigService } from '../services/sync-config.service.js';
 
 export class SmartEventSync {
   private intervalId: NodeJS.Timeout | null = null;
-  private readonly CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
-  
   private lastSyncTimes: Map<string, number> = new Map();
 
   start() {
+    const config = syncConfigService.getConfig();
     console.log('[SmartEventSync] 🧠 Starting intelligent event sync scheduler...');
+    console.log('[SmartEventSync] Config:', {
+      nearThreshold: `${config.nearEventThresholdMinutes}min`,
+      nearInterval: `${config.nearEventSyncIntervalMinutes}min`,
+      farInterval: `${config.farEventSyncIntervalMinutes}min`,
+      checkInterval: `${config.checkIntervalMinutes}min`,
+      lookforward: `${config.lookforwardHours}h`
+    });
     
     // Initial sync
     this.syncEvents();
     
-    // Schedule periodic checks
+    // Schedule periodic checks (using configurable interval)
     this.intervalId = setInterval(() => {
       this.syncEvents();
-    }, this.CHECK_INTERVAL);
+    }, syncConfigService.getCheckIntervalMs());
     
-    console.log('[SmartEventSync] ✅ Scheduler started (checks every 5 min)');
+    console.log(`[SmartEventSync] ✅ Scheduler started (checks every ${config.checkIntervalMinutes} min)`);
   }
 
   stop() {
@@ -34,64 +42,62 @@ export class SmartEventSync {
       console.log('[SmartEventSync] ⏹️  Scheduler stopped');
     }
   }
+  
+  restart() {
+    console.log('[SmartEventSync] 🔄 Restarting with new configuration...');
+    this.stop();
+    this.start();
+  }
 
   private async syncEvents() {
     try {
+      const config = syncConfigService.getConfig();
       console.log('[SmartEventSync] 🔍 Analyzing upcoming events...');
       
       const now = Math.floor(Date.now() / 1000);
-      const future36h = now + (36 * 60 * 60);
+      const futureTime = now + syncConfigService.getLookforwardSeconds();
       
-      // Get all upcoming events (next 36h)
-      const { data: events, error } = await supabase.client
-        .from('zwift_api_events')
-        .select('event_id, title, time_unix')
-        .gte('time_unix', now)
-        .lte('time_unix', future36h)
-        .order('time_unix', { ascending: true });
-
-      if (error || !events) {
-        console.error('[SmartEventSync] ❌ Failed to fetch events:', error);
-        return;
-      }
+      // Get all upcoming events (using configurable lookforward)
+      const events = await supabase.getUpcomingEventsRaw(config.lookforwardHours);
 
       console.log(`[SmartEventSync] Found ${events.length} upcoming events`);
 
-      // Categorize events
-      const nearEvents: string[] = []; // <= 1 hour
-      const soonEvents: string[] = []; // > 1 hour
+      // Categorize events (using configurable threshold)
+      const nearEvents: string[] = [];
+      const soonEvents: string[] = [];
+      const nearThresholdSeconds = syncConfigService.getNearEventThresholdSeconds();
 
       for (const event of events) {
         const timeUntilStart = event.time_unix - now;
-        const hoursUntilStart = timeUntilStart / 3600;
         
-        if (hoursUntilStart <= 1) {
+        if (timeUntilStart <= nearThresholdSeconds) {
           nearEvents.push(event.event_id);
         } else {
           soonEvents.push(event.event_id);
         }
       }
 
-      console.log(`[SmartEventSync] Categorized: ${nearEvents.length} near (<=1h), ${soonEvents.length} soon (>1h)`);
+      const thresholdMinutes = config.nearEventThresholdMinutes;
+      console.log(`[SmartEventSync] Categorized: ${nearEvents.length} near (<=${thresholdMinutes}min), ${soonEvents.length} soon (>${thresholdMinutes}min)`);
 
-      // Sync near events (<=1h) if 10+ minutes passed since last sync
+      // Sync near events (using configurable interval)
       for (const eventId of nearEvents) {
         const lastSync = this.lastSyncTimes.get(eventId) || 0;
         const minutesSinceSync = (Date.now() - lastSync) / 1000 / 60;
         
-        if (minutesSinceSync >= 10 || lastSync === 0) {
+        if (minutesSinceSync >= config.nearEventSyncIntervalMinutes || lastSync === 0) {
           console.log(`[SmartEventSync] 🔥 Syncing NEAR event ${eventId} (${minutesSinceSync.toFixed(1)}min since last sync)`);
           await this.syncEventSignups(eventId);
           this.lastSyncTimes.set(eventId, Date.now());
         }
       }
 
-      // Sync soon events (>1h) if 60+ minutes passed since last sync
+      // Sync soon events (using configurable interval)
       for (const eventId of soonEvents) {
         const lastSync = this.lastSyncTimes.get(eventId) || 0;
         const minutesSinceSync = (Date.now() - lastSync) / 1000 / 60;
         
-        if (minutesSinceSync >= 60 || lastSync === 0) {
+        if (minutesSinceSync >= config.farEventSyncIntervalMinutes || lastSync === 0) {
           console.log(`[SmartEventSync] 📅 Syncing SOON event ${eventId} (${minutesSinceSync.toFixed(1)}min since last sync)`);
           await this.syncEventSignups(eventId);
           this.lastSyncTimes.set(eventId, Date.now());
@@ -99,7 +105,7 @@ export class SmartEventSync {
       }
 
       // Cleanup old sync records (events that passed)
-      const eventIdsSet = new Set(events.map(e => e.event_id));
+      const eventIdsSet = new Set(events.map((e: any) => e.event_id));
       for (const [eventId] of this.lastSyncTimes) {
         if (!eventIdsSet.has(eventId)) {
           this.lastSyncTimes.delete(eventId);

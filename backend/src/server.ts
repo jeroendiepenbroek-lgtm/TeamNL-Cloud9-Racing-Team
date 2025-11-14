@@ -18,6 +18,7 @@ import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import autoSyncRouter from './api/endpoints/auto-sync.js';
 import signupsRouter from './api/endpoints/signups.js';
+import syncConfigRouter from './api/endpoints/sync-config.js';
 
 // US7 + US8: Auto-sync service
 import { autoSyncService } from './services/auto-sync.service.js';
@@ -84,6 +85,7 @@ app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
 app.use('/api/signups', signupsRouter); // Feature 1: Event signups
+app.use('/api/sync', syncConfigRouter); // Sync configuration management
 
 // 404 handler
 app.use((req: Request, res: Response) => {
