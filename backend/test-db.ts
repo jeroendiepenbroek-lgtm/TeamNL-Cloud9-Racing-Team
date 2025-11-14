@@ -1,15 +1,11 @@
 import { supabase } from './src/services/supabase.service';
 
 async function test() {
-  const now = Math.floor(Date.now() / 1000);
-  const future = now + (48 * 3600);
+  console.log('Testing view_upcoming_events...\n');
 
   const { data, error } = await (supabase as any).client
-    .from('zwift_api_events')
-    .select('event_id, title, distance_meters, elevation_meters, route_name, route_world')
-    .gte('time_unix', now)
-    .lte('time_unix', future)
-    .order('time_unix', { ascending: true })
+    .from('view_upcoming_events')
+    .select('event_id, title, distance_meters, elevation_meters, route_name, route_world, total_signups')
     .limit(5);
 
   if (error) {
