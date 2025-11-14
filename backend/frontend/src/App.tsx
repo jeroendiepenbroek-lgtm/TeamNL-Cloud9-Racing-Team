@@ -7,6 +7,7 @@ import Riders from './pages/Riders'
 import Events from './pages/Events'
 import EventsModern from './pages/EventsModern'
 import Sync from './pages/Sync'
+import SyncConfig from './pages/SyncConfig'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
@@ -304,6 +305,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <div className="max-w-7xl mx-auto"><Sync /></div>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/sync/config" 
+            element={
+              <ProtectedRoute>
+                <SyncConfig />
               </ProtectedRoute>
             } 
           />

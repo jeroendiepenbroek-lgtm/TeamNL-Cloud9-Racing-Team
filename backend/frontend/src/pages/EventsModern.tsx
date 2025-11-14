@@ -85,6 +85,27 @@ function formatTimeUntil(unix: number): { text: string; urgent: boolean; veryUrg
   };
 }
 
+// NEW: Format event start date/time (US2)
+function formatEventDateTime(unix: number): { dayName: string; date: string; time: string } {
+  const eventDate = new Date(unix * 1000);
+  
+  const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
+  const monthNames = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+  
+  const dayName = dayNames[eventDate.getDay()];
+  const day = eventDate.getDate();
+  const month = monthNames[eventDate.getMonth()];
+  const year = eventDate.getFullYear();
+  const hours = String(eventDate.getHours()).padStart(2, '0');
+  const minutes = String(eventDate.getMinutes()).padStart(2, '0');
+  
+  return {
+    dayName,
+    date: `${day} ${month} ${year}`,
+    time: `${hours}:${minutes}`
+  };
+}
+
 // US6: Collapsible Category Team Section Component
 function CategoryTeamSection({ 
   category, 
@@ -141,6 +162,7 @@ export default function Events() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'team'>('team');
+  const [lookforwardHours, setLookforwardHours] = useState(36);
   const [, setCurrentTime] = useState(Date.now());
 
   // US5: Update current time elke minuut voor countdown refresh
@@ -152,31 +174,30 @@ export default function Events() {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch events with smart refresh
-  const fetchEvents = async () => {
-    try {
-      const response = await fetch(`/api/events/upcoming?hours=36`);
-      if (!response.ok) throw new Error('Failed to fetch events');
-      
-      const data = await response.json();
-      setEvents(data.events || []);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        // Haal lookforwardHours op uit config
+        const configResponse = await fetch('/api/sync/config');
+        let hours = 36; // Default fallback
+        if (configResponse.ok) {
+          const configData = await configResponse.json();
+          hours = configData.lookforwardHours || 36;
+          setLookforwardHours(hours);
+        }
+        
+        const response = await fetch(`/api/events/upcoming?hours=${hours}`);
+        if (!response.ok) throw new Error('Failed to fetch events');
+        const data = await response.json();
+        setEvents(data.events || []);
+      } catch (error: any) {
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchEvents();
-    
-    // Smart refresh: check every 5 minutes
-    const refreshInterval = setInterval(() => {
-      fetchEvents();
-    }, 5 * 60 * 1000);
-    
-    return () => clearInterval(refreshInterval);
   }, []);
 
   // Filter events
@@ -218,16 +239,18 @@ export default function Events() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Calendar className="w-8 h-8 text-blue-600" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        {/* Header - US1: Prominenter met shadow en spacing */}
+        <div className="mb-12">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-300">
+              <Calendar className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent drop-shadow-sm">
               Upcoming Events
             </h1>
           </div>
-          <p className="text-slate-600 text-lg">
-            Next <span className="font-semibold text-blue-600">36 hours</span> • {filteredEvents.length} events
+          <p className="text-slate-700 text-lg font-medium ml-1">
+            Next <span className="font-bold text-blue-600">{lookforwardHours} hours</span> • {filteredEvents.length} events
           </p>
         </div>
 
@@ -265,6 +288,7 @@ export default function Events() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredEvents.map((event) => {
             const timeInfo = event.time_unix ? formatTimeUntil(event.time_unix) : null;
+            const dateTimeInfo = event.time_unix ? formatEventDateTime(event.time_unix) : null;
             const RouteIcon = event.route_profile ? ROUTE_PROFILES[event.route_profile]?.icon : Minus;
             const routeProfile = event.route_profile ? ROUTE_PROFILES[event.route_profile] : null;
 
@@ -294,6 +318,17 @@ export default function Events() {
                       </div>
                     )}
                   </div>
+
+                  {/* US2: Datum en tijd */}
+                  {dateTimeInfo && (
+                    <div className="flex items-center gap-2 text-white/90 text-sm font-medium mb-3 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg inline-flex">
+                      <Calendar className="w-4 h-4" />
+                      <span className="font-bold">{dateTimeInfo.dayName}</span>
+                      <span>{dateTimeInfo.date}</span>
+                      <span className="text-white/70">•</span>
+                      <span className="font-bold">{dateTimeInfo.time}</span>
+                    </div>
+                  )}
 
                   {/* US4: Route Info + Distance & Elevation in header */}
                   {event.route_name && (
@@ -382,29 +417,6 @@ export default function Events() {
                         })}
                     </div>
                   )}
-
-                  {/* US2: All Team Riders (fallback if no category breakdown) */}
-                  {event.team_riders && event.team_riders.length > 0 && !event.team_signups_by_category && (
-                    <div className="pt-4 border-t border-slate-200">
-                      <div className="flex items-center gap-2 mb-3">
-                        <UserCheck className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm font-semibold text-slate-700">
-                          Team Riders ({event.team_riders.length})
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {event.team_riders.map((rider) => (
-                          <div
-                            key={rider.rider_id}
-                            className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 text-sm font-medium"
-                          >
-                            {rider.rider_name}
-                            {rider.pen_name && ` • ${rider.pen_name}`}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             );
@@ -417,8 +429,8 @@ export default function Events() {
             <h3 className="text-xl font-semibold text-slate-600 mb-2">No events found</h3>
             <p className="text-slate-500">
               {filter === 'team' 
-                ? 'No upcoming events with team riders in the next 36 hours'
-                : 'No upcoming events in the next 36 hours'}
+                ? `No upcoming events with team riders in the next ${lookforwardHours} hours`
+                : `No upcoming events in the next ${lookforwardHours} hours`}
             </p>
           </div>
         )}
