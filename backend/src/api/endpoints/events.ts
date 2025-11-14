@@ -7,6 +7,7 @@ import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
 import { syncService } from '../../services/sync.service.js';
 import { zwiftClient } from '../zwift-client.js'; // US11
+import { syncConfigService } from '../../services/sync-config.service.js'; // US: Dynamic lookforward
 
 const router = Router();
 
@@ -26,11 +27,13 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/events/upcoming - Haal aankomende events op (binnen 36 uur)
+// GET /api/events/upcoming - Haal aankomende events op (dynamisch via config)
 // Feature 1: Events Page - Main endpoint
 router.get('/upcoming', async (req: Request, res: Response) => {
   try {
-    const hours = req.query.hours ? parseInt(req.query.hours as string) : 36;
+    // US: Gebruik lookforwardHours uit config (standaard 36, maar kan aangepast worden naar 24)
+    const config = syncConfigService.getConfig();
+    const hours = req.query.hours ? parseInt(req.query.hours as string) : config.lookforwardHours;
     const hasTeamRiders = req.query.hasTeamRiders === 'true';
     
     // US1: Pagination restrictie verwijderd - toon alle events in lookforward periode

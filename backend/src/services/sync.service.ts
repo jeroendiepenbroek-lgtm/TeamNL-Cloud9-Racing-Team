@@ -414,14 +414,14 @@ export class SyncService {
             title: event.title,
             event_type: event.type,
             sub_type: event.subType || null,
-            distance_meters: event.distance ? Math.round(parseFloat(String(event.distance))) : null, // Distance is already in meters
+            distance_meters: event.distance ? Math.floor(parseFloat(String(event.distance))) : null, // FORCE floor to integer
             // Elevation: probeer eerst van event, daarna van cached route
             elevation_meters: (() => {
-              if (event.elevation) return Math.round(parseFloat(String(event.elevation)));
+              if (event.elevation) return Math.floor(parseFloat(String(event.elevation))); // FORCE floor to integer
               const routeId = (event as any).routeId || (event as any).route_id;
               if (routeId) {
                 const cachedRoute = zwiftClient.getCachedRouteById(routeId);
-                return cachedRoute?.elevation || null;
+                return cachedRoute?.elevation ? Math.floor(cachedRoute.elevation) : null;
               }
               return null;
             })(),
