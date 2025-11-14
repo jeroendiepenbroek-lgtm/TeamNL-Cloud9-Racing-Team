@@ -1,3 +1,4 @@
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -44,8 +45,44 @@ function AdminTile({ icon, title, description, to, gradient }: AdminTileProps) {
   )
 }
 
+interface AdminStats {
+  teamMembers: number
+  activeUsers: number
+  lastSync: string
+  lastSyncDetails: {
+    timestamp: string
+    endpoint: string
+    recordsProcessed: number
+  } | null
+  systemStatus: string
+}
+
 export default function AdminHome() {
   const { user, accessStatus } = useAuth()
+  const [stats, setStats] = React.useState<AdminStats | null>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  // Fetch admin stats
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/admin/stats')
+        if (!response.ok) throw new Error('Failed to fetch stats')
+        const data = await response.json()
+        setStats(data)
+      } catch (error) {
+        console.error('Error fetching admin stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+    
+    // Refresh stats elke 30 seconden
+    const interval = setInterval(fetchStats, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   if (!user) {
     return (
@@ -134,24 +171,44 @@ export default function AdminHome() {
         {/* Quick Stats */}
         <div className="bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Quick Stats</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600 mb-1">--</div>
-              <div className="text-sm text-gray-600">Team Members</div>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+              <p className="text-gray-600 mt-2">Loading stats...</p>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600 mb-1">--</div>
-              <div className="text-sm text-gray-600">Active Users</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600 mb-1">
+                  {stats?.teamMembers ?? '--'}
+                </div>
+                <div className="text-sm text-gray-600">Team Members</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600 mb-1">
+                  {stats?.activeUsers ?? '--'}
+                </div>
+                <div className="text-sm text-gray-600">Active Users</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600 mb-1">
+                  {stats?.lastSync ?? '--'}
+                </div>
+                <div className="text-sm text-gray-600">Last Sync</div>
+                {stats?.lastSyncDetails && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    {stats.lastSyncDetails.recordsProcessed} records
+                  </div>
+                )}
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-orange-600 mb-1">
+                  {stats?.systemStatus === 'healthy' ? '✅' : '⚠️'}
+                </div>
+                <div className="text-sm text-gray-600">System Status</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-600 mb-1">--</div>
-              <div className="text-sm text-gray-600">Last Sync</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-orange-600 mb-1">✅</div>
-              <div className="text-sm text-gray-600">System Status</div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Back to Racing Matrix */}

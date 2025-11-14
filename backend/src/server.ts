@@ -19,6 +19,7 @@ import syncLogsRouter from './api/endpoints/sync-logs.js';
 import autoSyncRouter from './api/endpoints/auto-sync.js';
 import signupsRouter from './api/endpoints/signups.js';
 import syncConfigRouter from './api/endpoints/sync-config.js';
+import adminStatsRouter from './api/endpoints/admin-stats.js';
 
 // US7 + US8: Auto-sync service
 import { autoSyncService } from './services/auto-sync.service.js';
@@ -89,6 +90,7 @@ app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
 app.use('/api/signups', signupsRouter); // Feature 1: Event signups
 app.use('/api/sync', syncConfigRouter); // Sync configuration management
+app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 
 // 404 handler
 app.use((req: Request, res: Response) => {
