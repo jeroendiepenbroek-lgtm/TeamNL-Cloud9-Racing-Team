@@ -1,6 +1,6 @@
 /**
  * Endpoint 3: Events - GET /api/events
- * Feature 1: Events Page (48h lookforward)
+ * Feature 1: Events Page (36h lookforward)
  */
 
 import { Request, Response, Router } from 'express';
@@ -26,11 +26,11 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/events/upcoming - Haal aankomende events op (binnen 48 uur)
+// GET /api/events/upcoming - Haal aankomende events op (binnen 36 uur)
 // Feature 1: Events Page - Main endpoint
 router.get('/upcoming', async (req: Request, res: Response) => {
   try {
-    const hours = req.query.hours ? parseInt(req.query.hours as string) : 48;
+    const hours = req.query.hours ? parseInt(req.query.hours as string) : 36;
     const hasTeamRiders = req.query.hasTeamRiders === 'true';
     
     // PERFORMANCE: Paginering parameters

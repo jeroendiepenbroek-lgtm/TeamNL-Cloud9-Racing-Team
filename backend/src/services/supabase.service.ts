@@ -130,7 +130,7 @@ export class SupabaseService {
   }
 
   // Feature 1: Get upcoming events (within X hours)
-  async getUpcomingEvents(hours: number = 48, hasTeamRiders: boolean = false): Promise<any[]> {
+  async getUpcomingEvents(hours: number = 36, hasTeamRiders: boolean = false): Promise<any[]> {
     try {
       // Use views die nu ALLE kolommen bevatten (na migratie 015)
       const viewName = hasTeamRiders ? 'view_team_events' : 'view_upcoming_events';

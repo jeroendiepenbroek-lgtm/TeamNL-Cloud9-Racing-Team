@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Clubs from './pages/Clubs'
 import Riders from './pages/Riders'
 import Events from './pages/Events'
+import EventsModern from './pages/EventsModern'
 import Sync from './pages/Sync'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import Debug from './pages/Debug'
@@ -264,7 +265,8 @@ function AppContent() {
           
           {/* Public Pages */}
           <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
-          <Route path="/events" element={<div className="max-w-7xl mx-auto"><Events /></div>} />
+          <Route path="/events" element={<div className="max-w-7xl mx-auto"><EventsModern /></div>} />
+          <Route path="/events/classic" element={<div className="max-w-7xl mx-auto"><Events /></div>} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
           

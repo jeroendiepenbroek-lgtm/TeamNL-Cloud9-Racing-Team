@@ -52,7 +52,7 @@ SELECT
    WHERE es.event_id = e.event_id AND es.pen_name = 'E') as signups_e
 FROM zwift_api_events e
 WHERE TO_TIMESTAMP(e.time_unix) > NOW() 
-  AND TO_TIMESTAMP(e.time_unix) <= (NOW() + INTERVAL '48 hours')
+  AND TO_TIMESTAMP(e.time_unix) <= (NOW() + INTERVAL '36 hours')
 ORDER BY e.time_unix ASC;
 
 -- RECREATE view_team_events - DIRECT FROM TABLE met team rider aggregatie
@@ -95,7 +95,7 @@ SELECT
    WHERE es.event_id = e.event_id) as team_riders
 FROM zwift_api_events e
 WHERE TO_TIMESTAMP(e.time_unix) > NOW() 
-  AND TO_TIMESTAMP(e.time_unix) <= (NOW() + INTERVAL '48 hours')
+  AND TO_TIMESTAMP(e.time_unix) <= (NOW() + INTERVAL '36 hours')
   AND EXISTS (
     SELECT 1 
     FROM zwift_api_event_signups es
@@ -106,7 +106,7 @@ ORDER BY e.time_unix ASC;
 
 -- Comments
 COMMENT ON VIEW view_upcoming_events IS 
-  'Upcoming events (next 48h) with signup counts per category - uses zwift_api_event_signups';
+  'Upcoming events (next 36h) with signup counts per category - uses zwift_api_event_signups';
 COMMENT ON VIEW view_team_events IS 
   'Upcoming events with our team riders signed up - uses zwift_api_event_signups + my_team_members';
 

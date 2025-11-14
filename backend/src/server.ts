@@ -29,6 +29,9 @@ import { eventScheduler } from './services/event-scheduler.service.js';
 // US6 + US7: Signup scheduler service
 import { signupScheduler } from './services/signup-scheduler.service.js';
 
+// US3 + US4: Smart event sync (intelligent intervals)
+import { smartEventSync } from './schedulers/smart-event-sync.js';
+
 // US11: Zwift API client voor route profiles
 import { zwiftClient } from './api/zwift-client.js';
 
@@ -151,19 +154,20 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   `);
   
   // US7 + US8: Start auto-sync scheduler
-  // TEMPORARY DISABLED: blocks on startup
-  console.log('[AutoSync] ⚠️  Auto-sync DISABLED to debug hang issue');
-  // autoSyncService.start();
+  console.log('[AutoSync] 🔄 Starting auto-sync scheduler...');
+  autoSyncService.start();
   
   // Feature 1: Start event scheduler (US4 + US5)
-  // TEMPORARY DISABLED: scheduler blocks on startup
-  console.log('[EventScheduler] ⚠️  Scheduler DISABLED to debug hang issue');
-  // eventScheduler.start();
+  console.log('[EventScheduler] 📅 Starting event scheduler...');
+  eventScheduler.start();
   
-  // US6 + US7: Start signup scheduler
-  // TEMPORARY DISABLED: blocks API requests during initial sync
-  console.log('[SignupScheduler] ⚠️  Signup scheduler DISABLED to test API fixes');
-  // signupScheduler.start();
+  // US6 + US7: Start signup scheduler (US3/US4 smart intervals)
+  console.log('[SignupScheduler] 👥 Starting signup scheduler...');
+  signupScheduler.start();
+  
+  // US3 + US4: Start smart event sync (>1h = 1h, <=1h = 10min)
+  console.log('[SmartEventSync] 🧠 Starting intelligent event sync...');
+  smartEventSync.start();
   
   // US11: Pre-load route profiles cache
   console.log('[Routes] 🗺️  Pre-loading route profiles...');
