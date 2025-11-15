@@ -384,35 +384,35 @@ export default function RacingDataMatrixModern() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-8">
       {/* Modern Hero Header with Glassmorphism */}
-      <div className="relative overflow-hidden mb-6">
+      <div className="relative overflow-hidden mb-4 sm:mb-6">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-95"></div>
-        <div className="relative px-6 py-10">
+        <div className="relative px-3 py-4 sm:px-6 sm:py-6 lg:py-10">
           <div className="max-w-[98vw] mx-auto">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-4 bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
+              <div className="p-2 sm:p-3 lg:p-4 bg-white/20 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-2xl flex-shrink-0">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <div>
-                <h1 className="text-5xl font-black text-white tracking-tight flex items-center gap-3">
-                  TEAM DASHBOARD
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
+                  <span className="truncate">TEAM DASHBOARD</span>
                 </h1>
-                <p className="text-blue-100 text-xl font-semibold mt-2">
+                <p className="text-blue-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
                   TeamNL Cloud9 Racing · Performance Matrix
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-4 bg-white/10 backdrop-blur-lg rounded-xl px-5 py-3 border border-white/20 shadow-xl mt-4">
-              <span className="text-white/80 text-sm font-medium">Showing</span>
-              <span className="text-white font-bold text-2xl">{sortedRiders.length}</span>
-              <span className="text-white/80 text-sm font-medium">of</span>
-              <span className="text-white font-bold text-2xl">{riders?.length || 0}</span>
-              <span className="text-white/80 text-sm font-medium">riders</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 lg:px-5 lg:py-3 border border-white/20 shadow-xl mt-3 sm:mt-4">
+              <span className="text-white/80 text-xs sm:text-sm font-medium">Showing</span>
+              <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">{sortedRiders.length}</span>
+              <span className="text-white/80 text-xs sm:text-sm font-medium">of</span>
+              <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">{riders?.length || 0}</span>
+              <span className="text-white/80 text-xs sm:text-sm font-medium">riders</span>
               {searchTerm && (
                 <>
-                  <span className="text-white/60">·</span>
-                  <span className="text-cyan-300 font-semibold text-sm">🔍 "{searchTerm}"</span>
+                  <span className="text-white/60 hidden sm:inline">·</span>
+                  <span className="text-cyan-300 font-semibold text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">🔍 "{searchTerm}"</span>
                 </>
               )}
             </div>
@@ -421,24 +421,24 @@ export default function RacingDataMatrixModern() {
       </div>
 
       {/* Content Container */}
-      <div className="max-w-[98vw] mx-auto px-4">
+      <div className="max-w-[98vw] mx-auto px-2 sm:px-4">
         {/* Filter Controls */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3 flex-wrap">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-3 sm:p-4 lg:p-6 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {/* Search Bar */}
-          <div className="relative">
+          <div className="relative flex-1 sm:flex-initial">
             <input
               type="text"
-              placeholder="🔍 Zoek op naam..."
+              placeholder="🔍 Zoek..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="px-3 py-2 pl-8 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white min-w-[200px]"
+              className="w-full sm:w-auto px-2 sm:px-3 py-1.5 sm:py-2 pl-7 sm:pl-8 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white sm:min-w-[200px]"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm sm:text-base"
                 title="Clear search"
               >
                 ✕
@@ -447,7 +447,7 @@ export default function RacingDataMatrixModern() {
           </div>
         </div>
         
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* ZP Category Filter - Dropdown met badge icons */}
           <MultiSelectDropdown
             label="ZP-category"
@@ -487,23 +487,23 @@ export default function RacingDataMatrixModern() {
           {/* Favorites Toggle */}
           <button
             onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-            className={`px-3 py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-2 ${
+            className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
               showOnlyFavorites 
                 ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
             title={showOnlyFavorites ? 'Toon alle riders' : 'Toon alleen favorieten'}
           >
-            <span className="text-base">{showOnlyFavorites ? '⭐' : '☆'}</span>
-            <span>{showOnlyFavorites ? 'Favorieten' : 'Alle Riders'}</span>
+            <span className="text-sm sm:text-base">{showOnlyFavorites ? '⭐' : '☆'}</span>
+            <span className="hidden sm:inline">{showOnlyFavorites ? 'Favorieten' : 'Alle Riders'}</span>
             {showOnlyFavorites && favorites.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-white/30 rounded text-xs">
+              <span className="ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-white/30 rounded text-[10px] sm:text-xs">
                 {favorites.length}
               </span>
             )}
           </button>
           
-          {/* Clear Filters Button - always visible */}
+          {/* Clear Filters Button - compact on mobile */}
           <button
             onClick={() => {
               const totalFilters = filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length
@@ -515,17 +515,17 @@ export default function RacingDataMatrixModern() {
               }
             }}
             disabled={filterCategories.length === 0 && filterVeloLiveRanks.length === 0 && filterVelo30dayRanks.length === 0}
-            className={`px-3 py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-2 ${
+            className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
               filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0
                 ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
             title="Verwijder alle filters"
           >
-            <span className="text-base">🗑️</span>
-            <span>Clear Filters</span>
+            <span className="text-sm sm:text-base">🗑️</span>
+            <span className="hidden sm:inline">Clear</span>
             {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
-              <span className="ml-1 px-1.5 py-0.5 bg-white/30 rounded text-xs font-bold">
+              <span className="ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-white/30 rounded text-[10px] sm:text-xs font-bold">
                 {filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length}
               </span>
             )}
@@ -533,10 +533,11 @@ export default function RacingDataMatrixModern() {
           
             <button
               onClick={() => setShowLegend(!showLegend)}
-              className="px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center gap-2 font-semibold text-sm shadow-md hover:shadow-lg"
+              className="px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 lg:py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg sm:rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center gap-1 sm:gap-2 font-semibold text-xs sm:text-sm shadow-md hover:shadow-lg flex-shrink-0"
             >
               <span>{showLegend ? '📖' : '📚'}</span>
-              <span>{showLegend ? 'Hide' : 'Show'} Legend</span>
+              <span className="hidden sm:inline">{showLegend ? 'Hide' : 'Show'} Legend</span>
+              <span className="sm:hidden">Legend</span>
             </button>
           </div>
         </div>
@@ -544,7 +545,7 @@ export default function RacingDataMatrixModern() {
 
         {/* Legend Panel - Modern */}
         {showLegend && (
-          <div className="bg-white rounded-2xl p-6 shadow-xl border-2 border-indigo-100 mb-6">
+          <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-xl border-2 border-indigo-100 mb-4 sm:mb-6">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px]">
             {/* Info */}
             <div className="flex items-center text-blue-700 bg-blue-50 px-2 py-1 rounded">
