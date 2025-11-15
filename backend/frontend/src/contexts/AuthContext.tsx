@@ -40,106 +40,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessLoading(true)
       console.log('[AuthContext] Checking access status for user:', userId)
       
-      // STEP 1: Check if user has roles in user_roles table
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-      
-      if (rolesError) {
-        console.error('[AuthContext] Role check failed:', rolesError)
-      }
-      
-      const userRoles = roles?.map(r => r.role) || []
-      const isAdmin = userRoles.includes('admin')
-      
-      console.log('[AuthContext] User roles from user_roles:', userRoles)
-      
-      // STEP 2: If no roles, check if user is a rider in the riders table
-      if (userRoles.length === 0) {
-        console.log('[AuthContext] No roles found, checking if user is a team rider...')
-        
-        // Get user's email from Supabase auth
-        const { data: { user: authUser } } = await supabase.auth.getUser()
-        const userEmail = authUser?.email
-        
-        console.log('[AuthContext] User email:', userEmail)
-        
-        // Check if email matches a rider in the database
-        // Special case: jeroen.diepenbroek@gmail.com = rider 150437
-        if (userEmail === 'jeroen.diepenbroek@gmail.com') {
-          console.log('[AuthContext] ✅ Recognized team member: Jeroen (rider 150437)')
-          
-          // Try to auto-grant admin role (will fail if table doesn't exist yet)
-          const { error: insertError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: userId,
-              role: 'admin',
-              granted_by: userId,
-              granted_at: new Date().toISOString()
-            })
-          
-          if (insertError) {
-            if (insertError.code === '23505') {
-              console.log('[AuthContext] Admin role already exists')
-            } else if (insertError.code === '42P01') {
-              console.warn('[AuthContext] ⚠️ user_roles table does not exist yet!')
-              console.warn('[AuthContext] Please run SETUP_SAFE.sql in Supabase')
-              // STILL GRANT ACCESS - table will be created later
-            } else {
-              console.error('[AuthContext] Failed to auto-grant admin role:', insertError)
-            }
-          } else {
-            console.log('[AuthContext] ✅ Auto-granted admin role in database!')
-          }
-          
-          // ALWAYS grant access for Jeroen, regardless of database state
-          setAccessStatus({
-            has_access: true,
-            status: 'approved',
-            message: 'Team member access granted (admin)',
-            roles: ['admin'],
-            is_admin: true
-          })
-          return
-        }
-        
-        // TODO: Add more rider email checks or link to rider_id
-        // For now, deny access if not in user_roles and not recognized rider
-        console.log('[AuthContext] ❌ Not a recognized team member')
-        setAccessStatus({
-          has_access: false,
-          status: 'pending',
-          message: 'Alleen teamleden hebben toegang. Neem contact op met de admin.',
-          roles: [],
-          is_admin: false
-        })
-        
-        // Redirect to pending page
-        window.location.href = '/auth/pending'
+      const response = await fetch(`/api/user/access-status?user_id=${userId}`)
+      if (!response.ok) {
+        console.error('[AuthContext] Access status check failed:', response.status)
         return
       }
       
-      // User has roles - grant access
-      setAccessStatus({
-        has_access: true,
-        status: 'approved',
-        message: 'Access granted',
-        roles: userRoles,
-        is_admin: isAdmin
-      })
+      const data = await response.json()
+      console.log('[AuthContext] Access status:', data)
+      setAccessStatus(data)
       
+      // Als pending of rejected, redirect naar pending page
+      if (data.status === 'pending' || data.status === 'rejected') {
+        console.log('[AuthContext] User not approved, redirecting to pending page')
+        window.location.href = '/auth/pending'
+      }
     } catch (error) {
       console.error('[AuthContext] Access status error:', error)
-      // On error, deny access for security
-      setAccessStatus({
-        has_access: false,
-        status: 'pending',
-        message: 'Error checking access',
-        roles: [],
-        is_admin: false
-      })
     } finally {
       setAccessLoading(false)
     }

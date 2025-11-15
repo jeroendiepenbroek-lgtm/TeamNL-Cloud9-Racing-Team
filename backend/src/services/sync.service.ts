@@ -128,9 +128,9 @@ export class SyncService {
       const riders = ridersData.map(rider => ({
         zwift_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`, // Fallback voor lege names
-        category: rider.category,
-        ranking: rider.ranking,
-        points: rider.points,
+        category: rider.zpCategory || null, // API gebruikt zpCategory, niet category
+        ranking: rider.race?.current?.rating || null, // API gebruikt race.current.rating
+        points: rider.race?.finishes || 0, // API gebruikt race.finishes
         club_id: clubId,
         is_active: true,
         last_synced: new Date().toISOString(),

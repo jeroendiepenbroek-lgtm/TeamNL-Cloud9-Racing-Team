@@ -17,28 +17,10 @@ import resultsRouter from './api/endpoints/results.js';
 import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import autoSyncRouter from './api/endpoints/auto-sync.js';
-import signupsRouter from './api/endpoints/signups.js';
-import syncConfigRouter from './api/endpoints/sync-config.js';
-import adminStatsRouter from './api/endpoints/admin-stats.js';
 
 // US7 + US8: Auto-sync service
 import { autoSyncService } from './services/auto-sync.service.js';
 import { syncConfig } from './config/sync.config.js';
-
-// Feature 1: Event scheduler service (US4 + US5)
-import { eventScheduler } from './services/event-scheduler.service.js';
-
-// US6 + US7: Signup scheduler service
-import { signupScheduler } from './services/signup-scheduler.service.js';
-
-// US3 + US4: Smart event sync (intelligent intervals)
-import { smartEventSync } from './schedulers/smart-event-sync.js';
-
-// Rider sync scheduler
-import { riderSyncScheduler } from './schedulers/rider-sync.js';
-
-// US11: Zwift API client voor route profiles
-import { zwiftClient } from './api/zwift-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,9 +70,6 @@ app.use('/api/results', resultsRouter);
 app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
-app.use('/api/signups', signupsRouter); // Feature 1: Event signups
-app.use('/api/sync', syncConfigRouter); // Sync configuration management
-app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -148,43 +127,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  ⏰ Auto-Sync (US8):                           ║
 ║  • Enabled: ${syncConfig.enabled ? 'YES' : 'NO'}                              ║
 ║  • Interval: Every ${syncConfig.intervalHours}h                      ║
-║                                                ║
-║  🗓️  Event Scheduler (Feature 1):              ║
-║  • Hourly: Full 48h event sync                 ║
-║  • 10min: Urgent events (<1h)                  ║
-║                                                ║
-║  📊 Signup Scheduler (US6/US7):                ║
-║  • Enabled: YES                                ║
-║  • Hourly: Events 1-48h                        ║
-║  • 10min: Events <=1h                          ║
 ╚════════════════════════════════════════════════╝
   `);
   
   // US7 + US8: Start auto-sync scheduler
-  console.log('[AutoSync] 🔄 Starting auto-sync scheduler...');
   autoSyncService.start();
-  
-  // Feature 1: Start event scheduler (US4 + US5)
-  console.log('[EventScheduler] 📅 Starting event scheduler...');
-  eventScheduler.start();
-  
-  // US6 + US7: Start signup scheduler (US3/US4 smart intervals)
-  console.log('[SignupScheduler] 👥 Starting signup scheduler...');
-  signupScheduler.start();
-  
-  // US3 + US4: Start smart event sync (>1h = 1h, <=1h = 10min)
-  console.log('[SmartEventSync] 🧠 Starting intelligent event sync...');
-  smartEventSync.start();
-  
-  // Rider Sync: Start rider sync scheduler (configureerbaar interval)
-  console.log('[RiderSync] 🏃 Starting rider sync scheduler...');
-  riderSyncScheduler.start();
-  
-  // US11: Pre-load route profiles cache
-  console.log('[Routes] 🗺️  Pre-loading route profiles...');
-  zwiftClient.getAllRoutes()
-    .then(routes => console.log(`[Routes] ✅ Loaded ${routes.length} routes with profiles`))
-    .catch(err => console.error('[Routes] ❌ Failed to load routes:', err));
 });
 
 // Server error handling
