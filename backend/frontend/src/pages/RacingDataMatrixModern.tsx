@@ -655,86 +655,98 @@ export default function RacingDataMatrixModern() {
           </div>
         ) : (
           <div className="relative">
-            {/* Mobile Scroll Hint */}
-            <div className="md:hidden absolute top-1/2 right-0 -translate-y-1/2 bg-gradient-to-l from-indigo-600 to-transparent text-white px-4 py-2 text-xs font-medium rounded-l-lg pointer-events-none z-10 animate-pulse">
-              Swipe voor meer →
+            {/* Mobile Scroll Hint - Persistent en beter zichtbaar */}
+            <div className="lg:hidden absolute inset-y-0 right-0 flex items-center pointer-events-none z-20">
+              <div className="bg-gradient-to-l from-indigo-600 via-indigo-600/90 to-transparent text-white px-3 py-2 text-[10px] sm:text-xs font-bold rounded-l-xl shadow-lg animate-pulse">
+                <div className="flex items-center gap-1">
+                  <span className="hidden sm:inline">Swipe →</span>
+                  <span className="sm:hidden">→</span>
+                </div>
+              </div>
             </div>
             
-            <div className="overflow-x-auto max-h-[calc(100vh-180px)] overflow-y-auto">
-              <table className="w-full text-[11px]">
+            {/* Horizontal Scroll Container met verbeterde mobile support */}
+            <div className="overflow-x-auto max-h-[calc(100vh-180px)] overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-600 scrollbar-track-gray-200">
+              <table className="w-full text-[11px] min-w-[1400px]">
               <thead className="bg-gradient-to-r from-slate-700 to-slate-800 text-white sticky top-0 z-20 shadow-md">
                 {/* Group Headers Row */}
                 <tr className="border-b border-slate-600">
-                  <th rowSpan={2} className="px-2 py-0.5 text-center text-xs font-bold border-r border-slate-600" title="Favoriet">
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold border-r border-slate-600" title="Favoriet">
                     ⭐
                   </th>
-                  <th rowSpan={2} className="px-2 py-0.5 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('rider_id')}>
-                    Rider ID
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('rider_id')}>
+                    ID
                   </th>
-                  <th rowSpan={2} className="px-2 py-0.5 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_last_rating')}>
-                    vELO Live {sortBy === 'race_last_rating' && (sortDesc ? '↓' : '↑')}
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_last_rating')}>
+                    <span className="hidden sm:inline">vELO Live</span>
+                    <span className="sm:hidden">Live</span> {sortBy === 'race_last_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
-                  <th rowSpan={2} className="px-2 py-0.5 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_max30_rating')}>
-                    vELO 30-day {sortBy === 'race_max30_rating' && (sortDesc ? '↓' : '↑')}
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_max30_rating')}>
+                    <span className="hidden sm:inline">vELO 30-day</span>
+                    <span className="sm:hidden">30d</span> {sortBy === 'race_max30_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
-                  <th rowSpan={2} className="px-2 py-0.5 text-left text-xs font-bold uppercase tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('name')}>
+                  <th rowSpan={2} className="px-2 sm:px-3 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('name')}>
                     Rider Name
                   </th>
-                  <th rowSpan={2} className="px-2 py-0.5 text-center text-xs font-bold uppercase tracking-wider border-r border-slate-600">
-                    Category
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600">
+                    Cat
                   </th>
-                  <th colSpan={2} className="px-2 py-0.5 text-center text-xs font-bold uppercase tracking-wider bg-green-700 border-r border-slate-600">
+                  <th colSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider bg-green-700 border-r border-slate-600">
                     zFTP
                   </th>
-                  <th rowSpan={2} className="px-3 py-1 text-right text-sm font-bold uppercase tracking-wider border-r border-slate-600">
-                    Weight
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600">
+                    <span className="hidden sm:inline">Weight</span>
+                    <span className="sm:hidden">kg</span>
                   </th>
-                  <th colSpan={4} className="px-3 py-1 text-center text-sm font-bold uppercase tracking-wider bg-slate-600 border-r border-slate-600">
+                  <th colSpan={4} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider bg-slate-600 border-r border-slate-600">
                     Race Stats
                   </th>
-                  <th colSpan={7} className="px-2 py-0.5 text-center text-xs font-bold uppercase tracking-wider bg-indigo-700">
-                    Power Intervals (W/kg)
+                  <th colSpan={7} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider bg-indigo-700">
+                    Power (W/kg)
                   </th>
                 </tr>
                 {/* Individual Column Headers Row */}
                 <tr>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap" onClick={() => handleSort('zp_ftp')}>
-                    FTP (W)
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap" onClick={() => handleSort('zp_ftp')}>
+                    FTP
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('watts_per_kg')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('watts_per_kg')}>
                     W/kg
                   </th>
-                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
-                    Finishes
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
+                    <span className="hidden sm:inline">Finishes</span>
+                    <span className="sm:hidden">Fin</span>
                   </th>
-                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
-                    Wins
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
+                    <span className="hidden sm:inline">Wins</span>
+                    <span className="sm:hidden">W</span>
                   </th>
-                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
-                    Podiums
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
+                    <span className="hidden sm:inline">Podiums</span>
+                    <span className="sm:hidden">Pod</span>
                   </th>
-                  <th className="px-2 py-1 text-right text-sm font-semibold uppercase tracking-wider cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
-                    DNFs
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
+                    DNF
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w5')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w5')}>
                     5s
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w15')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w15')}>
                     15s
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w30')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w30')}>
                     30s
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w60')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w60')}>
                     1m
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w120')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w120')}>
                     2m
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w300')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w300')}>
                     5m
                   </th>
-                  <th className="px-2 py-0.5 text-right text-xs font-semibold uppercase tracking-wider bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w1200')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w1200')}>
                     20m
                   </th>
                 </tr>
@@ -751,26 +763,26 @@ export default function RacingDataMatrixModern() {
                         index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                       } ${veloLiveTier?.bgColor || ''}`}
                     >
-                      <td className="px-2 py-0.5 whitespace-nowrap text-center">
+                      <td className="px-1 sm:px-2 py-1 whitespace-nowrap text-center">
                         <button
                           onClick={() => handleToggleFavorite(rider.rider_id, rider.name)}
-                          className="text-xl sm:text-lg p-2 -m-2 hover:scale-125 transition-transform touch-manipulation"
+                          className="text-base sm:text-lg p-1 sm:p-2 -m-1 sm:-m-2 hover:scale-125 transition-transform touch-manipulation"
                           title={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
                           aria-label={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
                         >
                           {isFavorite(rider.rider_id) ? '⭐' : '☆'}
                         </button>
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap text-gray-700 font-mono text-xs">
+                      <td className="px-1 sm:px-2 py-1 whitespace-nowrap text-gray-700 font-mono text-[10px] sm:text-xs">
                         {rider.rider_id}
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap">
+                      <td className="px-1 sm:px-2 py-1 whitespace-nowrap">
                         <VeloBadge rating={rider.race_last_rating} />
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap">
+                      <td className="px-1 sm:px-2 py-1 whitespace-nowrap">
                         <VeloBadge rating={rider.race_max30_rating} />
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap font-semibold text-gray-900 text-sm">
+                      <td className="px-2 sm:px-3 py-1 whitespace-nowrap font-semibold text-gray-900 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
                           <span>{rider.name}</span>
                           {rider.rider_id === 150437 && (

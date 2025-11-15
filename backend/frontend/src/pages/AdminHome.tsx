@@ -139,7 +139,7 @@ export default function AdminHome() {
             icon="👤"
             title="Gebruikersbeheer"
             description="Beheer gebruikersrollen en toegangsrechten voor het dashboard"
-            to="/admin/users"
+            to="/admin/access-requests"
             gradient="from-green-500 to-green-700"
           />
           

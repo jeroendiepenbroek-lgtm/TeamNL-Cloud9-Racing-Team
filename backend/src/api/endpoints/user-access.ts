@@ -48,6 +48,9 @@ router.get('/access-status', async (req: Request, res: Response) => {
     const hasAdminRole = roles?.some((r) => r.role === 'admin') || false;
     const hasRiderRole = roles?.some((r) => r.role === 'rider') || false;
 
+    // SECURITY: Alleen users met explicit admin role in user_roles tabel krijgen admin toegang
+    // Geen hardcoded bypasses of rider ID checks
+    
     // Determine access status
     let status = 'no_request';
     let message = 'Geen access request gevonden';
