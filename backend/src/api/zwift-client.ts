@@ -12,6 +12,7 @@
 
 import axios, { AxiosInstance } from 'axios';
 import { ZwiftClub, ZwiftRider, ZwiftEvent, ZwiftResult } from '../types/index.js';
+import { rateLimiter } from '../utils/rate-limiter.js';
 
 const ZWIFT_API_BASE = 'https://zwift-ranking.herokuapp.com';
 const ZWIFT_API_KEY = process.env.ZWIFT_API_KEY || '';
@@ -75,8 +76,10 @@ export class ZwiftApiClient {
    * Rate limit: 1/60min (Standard)
    */
   async getClubMembers(clubId: number = TEAM_CLUB_ID): Promise<ZwiftRider[]> {
-    const response = await this.client.get(`/public/clubs/${clubId}`);
-    return response.data;
+    return await rateLimiter.executeWithLimit('club_members', async () => {
+      const response = await this.client.get(`/public/clubs/${clubId}`);
+      return response.data;
+    });
   }
 
   /**
@@ -100,8 +103,10 @@ export class ZwiftApiClient {
    * Rate limit: 1/1min
    */
   async getEventResults(eventId: number): Promise<ZwiftResult[]> {
-    const response = await this.client.get(`/public/results/${eventId}`);
-    return response.data;
+    return await rateLimiter.executeWithLimit('event_results', async () => {
+      const response = await this.client.get(`/public/results/${eventId}`);
+      return response.data;
+    });
   }
 
   /**
@@ -124,8 +129,10 @@ export class ZwiftApiClient {
    * Rate limit: 5/1min (Standard)
    */
   async getRider(riderId: number): Promise<ZwiftRider> {
-    const response = await this.client.get(`/public/riders/${riderId}`);
-    return response.data;
+    return await rateLimiter.executeWithLimit('rider_individual', async () => {
+      const response = await this.client.get(`/public/riders/${riderId}`);
+      return response.data;
+    });
   }
 
   /**
@@ -153,8 +160,10 @@ export class ZwiftApiClient {
     if (riderIds.length > 1000) {
       throw new Error('Maximum 1000 rider IDs per bulk request');
     }
-    const response = await this.client.post('/public/riders', riderIds);
-    return response.data;
+    return await rateLimiter.executeWithLimit('rider_bulk', async () => {
+      const response = await this.client.post('/public/riders', riderIds);
+      return response.data;
+    });
   }
 
   /**
@@ -193,14 +202,16 @@ export class ZwiftApiClient {
    * - categories, signups (comma-separated strings)
    */
   async getUpcomingEvents(): Promise<ZwiftEvent[]> {
-    const response = await this.client.get('/api/events/upcoming');
-    
-    // Response is direct array, not wrapped in { events: [] }
-    const events = Array.isArray(response.data) ? response.data : [];
-    
-    console.log(`[ZwiftAPI] ✅ /api/events/upcoming returned ${events.length} upcoming events`);
-    
-    return events;
+    return await rateLimiter.executeWithLimit('events_upcoming', async () => {
+      const response = await this.client.get('/api/events/upcoming');
+      
+      // Response is direct array, not wrapped in { events: [] }
+      const events = Array.isArray(response.data) ? response.data : [];
+      
+      console.log(`[ZwiftAPI] ✅ /api/events/upcoming returned ${events.length} upcoming events`);
+      
+      return events;
+    });
   }
 
   /**
@@ -226,8 +237,10 @@ export class ZwiftApiClient {
    * Returns detailed event data including participants (pens)
    */
   async getEventDetails(eventId: number): Promise<ZwiftEvent> {
-    const response = await this.client.get(`/api/events/${eventId}`);
-    return response.data;
+    return await rateLimiter.executeWithLimit('event_details', async () => {
+      const response = await this.client.get(`/api/events/${eventId}`);
+      return response.data;
+    });
   }
 
   /**
@@ -243,9 +256,11 @@ export class ZwiftApiClient {
    * - phenotype (rider type)
    */
   async getEventSignups(eventId: string): Promise<any[]> {
-    const response = await this.client.get(`/api/events/${eventId}/signups`);
-    console.log(`[ZwiftAPI] ✅ /api/events/${eventId}/signups returned ${response.data.length} pens`);
-    return response.data;
+    return await rateLimiter.executeWithLimit('event_signups', async () => {
+      const response = await this.client.get(`/api/events/${eventId}/signups`);
+      console.log(`[ZwiftAPI] ✅ /api/events/${eventId}/signups returned ${response.data.length} pens`);
+      return response.data;
+    });
   }
 
   // ============================================================================

@@ -20,6 +20,7 @@ import autoSyncRouter from './api/endpoints/auto-sync.js';
 import syncConfigRouter from './api/endpoints/sync-config.js';
 import syncV2Router from './api/endpoints/sync-v2.js';
 import adminStatsRouter from './api/endpoints/admin-stats.js';
+import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 
 // Sync services
 import { autoSyncService } from './services/auto-sync.service.js';
@@ -79,6 +80,7 @@ app.use('/api/auto-sync', autoSyncRouter); // US8
 app.use('/api/sync', syncV2Router); // Modern sync V2 (prioriteit)
 app.use('/api/sync', syncConfigRouter); // Sync configuratie (fallback)
 app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
+app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 
 // 404 handler
 app.use((req: Request, res: Response) => {
