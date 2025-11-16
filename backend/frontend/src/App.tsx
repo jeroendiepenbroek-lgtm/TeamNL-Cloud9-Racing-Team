@@ -8,7 +8,6 @@ import Riders from './pages/Riders'
 import Events from './pages/Events'
 import EventsModern from './pages/EventsModern'
 import Sync from './pages/Sync'
-import SyncConfig from './pages/SyncConfig'
 import SyncStatusModern from './pages/SyncStatusModern'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
@@ -18,6 +17,7 @@ import AdminHome from './pages/AdminHome'
 import { AccessRequests } from './pages/AccessRequests'
 import PendingAccess from './pages/PendingAccess'
 import UserManagement from './pages/UserManagement'
+import Archive from './pages/Archive'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -254,16 +254,12 @@ function AppContent() {
       {/* Content */}
       <main className="mx-auto py-6 px-4">
         <Routes>
-          {/* Landing Page - Matrix */}
-          <Route path="/" element={<RacingDataMatrix />} />
-          
-          {/* Modern Matrix POC - State of the Art Team Dashboard */}
-          <Route path="/team/modern" element={<RacingDataMatrixModern />} />
+          {/* Landing Page - Modern Matrix */}
+          <Route path="/" element={<RacingDataMatrixModern />} />
           
           {/* Public Pages */}
           <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><EventsModern /></div>} />
-          <Route path="/events/classic" element={<div className="max-w-7xl mx-auto"><Events /></div>} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
           
@@ -277,19 +273,9 @@ function AppContent() {
             } 
           />
           
-          {/* Admin Dashboard (System Status) */}
+          {/* Admin Dashboard (System Status) - Modern */}
           <Route 
             path="/admin/dashboard" 
-            element={
-              <ProtectedRoute>
-                <div className="max-w-7xl mx-auto"><Dashboard /></div>
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* Modern Dashboard POC - State of the Art Design */}
-          <Route 
-            path="/admin/dashboard/modern" 
             element={
               <ProtectedRoute>
                 <DashboardModern />
@@ -308,22 +294,6 @@ function AppContent() {
           />
           <Route 
             path="/sync" 
-            element={
-              <ProtectedRoute>
-                <div className="max-w-7xl mx-auto"><Sync /></div>
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/sync/config" 
-            element={
-              <ProtectedRoute>
-                <SyncConfig />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/sync/modern" 
             element={
               <ProtectedRoute>
                 <SyncStatusModern />
@@ -347,6 +317,21 @@ function AppContent() {
             } 
           />
           <Route path="/auth/pending" element={<PendingAccess />} />
+          
+          {/* Archive - Legacy Dashboards */}
+          <Route 
+            path="/admin/archive" 
+            element={
+              <ProtectedRoute>
+                <Archive />
+              </ProtectedRoute>
+            } 
+          />
+          <Route path="/admin/archive/dashboard" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Dashboard /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/sync" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Sync /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/matrix" element={<ProtectedRoute><RacingDataMatrix /></ProtectedRoute>} />
+          <Route path="/admin/archive/events" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Events /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/riders" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Riders /></div></ProtectedRoute>} />
         </Routes>
       </main>
 

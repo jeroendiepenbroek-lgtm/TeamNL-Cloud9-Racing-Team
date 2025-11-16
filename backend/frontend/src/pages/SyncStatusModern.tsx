@@ -5,7 +5,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Activity, Users, Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2, Zap } from 'lucide-react'
+import { Activity, Users, Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2, Zap, Settings, Save, PlayCircle, PauseCircle } from 'lucide-react'
 
 interface SyncMetrics {
   rider_sync: RiderSyncMetrics | null
@@ -49,10 +49,23 @@ interface SyncLog {
   details?: string
 }
 
+interface SyncConfig {
+  nearEventThresholdMinutes: number
+  nearEventSyncIntervalMinutes: number
+  farEventSyncIntervalMinutes: number
+  riderSyncEnabled: boolean
+  riderSyncIntervalMinutes: number
+  lookforwardHours: number
+  checkIntervalMinutes: number
+}
+
 const API_BASE = ''
 
 export default function SyncStatusModern() {
   const [triggeringSync, setTriggeringSync] = useState<string | null>(null)
+  const [showConfig, setShowConfig] = useState(false)
+  const [editingConfig, setEditingConfig] = useState<SyncConfig | null>(null)
+  const [savingConfig, setSavingConfig] = useState(false)
 
   // Fetch sync metrics
   const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery<SyncMetrics>({
@@ -76,6 +89,17 @@ export default function SyncStatusModern() {
     refetchInterval: 5000, // Every 5s
   })
 
+  // Fetch sync config
+  const { data: config, refetch: refetchConfig } = useQuery<SyncConfig>({
+    queryKey: ['sync-config'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/sync/config`)
+      if (!res.ok) throw new Error('Failed to fetch config')
+      return res.json()
+    },
+    refetchInterval: 30000, // Every 30s
+  })
+
   const handleTriggerSync = async (type: 'riders' | 'near-events' | 'far-events') => {
     setTriggeringSync(type)
     try {
@@ -92,6 +116,52 @@ export default function SyncStatusModern() {
       console.error('Sync trigger failed:', error)
     } finally {
       setTriggeringSync(null)
+    }
+  }
+
+  const handleSaveConfig = async () => {
+    if (!editingConfig) return
+    
+    setSavingConfig(true)
+    try {
+      const res = await fetch('/api/sync/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingConfig)
+      })
+      
+      if (!res.ok) throw new Error('Failed to save config')
+      
+      await refetchConfig()
+      setShowConfig(false)
+      setEditingConfig(null)
+    } catch (error) {
+      console.error('Config save failed:', error)
+    } finally {
+      setSavingConfig(false)
+    }
+  }
+
+  const handleToggleAutoSync = async (type: 'rider' | 'near' | 'far', enabled: boolean) => {
+    if (!config) return
+    
+    const updatedConfig = { ...config }
+    if (type === 'rider') {
+      updatedConfig.riderSyncEnabled = enabled
+    }
+    // Note: Near/Far event sync is always enabled, only intervals change
+    
+    try {
+      const res = await fetch('/api/sync/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      })
+      
+      if (!res.ok) throw new Error('Failed to toggle auto-sync')
+      await refetchConfig()
+    } catch (error) {
+      console.error('Auto-sync toggle failed:', error)
     }
   }
 
@@ -409,6 +479,218 @@ export default function SyncStatusModern() {
               )}
             </button>
           </div>
+        </div>
+
+        {/* Auto-Sync Configuration */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg sm:rounded-xl">
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </div>
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Auto-Sync Configuratie</h2>
+            </div>
+            <button
+              onClick={() => {
+                setShowConfig(!showConfig)
+                if (!showConfig && config) setEditingConfig(config)
+              }}
+              className="px-3 py-1.5 text-xs sm:text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            >
+              {showConfig ? 'Verberg' : 'Bewerk'}
+            </button>
+          </div>
+
+          {config && !showConfig && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Rider Sync Config */}
+              <div className="border-2 border-blue-100 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    <h3 className="font-bold text-gray-900">Rider Sync</h3>
+                  </div>
+                  <button
+                    onClick={() => handleToggleAutoSync('rider', !config.riderSyncEnabled)}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      config.riderSyncEnabled ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                    }`}
+                  >
+                    {config.riderSyncEnabled ? <PlayCircle className="w-5 h-5" /> : <PauseCircle className="w-5 h-5" />}
+                  </button>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Status</span>
+                    <span className={`font-bold ${config.riderSyncEnabled ? 'text-green-600' : 'text-gray-400'}`}>
+                      {config.riderSyncEnabled ? 'Actief' : 'Gepauzeerd'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Interval</span>
+                    <span className="font-bold text-gray-900">{config.riderSyncIntervalMinutes}min</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Near Event Sync Config */}
+              <div className="border-2 border-orange-100 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-orange-600" />
+                    <h3 className="font-bold text-gray-900">Near Events</h3>
+                  </div>
+                  <div className="p-1.5 rounded-lg bg-green-100">
+                    <PlayCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Status</span>
+                    <span className="font-bold text-green-600">Actief</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Interval</span>
+                    <span className="font-bold text-gray-900">{config.nearEventSyncIntervalMinutes}min</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Threshold</span>
+                    <span className="font-bold text-gray-900">{config.nearEventThresholdMinutes}min</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Far Event Sync Config */}
+              <div className="border-2 border-purple-100 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
+                    <h3 className="font-bold text-gray-900">Far Events</h3>
+                  </div>
+                  <div className="p-1.5 rounded-lg bg-green-100">
+                    <PlayCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Status</span>
+                    <span className="font-bold text-green-600">Actief</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Interval</span>
+                    <span className="font-bold text-gray-900">{config.farEventSyncIntervalMinutes}min</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Lookforward</span>
+                    <span className="font-bold text-gray-900">{config.lookforwardHours}h</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showConfig && editingConfig && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Rider Sync Settings */}
+                <div className="space-y-4">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-blue-600" />
+                    Rider Sync
+                  </h3>
+                  <label className="block">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">Auto-sync</span>
+                      <input
+                        type="checkbox"
+                        checked={editingConfig.riderSyncEnabled}
+                        onChange={(e) => setEditingConfig({ ...editingConfig, riderSyncEnabled: e.target.checked })}
+                        className="w-5 h-5 text-blue-600 rounded"
+                      />
+                    </div>
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium text-gray-700 mb-2 block">Sync Interval (minuten)</span>
+                    <input
+                      type="number"
+                      value={editingConfig.riderSyncIntervalMinutes}
+                      onChange={(e) => setEditingConfig({ ...editingConfig, riderSyncIntervalMinutes: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min="1"
+                    />
+                  </label>
+                </div>
+
+                {/* Event Sync Settings */}
+                <div className="space-y-4">
+                  <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-orange-600" />
+                    Event Sync
+                  </h3>
+                  <label className="block">
+                    <span className="text-sm font-medium text-gray-700 mb-2 block">Near Event Interval (min)</span>
+                    <input
+                      type="number"
+                      value={editingConfig.nearEventSyncIntervalMinutes}
+                      onChange={(e) => setEditingConfig({ ...editingConfig, nearEventSyncIntervalMinutes: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      min="1"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium text-gray-700 mb-2 block">Near Event Threshold (min)</span>
+                    <input
+                      type="number"
+                      value={editingConfig.nearEventThresholdMinutes}
+                      onChange={(e) => setEditingConfig({ ...editingConfig, nearEventThresholdMinutes: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      min="1"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium text-gray-700 mb-2 block">Far Event Interval (min)</span>
+                    <input
+                      type="number"
+                      value={editingConfig.farEventSyncIntervalMinutes}
+                      onChange={(e) => setEditingConfig({ ...editingConfig, farEventSyncIntervalMinutes: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      min="1"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-sm font-medium text-gray-700 mb-2 block">Lookforward Hours</span>
+                    <input
+                      type="number"
+                      value={editingConfig.lookforwardHours}
+                      onChange={(e) => setEditingConfig({ ...editingConfig, lookforwardHours: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      min="1"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={handleSaveConfig}
+                  disabled={savingConfig}
+                  className="px-6 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  <Save className="w-5 h-5" />
+                  {savingConfig ? 'Opslaan...' : 'Configuratie Opslaan'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowConfig(false)
+                    setEditingConfig(null)
+                  }}
+                  className="px-6 py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Annuleren
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sync History */}

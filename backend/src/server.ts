@@ -20,9 +20,12 @@ import autoSyncRouter from './api/endpoints/auto-sync.js';
 import syncConfigRouter from './api/endpoints/sync-config.js';
 import syncV2Router from './api/endpoints/sync-v2.js';
 
-// US7 + US8: Auto-sync service
+// Sync services
 import { autoSyncService } from './services/auto-sync.service.js';
 import { syncConfig } from './config/sync.config.js';
+import { SyncServiceV2 } from './services/sync-v2.service.js';
+import { syncConfigService } from './services/sync-config.service.js';
+import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -134,8 +137,71 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ╚════════════════════════════════════════════════╝
   `);
   
-  // US7 + US8: Start auto-sync scheduler
+  // US7 + US8: Start auto-sync scheduler (legacy)
   autoSyncService.start();
+  
+  // Modern V2 Auto-Sync Schedulers
+  console.log('🔄 Configuring V2 Auto-Sync schedulers...');
+  const config = syncConfigService.getConfig();
+  const syncServiceV2 = new SyncServiceV2();
+  
+  // Rider Sync Scheduler
+  if (config.riderSyncEnabled) {
+    const riderCronExpression = `*/${config.riderSyncIntervalMinutes} * * * *`; // Every N minutes
+    console.log(`  ✅ Rider Sync: Every ${config.riderSyncIntervalMinutes} minutes`);
+    
+    cron.schedule(riderCronExpression, async () => {
+      console.log(`\n⏰ [CRON] Rider Sync triggered at ${new Date().toISOString()}`);
+      try {
+        const metrics = await syncServiceV2.syncRiders({
+          intervalMinutes: config.riderSyncIntervalMinutes,
+        });
+        console.log(`✅ [CRON] Rider Sync completed: ${metrics.riders_processed} riders (${metrics.riders_new} new, ${metrics.riders_updated} updated)`);
+      } catch (error) {
+        console.error(`❌ [CRON] Rider Sync failed:`, error);
+      }
+    });
+  } else {
+    console.log(`  ⏸️  Rider Sync: Disabled`);
+  }
+  
+  // Near Event Sync Scheduler
+  const nearEventCronExpression = `*/${config.nearEventSyncIntervalMinutes} * * * *`;
+  console.log(`  ✅ Near Event Sync: Every ${config.nearEventSyncIntervalMinutes} minutes (threshold: ${config.nearEventThresholdMinutes}min)`);
+  
+  cron.schedule(nearEventCronExpression, async () => {
+    console.log(`\n⏰ [CRON] Near Event Sync triggered at ${new Date().toISOString()}`);
+    try {
+      const metrics = await syncServiceV2.syncNearEvents({
+        intervalMinutes: config.nearEventSyncIntervalMinutes,
+        thresholdMinutes: config.nearEventThresholdMinutes,
+        lookforwardHours: config.lookforwardHours,
+      });
+      console.log(`✅ [CRON] Near Event Sync completed: ${metrics.events_near} near events, ${metrics.signups_synced} signups`);
+    } catch (error) {
+      console.error(`❌ [CRON] Near Event Sync failed:`, error);
+    }
+  });
+  
+  // Far Event Sync Scheduler
+  const farEventCronExpression = `*/${config.farEventSyncIntervalMinutes} * * * *`;
+  console.log(`  ✅ Far Event Sync: Every ${config.farEventSyncIntervalMinutes} minutes (lookforward: ${config.lookforwardHours}h)`);
+  
+  cron.schedule(farEventCronExpression, async () => {
+    console.log(`\n⏰ [CRON] Far Event Sync triggered at ${new Date().toISOString()}`);
+    try {
+      const metrics = await syncServiceV2.syncFarEvents({
+        intervalMinutes: config.farEventSyncIntervalMinutes,
+        thresholdMinutes: config.nearEventThresholdMinutes,
+        lookforwardHours: config.lookforwardHours,
+      });
+      console.log(`✅ [CRON] Far Event Sync completed: ${metrics.events_far} far events, ${metrics.signups_synced} signups`);
+    } catch (error) {
+      console.error(`❌ [CRON] Far Event Sync failed:`, error);
+    }
+  });
+  
+  console.log('✅ All V2 Auto-Sync schedulers configured\n');
 });
 
 // Server error handling

@@ -120,51 +120,35 @@ export default function AdminHome() {
         {/* Admin Tiles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           <AdminTile
-            icon="👥"
-            title="Team Management"
-            description="Beheer je team leden - voeg riders toe of verwijder ze uit het team"
-            to="/riders"
-            gradient="from-blue-500 to-blue-700"
+            icon="📊"
+            title="System Status"
+            description="Real-time systeem monitoring met moderne glassmorphism design"
+            to="/admin/dashboard"
+            gradient="from-orange-500 to-orange-700"
           />
           
           <AdminTile
             icon="🔄"
             title="Sync Status"
-            description="Bekijk de status van data synchronisatie en trigger handmatige syncs"
+            description="Live sync metrics met auto-sync configuratie en manual triggers"
             to="/sync"
             gradient="from-purple-500 to-purple-700"
+          />
+          
+          <AdminTile
+            icon="👥"
+            title="Team Management"
+            description="Beheer je team leden met sync timestamps en moderne UI"
+            to="/riders"
+            gradient="from-blue-500 to-blue-700"
           />
           
           <AdminTile
             icon="👤"
             title="Gebruikersbeheer"
             description="Beheer gebruikersrollen en toegangsrechten voor het dashboard"
-            to="/admin/access-requests"
+            to="/admin/users"
             gradient="from-green-500 to-green-700"
-          />
-          
-          <AdminTile
-            icon="📊"
-            title="System Status"
-            description="Bekijk systeem statistieken, database status en API health"
-            to="/admin/dashboard"
-            gradient="from-orange-500 to-orange-700"
-          />
-          
-          <AdminTile
-            icon="✨"
-            title="Modern Dashboard POC"
-            description="State-of-the-art dashboard design - Nieuw concept met glassmorphism"
-            to="/admin/dashboard/modern"
-            gradient="from-cyan-500 via-blue-500 to-indigo-600"
-          />
-          
-          <AdminTile
-            icon="🏆"
-            title="Team Matrix POC"
-            description="State-of-the-art team dashboard - Modern design met alle rider data"
-            to="/team/modern"
-            gradient="from-violet-500 via-purple-500 to-fuchsia-600"
           />
           
           <AdminTile
@@ -173,6 +157,14 @@ export default function AdminHome() {
             description="Bekijk en goedkeur toegangsaanvragen van nieuwe gebruikers"
             to="/admin/access-requests"
             gradient="from-pink-500 to-pink-700"
+          />
+          
+          <AdminTile
+            icon="📦"
+            title="Dashboard Archief"
+            description="Oude dashboard versies bewaard voor referentie en rollback"
+            to="/admin/archive"
+            gradient="from-slate-600 to-slate-800"
           />
           
           <AdminTile
