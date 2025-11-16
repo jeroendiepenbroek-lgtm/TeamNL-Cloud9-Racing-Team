@@ -445,6 +445,19 @@ export default function Events() {
                     </div>
                   )}
                 </div>
+
+                {/* Card Footer - Sign Up Link */}
+                <div className="bg-slate-50 border-t border-slate-200 px-6 py-4">
+                  <a
+                    href={`https://www.zwift.com/events/view/${event.event_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg group-hover:scale-[1.02] transform duration-200"
+                  >
+                    <UserCheck className="w-5 h-5" />
+                    Sign Up on Zwift
+                  </a>
+                </div>
               </div>
             );
           })}
