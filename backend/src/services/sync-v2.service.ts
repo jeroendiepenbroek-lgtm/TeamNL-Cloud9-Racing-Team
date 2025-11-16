@@ -121,11 +121,12 @@ export class SyncServiceV2 {
       metrics.riders_new = riders.filter(r => !existingIds.has(r.zwift_id)).length;
       metrics.riders_updated = riders.length - metrics.riders_new;
 
-      // Log to sync_logs
+      // Log to sync_logs with clear RIDER_SYNC identifier
       await supabase.createSyncLog({
-        endpoint: `RIDER_SYNC: ${syncedRiders.length} riders (${metrics.riders_new} new, ${metrics.riders_updated} updated)`,
+        endpoint: `RIDER_SYNC`,
         status: 'success',
         records_processed: syncedRiders.length,
+        details: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
       });
 
       metrics.duration_ms = Date.now() - startTime;
@@ -146,10 +147,11 @@ export class SyncServiceV2 {
       
       // Log error without throwing
       await supabase.createSyncLog({
-        endpoint: 'POST /public/riders (bulk)',
+        endpoint: 'RIDER_SYNC',
         status: 'error',
         records_processed: 0,
         error_message: errorMessage,
+        details: `Interval: ${config.intervalMinutes}min`,
       }).catch(err => console.error('Failed to log error:', err));
       
       return metrics;
@@ -240,9 +242,10 @@ export class SyncServiceV2 {
       metrics.status = metrics.error_count > 0 ? 'partial' : 'success';
       
       await supabase.createSyncLog({
-        endpoint: `NEAR_EVENT_SYNC (${metrics.events_near} near, ${metrics.events_far} far)`,
+        endpoint: `NEAR_EVENT_SYNC`,
         status: metrics.status,
         records_processed: metrics.signups_synced,
+        details: `Near: ${metrics.events_near} | Far: ${metrics.events_far} | Events: ${metrics.events_scanned} | Threshold: ${config.thresholdMinutes}min`,
       });
       
       console.log(`✅ [NEAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
@@ -352,9 +355,10 @@ export class SyncServiceV2 {
       metrics.status = metrics.error_count > 0 ? 'partial' : 'success';
       
       await supabase.createSyncLog({
-        endpoint: `FAR_EVENT_SYNC (${metrics.events_far} far, ${metrics.events_near} near)`,
+        endpoint: `FAR_EVENT_SYNC`,
         status: metrics.status,
         records_processed: metrics.signups_synced,
+        details: `Far: ${metrics.events_far} | Near: ${metrics.events_near} | Events: ${metrics.events_scanned} | Lookforward: ${config.lookforwardHours}h`,
       });
       
       console.log(`✅ [FAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
@@ -372,6 +376,7 @@ export class SyncServiceV2 {
       await supabase.createSyncLog({
         endpoint: 'FAR_EVENT_SYNC',
         status: 'error',
+        details: `Lookforward: ${config.lookforwardHours}h | Interval: ${config.intervalMinutes}min`,
         records_processed: 0,
         error_message: error instanceof Error ? error.message : String(error),
       }).catch(err => console.error('Failed to log error:', err));

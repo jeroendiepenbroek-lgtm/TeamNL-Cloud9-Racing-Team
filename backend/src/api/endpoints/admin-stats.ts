@@ -13,9 +13,27 @@ router.get('/', async (req: Request, res: Response) => {
     const riders = await supabase.getRiders();
     const teamMembersCount = riders.filter(r => r.is_active).length;
 
-    // 2. Active Users - Count users with access (via getMyTeamMembers which checks access_control)
-    // Note: This is a proxy - actual user count would need dedicated method
-    const activeUsersCount = 0; // Placeholder - access_control tabel heeft geen dedicated getter
+    // 2. Active Users & Pending Requests - Query Supabase directly
+    let activeUsersCount = 0;
+    let pendingRequestsCount = 0;
+    
+    try {
+      // Query access_control for approved users
+      const { data: approvedUsers } = await supabase.client
+        .from('access_control')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'approved');
+      activeUsersCount = approvedUsers?.length ?? 0;
+      
+      // Query for pending requests
+      const { data: pendingRequests } = await supabase.client
+        .from('access_control')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      pendingRequestsCount = pendingRequests?.length ?? 0;
+    } catch (err) {
+      console.warn('[AdminStats] Failed to fetch user counts:', err);
+    }
 
     // 3. Last Sync - Get most recent successful sync
     const syncLogs = await supabase.getSyncLogs(1);
@@ -48,6 +66,7 @@ router.get('/', async (req: Request, res: Response) => {
     res.json({
       teamMembers: teamMembersCount ?? 0,
       activeUsers: activeUsersCount ?? 0,
+      pendingRequests: pendingRequestsCount ?? 0,
       lastSync: lastSyncFormatted,
       lastSyncDetails: lastSync ? {
         timestamp: lastSync.created_at,

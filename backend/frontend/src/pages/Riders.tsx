@@ -167,62 +167,39 @@ export default function Riders() {
     },
   });
 
-  // Table columns - Geoptimaliseerd voor breedte
+  // Table columns - Simplified: Name, ID, Club, Favorite, Last Sync
   const columnHelper = createColumnHelper<TeamRider>();
   const columns = [
-    columnHelper.accessor('rider_id', {
-      header: 'ID',
-      size: 80,
-      cell: (info) => <span className="text-gray-500 text-xs">{info.getValue()}</span>,
-    }),
     columnHelper.accessor('name', {
       header: 'Naam',
-      size: 200,
-      cell: (info) => <span className="font-semibold text-gray-800">{info.getValue()}</span>,
+      size: 250,
+      cell: (info) => <span className="font-semibold text-gray-800 text-base">{info.getValue()}</span>,
+    }),
+    columnHelper.accessor('rider_id', {
+      header: 'Zwift ID',
+      size: 100,
+      cell: (info) => <span className="text-gray-500 text-sm">{info.getValue()}</span>,
     }),
     columnHelper.accessor('club_name', {
       header: 'Club',
-      size: 100,
-      cell: (info) => <span className="text-sm text-gray-600">{info.getValue() || 'TeamNL'}</span>,
+      size: 150,
+      cell: (info) => <span className="text-sm text-gray-700">{info.getValue() || 'TeamNL'}</span>,
     }),
-    columnHelper.accessor('race_current_rating', {
-      header: 'Ranking',
-      size: 90,
+    columnHelper.accessor('last_synced', {
+      header: 'Laatst Gesynchroniseerd',
+      size: 180,
       cell: (info) => {
-        const val = info.getValue();
-        return val ? <span className="font-medium text-green-600">{Math.round(val)}</span> : '-';
+        const date = new Date(info.getValue());
+        const now = new Date();
+        const diffHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+        
+        return (
+          <div className="text-xs">
+            <div className="text-gray-600">{date.toLocaleDateString('nl-NL')}</div>
+            <div className="text-gray-400">{diffHours < 1 ? 'net gesynchroniseerd' : `${diffHours}u geleden`}</div>
+          </div>
+        );
       },
-    }),
-    columnHelper.accessor('zp_category', {
-      header: 'Cat',
-      size: 60,
-      cell: (info) => (
-        <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">
-          {info.getValue() || '?'}
-        </span>
-      ),
-    }),
-    columnHelper.accessor('zp_ftp', {
-      header: 'FTP',
-      size: 80,
-      cell: (info) => (info.getValue() ? <span className="text-sm">{info.getValue()}W</span> : '-'),
-    }),
-    columnHelper.accessor('watts_per_kg', {
-      header: 'W/kg',
-      size: 70,
-      cell: (info) => (info.getValue() ? <span className="text-sm font-medium text-purple-600">{Number(info.getValue()).toFixed(2)}</span> : '-'),
-    }),
-    columnHelper.accessor('race_finishes', {
-      header: 'Races',
-      size: 70,
-      cell: (info) => <span className="text-sm text-gray-600">{info.getValue() || 0}</span>,
-    }),
-    columnHelper.accessor('race_wins', {
-      header: 'Wins',
-      size: 70,
-      cell: (info) => (
-        <span className="font-bold text-yellow-600">{info.getValue() || 0}</span>
-      ),
     }),
     columnHelper.accessor('is_favorite', {
       header: '⭐',

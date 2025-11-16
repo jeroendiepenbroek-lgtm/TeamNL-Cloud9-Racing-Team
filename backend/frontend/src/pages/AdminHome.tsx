@@ -48,6 +48,7 @@ function AdminTile({ icon, title, description, to, gradient }: AdminTileProps) {
 interface AdminStats {
   teamMembers: number
   activeUsers: number
+  pendingRequests: number
   lastSync: string
   lastSyncDetails: {
     timestamp: string
@@ -144,19 +145,11 @@ export default function AdminHome() {
           />
           
           <AdminTile
-            icon="👤"
+            icon="👥"
             title="Gebruikersbeheer"
-            description="Beheer gebruikersrollen en toegangsrechten voor het dashboard"
+            description="Beheer gebruikers, rollen en toegangsrechten. Bekijk en goedkeur nieuwe aanvragen."
             to="/admin/users"
             gradient="from-green-500 to-green-700"
-          />
-          
-          <AdminTile
-            icon="📧"
-            title="Access Requests"
-            description="Bekijk en goedkeur toegangsaanvragen van nieuwe gebruikers"
-            to="/admin/access-requests"
-            gradient="from-pink-500 to-pink-700"
           />
           
           <AdminTile
@@ -197,6 +190,11 @@ export default function AdminHome() {
                   {stats?.activeUsers ?? '--'}
                 </div>
                 <div className="text-sm text-gray-600">Active Users</div>
+                {stats && stats.pendingRequests > 0 && (
+                  <div className="text-xs text-orange-600 font-medium mt-1">
+                    {stats.pendingRequests} pending
+                  </div>
+                )}
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-purple-600 mb-1">

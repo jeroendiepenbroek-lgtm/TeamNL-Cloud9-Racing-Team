@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Activity, Users, Calendar, TrendingUp, Server, Zap, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Activity, Users, TrendingUp, Server, Zap, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
 
 interface HealthCheck {
   status: string
@@ -10,10 +10,16 @@ interface HealthCheck {
 }
 
 interface Stats {
-  totalRiders: number
-  activeRiders: number
-  eventsTracked: number
+  teamMembers: number
+  activeUsers: number
+  pendingRequests: number
   lastSync: string | null
+  lastSyncDetails?: {
+    rider_sync?: { timestamp: string; success: boolean; records: number }
+    near_event_sync?: { timestamp: string; success: boolean; records: number }
+    far_event_sync?: { timestamp: string; success: boolean; records: number }
+  }
+  systemStatus: string
 }
 
 const API_BASE = ''; // Empty = same origin (production), of http://localhost:3000 voor dev
@@ -127,11 +133,11 @@ export default function DashboardModern() {
                 {statsLoading ? (
                   <div className="h-9 w-16 bg-gray-200 rounded animate-pulse"></div>
                 ) : (
-                  stats?.totalRiders ?? '-'
+                  stats?.teamMembers ?? '-'
                 )}
               </div>
               <div className="mt-2 text-xs text-gray-500 group-hover:text-white/60 transition-colors">
-                {stats?.activeRiders ?? 0} actief
+                Team members in database
               </div>
             </div>
           </div>
@@ -153,37 +159,41 @@ export default function DashboardModern() {
                 {statsLoading ? (
                   <div className="h-9 w-16 bg-gray-200 rounded animate-pulse"></div>
                 ) : (
-                  stats?.activeRiders ?? '-'
+                  stats?.activeUsers ?? '-'
                 )}
               </div>
               <div className="mt-2 text-xs text-gray-500 group-hover:text-white/60 transition-colors">
-                Recent activity
+                {stats?.pendingRequests ? `${stats.pendingRequests} aanvragen wachtend` : 'Goedgekeurde gebruikers'}
               </div>
             </div>
           </div>
 
-          {/* Events Tracked Card */}
+          {/* System Status Card */}
           <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <div className="relative p-4 sm:p-5 lg:p-6">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className="p-2 sm:p-3 bg-purple-50 rounded-lg sm:rounded-xl group-hover:bg-white/20 transition-colors">
-                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 group-hover:text-white transition-colors" />
+                  <Server className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 group-hover:text-white transition-colors" />
                 </div>
-                <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 group-hover:text-white transition-colors" />
+                {stats?.systemStatus === 'healthy' ? (
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 group-hover:text-white transition-colors" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 group-hover:text-white transition-colors" />
+                )}
               </div>
               <div className="text-gray-600 text-xs sm:text-sm font-medium mb-1 group-hover:text-white/80 transition-colors">
-                Events Tracked
+                Systeem Status
               </div>
-              <div className="text-2xl sm:text-3xl font-black text-gray-900 group-hover:text-white transition-colors">
+              <div className="text-2xl sm:text-3xl font-black text-gray-900 group-hover:text-white transition-colors uppercase">
                 {statsLoading ? (
-                  <div className="h-9 w-16 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-9 w-20 bg-gray-200 rounded animate-pulse"></div>
                 ) : (
-                  stats?.eventsTracked ?? '-'
+                  stats?.systemStatus ?? 'Unknown'
                 )}
               </div>
               <div className="mt-2 text-xs text-gray-500 group-hover:text-white/60 transition-colors">
-                Upcoming races
+                All services operational
               </div>
             </div>
           </div>
