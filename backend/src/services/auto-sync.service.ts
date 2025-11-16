@@ -52,12 +52,12 @@ export class AutoSyncService {
       // Strategy: Use GET for small teams (< 10 riders, 5/min rate)
       //           Use POST bulk for larger teams (1/15min rate, max 1000)
       if (riderIds.length <= 10) {
-        endpointUsed = `GET /public/rider/:id (${riderIds.length} calls)`;
+        endpointUsed = 'RIDER_SYNC';
         console.log('[AutoSync] 📡 Using individual GET calls (small team, 5/min rate)');
         
         // Create sync log
         const syncLog = await supabase.createSyncLog({
-          endpoint: endpointUsed,
+          endpoint: 'RIDER_SYNC',
           status: 'running',
           records_processed: 0,
         });
@@ -78,12 +78,12 @@ export class AutoSyncService {
           }
         }
       } else {
-        endpointUsed = `POST /public/riders (bulk: ${riderIds.length} riders)`;
+        endpointUsed = 'RIDER_SYNC';
         console.log('[AutoSync] 📡 Using bulk POST API (large team, 1/15min rate)');
         
         // Create sync log
         const syncLog = await supabase.createSyncLog({
-          endpoint: endpointUsed,
+          endpoint: 'RIDER_SYNC',
           status: 'running',
           records_processed: 0,
         });
@@ -95,8 +95,8 @@ export class AutoSyncService {
         } catch (error: any) {
           console.error('[AutoSync] ❌ Bulk POST failed, falling back to GET:', error.message);
           
-          // Update endpoint info - fallback
-          endpointUsed = `POST /public/riders (failed) → GET /public/rider/:id (${riderIds.length} fallback calls)`;
+          // Keep endpoint as RIDER_SYNC even on fallback
+          endpointUsed = 'RIDER_SYNC';
           
           // Fallback: individual GET calls
           for (const riderId of riderIds) {
