@@ -27,7 +27,7 @@ interface Stats {
 }
 
 export function AccessRequests() {
-  const { user } = useAuth()
+  const { user, accessLoading } = useAuth()
   const navigate = useNavigate()
   const [requests, setRequests] = useState<AccessRequest[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
@@ -37,13 +37,16 @@ export function AccessRequests() {
   const [reviewNotes, setReviewNotes] = useState<{ [key: string]: string }>({})
 
   useEffect(() => {
+    // Wacht tot auth check klaar is
+    if (accessLoading) return
+    
     if (!user) {
       navigate('/')
       return
     }
     fetchRequests()
     fetchStats()
-  }, [user, filter])
+  }, [user, filter, accessLoading])
 
   const fetchRequests = async () => {
     try {

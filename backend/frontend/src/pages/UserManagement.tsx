@@ -15,19 +15,23 @@ interface UserWithRole {
 const AVAILABLE_ROLES = ['admin', 'rider', 'captain', 'viewer'] as const
 
 export default function UserManagement() {
-  const { user, accessStatus } = useAuth()
+  const { user, accessStatus, accessLoading } = useAuth()
   const navigate = useNavigate()
   const [users, setUsers] = useState<UserWithRole[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   useEffect(() => {
+    // Wacht tot accessStatus geladen is voordat we redirecten
+    if (accessLoading) return
+    
     if (!user || !accessStatus?.is_admin) {
+      console.log('[UserManagement] Access denied - redirecting. User:', !!user, 'Is admin:', accessStatus?.is_admin)
       navigate('/')
       return
     }
     fetchUsers()
-  }, [user, accessStatus])
+  }, [user, accessStatus, accessLoading])
 
   const fetchUsers = async () => {
     try {
@@ -143,12 +147,15 @@ export default function UserManagement() {
     }
   }
 
-  if (loading) {
+  // Toon loading terwijl access status wordt gecontroleerd
+  if (accessLoading || loading) {
     return (
       <div className="max-w-7xl mx-auto py-6 px-4">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Gebruikers laden...</p>
+        <div className="bg-white shadow rounded-lg p-12 text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="mt-4 text-gray-600">
+            {accessLoading ? 'Toegang controleren...' : 'Gebruikers laden...'}
+          </p>
         </div>
       </div>
     )
