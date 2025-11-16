@@ -542,19 +542,33 @@ function EventCard({ event, timeUntil, formattedDate, distance }: EventCardProps
       </div>
 
       {/* Card Footer */}
-      {event.event_url && (
-        <div className="bg-gray-50 px-6 py-3">
+      <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          {/* Sign-up Link */}
           <a
-            href={event.event_url}
+            href={`https://www.zwift.com/events/view/${event.event_id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold text-sm transition-colors shadow-sm"
           >
-            Bekijk op ZwiftRacing
+            Sign Up
             <ExternalLink className="w-4 h-4" />
           </a>
+          
+          {/* ZwiftRacing Link */}
+          {event.event_url && (
+            <a
+              href={event.event_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm font-semibold text-orange-600 hover:text-orange-700"
+            >
+              Bekijk op ZwiftRacing
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
