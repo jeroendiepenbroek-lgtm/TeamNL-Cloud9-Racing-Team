@@ -204,6 +204,10 @@ class SyncCoordinator {
           
           console.log(`[SyncCoordinator] 🚦 ${request.type} blocked by ${blockedBy}, waiting ${waitMin}min`);
           await this._sleep(waitTime);
+          
+          // ✅ Re-sort queue om priority te behouden na wait
+          this._sortQueue();
+          console.log(`[SyncCoordinator] 🔄 Queue re-sorted after rate limit wait (${this.queue.length} items)`);
           continue; // Re-check na wait
         }
         

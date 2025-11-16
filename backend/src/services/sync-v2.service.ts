@@ -89,17 +89,34 @@ export class SyncServiceV2 {
       console.log(`[RIDER SYNC] Fetching club members...`);
       const response = await zwiftClient.getClubMembers(clubId);
       
+      // Debug: log response structure
+      console.log(`[RIDER SYNC] Response type: ${typeof response}, isArray: ${Array.isArray(response)}`);
+      if (response && typeof response === 'object' && !Array.isArray(response)) {
+        console.log(`[RIDER SYNC] Response keys: ${Object.keys(response).join(', ')}`);
+        console.log(`[RIDER SYNC] Sample response:`, JSON.stringify(response).substring(0, 200));
+      }
+      
       // Handle both direct array and wrapped response formats
       let clubMembers: any[];
       if (Array.isArray(response)) {
         clubMembers = response;
       } else if (response && typeof response === 'object') {
         // Try common wrapper properties
-        clubMembers = (response as any).data || (response as any).members || (response as any).results || [];
+        const candidates = [
+          (response as any).data,
+          (response as any).members, 
+          (response as any).results,
+          (response as any).riders,
+          (response as any).clubMembers,
+        ].filter(c => Array.isArray(c));
         
-        if (clubMembers.length === 0) {
-          console.warn(`[RIDER SYNC] API response is object but no members found. Keys: ${Object.keys(response).join(', ')}`);
-          throw new Error(`Invalid response from getClubMembers: object with no recognized array property`);
+        if (candidates.length > 0) {
+          clubMembers = candidates[0];
+          console.log(`[RIDER SYNC] Found array in response object (${clubMembers.length} items)`);
+        } else {
+          console.error(`[RIDER SYNC] API response is object but no array found. Keys: ${Object.keys(response).join(', ')}`);
+          console.error(`[RIDER SYNC] Response sample:`, JSON.stringify(response).substring(0, 500));
+          throw new Error(`Invalid response from getClubMembers: object with no recognized array property (keys: ${Object.keys(response).join(', ')})`);
         }
       } else {
         throw new Error(`Invalid response from getClubMembers: expected array or object, got ${typeof response}`);

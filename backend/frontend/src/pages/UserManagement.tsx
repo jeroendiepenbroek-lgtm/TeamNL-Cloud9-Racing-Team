@@ -26,8 +26,8 @@ export default function UserManagement() {
     if (accessLoading) return
     
     if (!user || !accessStatus?.is_admin) {
-      console.log('[UserManagement] Access denied - redirecting. User:', !!user, 'Is admin:', accessStatus?.is_admin)
-      navigate('/')
+      console.log('[UserManagement] Access denied - redirecting to admin home. User:', !!user, 'Is admin:', accessStatus?.is_admin)
+      navigate('/admin')
       return
     }
     fetchUsers()
