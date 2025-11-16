@@ -51,8 +51,10 @@ export class ZwiftApiClient {
         const url = error.config?.url || 'unknown';
         
         if (status === 429) {
+          // Parse endpoint voor user-friendly message
+          const friendlyEndpoint = this._getFriendlyEndpointName(url);
           console.error(`[ZwiftAPI] 🚫 RATE LIMIT (429) ${url} - Too many requests`);
-          error.message = `Rate limit exceeded for ${url}. Please wait before retrying.`;
+          error.message = `Rate limit exceeded: ${friendlyEndpoint}. Wait before retrying.`;
         } else if (status === 'TIMEOUT') {
           console.error(`[ZwiftAPI] ⏱️  TIMEOUT ${url}`);
           error.message = `Request timeout for ${url}`;
@@ -478,6 +480,43 @@ export class ZwiftApiClient {
     // Return first match with profile
     const withProfile = matchingRoutes.find((r: any) => r.profile);
     return withProfile?.profile || null;
+  }
+
+  /**
+   * Convert raw API URL naar user-friendly endpoint naam
+   */
+  private _getFriendlyEndpointName(url: string): string {
+    // Parse club endpoint
+    if (url.includes('/public/clubs/')) {
+      return 'Team members sync (club API)';
+    }
+    
+    // Parse rider endpoints
+    if (url.includes('/public/riders') && !url.includes('/public/riders/')) {
+      return 'Rider bulk sync (POST)';
+    }
+    if (url.includes('/public/riders/')) {
+      return 'Individual rider sync (GET)';
+    }
+    
+    // Parse event endpoints
+    if (url.includes('/api/events/upcoming')) {
+      return 'Upcoming events sync';
+    }
+    if (url.includes('/api/events/') && url.includes('/signups')) {
+      return 'Event signups sync';
+    }
+    if (url.includes('/api/events/')) {
+      return 'Event details sync';
+    }
+    
+    // Parse results
+    if (url.includes('/public/results/')) {
+      return 'Event results sync';
+    }
+    
+    // Fallback: return URL
+    return url;
   }
 }
 

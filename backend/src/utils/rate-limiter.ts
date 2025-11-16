@@ -145,9 +145,10 @@ export class RateLimiter {
       
       if (waitTime > 0) {
         const waitMinutes = Math.ceil(waitTime / 60000);
+        const friendlyName = this._getFriendlyName(endpoint);
         console.log(
-          `[RateLimiter] 🚦 Rate limit voor ${endpoint}: ` +
-          `wacht ${waitMinutes} min (${config.maxCalls}/${this._formatWindow(config.windowMs)})`
+          `[RateLimiter] 🚦 ${friendlyName}: ` +
+          `wacht ${waitMinutes} min (limit: ${config.maxCalls}/${this._formatWindow(config.windowMs)})`
         );
         
         await this._sleep(waitTime);
@@ -272,6 +273,22 @@ export class RateLimiter {
     } else {
       return `${ms / 1000}s`;
     }
+  }
+
+  /**
+   * User-friendly names voor endpoints
+   */
+  private _getFriendlyName(endpoint: EndpointType): string {
+    const names: Record<EndpointType, string> = {
+      club_members: 'Team members sync (rider IDs ophalen)',
+      rider_individual: 'Individual rider sync',
+      rider_bulk: 'Rider bulk sync (team data)',
+      event_details: 'Event details sync',
+      event_signups: 'Event signups sync',
+      event_results: 'Event results sync',
+      events_upcoming: 'Upcoming events sync',
+    };
+    return names[endpoint] || endpoint;
   }
 }
 
