@@ -430,10 +430,19 @@ export class SyncServiceV2 {
   }> {
     const logs = await supabase.getSyncLogs(100);
     
-    // Find latest of each type
-    const riderLog = logs.find(l => l.endpoint?.includes('bulk'));
-    const nearLog = logs.find(l => l.endpoint === 'NEAR_EVENT_SYNC');
-    const farLog = logs.find(l => l.endpoint === 'FAR_EVENT_SYNC');
+    // Find latest of each type - check both old and new endpoint formats
+    const riderLog = logs.find(l => 
+      l.endpoint?.includes('bulk') || 
+      l.endpoint?.includes('RIDER_SYNC')
+    );
+    const nearLog = logs.find(l => 
+      l.endpoint?.includes('NEAR_EVENT_SYNC') || 
+      l.endpoint === 'NEAR_EVENT_SYNC'
+    );
+    const farLog = logs.find(l => 
+      l.endpoint?.includes('FAR_EVENT_SYNC') || 
+      l.endpoint === 'FAR_EVENT_SYNC'
+    );
     
     return {
       rider_sync: riderLog ? this.parseMetricsFromLog(riderLog, 'RIDER_SYNC') : null,
