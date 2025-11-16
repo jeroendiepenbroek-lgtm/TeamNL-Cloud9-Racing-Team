@@ -1,0 +1,1 @@
+{"version":3,"file":"sync.config.d.ts","sourceRoot":"","sources":["../../src/config/sync.config.ts"],"names":[],"mappings":"AAAA;;;;;;;GAOG;AAEH,MAAM,WAAW,UAAU;IACzB,OAAO,EAAE,OAAO,CAAC;IACjB,aAAa,EAAE,MAAM,CAAC;IACtB,iBAAiB,EAAE,MAAM,CAAC;IAC1B,cAAc,EAAE,MAAM,CAAC;CACxB;AAED,wBAAgB,aAAa,IAAI,UAAU,CAkB1C;AAED,eAAO,MAAM,UAAU,YAAkB,CAAC"}

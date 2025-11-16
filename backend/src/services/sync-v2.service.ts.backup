@@ -91,7 +91,7 @@ export class SyncServiceV2 {
       }
       
       // Extract rider IDs from club members response
-      const riderIds = clubMembers.map(m => m.riderId).filter(id => id);
+      const riderIds = clubMembers.map(m => m.riderId || m.rider_id).filter(id => id);
       
       // Step 2: Bulk fetch full rider data
       console.log(`[RIDER SYNC] Fetching full rider data for ${riderIds.length} riders...`);
@@ -99,8 +99,7 @@ export class SyncServiceV2 {
       
       // Get existing riders to track new vs updated
       const existingRiders = await supabase.getRiders();
-      // Map rider_id from DB to zwift_id for comparison
-      const existingIds = new Set(existingRiders.map(r => r.rider_id));
+      const existingIds = new Set(existingRiders.map(r => r.zwift_id));
       
       // Map to database format
       const riders = ridersData.map(rider => ({
@@ -123,9 +122,10 @@ export class SyncServiceV2 {
 
       // Log to sync_logs
       await supabase.createSyncLog({
-        endpoint: `RIDER_SYNC: ${syncedRiders.length} riders (${metrics.riders_new} new, ${metrics.riders_updated} updated)`,
+        endpoint: `POST /public/riders (bulk: ${syncedRiders.length} riders)`,
         status: 'success',
         records_processed: syncedRiders.length,
+        details: `Interval: ${config.intervalMinutes}min | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
       });
 
       metrics.duration_ms = Date.now() - startTime;
@@ -184,55 +184,69 @@ export class SyncServiceV2 {
     };
 
     try {
-      // Get all events in next 48 hours (more efficient than per-rider scan)
-      console.log(`[NEAR EVENT SYNC] Fetching all events...`);
-      const allEvents = await zwiftClient.getEvents48Hours();
-      console.log(`[NEAR EVENT SYNC] Found ${allEvents.length} events in next 48 hours`);
+      // Get all riders to scan for events
+      const riders = await supabase.getRiders();
+      console.log(`[NEAR EVENT SYNC] Scanning ${riders.length} riders for upcoming events...`);
       
-      if (allEvents.length === 0) {
-        console.log(`[NEAR EVENT SYNC] No upcoming events`);
-        metrics.status = 'success';
+      if (riders.length === 0) {
+        console.warn(`[NEAR EVENT SYNC] No riders found in database`);
+        metrics.status = 'partial';
         metrics.duration_ms = Date.now() - startTime;
-        
-        await supabase.createSyncLog({
-          endpoint: `NEAR_EVENT_SYNC (0 events)`,
-          status: 'success',
-          records_processed: 0,
-        });
-        
         return metrics;
       }
       
-      const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
-      const nearThreshold = now + (config.thresholdMinutes * 60);
+      const now = Date.now();
+      const nearThreshold = now + (config.thresholdMinutes * 60 * 1000);
+      const lookforwardMs = config.lookforwardHours * 60 * 60 * 1000;
       
+      let nearEvents: any[] = [];
       let signupsCount = 0;
       
-      // Process each event
-      for (const event of allEvents) {
-        metrics.events_scanned++;
+      // Scan riders in batches
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < riders.length; i += BATCH_SIZE) {
+        const batch = riders.slice(i, i + BATCH_SIZE);
         
-        // Event time is already in Unix timestamp (seconds)
-        const eventTime = event.time;
-        
-        // Check if event is "near" (starting within threshold)
-        if (eventTime < nearThreshold) {
-          metrics.events_near++;
-          
-          // Sync signups for near events
+        await Promise.all(batch.map(async (rider) => {
           try {
-            const result = await this.syncEventSignups(event.eventId);
-            signupsCount += result.total;
+            // Use rider_id (which is the same as zwift_id in our schema)
+            const riderId = rider.rider_id || rider.zwift_id;
+            // Note: We get ALL events via getEvents48Hours() and filter per rider
+            // getRiderUpcomingEvents() is deprecated and doesn't work reliably
+            
+            for (const event of events) {
+              const eventTime = new Date(event.eventStart).getTime();
+              
+              // Only process events within lookforward window
+              if (eventTime > now && eventTime < now + lookforwardMs) {
+                metrics.events_scanned++;
+                
+                // Check if event is "near"
+                if (eventTime < nearThreshold) {
+                  metrics.events_near++;
+                  nearEvents.push(event);
+                  
+                  // Sync signups for near events
+                  try {
+                    const result = await this.syncEventSignups(event.id);
+                    signupsCount += result.total;
+                  } catch (err) {
+                    metrics.error_count++;
+                    console.warn(`Failed to sync signups for event ${event.id}:`, err);
+                  }
+                } else {
+                  metrics.events_far++;
+                }
+              }
+            }
           } catch (err) {
             metrics.error_count++;
-            console.warn(`Failed to sync signups for event ${event.eventId}:`, err);
+            console.warn(`Failed to scan rider ${rider.zwift_id}:`, err);
           }
-          
-          // Rate limit protection (1 request per 200ms)
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } else {
-          metrics.events_far++;
-        }
+        }));
+        
+        // Rate limit protection
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
       
       metrics.signups_synced = signupsCount;
@@ -296,55 +310,67 @@ export class SyncServiceV2 {
     };
 
     try {
-      // Get all events in next 48 hours
-      console.log(`[FAR EVENT SYNC] Fetching all events...`);
-      const allEvents = await zwiftClient.getEvents48Hours();
-      console.log(`[FAR EVENT SYNC] Found ${allEvents.length} events in next 48 hours`);
+      const riders = await supabase.getRiders();
+      console.log(`[FAR EVENT SYNC] Scanning ${riders.length} riders for far events...`);
       
-      if (allEvents.length === 0) {
-        console.log(`[FAR EVENT SYNC] No upcoming events`);
-        metrics.status = 'success';
+      if (riders.length === 0) {
+        console.warn(`[FAR EVENT SYNC] No riders found in database`);
+        metrics.status = 'partial';
         metrics.duration_ms = Date.now() - startTime;
-        
-        await supabase.createSyncLog({
-          endpoint: `FAR_EVENT_SYNC (0 events)`,
-          status: 'success',
-          records_processed: 0,
-        });
-        
         return metrics;
       }
       
-      const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
-      const farThreshold = now + (config.thresholdMinutes * 60);
+      const now = Date.now();
+      const farThreshold = now + (config.thresholdMinutes * 60 * 1000);
+      const lookforwardMs = config.lookforwardHours * 60 * 60 * 1000;
       
+      let farEvents: any[] = [];
       let signupsCount = 0;
       
-      // Process each event
-      for (const event of allEvents) {
-        metrics.events_scanned++;
+      // Scan riders in batches
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < riders.length; i += BATCH_SIZE) {
+        const batch = riders.slice(i, i + BATCH_SIZE);
         
-        // Event time is already in Unix timestamp (seconds)
-        const eventTime = event.time;
-        
-        // Check if event is "far" (starting after threshold)
-        if (eventTime >= farThreshold) {
-          metrics.events_far++;
-          
-          // Optionally sync signups for far events (less detailed updates)
+        await Promise.all(batch.map(async (rider) => {
           try {
-            const result = await this.syncEventSignups(event.eventId);
-            signupsCount += result.total;
+            const riderId = rider.rider_id;
+            const events = await zwiftClient.getRiderUpcomingEvents(riderId);
+            
+            for (const event of events) {
+              const eventTime = new Date(event.eventStart).getTime();
+              
+              // Only process events within lookforward window
+              if (eventTime > now && eventTime < now + lookforwardMs) {
+                metrics.events_scanned++;
+                
+                // Check if event is "far"
+                if (eventTime >= farThreshold) {
+                  metrics.events_far++;
+                  farEvents.push(event);
+                  
+                  // Optionally sync signups for far events (less detailed)
+                  try {
+                    const result = await this.syncEventSignups(event.id);
+                    signupsCount += result.total;
+                  } catch (err) {
+                    metrics.error_count++;
+                    console.warn(`Failed to sync signups for event ${event.id}:`, err);
+                  }
+                } else {
+                  metrics.events_near++;
+                }
+              }
+            }
           } catch (err) {
             metrics.error_count++;
-            console.warn(`Failed to sync signups for event ${event.eventId}:`, err);
+            const riderId = rider.rider_id;
+            console.warn(`Failed to scan rider ${riderId}:`, err);
           }
-          
-          // Rate limit protection (1 request per 200ms)
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } else {
-          metrics.events_near++;
-        }
+        }));
+        
+        // Rate limit protection
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
       
       metrics.signups_synced = signupsCount;
