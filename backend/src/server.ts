@@ -139,8 +139,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ╚════════════════════════════════════════════════╝
   `);
   
-  // US7 + US8: Start auto-sync scheduler (legacy)
-  autoSyncService.start();
+  // US7 + US8: Legacy auto-sync scheduler - DISABLED to prevent conflicts with V2
+  // autoSyncService.start();  // ❌ DISABLED: conflicts with V2 syncs, causes rate limits
   
   // Modern V2 Auto-Sync Schedulers
   console.log('🔄 Configuring V2 Auto-Sync schedulers...');

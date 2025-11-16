@@ -73,11 +73,22 @@ export class SyncServiceV2 {
     try {
       // Step 1: Get club members (returns array of riders directly)
       console.log(`[RIDER SYNC] Fetching club members...`);
-      const clubMembers = await zwiftClient.getClubMembers(clubId);
+      const response = await zwiftClient.getClubMembers(clubId);
       
-      // Validate response is array
-      if (!Array.isArray(clubMembers)) {
-        throw new Error(`Invalid response from getClubMembers: expected array, got ${typeof clubMembers}`);
+      // Handle both direct array and wrapped response formats
+      let clubMembers: any[];
+      if (Array.isArray(response)) {
+        clubMembers = response;
+      } else if (response && typeof response === 'object') {
+        // Try common wrapper properties
+        clubMembers = (response as any).data || (response as any).members || (response as any).results || [];
+        
+        if (clubMembers.length === 0) {
+          console.warn(`[RIDER SYNC] API response is object but no members found. Keys: ${Object.keys(response).join(', ')}`);
+          throw new Error(`Invalid response from getClubMembers: object with no recognized array property`);
+        }
+      } else {
+        throw new Error(`Invalid response from getClubMembers: expected array or object, got ${typeof response}`);
       }
       
       console.log(`[RIDER SYNC] Found ${clubMembers.length} club members`);
