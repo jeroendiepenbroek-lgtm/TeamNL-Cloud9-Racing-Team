@@ -19,18 +19,18 @@ router.get('/', async (req: Request, res: Response) => {
     
     try {
       // Query access_control for approved users
-      const { data: approvedUsers } = await supabase.client
+      const { count: approvedCount } = await supabase.client
         .from('access_control')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('status', 'approved');
-      activeUsersCount = approvedUsers?.length ?? 0;
+      activeUsersCount = approvedCount ?? 0;
       
       // Query for pending requests
-      const { data: pendingRequests } = await supabase.client
+      const { count: pendingCount } = await supabase.client
         .from('access_control')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
-      pendingRequestsCount = pendingRequests?.length ?? 0;
+      pendingRequestsCount = pendingCount ?? 0;
     } catch (err) {
       console.warn('[AdminStats] Failed to fetch user counts:', err);
     }

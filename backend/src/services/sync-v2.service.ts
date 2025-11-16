@@ -126,7 +126,7 @@ export class SyncServiceV2 {
         endpoint: `RIDER_SYNC`,
         status: 'success',
         records_processed: syncedRiders.length,
-        details: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
+        message: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
       });
 
       metrics.duration_ms = Date.now() - startTime;
@@ -151,7 +151,7 @@ export class SyncServiceV2 {
         status: 'error',
         records_processed: 0,
         error_message: errorMessage,
-        details: `Interval: ${config.intervalMinutes}min`,
+        message: `Interval: ${config.intervalMinutes}min`,
       }).catch(err => console.error('Failed to log error:', err));
       
       return metrics;
@@ -245,7 +245,7 @@ export class SyncServiceV2 {
         endpoint: `NEAR_EVENT_SYNC`,
         status: metrics.status,
         records_processed: metrics.signups_synced,
-        details: `Near: ${metrics.events_near} | Far: ${metrics.events_far} | Events: ${metrics.events_scanned} | Threshold: ${config.thresholdMinutes}min`,
+        message: `Near: ${metrics.events_near} | Far: ${metrics.events_far} | Events: ${metrics.events_scanned} | Threshold: ${config.thresholdMinutes}min`,
       });
       
       console.log(`✅ [NEAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
@@ -358,7 +358,7 @@ export class SyncServiceV2 {
         endpoint: `FAR_EVENT_SYNC`,
         status: metrics.status,
         records_processed: metrics.signups_synced,
-        details: `Far: ${metrics.events_far} | Near: ${metrics.events_near} | Events: ${metrics.events_scanned} | Lookforward: ${config.lookforwardHours}h`,
+        message: `Far: ${metrics.events_far} | Near: ${metrics.events_near} | Events: ${metrics.events_scanned} | Lookforward: ${config.lookforwardHours}h`,
       });
       
       console.log(`✅ [FAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
@@ -376,7 +376,7 @@ export class SyncServiceV2 {
       await supabase.createSyncLog({
         endpoint: 'FAR_EVENT_SYNC',
         status: 'error',
-        details: `Lookforward: ${config.lookforwardHours}h | Interval: ${config.intervalMinutes}min`,
+        message: `Lookforward: ${config.lookforwardHours}h | Interval: ${config.intervalMinutes}min`,
         records_processed: 0,
         error_message: error instanceof Error ? error.message : String(error),
       }).catch(err => console.error('Failed to log error:', err));
