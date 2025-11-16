@@ -141,7 +141,7 @@ export class SyncServiceV2 {
       metrics.error_count = 1;
       metrics.duration_ms = Date.now() - startTime;
       
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error));
       
       console.error(`❌ [RIDER SYNC] Failed:`, errorMessage);
       
@@ -264,7 +264,8 @@ export class SyncServiceV2 {
         endpoint: 'NEAR_EVENT_SYNC',
         status: 'error',
         records_processed: 0,
-        error_message: error instanceof Error ? error.message : String(error),
+        error_message: error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error)),
+        message: `Threshold: ${config.thresholdMinutes}min | Interval: ${config.intervalMinutes}min`,
       }).catch(err => console.error('Failed to log error:', err));
       
       return metrics;
@@ -378,7 +379,7 @@ export class SyncServiceV2 {
         status: 'error',
         message: `Lookforward: ${config.lookforwardHours}h | Interval: ${config.intervalMinutes}min`,
         records_processed: 0,
-        error_message: error instanceof Error ? error.message : String(error),
+        error_message: error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error)),
       }).catch(err => console.error('Failed to log error:', err));
       
       return metrics;
@@ -434,19 +435,25 @@ export class SyncServiceV2 {
     far_event_sync: EventSyncMetrics | null;
   }> {
     const logs = await supabase.getSyncLogs(100);
+    const now = new Date();
     
-    // Find latest of each type - check both old and new endpoint formats
+    // Helper: Check if log is stale "running" status (older than 10 minutes)
+    const isStaleRunning = (log: any) => {
+      if (log.status !== 'running') return false;
+      const logTime = new Date(log.created_at || log.synced_at);
+      const ageMinutes = (now.getTime() - logTime.getTime()) / 60000;
+      return ageMinutes > 5; // Lowered to 5 minutes for faster stale detection
+    };
+    
+    // Find latest of each type - check both old and new endpoint formats, skip stale "running"
     const riderLog = logs.find(l => 
-      l.endpoint?.includes('bulk') || 
-      l.endpoint?.includes('RIDER_SYNC')
+      (l.endpoint?.includes('bulk') || l.endpoint?.includes('RIDER_SYNC')) && !isStaleRunning(l)
     );
     const nearLog = logs.find(l => 
-      l.endpoint?.includes('NEAR_EVENT_SYNC') || 
-      l.endpoint === 'NEAR_EVENT_SYNC'
+      (l.endpoint?.includes('NEAR_EVENT_SYNC') || l.endpoint === 'NEAR_EVENT_SYNC') && !isStaleRunning(l)
     );
     const farLog = logs.find(l => 
-      l.endpoint?.includes('FAR_EVENT_SYNC') || 
-      l.endpoint === 'FAR_EVENT_SYNC'
+      (l.endpoint?.includes('FAR_EVENT_SYNC') || l.endpoint === 'FAR_EVENT_SYNC') && !isStaleRunning(l)
     );
     
     return {
@@ -457,16 +464,16 @@ export class SyncServiceV2 {
   }
 
   private parseMetricsFromLog(log: any, type: string): any {
-    // Parse details field for metrics
-    const details = log.details || '';
-    const matches = details.match(/Interval: (\d+)min|Near: (\d+)|Far: (\d+)|New: (\d+)|Updated: (\d+)|Errors: (\d+)/g);
+    // Use message field (contains details like "Interval: 360min | New: 5 | Updated: 70")
+    const details = log.message || log.details || '';
     
     return {
       type,
-      timestamp: log.synced_at,
+      timestamp: log.synced_at || log.created_at,
       status: log.status,
-      records_processed: log.records_processed,
+      records_processed: log.records_processed || 0,
       details,
+      error_message: log.error_message || null,
     };
   }
 }
