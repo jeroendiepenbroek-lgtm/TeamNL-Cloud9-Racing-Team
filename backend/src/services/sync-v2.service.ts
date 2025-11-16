@@ -12,6 +12,7 @@
 import { zwiftClient } from '../api/zwift-client.js';
 import { supabase } from './supabase.service.js';
 import { DbRider, DbEvent } from '../types/index.js';
+import { syncCoordinator } from './sync-coordinator.service.js';
 
 const TEAM_CLUB_ID = 11818;
 
@@ -45,7 +46,20 @@ export interface EventSyncMetrics {
 export class SyncServiceV2 {
   
   /**
-   * RIDER SYNC
+   * RIDER SYNC (Coordinated)
+   * Uses sync coordinator to prevent conflicts
+   */
+  async syncRidersCoordinated(config: { 
+    intervalMinutes: number;
+    clubId?: number;
+  }): Promise<RiderSyncMetrics> {
+    return await syncCoordinator.queueSync('RIDER_SYNC', async () => {
+      return await this.syncRiders(config);
+    });
+  }
+  
+  /**
+   * RIDER SYNC (Direct - internal use)
    * Syncs all club members with full rider data
    * Tracks: interval, rider count, new vs updated
    */
@@ -170,7 +184,21 @@ export class SyncServiceV2 {
   }
 
   /**
-   * EVENT SYNC - NEAR EVENTS
+   * NEAR EVENT SYNC (Coordinated)
+   * Uses sync coordinator to prevent conflicts
+   */
+  async syncNearEventsCoordinated(config: {
+    intervalMinutes: number;
+    thresholdMinutes: number;
+    lookforwardHours: number;
+  }): Promise<EventSyncMetrics> {
+    return await syncCoordinator.queueSync('NEAR_EVENT_SYNC', async () => {
+      return await this.syncNearEvents(config);
+    });
+  }
+  
+  /**
+   * EVENT SYNC - NEAR EVENTS (Direct - internal use)
    * Syncs events that are close to starting (more frequent updates)
    */
   async syncNearEvents(config: {
@@ -284,7 +312,21 @@ export class SyncServiceV2 {
   }
 
   /**
-   * EVENT SYNC - FAR EVENTS
+   * FAR EVENT SYNC (Coordinated)
+   * Uses sync coordinator to prevent conflicts
+   */
+  async syncFarEventsCoordinated(config: {
+    intervalMinutes: number;
+    thresholdMinutes: number;
+    lookforwardHours: number;
+  }): Promise<EventSyncMetrics> {
+    return await syncCoordinator.queueSync('FAR_EVENT_SYNC', async () => {
+      return await this.syncFarEvents(config);
+    });
+  }
+  
+  /**
+   * EVENT SYNC - FAR EVENTS (Direct - internal use)
    * Syncs events that are far in the future (less frequent updates)
    */
   async syncFarEvents(config: {

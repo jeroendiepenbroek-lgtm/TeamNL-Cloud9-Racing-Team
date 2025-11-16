@@ -137,7 +137,7 @@ export default function AdminHome() {
           />
           
           <AdminTile
-            icon="👥"
+            icon="🚴"
             title="Team Management"
             description="Beheer je team leden met sync timestamps en moderne UI"
             to="/riders"

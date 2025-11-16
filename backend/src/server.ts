@@ -157,7 +157,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     cron.schedule(riderCronExpression, async () => {
       console.log(`\n⏰ [CRON] Rider Sync triggered at ${new Date().toISOString()}`);
       try {
-        const metrics = await syncServiceV2.syncRiders({
+        const metrics = await syncServiceV2.syncRidersCoordinated({
           intervalMinutes: config.riderSyncIntervalMinutes,
         });
         console.log(`✅ [CRON] Rider Sync completed: ${metrics.riders_processed} riders (${metrics.riders_new} new, ${metrics.riders_updated} updated)`);
@@ -176,7 +176,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   cron.schedule(nearEventCronExpression, async () => {
     console.log(`\n⏰ [CRON] Near Event Sync triggered at ${new Date().toISOString()}`);
     try {
-      const metrics = await syncServiceV2.syncNearEvents({
+      const metrics = await syncServiceV2.syncNearEventsCoordinated({
         intervalMinutes: config.nearEventSyncIntervalMinutes,
         thresholdMinutes: config.nearEventThresholdMinutes,
         lookforwardHours: config.lookforwardHours,
@@ -194,7 +194,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   cron.schedule(farEventCronExpression, async () => {
     console.log(`\n⏰ [CRON] Far Event Sync triggered at ${new Date().toISOString()}`);
     try {
-      const metrics = await syncServiceV2.syncFarEvents({
+      const metrics = await syncServiceV2.syncFarEventsCoordinated({
         intervalMinutes: config.farEventSyncIntervalMinutes,
         thresholdMinutes: config.nearEventThresholdMinutes,
         lookforwardHours: config.lookforwardHours,

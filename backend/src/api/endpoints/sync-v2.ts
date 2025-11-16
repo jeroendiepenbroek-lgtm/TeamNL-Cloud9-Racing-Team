@@ -6,6 +6,7 @@
 import { Request, Response, Router } from 'express';
 import { syncServiceV2 } from '../../services/sync-v2.service.js';
 import { syncConfigService } from '../../services/sync-config.service.js';
+import { syncCoordinator } from '../../services/sync-coordinator.service.js';
 
 const router = Router();
 
@@ -87,6 +88,17 @@ router.post('/events/far', async (req: Request, res: Response) => {
       error: 'Far event sync failed',
       message: error instanceof Error ? error.message : 'Unknown error'
     });
+  }
+});
+
+// GET /api/sync/coordinator/status - Get sync coordinator status
+router.get('/coordinator/status', (req: Request, res: Response) => {
+  try {
+    const status = syncCoordinator.getStatus();
+    res.json(status);
+  } catch (error) {
+    console.error('Error getting coordinator status:', error);
+    res.status(500).json({ error: 'Failed to get coordinator status' });
   }
 });
 
