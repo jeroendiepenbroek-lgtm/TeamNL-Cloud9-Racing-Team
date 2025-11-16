@@ -8,35 +8,18 @@ import { useState } from 'react'
 import { Activity, Users, Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2, Zap, Settings, Save, PlayCircle, PauseCircle } from 'lucide-react'
 
 interface SyncMetrics {
-  rider_sync: RiderSyncMetrics | null
-  near_event_sync: EventSyncMetrics | null
-  far_event_sync: EventSyncMetrics | null
+  rider_sync: MetricItem | null
+  near_event_sync: MetricItem | null
+  far_event_sync: MetricItem | null
 }
 
-interface RiderSyncMetrics {
-  type: 'RIDER_SYNC'
+interface MetricItem {
+  type: string
   timestamp: string
-  interval_minutes: number
-  riders_processed: number
-  riders_updated: number
-  riders_new: number
-  duration_ms: number
-  status: 'success' | 'partial' | 'error'
-  error_count: number
-}
-
-interface EventSyncMetrics {
-  type: 'NEAR_EVENT_SYNC' | 'FAR_EVENT_SYNC'
-  timestamp: string
-  interval_minutes: number
-  threshold_minutes: number
-  events_scanned: number
-  events_near: number
-  events_far: number
-  signups_synced: number
-  duration_ms: number
-  status: 'success' | 'partial' | 'error'
-  error_count: number
+  status: 'success' | 'partial' | 'error' | 'running'
+  records_processed: number
+  details: string
+  error_message: string | null
 }
 
 interface SyncLog {
@@ -45,7 +28,9 @@ interface SyncLog {
   status: string
   records_processed: number
   synced_at: string
-  error_message?: string
+  created_at: string
+  error_message?: string | null
+  message?: string | null
   details?: string
 }
 
@@ -79,7 +64,7 @@ export default function SyncStatusModern() {
   })
 
   // Fetch sync logs
-  const { data: logs, isLoading: logsLoading, refetch: refetchLogs } = useQuery<SyncLog[]>({
+  const { data: logsResponse, isLoading: logsLoading, refetch: refetchLogs } = useQuery<{count: number, logs: SyncLog[]}>({
     queryKey: ['sync-logs'],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/sync-logs?limit=20`)
@@ -88,6 +73,8 @@ export default function SyncStatusModern() {
     },
     refetchInterval: 5000, // Every 5s
   })
+  
+  const logs = logsResponse?.logs || []
 
   // Fetch sync config
   const { data: config, refetch: refetchConfig } = useQuery<SyncConfig>({
@@ -165,11 +152,6 @@ export default function SyncStatusModern() {
     }
   }
 
-  const formatDuration = (ms: number) => {
-    if (ms < 1000) return `${ms}ms`
-    return `${(ms / 1000).toFixed(1)}s`
-  }
-
   const formatTimestamp = (ts: string) => {
     const date = new Date(ts)
     const now = new Date()
@@ -198,6 +180,80 @@ export default function SyncStatusModern() {
       case 'error': return <AlertCircle className="w-5 h-5" />
       default: return <Clock className="w-5 h-5" />
     }
+  }
+
+  // Helper: Parse details string for display values
+  const parseDetails = (details: string | undefined) => {
+    if (!details) return {}
+    const parsed: Record<string, string> = {}
+    
+    // Match patterns like "Interval: 360min", "New: 5", "Far: 196"
+    const patterns = details.match(/(\w+):\s*([^|]+)/g)
+    patterns?.forEach(pattern => {
+      const [key, value] = pattern.split(':').map(s => s.trim())
+      parsed[key.toLowerCase()] = value
+    })
+    
+    return parsed
+  }
+
+  // Helper: Render metric card content
+  const renderMetricCard = (metric: MetricItem | null, type: 'rider' | 'near' | 'far') => {
+    if (!metric) {
+      return (
+        <div className="text-center text-gray-500 text-xs sm:text-sm py-4">
+          Geen sync data beschikbaar
+        </div>
+      )
+    }
+
+    const details = parseDetails(metric.details)
+    
+    return (
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3">
+            <div className="text-[10px] sm:text-xs text-gray-600 mb-1">
+              {type === 'rider' ? 'Records' : 'Signups'}
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-blue-700">
+              {metric.records_processed || 0}
+            </div>
+          </div>
+          {(details.new || details.near || details.far) && (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3">
+              <div className="text-[10px] sm:text-xs text-gray-600 mb-1">
+                {details.new ? 'New' : details.near ? 'Near' : 'Far'}
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-green-700">
+                {details.new || details.near || details.far}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {Object.keys(details).map(key => {
+          if (['new', 'near', 'far'].includes(key)) return null
+          return (
+            <div key={key} className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-gray-600 capitalize">{key}</span>
+              <span className="font-bold text-gray-900">{details[key]}</span>
+            </div>
+          )
+        })}
+
+        {metric.error_message && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700">
+            {metric.error_message}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between text-xs sm:text-sm pt-2 border-t border-gray-200">
+          <span className="text-gray-500">Last sync</span>
+          <span className="font-medium text-gray-700">{formatTimestamp(metric.timestamp)}</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -254,43 +310,8 @@ export default function SyncStatusModern() {
                 <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
               </div>
-            ) : metrics?.rider_sync ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3">
-                    <div className="text-[10px] sm:text-xs text-gray-600 mb-1">Total Riders</div>
-                    <div className="text-xl sm:text-2xl font-black text-blue-700">{metrics.rider_sync.riders_processed}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3">
-                    <div className="text-[10px] sm:text-xs text-gray-600 mb-1">New</div>
-                    <div className="text-xl sm:text-2xl font-black text-green-700">{metrics.rider_sync.riders_new}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Updated</span>
-                  <span className="font-bold text-gray-900">{metrics.rider_sync.riders_updated}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Interval</span>
-                  <span className="font-bold text-gray-900">{metrics.rider_sync.interval_minutes}min</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Duration</span>
-                  <span className="font-bold text-gray-900">{formatDuration(metrics.rider_sync.duration_ms)}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm pt-2 border-t border-gray-200">
-                  <span className="text-gray-500">Last sync</span>
-                  <span className="font-medium text-gray-700">{formatTimestamp(metrics.rider_sync.timestamp)}</span>
-                </div>
-              </div>
             ) : (
-              <div className="text-center text-gray-500 text-xs sm:text-sm py-4">
-                Geen sync data beschikbaar
-              </div>
+              renderMetricCard(metrics?.rider_sync || null, 'rider')
             )}
 
             <button
@@ -338,43 +359,8 @@ export default function SyncStatusModern() {
                 <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
               </div>
-            ) : metrics?.near_event_sync ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-3">
-                    <div className="text-[10px] sm:text-xs text-gray-600 mb-1">Near Events</div>
-                    <div className="text-xl sm:text-2xl font-black text-orange-700">{metrics.near_event_sync.events_near}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-3">
-                    <div className="text-[10px] sm:text-xs text-gray-600 mb-1">Signups</div>
-                    <div className="text-xl sm:text-2xl font-black text-purple-700">{metrics.near_event_sync.signups_synced}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Threshold</span>
-                  <span className="font-bold text-gray-900">{metrics.near_event_sync.threshold_minutes}min</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Interval</span>
-                  <span className="font-bold text-gray-900">{metrics.near_event_sync.interval_minutes}min</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Duration</span>
-                  <span className="font-bold text-gray-900">{formatDuration(metrics.near_event_sync.duration_ms)}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm pt-2 border-t border-gray-200">
-                  <span className="text-gray-500">Last sync</span>
-                  <span className="font-medium text-gray-700">{formatTimestamp(metrics.near_event_sync.timestamp)}</span>
-                </div>
-              </div>
             ) : (
-              <div className="text-center text-gray-500 text-xs sm:text-sm py-4">
-                Geen sync data beschikbaar
-              </div>
+              renderMetricCard(metrics?.near_event_sync || null, 'near')
             )}
 
             <button
@@ -422,43 +408,8 @@ export default function SyncStatusModern() {
                 <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
               </div>
-            ) : metrics?.far_event_sync ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-3">
-                    <div className="text-[10px] sm:text-xs text-gray-600 mb-1">Far Events</div>
-                    <div className="text-xl sm:text-2xl font-black text-purple-700">{metrics.far_event_sync.events_far}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-3">
-                    <div className="text-[10px] sm:text-xs text-gray-600 mb-1">Signups</div>
-                    <div className="text-xl sm:text-2xl font-black text-blue-700">{metrics.far_event_sync.signups_synced}</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Threshold</span>
-                  <span className="font-bold text-gray-900">{metrics.far_event_sync.threshold_minutes}min</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Interval</span>
-                  <span className="font-bold text-gray-900">{metrics.far_event_sync.interval_minutes}min</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-gray-600">Duration</span>
-                  <span className="font-bold text-gray-900">{formatDuration(metrics.far_event_sync.duration_ms)}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs sm:text-sm pt-2 border-t border-gray-200">
-                  <span className="text-gray-500">Last sync</span>
-                  <span className="font-medium text-gray-700">{formatTimestamp(metrics.far_event_sync.timestamp)}</span>
-                </div>
-              </div>
             ) : (
-              <div className="text-center text-gray-500 text-xs sm:text-sm py-4">
-                Geen sync data beschikbaar
-              </div>
+              renderMetricCard(metrics?.far_event_sync || null, 'far')
             )}
 
             <button
