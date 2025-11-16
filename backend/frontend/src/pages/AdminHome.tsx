@@ -148,7 +148,7 @@ export default function AdminHome() {
             icon="👥"
             title="Gebruikersbeheer"
             description="Beheer gebruikers, rollen en toegangsrechten. Bekijk en goedkeur nieuwe aanvragen."
-            to="/admin/users"
+            to="/admin/access-requests"
             gradient="from-green-500 to-green-700"
           />
           
