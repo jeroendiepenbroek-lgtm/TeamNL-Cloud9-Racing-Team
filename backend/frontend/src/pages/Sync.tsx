@@ -19,7 +19,11 @@ interface SyncLog {
   created_at: string;
 }
 
-export default function Sync() {
+interface SyncProps {
+  readOnly?: boolean
+}
+
+export default function Sync({ readOnly = false }: SyncProps) {
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [logs, setLogs] = useState<SyncLog[]>([]);
   const [isTriggering, setIsTriggering] = useState(false);
@@ -69,6 +73,10 @@ export default function Sync() {
 
   // Manual trigger
   const handleManualSync = async () => {
+    if (readOnly) {
+      toast.error('Sync uitgeschakeld in archief modus');
+      return;
+    }
     setIsTriggering(true);
     
     try {
@@ -119,6 +127,15 @@ export default function Sync() {
 
   return (
     <div ref={containerRef} className="space-y-6 transition-transform duration-300">
+      {/* Archive Banner */}
+      {readOnly && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-700 font-bold">📦 Archief Modus</span>
+            <span className="text-amber-600 text-sm">Sync triggers uitgeschakeld - alleen-lezen versie</span>
+          </div>
+        </div>
+      )}
       {/* Status Card */}
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-start mb-6">
@@ -144,9 +161,9 @@ export default function Sync() {
             </a>
             <button
               onClick={handleManualSync}
-              disabled={isTriggering || status?.isRunning}
+              disabled={isTriggering || status?.isRunning || readOnly}
               className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                isTriggering || status?.isRunning
+                isTriggering || status?.isRunning || readOnly
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
               }`}

@@ -327,11 +327,11 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
-          <Route path="/admin/archive/dashboard" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Dashboard /></div></ProtectedRoute>} />
-          <Route path="/admin/archive/sync" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Sync /></div></ProtectedRoute>} />
-          <Route path="/admin/archive/matrix" element={<ProtectedRoute><RacingDataMatrix /></ProtectedRoute>} />
-          <Route path="/admin/archive/events" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Events /></div></ProtectedRoute>} />
-          <Route path="/admin/archive/riders" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Riders /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/dashboard" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Dashboard readOnly={true} /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/sync" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Sync readOnly={true} /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/matrix" element={<ProtectedRoute><RacingDataMatrix readOnly={true} /></ProtectedRoute>} />
+          <Route path="/admin/archive/events" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Events readOnly={true} /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/riders" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Riders readOnly={true} /></div></ProtectedRoute>} />
         </Routes>
       </main>
 

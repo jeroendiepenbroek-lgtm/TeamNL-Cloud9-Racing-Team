@@ -79,7 +79,11 @@ interface TeamSignup {
   // US8: Removed power_wkg5 and race_rating
 }
 
-export default function Events() {
+interface EventsProps {
+  readOnly?: boolean
+}
+
+export default function Events({ readOnly = false }: EventsProps) {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -186,6 +190,15 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Archive Banner */}
+      {readOnly && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mx-auto max-w-7xl mt-4">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-700 font-bold">📦 Archief Modus</span>
+            <span className="text-amber-600 text-sm">Alleen-lezen versie voor referentie</span>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

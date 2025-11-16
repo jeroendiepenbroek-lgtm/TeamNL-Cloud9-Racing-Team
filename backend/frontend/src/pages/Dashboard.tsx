@@ -10,7 +10,11 @@ interface HealthCheck {
 
 const API_BASE = ''; // Empty = same origin (production), of http://localhost:3000 voor dev
 
-export default function Dashboard() {
+interface DashboardProps {
+  readOnly?: boolean
+}
+
+export default function Dashboard({ readOnly = false }: DashboardProps) {
   const { data: health, isLoading } = useQuery<HealthCheck>({
     queryKey: ['health'],
     queryFn: async () => {
@@ -33,6 +37,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Archive Banner */}
+      {readOnly && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-700 font-bold">📦 Archief Modus</span>
+            <span className="text-amber-600 text-sm">Dit is een alleen-lezen versie voor referentie</span>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-white shadow rounded-lg p-6">
         <h1 className="text-2xl font-bold text-gray-900">TeamNL Cloud9 Racing Dashboard</h1>

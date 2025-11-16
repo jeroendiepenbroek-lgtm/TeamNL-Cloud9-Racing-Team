@@ -236,7 +236,11 @@ function MultiSelectDropdown<T extends string | number>({
   )
 }
 
-export default function RacingDataMatrix() {
+interface RacingDataMatrixProps {
+  readOnly?: boolean
+}
+
+export default function RacingDataMatrix({ readOnly = false }: RacingDataMatrixProps) {
   const [showLegend, setShowLegend] = useState(false)
   const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_last_rating')
   const [sortDesc, setSortDesc] = useState(true)
@@ -383,6 +387,15 @@ export default function RacingDataMatrix() {
 
   return (
     <div className="space-y-3 max-w-[98vw] mx-auto py-2">
+      {/* Archive Banner */}
+      {readOnly && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-700 font-bold">📦 Archief Modus</span>
+            <span className="text-amber-600 text-sm">Alleen-lezen versie voor referentie</span>
+          </div>
+        </div>
+      )}
       {/* Header met filters en legend button */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>

@@ -101,7 +101,11 @@ interface TeamRider {
 
 const API_BASE = '';
 
-export default function Riders() {
+interface RidersProps {
+  readOnly?: boolean
+}
+
+export default function Riders({ readOnly = false }: RidersProps) {
   const queryClient = useQueryClient();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -254,6 +258,15 @@ export default function Riders() {
 
   return (
     <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
+      {/* Archive Banner */}
+      {readOnly && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-700 font-bold">📦 Archief Modus</span>
+            <span className="text-amber-600 text-sm">Mutaties uitgeschakeld - alleen-lezen versie</span>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800">👥 Team Management</h1>
@@ -289,20 +302,22 @@ export default function Riders() {
           {/* Buttons */}
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md"
+              onClick={() => !readOnly && setShowAddModal(true)}
+              disabled={readOnly}
+              className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               <span>➕</span> Add Rider
             </button>
             <button
-              onClick={() => setShowBulkModal(true)}
-              className="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md"
+              onClick={() => !readOnly && setShowBulkModal(true)}
+              disabled={readOnly}
+              className="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 text-sm font-medium shadow-sm hover:shadow-md disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               <span>📤</span> Bulk Upload
             </button>
             <button
               onClick={() => triggerManualSync.mutate()}
-              disabled={triggerManualSync.isPending || riders.length === 0}
+              disabled={triggerManualSync.isPending || riders.length === 0 || readOnly}
               className="px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium shadow-sm hover:shadow-md"
               title={riders.length === 0 ? 'Voeg eerst riders toe om te synchen' : 'Sync alle team members met ZwiftRacing API'}
             >
