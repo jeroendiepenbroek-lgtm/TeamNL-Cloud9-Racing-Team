@@ -18,6 +18,7 @@ import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import autoSyncRouter from './api/endpoints/auto-sync.js';
 import syncConfigRouter from './api/endpoints/sync-config.js';
+import syncV2Router from './api/endpoints/sync-v2.js';
 
 // US7 + US8: Auto-sync service
 import { autoSyncService } from './services/auto-sync.service.js';
@@ -71,7 +72,8 @@ app.use('/api/results', resultsRouter);
 app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/auto-sync', autoSyncRouter); // US8
-app.use('/api/sync', syncConfigRouter); // Sync configuratie
+app.use('/api/sync', syncV2Router); // Modern sync V2 (prioriteit)
+app.use('/api/sync', syncConfigRouter); // Sync configuratie (fallback)
 
 // 404 handler
 app.use((req: Request, res: Response) => {

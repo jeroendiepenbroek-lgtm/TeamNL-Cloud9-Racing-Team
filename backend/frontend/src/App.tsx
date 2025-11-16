@@ -9,6 +9,7 @@ import Events from './pages/Events'
 import EventsModern from './pages/EventsModern'
 import Sync from './pages/Sync'
 import SyncConfig from './pages/SyncConfig'
+import SyncStatusModern from './pages/SyncStatusModern'
 import RacingDataMatrix from './pages/RacingDataMatrix'
 import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
 import Debug from './pages/Debug'
@@ -318,6 +319,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <SyncConfig />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/sync/modern" 
+            element={
+              <ProtectedRoute>
+                <SyncStatusModern />
               </ProtectedRoute>
             } 
           />

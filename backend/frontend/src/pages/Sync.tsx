@@ -131,6 +131,12 @@ export default function Sync() {
           
           <div className="flex gap-3">
             <a
+              href="/sync/modern"
+              className="px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              ✨ Modern Dashboard
+            </a>
+            <a
               href="/sync/config"
               className="px-6 py-3 rounded-lg font-semibold transition-all bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-lg flex items-center gap-2"
             >

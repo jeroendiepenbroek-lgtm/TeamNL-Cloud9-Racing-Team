@@ -109,10 +109,17 @@ export class SyncService {
     console.log(`🔄 Syncing riders for club ${clubId}...`);
     
     try {
-      // Step 1: Get club members (lightweight - just IDs)
-      console.log(`[SyncRiders] Step 1: Fetching club member IDs...`);
+      // Step 1: Get club members (returns array of ZwiftRider directly)
+      console.log(`[SyncRiders] Step 1: Fetching club members...`);
       const clubMembers = await zwiftClient.getClubMembers(clubId);
-      const riderIds = clubMembers.map(m => m.riderId);
+      
+      // Validate response is array
+      if (!Array.isArray(clubMembers)) {
+        throw new Error(`Invalid response from getClubMembers: expected array, got ${typeof clubMembers}`);
+      }
+      
+      // Extract rider IDs
+      const riderIds = clubMembers.map(m => m.riderId).filter(id => id);
       
       console.log(`[SyncRiders] Found ${riderIds.length} club members`);
       
