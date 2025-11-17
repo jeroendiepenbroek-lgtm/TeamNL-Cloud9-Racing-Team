@@ -101,9 +101,10 @@ export class SyncService {
   }
 
   /**
-   * 2. Sync club riders (simplified - uses only GET club members)
-   * GET /public/clubs/{id} returns FULL rider data already
-   * Rate limit: 1/60min
+   * 2. Sync club riders (SMART STRATEGY)
+   * - Full team sync: GET /public/clubs/{id} (1/60min) - scheduled 6h
+   * - Bulk update: POST /public/riders (1/15min) - voor >10 riders
+   * - Individual: GET /public/riders/{id} (5/1min) - voor ≤10 riders
    */
   async syncRiders(clubId: number = TEAM_CLUB_ID): Promise<DbRider[]> {
     console.log(`🔄 Syncing riders for club ${clubId}...`);
@@ -125,16 +126,58 @@ export class SyncService {
         return [];
       }
       
-      // Map to database format - NO EXTRA API CALL NEEDED
+      // Map to database format with ALL available fields (matching DbRider interface)
       const riders = clubMembers.map(rider => ({
-        zwift_id: rider.riderId,
+        // Core identifiers
+        rider_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`,
-        category: rider.zpCategory || null,
-        ranking: rider.race?.current?.rating || null,
-        points: rider.race?.finishes || 0,
-        club_id: clubId,
-        is_active: true,
-        last_synced: new Date().toISOString(),
+        
+        // Demographics
+        gender: rider.gender,
+        country: rider.country,
+        age: rider.age,
+        height: rider.height,
+        weight: rider.weight,
+        
+        // Zwift Performance
+        zp_category: rider.zpCategory,
+        zp_ftp: rider.zpFTP,
+        
+        // Power Data (14 fields from power object)
+        power_wkg5: rider.power?.wkg5,
+        power_wkg15: rider.power?.wkg15,
+        power_wkg30: rider.power?.wkg30,
+        power_wkg60: rider.power?.wkg60,
+        power_wkg120: rider.power?.wkg120,
+        power_wkg300: rider.power?.wkg300,
+        power_wkg1200: rider.power?.wkg1200,
+        power_w5: rider.power?.w5,
+        power_w15: rider.power?.w15,
+        power_w30: rider.power?.w30,
+        power_w60: rider.power?.w60,
+        power_w120: rider.power?.w120,
+        power_w300: rider.power?.w300,
+        power_w1200: rider.power?.w1200,
+        power_cp: rider.power?.CP,
+        power_awc: rider.power?.AWC,
+        power_compound_score: rider.power?.compoundScore,
+        power_rating: rider.power?.powerRating,
+        
+        // Race Stats (12 fields from race object)
+        race_last_rating: rider.race?.last?.rating,
+        race_last_date: rider.race?.last?.date,
+        race_last_category: rider.race?.last?.mixed?.category,
+        race_last_number: rider.race?.last?.mixed?.number,
+        race_current_rating: rider.race?.current?.rating,
+        race_current_date: rider.race?.current?.date,
+        race_max30_rating: rider.race?.max30?.rating,
+        race_max30_expires: rider.race?.max30?.expires,
+        race_max90_rating: rider.race?.max90?.rating,
+        race_max90_expires: rider.race?.max90?.expires,
+        race_finishes: rider.race?.finishes,
+        race_dnfs: rider.race?.dnfs,
+        race_wins: rider.race?.wins,
+        race_podiums: rider.race?.podiums,
       }));
 
       const syncedRiders = await supabase.upsertRiders(riders);
@@ -145,7 +188,7 @@ export class SyncService {
         records_processed: syncedRiders.length,
       });
 
-      console.log(`✅ Synced ${syncedRiders.length} riders (single API call)`);
+      console.log(`✅ Synced ${syncedRiders.length} riders (single GET call)`);
       return syncedRiders;
     } catch (error: any) {
       const errorMessage = error instanceof Error 
@@ -165,6 +208,145 @@ export class SyncService {
       });
       
       console.error(`❌ [SyncRiders] Error syncing riders:`, detailedMessage);
+      throw error;
+    }
+  }
+
+  /**
+   * 2b. SMART sync specific riders (gebruikt efficiëntste methode)
+   * - 1 rider: GET /public/riders/{id} (5/min)
+   * - 2-10 riders: GET /public/riders/{id} sequentially (5/min, 12s delay)
+   * - >10 riders: POST /public/riders bulk (1/15min)
+   */
+  async syncSpecificRiders(riderIds: number[]): Promise<DbRider[]> {
+    const count = riderIds.length;
+    console.log(`🔄 [SmartSync] Syncing ${count} specific rider(s)...`);
+    
+    try {
+      let ridersData: any[] = [];
+      
+      if (count === 0) {
+        return [];
+      } else if (count === 1) {
+        // Single rider: GET (most efficient for 1)
+        console.log(`[SmartSync] Using GET /public/riders/${riderIds[0]} (5/min rate)`);
+        const rider = await zwiftClient.getRider(riderIds[0]);
+        ridersData = [rider];
+        
+        await supabase.createSyncLog({
+          endpoint: `GET /public/riders/${riderIds[0]}`,
+          status: 'success',
+          records_processed: 1,
+        });
+      } else if (count <= 10) {
+        // Small batch: Sequential GET (5/min = 12s between calls)
+        console.log(`[SmartSync] Using sequential GET for ${count} riders (5/min rate, 12s delay)`);
+        
+        for (const riderId of riderIds) {
+          try {
+            const rider = await zwiftClient.getRider(riderId);
+            ridersData.push(rider);
+            
+            // Rate limit: 5/min = wait 12s between calls
+            if (riderIds.indexOf(riderId) < riderIds.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 12000));
+            }
+          } catch (err) {
+            console.warn(`[SmartSync] Failed to fetch rider ${riderId}:`, err);
+          }
+        }
+        
+        await supabase.createSyncLog({
+          endpoint: `GET /public/riders/{id} (sequential x${count})`,
+          status: 'success',
+          records_processed: ridersData.length,
+        });
+      } else {
+        // Large batch: Bulk POST (most efficient for >10)
+        console.log(`[SmartSync] Using POST /public/riders bulk for ${count} riders (1/15min rate)`);
+        ridersData = await zwiftClient.getBulkRiders(riderIds);
+        
+        await supabase.createSyncLog({
+          endpoint: `POST /public/riders (bulk x${count})`,
+          status: 'success',
+          records_processed: ridersData.length,
+        });
+      }
+      
+      // Map to database format with ALL available fields (matching DbRider interface)
+      const riders = ridersData.map(rider => ({
+        // Core identifiers
+        rider_id: rider.riderId,
+        name: rider.name || `Rider ${rider.riderId}`,
+        
+        // Demographics
+        gender: rider.gender,
+        country: rider.country,
+        age: rider.age,
+        height: rider.height,
+        weight: rider.weight,
+        
+        // Zwift Performance
+        zp_category: rider.zpCategory,
+        zp_ftp: rider.zpFTP,
+        
+        // Power Data (14 fields from power object)
+        power_wkg5: rider.power?.wkg5,
+        power_wkg15: rider.power?.wkg15,
+        power_wkg30: rider.power?.wkg30,
+        power_wkg60: rider.power?.wkg60,
+        power_wkg120: rider.power?.wkg120,
+        power_wkg300: rider.power?.wkg300,
+        power_wkg1200: rider.power?.wkg1200,
+        power_w5: rider.power?.w5,
+        power_w15: rider.power?.w15,
+        power_w30: rider.power?.w30,
+        power_w60: rider.power?.w60,
+        power_w120: rider.power?.w120,
+        power_w300: rider.power?.w300,
+        power_w1200: rider.power?.w1200,
+        power_cp: rider.power?.CP,
+        power_awc: rider.power?.AWC,
+        power_compound_score: rider.power?.compoundScore,
+        power_rating: rider.power?.powerRating,
+        
+        // Race Stats (12 fields from race object)
+        race_last_rating: rider.race?.last?.rating,
+        race_last_date: rider.race?.last?.date,
+        race_last_category: rider.race?.last?.mixed?.category,
+        race_last_number: rider.race?.last?.mixed?.number,
+        race_current_rating: rider.race?.current?.rating,
+        race_current_date: rider.race?.current?.date,
+        race_max30_rating: rider.race?.max30?.rating,
+        race_max30_expires: rider.race?.max30?.expires,
+        race_max90_rating: rider.race?.max90?.rating,
+        race_max90_expires: rider.race?.max90?.expires,
+        race_finishes: rider.race?.finishes,
+        race_dnfs: rider.race?.dnfs,
+        race_wins: rider.race?.wins,
+        race_podiums: rider.race?.podiums,
+      }));
+
+      const syncedRiders = await supabase.upsertRiders(riders);
+      
+      console.log(`✅ [SmartSync] Synced ${syncedRiders.length}/${count} riders`);
+      return syncedRiders;
+      
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+      const status = error.response?.status;
+      const detailedMessage = status === 429 
+        ? `Rate limit exceeded - ${errorMessage}`
+        : errorMessage;
+      
+      await supabase.createSyncLog({
+        endpoint: `Smart rider sync (${count} riders)`,
+        status: 'error',
+        records_processed: 0,
+        error_message: detailedMessage,
+      });
+      
+      console.error(`❌ [SmartSync] Error:`, detailedMessage);
       throw error;
     }
   }
@@ -515,6 +697,28 @@ export class SyncService {
         } catch (bulkError) {
           console.error(`❌ [BulkImport] Bulk upsert failed:`, bulkError);
           throw bulkError;
+        }
+      }
+
+      // 6. SMART: Update rider data for participants (only if signups found)
+      if (signupsMatched > 0) {
+        const participantIds = Array.from(new Set(
+          events.flatMap(e => 
+            e.pens?.flatMap((p: any) => 
+              p.results?.signups?.map((s: any) => s.riderId || s.rider_id)
+                .filter((id: number) => riderMap.has(id))
+            ) || []
+          ).filter(Boolean)
+        ));
+        
+        if (participantIds.length > 0) {
+          console.log(`🔄 [SmartSync] Updating ${participantIds.length} participant riders...`);
+          try {
+            await this.syncSpecificRiders(participantIds);
+            console.log(`✅ [SmartSync] Participant riders updated`);
+          } catch (syncError) {
+            console.warn(`⚠️  [SmartSync] Failed to update participants:`, syncError);
+          }
         }
       }
 

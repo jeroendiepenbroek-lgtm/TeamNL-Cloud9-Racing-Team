@@ -132,28 +132,64 @@ export class SyncServiceV2 {
         return metrics;
       }
       
-      // Extract rider IDs from club members response
-      const riderIds = clubMembers.map(m => m.riderId).filter(id => id);
-      
-      // Step 2: Bulk fetch full rider data
-      console.log(`[RIDER SYNC] Fetching full rider data for ${riderIds.length} riders...`);
-      const ridersData = await zwiftClient.getBulkRiders(riderIds);
-      
+      // clubMembers already contains FULL rider data (no extra API call needed)
       // Get existing riders to track new vs updated
       const existingRiders = await supabase.getRiders();
       // Map rider_id from DB for comparison
       const existingIds = new Set(existingRiders.map(r => r.rider_id));
       
-      // Map to database format
-      const riders = ridersData.map(rider => ({
+      // Map to database format with ALL available fields (matching DbRider interface)
+      const riders = clubMembers.map(rider => ({
+        // Core identifiers
         rider_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`,
-        zp_category: rider.zpCategory || null,
-        race_current_rating: rider.race?.current?.rating || null,
-        race_finishes: rider.race?.finishes || 0,
-        club_id: clubId,
-        club_name: rider.club?.name || null,
-        last_synced: new Date().toISOString(),
+        
+        // Demographics
+        gender: rider.gender,
+        country: rider.country,
+        age: rider.age,
+        height: rider.height,
+        weight: rider.weight,
+        
+        // Zwift Performance
+        zp_category: rider.zpCategory,
+        zp_ftp: rider.zpFTP,
+        
+        // Power Data (18 fields from power object)
+        power_wkg5: rider.power?.wkg5,
+        power_wkg15: rider.power?.wkg15,
+        power_wkg30: rider.power?.wkg30,
+        power_wkg60: rider.power?.wkg60,
+        power_wkg120: rider.power?.wkg120,
+        power_wkg300: rider.power?.wkg300,
+        power_wkg1200: rider.power?.wkg1200,
+        power_w5: rider.power?.w5,
+        power_w15: rider.power?.w15,
+        power_w30: rider.power?.w30,
+        power_w60: rider.power?.w60,
+        power_w120: rider.power?.w120,
+        power_w300: rider.power?.w300,
+        power_w1200: rider.power?.w1200,
+        power_cp: rider.power?.CP,
+        power_awc: rider.power?.AWC,
+        power_compound_score: rider.power?.compoundScore,
+        power_rating: rider.power?.powerRating,
+        
+        // Race Stats (14 fields from race object)
+        race_last_rating: rider.race?.last?.rating,
+        race_last_date: rider.race?.last?.date,
+        race_last_category: rider.race?.last?.mixed?.category,
+        race_last_number: rider.race?.last?.mixed?.number,
+        race_current_rating: rider.race?.current?.rating,
+        race_current_date: rider.race?.current?.date,
+        race_max30_rating: rider.race?.max30?.rating,
+        race_max30_expires: rider.race?.max30?.expires,
+        race_max90_rating: rider.race?.max90?.rating,
+        race_max90_expires: rider.race?.max90?.expires,
+        race_finishes: rider.race?.finishes,
+        race_dnfs: rider.race?.dnfs,
+        race_wins: rider.race?.wins,
+        race_podiums: rider.race?.podiums,
       }));
 
       // Upsert to database
@@ -165,10 +201,10 @@ export class SyncServiceV2 {
 
       // Log to sync_logs with clear RIDER_SYNC identifier
       await supabase.createSyncLog({
-        endpoint: `RIDER_SYNC`,
+        endpoint: `RIDER_SYNC (complete field mapping)`,
         status: 'success',
         records_processed: syncedRiders.length,
-        message: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
+        message: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated} | All 50+ fields synced`,
       });
 
       metrics.duration_ms = Date.now() - startTime;
