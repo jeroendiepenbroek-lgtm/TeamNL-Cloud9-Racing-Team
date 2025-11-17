@@ -317,12 +317,12 @@ export class SyncServiceV2 {
       await supabase.createSyncLog({
         endpoint: `NEAR_EVENT_SYNC`,
         status: metrics.status,
-        records_processed: metrics.signups_synced,
-        message: `Near: ${metrics.events_near} | Far: ${metrics.events_far} | Events: ${metrics.events_scanned} | Threshold: ${config.thresholdMinutes}min`,
+        records_processed: allEvents.length,
+        details: `Events: ${allEvents.length} | Near: ${metrics.events_near} | Far: ${metrics.events_far} | Signups: ${metrics.signups_synced} | Threshold: ${config.thresholdMinutes}min`,
       });
       
       console.log(`✅ [NEAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
-      console.log(`   📊 Near: ${metrics.events_near} | Far: ${metrics.events_far} | Signups: ${metrics.signups_synced}`);
+      console.log(`   📊 Events: ${allEvents.length} | Near: ${metrics.events_near} | Far: ${metrics.events_far} | Signups: ${metrics.signups_synced}`);
       
       return metrics;
       
@@ -492,11 +492,12 @@ export class SyncServiceV2 {
       await supabase.createSyncLog({
         endpoint: `FAR_EVENT_SYNC`,
         status: metrics.status,
-        records_processed: metrics.signups_synced,
+        records_processed: allEvents.length,
+        details: `Events: ${allEvents.length} | Far: ${metrics.events_far} | Near: ${metrics.events_near} | New: ${newEventsCount} | Skipped: ${skippedEventsCount} | Signups: ${metrics.signups_synced}`,
       });
       
       console.log(`✅ [FAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
-      console.log(`   📊 Far: ${metrics.events_far} | Near: ${metrics.events_near} | Signups: ${metrics.signups_synced}`);
+      console.log(`   📊 Events: ${allEvents.length} | Far: ${metrics.events_far} | Near: ${metrics.events_near} | New: ${newEventsCount} | Signups: ${metrics.signups_synced}`);
       
       return metrics;
       
