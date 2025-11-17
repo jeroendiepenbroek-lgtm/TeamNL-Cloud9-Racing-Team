@@ -20,6 +20,7 @@ import syncConfigRouter from './api/endpoints/sync-config.js';
 import syncV2Router from './api/endpoints/sync-v2.js';
 import adminStatsRouter from './api/endpoints/admin-stats.js';
 import rateLimiterRouter from './api/endpoints/rate-limiter.js';
+import cleanupRouter from './api/endpoints/cleanup.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
@@ -78,6 +79,7 @@ app.use('/api/sync', syncV2Router); // Modern sync V2 (prioriteit)
 app.use('/api/sync', syncConfigRouter); // Sync configuratie (fallback)
 app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
+app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -203,6 +205,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   });
   
   console.log('✅ All V2 Auto-Sync schedulers configured\n');
+
+  // Weekly Event Cleanup - Zondag 03:00 (laag verkeer)
+  console.log('🧹 Configuring weekly event cleanup...');
+  
+  cron.schedule('0 3 * * 0', async () => {
+    console.log(`\n🧹 [CRON] Weekly event cleanup triggered at ${new Date().toISOString()}`);
+    try {
+      const { eventCleanupService } = await import('./services/event-cleanup.service.js');
+      const result = await eventCleanupService.runFullCleanup();
+      console.log(`✅ [CRON] Cleanup completed:`, result);
+    } catch (error) {
+      console.error(`❌ [CRON] Cleanup failed:`, error);
+    }
+  });
+  
+  console.log('  ✅ Weekly cleanup: Zondag 03:00 (past events + stale future)');
+  console.log('✅ Event cleanup scheduler configured\n');
 });
 
 // Server error handling

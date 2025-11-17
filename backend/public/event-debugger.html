@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Event Sync Debugger</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+    h1 { color: #333; }
+    .card { background: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    button { padding: 10px 20px; margin: 5px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover { background: #5a67d8; }
+    button.danger { background: #f56565; }
+    button.danger:hover { background: #e53e3e; }
+    pre { background: #2d3748; color: #68d391; padding: 15px; border-radius: 4px; overflow-x: auto; }
+    .metric { display: inline-block; margin: 10px 20px 10px 0; }
+    .metric-value { font-size: 32px; font-weight: bold; color: #667eea; }
+    .metric-label { font-size: 12px; color: #718096; text-transform: uppercase; }
+    .loading { color: #f6ad55; }
+    .success { color: #68d391; }
+    .error { color: #fc8181; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Event Sync Debugger</h1>
+  
+  <div class="card">
+    <h2>📊 Database Stats</h2>
+    <div id="stats">
+      <div class="metric">
+        <div class="metric-value" id="totalEvents">-</div>
+        <div class="metric-label">Total Events</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" id="upcomingEvents">-</div>
+        <div class="metric-label">Upcoming Events</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" id="lastSync">-</div>
+        <div class="metric-label">Last Sync</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🚀 Manual Triggers</h2>
+    <button onclick="triggerSync('events/near')">▶️ NEAR_EVENT_SYNC</button>
+    <button onclick="triggerSync('events/far')">▶️ FAR_EVENT_SYNC (48h)</button>
+    <button onclick="triggerSync('events/far', {lookforwardHours: 168})">▶️ FAR_EVENT_SYNC (7 dagen)</button>
+    <button onclick="triggerSync('rider')">▶️ RIDER_SYNC</button>
+    <div id="syncResult" style="margin-top: 15px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>📋 Raw Data Checks</h2>
+    <button onclick="checkEndpoint('/api/events')">GET /api/events</button>
+    <button onclick="checkEndpoint('/api/events/upcoming')">GET /api/events/upcoming</button>
+    <button onclick="checkEndpoint('/api/events/debug')">GET /api/events/debug</button>
+    <button onclick="checkEndpoint('/api/sync/logs')">GET /api/sync/logs</button>
+    <pre id="rawData" style="max-height: 400px; overflow-y: auto;"></pre>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+
+    async function loadStats() {
+      try {
+        // Total events
+        const eventsRes = await fetch(`${API_BASE}/api/events`);
+        const eventsData = await eventsRes.json();
+        document.getElementById('totalEvents').textContent = eventsData.count || eventsData.length || 0;
+
+        // Upcoming events
+        const upcomingRes = await fetch(`${API_BASE}/api/events/upcoming`);
+        const upcomingData = await upcomingRes.json();
+        document.getElementById('upcomingEvents').textContent = upcomingData.count || upcomingData.length || 0;
+
+        // Last sync
+        const logsRes = await fetch(`${API_BASE}/api/sync/logs`);
+        const logsData = await logsRes.json();
+        if (logsData.logs && logsData.logs.length > 0) {
+          const lastLog = logsData.logs[0];
+          const date = new Date(lastLog.created_at);
+          document.getElementById('lastSync').textContent = date.toLocaleTimeString();
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        document.getElementById('totalEvents').textContent = 'Error';
+      }
+    }
+
+    async function triggerSync(type, body = {}) {
+      const resultDiv = document.getElementById('syncResult');
+      resultDiv.innerHTML = '<span class="loading">⏳ Syncing...</span>';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/sync/${type}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        resultDiv.innerHTML = `<span class="success">✅ Success!</span><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        
+        // Reload stats
+        setTimeout(loadStats, 1000);
+      } catch (error) {
+        resultDiv.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+      }
+    }
+
+    async function checkEndpoint(endpoint) {
+      const rawDiv = document.getElementById('rawData');
+      rawDiv.textContent = 'Loading...';
+
+      try {
+        const response = await fetch(`${API_BASE}${endpoint}`);
+        const data = await response.json();
+        rawDiv.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        rawDiv.textContent = `Error: ${error.message}`;
+      }
+    }
+
+    // Auto-refresh stats every 10 seconds
+    setInterval(loadStats, 10000);
+    
+    // Load initial stats
+    loadStats();
+  </script>
+</body>
+</html>

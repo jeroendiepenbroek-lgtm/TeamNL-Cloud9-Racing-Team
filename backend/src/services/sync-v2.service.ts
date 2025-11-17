@@ -242,8 +242,8 @@ export class SyncServiceV2 {
     };
 
     try {
-      // Get all events in next 48 hours (more efficient than per-rider scan)
-      console.log(`[NEAR EVENT SYNC] Fetching all events...`);
+      // Get all events in next 48 hours FROM API (more efficient than per-rider scan)
+      console.log(`[NEAR EVENT SYNC] Fetching all events from API...`);
       const allEvents = await zwiftClient.getEvents48Hours();
       console.log(`[NEAR EVENT SYNC] Found ${allEvents.length} events in next 48 hours`);
       
@@ -260,6 +260,23 @@ export class SyncServiceV2 {
         
         return metrics;
       }
+
+      // CRITICAL FIX: Save events to database FIRST before syncing signups
+      console.log(`[NEAR EVENT SYNC] Saving ${allEvents.length} events to database...`);
+      const eventsToSave = allEvents.map(e => ({
+        event_id: e.eventId,
+        time_unix: e.time,
+        title: e.title,
+        event_type: e.type,
+        sub_type: e.subType,
+        distance_meters: e.distance ? Math.round(e.distance * 1000) : undefined,
+        route_id: (e as any).route?.id,
+        raw_response: JSON.stringify(e),
+        last_synced: new Date().toISOString(),
+      }));
+      
+      await supabase.upsertEvents(eventsToSave as any);
+      console.log(`[NEAR EVENT SYNC] ✅ Saved ${eventsToSave.length} events to database`);
       
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const nearThreshold = now + (config.thresholdMinutes * 60);
@@ -373,8 +390,8 @@ export class SyncServiceV2 {
     };
 
     try {
-      // Get all events in next 48 hours
-      console.log(`[FAR EVENT SYNC] Fetching all events...`);
+      // Get all events in next 48 hours FROM API
+      console.log(`[FAR EVENT SYNC] Fetching all events from API...`);
       const allEvents = await zwiftClient.getEvents48Hours();
       console.log(`[FAR EVENT SYNC] Found ${allEvents.length} events in next 48 hours`);
       
@@ -391,6 +408,23 @@ export class SyncServiceV2 {
         
         return metrics;
       }
+
+      // CRITICAL FIX: Save events to database FIRST before syncing signups
+      console.log(`[FAR EVENT SYNC] Saving ${allEvents.length} events to database...`);
+      const eventsToSave = allEvents.map(e => ({
+        event_id: e.eventId,
+        time_unix: e.time,
+        title: e.title,
+        event_type: e.type,
+        sub_type: e.subType,
+        distance_meters: e.distance ? Math.round(e.distance * 1000) : undefined,
+        route_id: (e as any).route?.id,
+        raw_response: JSON.stringify(e),
+        last_synced: new Date().toISOString(),
+      }));
+      
+      await supabase.upsertEvents(eventsToSave as any);
+      console.log(`[FAR EVENT SYNC] ✅ Saved ${eventsToSave.length} events to database`);
       
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const farThreshold = now + (config.thresholdMinutes * 60);
