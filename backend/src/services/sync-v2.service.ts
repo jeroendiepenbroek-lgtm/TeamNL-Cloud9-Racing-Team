@@ -392,7 +392,13 @@ export class SyncServiceV2 {
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const farThreshold = now + (config.thresholdMinutes * 60);
       
+      // Get existing events from database to check what's new
+      const existingEvents = await supabase.getEvents();
+      const existingEventIds = new Set(existingEvents.map(e => e.event_id || e.zwift_event_id?.toString()));
+      
       let signupsCount = 0;
+      let newEventsCount = 0;
+      let skippedEventsCount = 0;
       
       // Process each event
       for (const event of allEvents) {
@@ -405,21 +411,34 @@ export class SyncServiceV2 {
         if (eventTime >= farThreshold) {
           metrics.events_far++;
           
-          // Optionally sync signups for far events (less detailed updates)
-          try {
-            const result = await this.syncEventSignups(event.eventId);
-            signupsCount += result.total;
-          } catch (err) {
-            metrics.error_count++;
-            console.warn(`Failed to sync signups for event ${event.eventId}:`, err);
-          }
+          // Only sync if event is NEW or not in database yet
+          const isNewEvent = !existingEventIds.has(event.eventId);
           
-          // Rate limit protection (1 request per 200ms)
-          await new Promise(resolve => setTimeout(resolve, 200));
+          if (isNewEvent) {
+            newEventsCount++;
+            console.log(`[FAR EVENT SYNC] New far event detected: ${event.title || event.eventId} (${event.eventId})`);
+            
+            // Sync event metadata + signups for new events
+            try {
+              const result = await this.syncEventSignups(event.eventId);
+              signupsCount += result.total;
+            } catch (err) {
+              metrics.error_count++;
+              console.warn(`Failed to sync signups for event ${event.eventId}:`, err);
+            }
+            
+            // Rate limit protection (1 request per 200ms)
+            await new Promise(resolve => setTimeout(resolve, 200));
+          } else {
+            // Event already in DB, skip for efficiency
+            skippedEventsCount++;
+          }
         } else {
           metrics.events_near++;
         }
       }
+      
+      console.log(`[FAR EVENT SYNC] Efficiency: ${newEventsCount} new events synced, ${skippedEventsCount} existing events skipped`);
       
       metrics.signups_synced = signupsCount;
       metrics.duration_ms = Date.now() - startTime;
@@ -429,7 +448,6 @@ export class SyncServiceV2 {
         endpoint: `FAR_EVENT_SYNC`,
         status: metrics.status,
         records_processed: metrics.signups_synced,
-        message: `Far: ${metrics.events_far} | Near: ${metrics.events_near} | Events: ${metrics.events_scanned} | Lookforward: ${config.lookforwardHours}h`,
       });
       
       console.log(`✅ [FAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
@@ -447,7 +465,6 @@ export class SyncServiceV2 {
       await supabase.createSyncLog({
         endpoint: 'FAR_EVENT_SYNC',
         status: 'error',
-        message: `Lookforward: ${config.lookforwardHours}h | Interval: ${config.intervalMinutes}min`,
         records_processed: 0,
         error_message: error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error)),
       }).catch(err => console.error('Failed to log error:', err));
