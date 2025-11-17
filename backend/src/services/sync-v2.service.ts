@@ -318,7 +318,7 @@ export class SyncServiceV2 {
         endpoint: `NEAR_EVENT_SYNC`,
         status: metrics.status,
         records_processed: allEvents.length,
-        details: `Events: ${allEvents.length} | Near: ${metrics.events_near} | Far: ${metrics.events_far} | Signups: ${metrics.signups_synced} | Threshold: ${config.thresholdMinutes}min`,
+        error_message: `Events: ${allEvents.length} | Near: ${metrics.events_near} | Far: ${metrics.events_far} | Signups: ${metrics.signups_synced} | Threshold: ${config.thresholdMinutes}min`,
       });
       
       console.log(`✅ [NEAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
@@ -493,7 +493,7 @@ export class SyncServiceV2 {
         endpoint: `FAR_EVENT_SYNC`,
         status: metrics.status,
         records_processed: allEvents.length,
-        details: `Events: ${allEvents.length} | Far: ${metrics.events_far} | Near: ${metrics.events_near} | New: ${newEventsCount} | Skipped: ${skippedEventsCount} | Signups: ${metrics.signups_synced}`,
+        error_message: `Events: ${allEvents.length} | Far: ${metrics.events_far} | Near: ${metrics.events_near} | New: ${newEventsCount} | Skipped: ${skippedEventsCount} | Signups: ${metrics.signups_synced}`,
       });
       
       console.log(`✅ [FAR EVENT SYNC] Completed in ${metrics.duration_ms}ms`);
