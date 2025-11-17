@@ -68,30 +68,21 @@ export class SupabaseService {
     return (data || []).map(r => r.rider_id);
   }
 
-  // Get ALL rider IDs from riders table (our team members)
-  // UNIFIED: Use same fallback logic as getMyTeamMembers() for consistency
+  // Get MY TEAM rider IDs (from my_team_members table)
   async getAllTeamRiderIds(): Promise<number[]> {
-    // Try view_my_team first (correct source via my_team_members)
-    try {
-      const { data, error } = await this.client
-        .from('view_my_team')
-        .select('rider_id');
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        return data.map((r: any) => r.rider_id);
-      }
-    } catch (viewError) {
-      console.warn('view_my_team not available, falling back to riders table:', viewError);
-    }
-
-    // Fallback: All riders in riders table (same as Matrix fallback)
+    // Direct query to my_team_members table (single source of truth for team selection)
     const { data, error } = await this.client
-      .from('riders')
+      .from('my_team_members')
       .select('rider_id');
 
-    if (error) throw error;
-    return (data || []).map((r: any) => r.rider_id);
+    if (error) {
+      console.error('Error fetching team rider IDs from my_team_members:', error);
+      throw error;
+    }
+
+    const riderIds = (data || []).map((r: any) => r.rider_id);
+    console.log(`[Supabase] Found ${riderIds.length} riders in my_team_members`);
+    return riderIds;
   }
 
   async getRider(riderId: number): Promise<DbRider | null> {

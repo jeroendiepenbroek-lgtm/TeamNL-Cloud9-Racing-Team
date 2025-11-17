@@ -85,61 +85,57 @@ export class SyncServiceV2 {
     };
 
     try {
-      // Step 1: Get club members (returns array of riders directly)
-      console.log(`[RIDER SYNC] Fetching club members...`);
-      const response = await zwiftClient.getClubMembers(clubId);
+      // Step 1: Get MY TEAM rider IDs (only sync our selected team)
+      console.log(`[RIDER SYNC] Fetching my team rider IDs...`);
+      const teamRiderIds = await supabase.getAllTeamRiderIds();
       
-      // Debug: log response structure
-      console.log(`[RIDER SYNC] Response type: ${typeof response}, isArray: ${Array.isArray(response)}`);
-      if (response && typeof response === 'object' && !Array.isArray(response)) {
-        console.log(`[RIDER SYNC] Response keys: ${Object.keys(response).join(', ')}`);
-        console.log(`[RIDER SYNC] Sample response:`, JSON.stringify(response).substring(0, 200));
-      }
-      
-      // Handle both direct array and wrapped response formats
-      let clubMembers: any[];
-      if (Array.isArray(response)) {
-        clubMembers = response;
-      } else if (response && typeof response === 'object') {
-        // Try common wrapper properties
-        const candidates = [
-          (response as any).data,
-          (response as any).members, 
-          (response as any).results,
-          (response as any).riders,
-          (response as any).clubMembers,
-        ].filter(c => Array.isArray(c));
-        
-        if (candidates.length > 0) {
-          clubMembers = candidates[0];
-          console.log(`[RIDER SYNC] Found array in response object (${clubMembers.length} items)`);
-        } else {
-          console.error(`[RIDER SYNC] API response is object but no array found. Keys: ${Object.keys(response).join(', ')}`);
-          console.error(`[RIDER SYNC] Response sample:`, JSON.stringify(response).substring(0, 500));
-          throw new Error(`Invalid response from getClubMembers: object with no recognized array property (keys: ${Object.keys(response).join(', ')})`);
-        }
-      } else {
-        throw new Error(`Invalid response from getClubMembers: expected array or object, got ${typeof response}`);
-      }
-      
-      console.log(`[RIDER SYNC] Found ${clubMembers.length} club members`);
-      metrics.riders_processed = clubMembers.length;
-      
-      if (clubMembers.length === 0) {
-        console.warn(`[RIDER SYNC] No riders found for club ${clubId}`);
+      if (teamRiderIds.length === 0) {
+        console.warn(`[RIDER SYNC] No team members found in my_team_members`);
         metrics.status = 'partial';
         metrics.duration_ms = Date.now() - startTime;
         return metrics;
       }
       
-      // clubMembers already contains FULL rider data (no extra API call needed)
+      console.log(`[RIDER SYNC] Found ${teamRiderIds.length} team members to sync`);
+      metrics.riders_processed = teamRiderIds.length;
+      
+      // Step 2: Fetch full rider data for team members using smart strategy
+      console.log(`[RIDER SYNC] Fetching full rider data...`);
+      let ridersData: any[] = [];
+      
+      if (teamRiderIds.length === 1) {
+        // Single rider: GET
+        const rider = await zwiftClient.getRider(teamRiderIds[0]);
+        ridersData = [rider];
+      } else if (teamRiderIds.length <= 10) {
+        // Small batch: Sequential GET with delays
+        for (const riderId of teamRiderIds) {
+          try {
+            const rider = await zwiftClient.getRider(riderId);
+            ridersData.push(rider);
+            // Rate limit: 5/min = 12s between calls
+            if (teamRiderIds.indexOf(riderId) < teamRiderIds.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 12000));
+            }
+          } catch (err) {
+            console.warn(`[RIDER SYNC] Failed to fetch rider ${riderId}:`, err);
+            metrics.error_count++;
+          }
+        }
+      } else {
+        // Large batch: Bulk POST
+        console.log(`[RIDER SYNC] Using bulk POST for ${teamRiderIds.length} riders`);
+        ridersData = await zwiftClient.getBulkRiders(teamRiderIds);
+      }
+      
+      console.log(`[RIDER SYNC] Fetched ${ridersData.length}/${teamRiderIds.length} riders successfully`);
+      
       // Get existing riders to track new vs updated
       const existingRiders = await supabase.getRiders();
-      // Map rider_id from DB for comparison
       const existingIds = new Set(existingRiders.map(r => r.rider_id));
       
       // Map to database format with ALL available fields (matching DbRider interface)
-      const riders = clubMembers.map(rider => ({
+      const riders = ridersData.map(rider => ({
         // Core identifiers
         rider_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`,
@@ -201,16 +197,16 @@ export class SyncServiceV2 {
 
       // Log to sync_logs with clear RIDER_SYNC identifier
       await supabase.createSyncLog({
-        endpoint: `RIDER_SYNC (complete field mapping)`,
-        status: 'success',
+        endpoint: `RIDER_SYNC (my team only)`,
+        status: metrics.error_count > 0 ? 'partial' : 'success',
         records_processed: syncedRiders.length,
-        message: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated} | All 50+ fields synced`,
+        message: `Interval: ${config.intervalMinutes}min | Team: ${metrics.riders_processed} | Synced: ${syncedRiders.length} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated} | Errors: ${metrics.error_count} | All 50+ fields`,
       });
 
       metrics.duration_ms = Date.now() - startTime;
       
       console.log(`✅ [RIDER SYNC] Completed in ${metrics.duration_ms}ms`);
-      console.log(`   📊 Total: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`);
+      console.log(`   📊 Team: ${metrics.riders_processed} | Synced: ${syncedRiders.length} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated} | Errors: ${metrics.error_count}`);
       
       return metrics;
       
