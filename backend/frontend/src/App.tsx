@@ -1,16 +1,11 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
-import Dashboard from './pages/Dashboard'
 import DashboardModern from './pages/DashboardModern'
-import Clubs from './pages/Clubs'
-import Riders from './pages/Riders'
-import Events from './pages/Events'
 import EventsModern from './pages/EventsModern'
-import Sync from './pages/Sync'
 import SyncStatusModern from './pages/SyncStatusModern'
-import RacingDataMatrix from './pages/RacingDataMatrix'
 import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
+import RidersModern from './pages/RidersModern'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
 import AdminHome from './pages/AdminHome'
@@ -258,7 +253,6 @@ function AppContent() {
           <Route path="/" element={<RacingDataMatrixModern />} />
           
           {/* Public Pages */}
-          <Route path="/clubs" element={<div className="max-w-7xl mx-auto"><Clubs /></div>} />
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><EventsModern /></div>} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
@@ -288,7 +282,7 @@ function AppContent() {
             path="/riders" 
             element={
               <ProtectedRoute>
-                <div className="max-w-7xl mx-auto"><Riders /></div>
+                <div className="max-w-7xl mx-auto"><RidersModern /></div>
               </ProtectedRoute>
             } 
           />
@@ -327,11 +321,11 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
-          <Route path="/admin/archive/dashboard" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Dashboard readOnly={true} /></div></ProtectedRoute>} />
-          <Route path="/admin/archive/sync" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Sync readOnly={true} /></div></ProtectedRoute>} />
-          <Route path="/admin/archive/matrix" element={<ProtectedRoute><RacingDataMatrix readOnly={true} /></ProtectedRoute>} />
-          <Route path="/admin/archive/events" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Events readOnly={true} /></div></ProtectedRoute>} />
-          <Route path="/admin/archive/riders" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><Riders readOnly={true} /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/dashboard" element={<ProtectedRoute><DashboardModern /></ProtectedRoute>} />
+          <Route path="/admin/archive/sync" element={<ProtectedRoute><SyncStatusModern /></ProtectedRoute>} />
+          <Route path="/admin/archive/matrix" element={<ProtectedRoute><RacingDataMatrixModern /></ProtectedRoute>} />
+          <Route path="/admin/archive/events" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><EventsModern /></div></ProtectedRoute>} />
+          <Route path="/admin/archive/riders" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><RidersModern /></div></ProtectedRoute>} />
         </Routes>
       </main>
 
