@@ -336,6 +336,7 @@ export class SyncServiceV2 {
     intervalMinutes: number;
     thresholdMinutes: number;
     lookforwardHours: number;
+    force?: boolean;
   }): Promise<EventSyncMetrics> {
     return await syncCoordinator.queueSync('FAR_EVENT_SYNC', async () => {
       return await this.syncFarEvents(config);
@@ -345,11 +346,13 @@ export class SyncServiceV2 {
   /**
    * EVENT SYNC - FAR EVENTS (Direct - internal use)
    * Syncs events that are far in the future (less frequent updates)
+   * @param config.force - If true, sync ALL events (not just new ones)
    */
   async syncFarEvents(config: {
     intervalMinutes: number;
     thresholdMinutes: number; // Events starting after this window
     lookforwardHours: number;
+    force?: boolean; // Sync all events, not just new ones
   }): Promise<EventSyncMetrics> {
     const startTime = Date.now();
     
@@ -392,9 +395,15 @@ export class SyncServiceV2 {
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
       const farThreshold = now + (config.thresholdMinutes * 60);
       
-      // Get existing events from database to check what's new
-      const existingEvents = await supabase.getEvents();
-      const existingEventIds = new Set(existingEvents.map(e => e.event_id || e.zwift_event_id?.toString()));
+      // Get existing events from database to check what's new (unless force=true)
+      let existingEventIds = new Set<string>();
+      if (!config.force) {
+        const existingEvents = await supabase.getEvents();
+        existingEventIds = new Set(existingEvents.map(e => e.event_id || e.zwift_event_id?.toString()));
+        console.log(`[FAR EVENT SYNC] Found ${existingEventIds.size} existing events in database`);
+      } else {
+        console.log(`[FAR EVENT SYNC] FORCE mode - will sync ALL events`);
+      }
       
       let signupsCount = 0;
       let newEventsCount = 0;
@@ -411,14 +420,16 @@ export class SyncServiceV2 {
         if (eventTime >= farThreshold) {
           metrics.events_far++;
           
-          // Only sync if event is NEW or not in database yet
+          // Sync if NEW or if force=true
           const isNewEvent = !existingEventIds.has(event.eventId);
+          const shouldSync = config.force || isNewEvent;
           
-          if (isNewEvent) {
+          if (shouldSync) {
             newEventsCount++;
-            console.log(`[FAR EVENT SYNC] New far event detected: ${event.title || event.eventId} (${event.eventId})`);
+            const reason = config.force ? 'FORCE' : 'NEW';
+            console.log(`[FAR EVENT SYNC] [${reason}] Syncing: ${event.title || event.eventId} (${event.eventId})`);
             
-            // Sync event metadata + signups for new events
+            // Sync event metadata + signups
             try {
               const result = await this.syncEventSignups(event.eventId);
               signupsCount += result.total;

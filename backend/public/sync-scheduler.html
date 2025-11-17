@@ -494,11 +494,48 @@
 
         <div class="actions">
           <button class="btn btn-warning" onclick="triggerSync('events/far')">
-            <span>▶️</span> Sync Nu
+            <span>▶️</span> Sync Nu (Standaard)
           </button>
           <button class="btn btn-secondary" onclick="updateConfig('far')">
             <span>💾</span> Opslaan
           </button>
+        </div>
+
+        <!-- Advanced Far Event Sync -->
+        <div style="margin-top: 20px; padding: 15px; background: #f7fafc; border-radius: 8px; border-left: 4px solid #f6ad55;">
+          <h3 style="margin: 0 0 12px 0; font-size: 14px; color: #744210;">
+            🔧 Geavanceerde Opties
+          </h3>
+          <div class="input-group" style="margin-bottom: 10px;">
+            <label style="font-size: 13px; color: #4a5568; min-width: 140px;">
+              Lookforward Hours:
+            </label>
+            <input 
+              type="number" 
+              id="customLookforward" 
+              value="48" 
+              min="1" 
+              max="168" 
+              style="width: 80px;"
+              placeholder="48"
+            />
+            <span style="font-size: 12px; color: #718096;">
+              (1-168 uur, standaard: 48)
+            </span>
+          </div>
+          <div class="input-group" style="margin-bottom: 15px;">
+            <label style="font-size: 13px; color: #4a5568; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="forceSync" style="width: auto; margin: 0;" />
+              <span>Force sync (alle events, ook bestaande)</span>
+            </label>
+          </div>
+          <button class="btn btn-warning" onclick="triggerAdvancedFarSync()" style="width: 100%;">
+            <span>🚀</span> Start Geavanceerde Sync
+          </button>
+          <p style="font-size: 11px; color: #718096; margin: 10px 0 0 0; line-height: 1.4;">
+            💡 <strong>Tip:</strong> Gebruik lookforward van 168 uur (7 dagen) om alle komende events te laden. 
+            Force sync zorgt dat ook bestaande events opnieuw gesynchroniseerd worden.
+          </p>
         </div>
       </div>
     </div>
@@ -619,6 +656,72 @@
       } catch (error) {
         addLog(`❌ ${type.toUpperCase()} sync gefaald: ${error.message}`, 'error');
         showAlert(`${type.toUpperCase()} sync gefaald: ${error.message}`, 'error');
+        
+        badge.className = 'status-badge status-inactive';
+        badge.textContent = 'Error';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHTML;
+      }
+    }
+
+    // Trigger advanced far sync with custom parameters
+    async function triggerAdvancedFarSync() {
+      const lookforward = parseInt(document.getElementById('customLookforward').value) || 48;
+      const force = document.getElementById('forceSync').checked;
+      
+      // Validate
+      if (lookforward < 1 || lookforward > 168) {
+        showAlert('Lookforward hours moet tussen 1 en 168 zijn', 'error');
+        return;
+      }
+      
+      const btn = event.target.closest('button');
+      const originalHTML = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span> Syncing...';
+      
+      const badge = document.getElementById('farStatus');
+      badge.className = 'status-badge status-running';
+      badge.textContent = 'Running...';
+      
+      addLog(`🚀 FAR EVENT sync gestart (lookforward: ${lookforward}h, force: ${force})...`, 'info');
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/sync/events/far`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            lookforwardHours: lookforward,
+            force: force
+          })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || `HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        addLog(`✅ FAR EVENT sync voltooid - ${data.metrics.events_far} far events, ${data.metrics.signups_synced} signups`, 'success');
+        showAlert(`Far event sync succesvol! ${data.metrics.events_far} events verwerkt in ${data.metrics.duration_ms}ms`, 'success');
+        
+        // Update metrics
+        updateMetricsDisplay('events/far', data.metrics);
+        
+        badge.className = 'status-badge status-active';
+        badge.textContent = 'Voltooid';
+        
+        setTimeout(() => {
+          badge.className = 'status-badge status-inactive';
+          badge.textContent = 'Inactief';
+        }, 3000);
+        
+      } catch (error) {
+        addLog(`❌ FAR EVENT sync gefaald: ${error.message}`, 'error');
+        showAlert(`Far event sync gefaald: ${error.message}`, 'error');
         
         badge.className = 'status-badge status-inactive';
         badge.textContent = 'Error';
