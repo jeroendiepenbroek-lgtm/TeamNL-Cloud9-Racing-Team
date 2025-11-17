@@ -141,18 +141,18 @@ export class SyncServiceV2 {
       
       // Get existing riders to track new vs updated
       const existingRiders = await supabase.getRiders();
-      // Map rider_id from DB to zwift_id for comparison
+      // Map rider_id from DB for comparison
       const existingIds = new Set(existingRiders.map(r => r.rider_id));
       
       // Map to database format
       const riders = ridersData.map(rider => ({
-        zwift_id: rider.riderId,
+        rider_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`,
-        category: rider.zpCategory || null,
-        ranking: rider.race?.current?.rating || null,
-        points: rider.race?.finishes || 0,
+        zp_category: rider.zpCategory || null,
+        race_current_rating: rider.race?.current?.rating || null,
+        race_finishes: rider.race?.finishes || 0,
         club_id: clubId,
-        is_active: true,
+        club_name: rider.club?.name || null,
         last_synced: new Date().toISOString(),
       }));
 
@@ -160,7 +160,7 @@ export class SyncServiceV2 {
       const syncedRiders = await supabase.upsertRiders(riders);
       
       // Calculate new vs updated
-      metrics.riders_new = riders.filter(r => !existingIds.has(r.zwift_id)).length;
+      metrics.riders_new = riders.filter(r => !existingIds.has(r.rider_id)).length;
       metrics.riders_updated = riders.length - metrics.riders_new;
 
       // Log to sync_logs with clear RIDER_SYNC identifier
