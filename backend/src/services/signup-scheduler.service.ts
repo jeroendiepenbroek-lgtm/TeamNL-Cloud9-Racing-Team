@@ -8,7 +8,7 @@
  */
 
 import cron from 'node-cron';
-import { syncService } from './sync.service.js';
+import { syncService } from './sync-v2.service.js';
 import { supabase } from './supabase.service.js';
 
 export class SignupSchedulerService {

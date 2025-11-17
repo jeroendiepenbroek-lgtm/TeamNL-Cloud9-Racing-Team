@@ -4,7 +4,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncService } from '../../services/sync.service.js';
+import { syncService } from '../../services/sync-v2.service.js';
 
 const router = Router();
 
