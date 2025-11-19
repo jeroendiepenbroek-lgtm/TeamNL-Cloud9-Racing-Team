@@ -168,12 +168,19 @@ export class SupabaseService {
   // Feature 1: Get upcoming events (within X hours)
   async getUpcomingEvents(hours: number = 36, hasTeamRiders: boolean = false): Promise<any[]> {
     try {
+      // Calculate time window
+      const now = Math.floor(Date.now() / 1000);
+      const future = now + (hours * 60 * 60);
+      
       // Use views die nu ALLE kolommen bevatten (na migratie 015)
       const viewName = hasTeamRiders ? 'view_team_events' : 'view_upcoming_events';
       
+      // CRITICAL: Filter op hours parameter (view heeft alleen >= NOW, niet hours limit!)
       const { data, error } = await this.client
         .from(viewName)
         .select('*')
+        .gte('time_unix', now)
+        .lte('time_unix', future)
         .order('time_unix', { ascending: true });
       
       if (error) {
@@ -181,6 +188,7 @@ export class SupabaseService {
         throw error;
       }
       
+      console.log(`[SupabaseService] ${viewName} returned ${data?.length || 0} events for ${hours}h window`);
       return data || [];
     } catch (viewError) {
       // Fallback naar directe table query als views niet bestaan
