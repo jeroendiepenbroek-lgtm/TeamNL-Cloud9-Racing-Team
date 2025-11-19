@@ -61,9 +61,9 @@ export class RiderSyncScheduler {
       this.isSyncing = true;
       console.log('[RiderSync] 🔄 Starting rider sync...');
       
-      const riders = await syncService.syncRiders(TEAM_CLUB_ID);
+      const metrics = await syncService.syncRiders({ intervalMinutes: 60, clubId: TEAM_CLUB_ID });
       
-      console.log(`[RiderSync] ✅ Synced ${riders.length} riders from club ${TEAM_CLUB_ID}`);
+      console.log(`[RiderSync] ✅ Synced ${metrics.riders_processed} riders from club ${TEAM_CLUB_ID}`);
     } catch (error: any) {
       console.error('[RiderSync] ❌ Rider sync failed:', error.message);
     } finally {
@@ -82,10 +82,10 @@ export class RiderSyncScheduler {
 
     try {
       this.isSyncing = true;
-      const riders = await syncService.syncRiders(TEAM_CLUB_ID);
+      const metrics = await syncService.syncRiders({ intervalMinutes: 60, clubId: TEAM_CLUB_ID });
       return {
         success: true,
-        count: riders.length
+        count: metrics.riders_processed
       };
     } catch (error: any) {
       return {

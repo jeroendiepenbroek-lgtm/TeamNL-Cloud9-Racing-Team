@@ -84,12 +84,12 @@ router.get('/team', async (req: Request, res: Response) => {
 router.post('/sync', async (req: Request, res: Response) => {
   try {
     const clubId = req.body.clubId || 11818;
-    const riders = await syncService.syncRiders(clubId);
+    const metrics = await syncService.syncRiders({ intervalMinutes: 60, clubId });
     
     res.json({
       success: true,
-      count: riders.length,
-      riders,
+      count: metrics.riders_processed,
+      metrics,
     });
   } catch (error) {
     console.error('Error syncing riders:', error);
