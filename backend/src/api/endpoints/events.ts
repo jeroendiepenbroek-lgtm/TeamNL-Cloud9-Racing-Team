@@ -313,8 +313,13 @@ router.post('/sync', async (req: Request, res: Response) => {
       ...result,
     });
   } catch (error) {
-    console.error('Error syncing events:', error);
-    res.status(500).json({ error: 'Fout bij synchroniseren events' });
+    console.error('❌ [Events/Sync] FATAL ERROR:', error);
+    console.error('Stack:', (error as Error)?.stack);
+    res.status(500).json({ 
+      error: 'Fout bij synchroniseren events',
+      message: (error as Error)?.message,
+      details: String(error)
+    });
   }
 });
 
