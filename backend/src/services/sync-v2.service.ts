@@ -558,7 +558,7 @@ export class SyncServiceV2 {
         return metrics;
       }
 
-      // Step 2: Save ALLE events naar database (altijd)
+      // Step 2: Save ALLE events naar database (altijd) - inclusief route + elevation data
       console.log(`[${syncLabel}] Saving ${allEvents.length} events to database...`);
       const eventsToSave = allEvents.map(e => ({
         event_id: e.eventId,
@@ -567,7 +567,11 @@ export class SyncServiceV2 {
         event_type: e.type,
         sub_type: e.subType,
         distance_meters: e.distance ? Math.round(e.distance * 1000) : undefined,
-        route_id: (e as any).route?.id,
+        elevation_m: e.elevation || e.route?.elevation || null,
+        route_id: e.route?.routeId || (e as any).route?.id || null,
+        route_name: e.route?.name || null,
+        route_world: e.route?.world || null,
+        route_profile: e.route?.profile || null,
         raw_response: JSON.stringify(e),
         last_synced: new Date().toISOString(),
       }));
