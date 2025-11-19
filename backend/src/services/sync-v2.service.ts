@@ -664,12 +664,16 @@ export class SyncServiceV2 {
       metrics.error_count++;
       metrics.duration_ms = Date.now() - startTime;
       
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : (
+        typeof error === 'object' ? JSON.stringify(error) : String(error)
+      );
       const errorStack = error?.stack?.substring(0, 300) || '';
       
       console.error(`❌ [${syncLabel}] CRITICAL ERROR:`, error);
+      console.error(`   Type:`, typeof error, error?.constructor?.name);
       console.error(`   Stack:`, error?.stack);
       console.error(`   Message:`, errorMessage);
+      console.error(`   Full error:`, JSON.stringify(error, null, 2));
       
       await supabase.createSyncLog({
         endpoint: syncLabel,
@@ -681,6 +685,7 @@ export class SyncServiceV2 {
       // Add error message to metrics for debugging
       (metrics as any).error_message = errorMessage;
       (metrics as any).error_stack = errorStack;
+      (metrics as any).error_type = error?.constructor?.name || typeof error;
       
       return metrics;
     }
