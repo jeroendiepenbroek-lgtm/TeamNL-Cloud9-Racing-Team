@@ -590,7 +590,7 @@ export class SyncServiceV2 {
           distance_meters: e.distance ? Math.round(Number(e.distance)) : null,
           // Route data uit cache (US2, US4, US5, US6)
           elevation_m: routeData?.elevation || e.elevation || null,
-          route_id: e.routeId ? String(e.routeId) : null,
+          route_id: e.routeId ? parseInt(String(e.routeId)) : null,
           route_name: routeData?.name || null,
           route_world: routeData?.world || null,
           route_profile: routeData?.profile || null,
