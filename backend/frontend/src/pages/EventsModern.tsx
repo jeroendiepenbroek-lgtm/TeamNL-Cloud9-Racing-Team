@@ -378,7 +378,7 @@ export default function Events() {
                         {event.distance_km && (
                           <>
                             <span className="text-white/60">•</span>
-                            <span>{(parseFloat(event.distance_km) / 1000).toFixed(1)} km</span>
+                            <span>{event.distance_km} km</span>
                           </>
                         )}
                         {event.elevation_m !== undefined && event.elevation_m > 0 && (
