@@ -131,8 +131,17 @@ router.get('/upcoming', async (req: Request, res: Response) => {
         categories: Object.keys(signupsByCategory).sort(),
         // US1: Distance correct berekenen (meters → km)
         distance_km: event.distance_meters ? (event.distance_meters / 1000).toFixed(1) : null,
-        // US6: Elevation uit database (elevation_meters kolom)
-        elevation_m: event.elevation_meters || null,
+        // US2: Elevation uit database (elevation_m kolom)
+        elevation_m: event.elevation_m || null,
+        // US3: Event type
+        event_type: event.event_type || null,
+        sub_type: event.sub_type || null,
+        // US4: Route info uit database
+        route_name: event.route_name || null,
+        // US5: Wereld
+        route_world: event.route_world || null,
+        // US6: Route profiel uit database
+        route_profile: event.route_profile || null,
       };
     });
     
