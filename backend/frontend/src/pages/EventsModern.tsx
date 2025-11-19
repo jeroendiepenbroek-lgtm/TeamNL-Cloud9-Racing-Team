@@ -356,53 +356,59 @@ export default function Events() {
                     </div>
                   )}
 
-                  {/* US1: Event Type - Race/Group Ride + sub_type */}
-                  {(event.event_type || event.sub_type) && (
-                    <div className="flex items-center gap-2 text-white/90 text-xs font-medium">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>
-                        {event.event_type}
-                        {event.sub_type && ` - ${event.sub_type}`}
-                      </span>
-                    </div>
-                  )}
+                  {/* Compact Row: Event Type + Route Info met icons en badges */}
+                  <div className="space-y-2">
+                    {/* Event Type Badge */}
+                    {(event.event_type || event.sub_type) && (
+                      <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/95 text-xs font-semibold">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>
+                          {event.event_type}
+                          {event.sub_type && ` · ${event.sub_type}`}
+                        </span>
+                      </div>
+                    )}
 
-                  {/* US4: Route Info - Compact met km, meters en profiel */}
-                  {event.route_name && (
-                    <div className="space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2 text-white/90 text-sm">
-                        <MapPin className="w-4 h-4 flex-shrink-0" />
-                        <span className="font-medium">{event.route_name}</span>
-                        {event.route_world && (
-                          <>
-                            <span className="text-white/60">•</span>
-                            <span className="text-white/80">{event.route_world}</span>
-                          </>
-                        )}
+                    {/* Route Details Grid - Moderne badges layout */}
+                    {event.route_name && (
+                      <div className="grid gap-2">
+                        {/* Route Name + World */}
+                        <div className="flex items-center gap-2 text-white/95 text-sm font-medium">
+                          <MapPin className="w-4 h-4 flex-shrink-0" />
+                          <span className="font-semibold">{event.route_name}</span>
+                          {event.route_world && (
+                            <span className="text-white/70 text-xs">({event.route_world})</span>
+                          )}
+                        </div>
+
+                        {/* Route Stats - Icon Badges */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Profile Badge - Prominent */}
+                          {routeProfile && (
+                            <div className={`inline-flex items-center gap-1.5 ${routeProfile.color} px-2.5 py-1 rounded-md shadow-sm`}>
+                              <RouteIcon className="w-3.5 h-3.5" />
+                              <span className="text-xs font-bold">{routeProfile.label}</span>
+                            </div>
+                          )}
+                          
+                          {/* Distance Badge */}
+                          {event.distance_km && (
+                            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/95">
+                              <span className="text-xs font-semibold">{event.distance_km} km</span>
+                            </div>
+                          )}
+                          
+                          {/* Elevation Badge */}
+                          {event.elevation_m !== undefined && event.elevation_m > 0 && (
+                            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/95">
+                              <TrendingUp className="w-3.5 h-3.5" />
+                              <span className="text-xs font-semibold">{event.elevation_m}m</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      {/* Route stats: profiel, km, hoogtemeters - Tekstueel en compact */}
-                      <div className="flex flex-wrap items-center gap-2 text-white/90 text-xs">
-                        {routeProfile && (
-                          <div className="flex items-center gap-1.5">
-                            <RouteIcon className="w-3.5 h-3.5" />
-                            <span className="font-medium">{routeProfile.label}</span>
-                          </div>
-                        )}
-                        {event.distance_km && (
-                          <>
-                            <span className="text-white/60">•</span>
-                            <span>{event.distance_km} km</span>
-                          </>
-                        )}
-                        {event.elevation_m !== undefined && event.elevation_m > 0 && (
-                          <>
-                            <span className="text-white/60">•</span>
-                            <span>{event.elevation_m} m</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 {/* Card Body - Compact en overzichtelijk */}
