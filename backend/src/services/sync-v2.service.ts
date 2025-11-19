@@ -604,8 +604,7 @@ export class SyncServiceV2 {
       await supabase.upsertEvents(eventsToSave as any);
       console.log(`[${syncLabel}] ✅ Saved ${eventsToSave.length} events to database`);
       
-      // Step 3: Bepaal welke events signups nodig hebben
-      const now = Math.floor(Date.now() / 1000);
+      // Step 3: Bepaal welke events signups nodig hebben (hergebruik 'now' van regel 550)
       const nearThreshold = now + (config.thresholdMinutes * 60);
       
       let signupsCount = 0;
