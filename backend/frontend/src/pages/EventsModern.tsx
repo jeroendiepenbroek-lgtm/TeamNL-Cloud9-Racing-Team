@@ -354,47 +354,48 @@ export default function Events() {
                     </div>
                   )}
 
-                  {/* US4: Route Info - Simpel in header */}
+                  {/* US4: Route Info - Compact met km, meters en profiel */}
                   {event.route_name && (
-                    <div className="flex flex-wrap items-center gap-2 text-white/90 text-sm">
-                      <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="font-medium">{event.route_name}</span>
-                      {event.route_world && (
-                        <>
-                          <span className="text-white/60">•</span>
-                          <span className="text-white/80">{event.route_world}</span>
-                        </>
-                      )}
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2 text-white/90 text-sm">
+                        <MapPin className="w-4 h-4 flex-shrink-0" />
+                        <span className="font-medium">{event.route_name}</span>
+                        {event.route_world && (
+                          <>
+                            <span className="text-white/60">•</span>
+                            <span className="text-white/80">{event.route_world}</span>
+                          </>
+                        )}
+                      </div>
+                      {/* Route stats: profiel, km, hoogtemeters - Tekstueel en compact */}
+                      <div className="flex flex-wrap items-center gap-2 text-white/90 text-xs">
+                        {routeProfile && (
+                          <div className="flex items-center gap-1.5">
+                            <RouteIcon className="w-3.5 h-3.5" />
+                            <span className="font-medium">{routeProfile.label}</span>
+                          </div>
+                        )}
+                        {event.distance_km && (
+                          <>
+                            <span className="text-white/60">•</span>
+                            <span>{(parseFloat(event.distance_km) / 1000).toFixed(1)} km</span>
+                          </>
+                        )}
+                        {event.elevation_m !== undefined && event.elevation_m > 0 && (
+                          <>
+                            <span className="text-white/60">•</span>
+                            <span>{event.elevation_m} m</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Card Body - Compacter met prominente route info */}
+                {/* Card Body - Compact en overzichtelijk */}
                 <div className="p-4">
-                  {/* Route Info Box - Prominente positie met km, hoogtemeters en profiel */}
-                  <div className="mb-4 flex items-center gap-3 flex-wrap">
-                    {routeProfile && (
-                      <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg ${routeProfile.color} font-bold text-sm shadow-sm`}>
-                        <RouteIcon className="w-5 h-5" />
-                        <span>{routeProfile.label}</span>
-                      </div>
-                    )}
-                    {event.distance_km && (
-                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-bold text-sm shadow-sm">
-                        <span>📏</span>
-                        <span>{event.distance_km} km</span>
-                      </div>
-                    )}
-                    {event.elevation_m !== undefined && event.elevation_m > 0 && (
-                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-bold text-sm shadow-sm">
-                        <span>⛰️</span>
-                        <span>{event.elevation_m} m</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* US3, US4, US5: Compacte horizontale stats row */}
-                  <div className="flex items-center gap-3 sm:gap-4 mb-4 pb-4 border-b border-slate-200 overflow-x-auto">
+                  {/* Stats row - Compacter zonder extra route info */}
+                  <div className="flex items-center gap-3 sm:gap-4 mb-4 pb-3 border-b border-slate-200 overflow-x-auto">
                     {/* Total signups (multi-person icon) */}
                     {event.total_signups !== undefined && (
                       <div className="flex items-center gap-1.5 sm:gap-2 text-slate-600">
@@ -453,7 +454,7 @@ export default function Events() {
                 </div>
 
                 {/* Card Footer - Sign Up Link */}
-                <div className="bg-slate-50 border-t border-slate-200 px-6 py-4">
+                <div className="bg-slate-50 border-t border-slate-200 px-4 py-3">
                   <a
                     href={`https://www.zwift.com/events/view/${event.event_id}`}
                     target="_blank"
