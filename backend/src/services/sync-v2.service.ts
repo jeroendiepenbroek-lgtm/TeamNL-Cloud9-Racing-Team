@@ -546,9 +546,16 @@ export class SyncServiceV2 {
       await zwiftClient.getAllRoutes();
       
       // Step 1: Haal alle events op van API
-      console.log(`[${syncLabel}] Fetching all events from API...`);
-      const allEvents = await zwiftClient.getEvents48Hours();
-      console.log(`[${syncLabel}] Found ${allEvents.length} events in next 48 hours`);
+      console.log(`[${syncLabel}] Fetching all events from API (${config.lookforwardHours}h window)...`);
+      const rawEvents = await zwiftClient.getUpcomingEvents();
+      
+      // Filter op lookforward window
+      const now = Math.floor(Date.now() / 1000);
+      const lookforwardSeconds = config.lookforwardHours * 60 * 60;
+      const allEvents = rawEvents.filter(event => 
+        event.time >= now && event.time <= (now + lookforwardSeconds)
+      );
+      console.log(`[${syncLabel}] Found ${allEvents.length}/${rawEvents.length} events in next ${config.lookforwardHours}h`);
       
       if (allEvents.length === 0) {
         console.log(`[${syncLabel}] No upcoming events`);
