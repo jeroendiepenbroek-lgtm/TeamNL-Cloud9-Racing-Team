@@ -292,7 +292,12 @@ router.get('/:eventId/signups', async (req: Request, res: Response) => {
 // POST /api/events/sync - Sync events vanaf ZwiftRacing API
 router.post('/sync', async (req: Request, res: Response) => {
   try {
-    const result = await syncService.bulkImportUpcomingEvents();
+    const result = await syncService.syncEventsCombined({ 
+      intervalMinutes: 60,
+      thresholdMinutes: 30,
+      lookforwardHours: 168,
+      mode: 'full_scan'
+    });
     
     res.json({
       success: true,
@@ -309,7 +314,12 @@ router.post('/sync', async (req: Request, res: Response) => {
 router.post('/sync/rider-events', async (req: Request, res: Response) => {
   try {
     const hours = req.body.hours || 48;
-    const result = await syncService.syncRiderUpcomingEvents(hours);
+    const result = await syncService.syncEventsCombined({ 
+      intervalMinutes: 60,
+      thresholdMinutes: 30,
+      lookforwardHours: hours,
+      mode: 'near_only'
+    });
     
     res.json({
       success: true,
