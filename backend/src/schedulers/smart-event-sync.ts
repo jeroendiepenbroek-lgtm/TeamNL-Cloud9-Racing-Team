@@ -5,7 +5,7 @@
  * Configureerbaar via syncConfigService
  */
 
-import { syncService } from '../services/sync-v2.service.js';
+import { syncServiceV2 as syncService } from '../services/sync-v2.service.js';
 import { supabase } from '../services/supabase.service.js';
 import { syncConfigService } from '../services/sync-config.service.js';
 

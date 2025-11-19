@@ -80,37 +80,7 @@ export class ZwiftApiClient {
   async getClubMembers(clubId: number = TEAM_CLUB_ID): Promise<ZwiftRider[]> {
     return await rateLimiter.executeWithLimit('club_members', async () => {
       const response = await this.client.get(`/public/clubs/${clubId}`);
-      
-      // API kan verschillende formaten teruggeven
-      // 1. Direct array: [...]
-      // 2. Object met data property: { data: [...] }
-      // 3. Object met riders property: { riders: [...] }
-      const data = response.data;
-      
-      if (Array.isArray(data)) {
-        return data;
-      }
-      
-      if (data && typeof data === 'object') {
-        // Probeer data.data of data.riders
-        if (Array.isArray(data.data)) {
-          return data.data;
-        }
-        if (Array.isArray(data.riders)) {
-          return data.riders;
-        }
-        // Als object met keys die rider IDs zijn
-        if (Object.keys(data).length > 0) {
-          const firstKey = Object.keys(data)[0];
-          if (data[firstKey]?.riderId) {
-            // Object met rider data als values
-            return Object.values(data);
-          }
-        }
-      }
-      
-      console.error('[getClubMembers] Unexpected API response format:', typeof data, data);
-      throw new Error(`Invalid response from ZwiftRacing API: expected array, got ${typeof data}`);
+      return response.data;
     });
   }
 

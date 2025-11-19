@@ -3,7 +3,7 @@
  */
 import { Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncService } from '../../services/sync.service.js';
+import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
 const router = Router();
 // GET /api/riders - Haal alle riders op (optioneel gefilterd op club)
 router.get('/', async (req, res) => {

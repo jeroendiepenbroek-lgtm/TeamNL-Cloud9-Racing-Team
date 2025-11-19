@@ -5,6 +5,7 @@
 import { Router } from 'express';
 import { syncServiceV2 } from '../../services/sync-v2.service.js';
 import { syncConfigService } from '../../services/sync-config.service.js';
+import { syncCoordinator } from '../../services/sync-coordinator.service.js';
 const router = Router();
 // GET /api/sync/metrics - Haal laatste sync metrics op
 router.get('/metrics', async (req, res) => {
@@ -60,17 +61,38 @@ router.post('/events/near', async (req, res) => {
     }
 });
 // POST /api/sync/events/far - Trigger far event sync
+// Body params (optional):
+//   - lookforwardHours: number (default: from config, typically 48)
+//   - force: boolean (sync all events, not just new ones)
 router.post('/events/far', async (req, res) => {
     try {
         const config = syncConfigService.getConfig();
+        // Allow custom lookforward hours via body (om meer events te laden)
+        const lookforwardHours = req.body?.lookforwardHours
+            ? Number(req.body.lookforwardHours)
+            : config.lookforwardHours;
+        // Validate lookforwardHours
+        if (isNaN(lookforwardHours) || lookforwardHours < 1 || lookforwardHours > 168) {
+            return res.status(400).json({
+                error: 'Invalid lookforwardHours',
+                message: 'lookforwardHours must be between 1 and 168 (7 days)'
+            });
+        }
+        const force = req.body?.force === true;
+        console.log(`[API] Far event sync triggered - lookforward: ${lookforwardHours}h, force: ${force}`);
         const metrics = await syncServiceV2.syncFarEvents({
             intervalMinutes: config.farEventSyncIntervalMinutes,
             thresholdMinutes: config.nearEventThresholdMinutes,
-            lookforwardHours: config.lookforwardHours,
+            lookforwardHours,
+            force, // Will be used to bypass "new events only" check
         });
         res.json({
             message: 'Far event sync completed',
             metrics,
+            config: {
+                lookforwardHours,
+                force,
+            }
         });
     }
     catch (error) {
@@ -79,6 +101,17 @@ router.post('/events/far', async (req, res) => {
             error: 'Far event sync failed',
             message: error instanceof Error ? error.message : 'Unknown error'
         });
+    }
+});
+// GET /api/sync/coordinator/status - Get sync coordinator status
+router.get('/coordinator/status', (req, res) => {
+    try {
+        const status = syncCoordinator.getStatus();
+        res.json(status);
+    }
+    catch (error) {
+        console.error('Error getting coordinator status:', error);
+        res.status(500).json({ error: 'Failed to get coordinator status' });
     }
 });
 export default router;

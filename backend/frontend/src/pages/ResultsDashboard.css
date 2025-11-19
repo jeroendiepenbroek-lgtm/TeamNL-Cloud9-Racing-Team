@@ -1,0 +1,443 @@
+.results-dashboard {
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.dashboard-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.dashboard-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.filters {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.filters select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background-color: white;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.filters select:hover {
+  border-color: #9ca3af;
+}
+
+.stats-summary {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.stats-summary .stat strong {
+  color: #111827;
+  font-size: 1.5rem;
+  margin-right: 0.25rem;
+}
+
+/* Power Legend */
+.power-legend {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+  font-size: 0.875rem;
+}
+
+.power-legend .legend-title {
+  font-weight: 600;
+  color: #374151;
+}
+
+.power-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+}
+
+.power-legend .legend-item span {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+/* Event Groups */
+.results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.event-group {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  color: white;
+}
+
+.event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.event-date {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.event-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.event-route {
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.event-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.event-type {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.event-subtype {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+/* Results Table */
+.results-table-container {
+  overflow-x: auto;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.results-table thead {
+  background: #f3f4f6;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.results-table th {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.results-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s;
+  cursor: pointer;
+}
+
+.results-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.results-table tbody tr.disqualified {
+  opacity: 0.5;
+  background: #fef2f2;
+}
+
+.results-table td {
+  padding: 0.75rem 0.5rem;
+  white-space: nowrap;
+}
+
+/* PEN Badge */
+.pen {
+  font-weight: 700;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.pen-a { background: #fef3c7; color: #92400e; }
+.pen-b { background: #dbeafe; color: #1e40af; }
+.pen-c { background: #d1fae5; color: #065f46; }
+.pen-d { background: #fce7f3; color: #9f1239; }
+.pen-e { background: #f3e8ff; color: #6b21a8; }
+
+/* Rank */
+.rank {
+  font-weight: 600;
+  color: #111827;
+}
+
+.rank .total {
+  color: #9ca3af;
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+
+/* vELO Badge */
+.velo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+
+.velo-high {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.velo-mid {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.velo-low {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.velo-unknown {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.velo-trend {
+  font-size: 1rem;
+  margin-left: 0.125rem;
+}
+
+/* Rider Name */
+.rider-name {
+  font-weight: 600;
+  color: #1f2937;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Time and Delta */
+.time {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #111827;
+}
+
+.delta {
+  font-family: 'Courier New', monospace;
+  color: #6b7280;
+  font-size: 0.8125rem;
+}
+
+/* Power Values with Color Coding */
+.avg-wkg,
+.results-table td[class*="power"] {
+  font-weight: 600;
+  text-align: right;
+}
+
+.power-pr {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.power-near {
+  background: #f3f4f6;
+  color: #374151;
+  font-weight: 700;
+}
+
+.power-good {
+  background: #fed7aa;
+  color: #9a3412;
+  font-weight: 600;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error {
+  text-align: center;
+  padding: 3rem;
+  color: #991b1b;
+}
+
+.error h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.error button {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.error button:hover {
+  background: #2563eb;
+}
+
+/* No Results */
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: #6b7280;
+  font-size: 1.125rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .results-dashboard {
+    padding: 1rem;
+  }
+
+  .dashboard-header {
+    gap: 1rem;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .filters {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .filters label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .filters select {
+    width: 100%;
+  }
+
+  .stats-summary {
+    gap: 1rem;
+  }
+
+  .event-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .results-table {
+    font-size: 0.75rem;
+  }
+
+  .results-table th,
+  .results-table td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .rider-name {
+    max-width: 120px;
+  }
+
+  .power-legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-table th:nth-child(n+9),
+  .results-table td:nth-child(n+9) {
+    display: none;
+  }
+  
+  .results-table-container {
+    margin: 0 -1rem;
+  }
+}

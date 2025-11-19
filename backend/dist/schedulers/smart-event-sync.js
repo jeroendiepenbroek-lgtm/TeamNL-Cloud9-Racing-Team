@@ -4,7 +4,7 @@
  * US4: Events <=1h syncen elke 10 min
  * Configureerbaar via syncConfigService
  */
-import { syncService } from '../services/sync.service.js';
+import { syncServiceV2 as syncService } from '../services/sync-v2.service.js';
 import { supabase } from '../services/supabase.service.js';
 import { syncConfigService } from '../services/sync-config.service.js';
 export class SmartEventSync {

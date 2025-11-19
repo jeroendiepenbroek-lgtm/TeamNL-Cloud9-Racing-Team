@@ -3,7 +3,7 @@
  */
 import { Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncService } from '../../services/sync.service.js';
+import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
 const router = Router();
 // GET /api/sync-logs - Haal sync logs op
 router.get('/', async (req, res) => {

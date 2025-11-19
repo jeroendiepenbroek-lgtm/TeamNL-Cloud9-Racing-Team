@@ -3,7 +3,7 @@
  * Sync and query event signups
  */
 import { Router } from 'express';
-import { SyncService } from '../../services/sync.service.js';
+import { SyncServiceV2 as SyncService } from '../../services/sync-v2.service.js';
 import { SupabaseService } from '../../services/supabase.service.js';
 const router = Router();
 const syncService = new SyncService();

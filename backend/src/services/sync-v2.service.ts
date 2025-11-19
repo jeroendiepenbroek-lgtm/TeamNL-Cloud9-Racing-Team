@@ -11,7 +11,7 @@
 
 import { zwiftClient } from '../api/zwift-client.js';
 import { supabase } from './supabase.service.js';
-import { DbRider, DbEvent, DbClub, DbResult } from '../types/index.js';
+import { DbRider, DbEvent } from '../types/index.js';
 import { syncCoordinator } from './sync-coordinator.service.js';
 
 const TEAM_CLUB_ID = 11818;
@@ -30,10 +30,11 @@ export interface RiderSyncMetrics {
 }
 
 export interface EventSyncMetrics {
-  type: 'NEAR_EVENT_SYNC' | 'FAR_EVENT_SYNC';
+  type: 'NEAR_EVENT_SYNC' | 'FAR_EVENT_SYNC' | 'COMBINED_EVENT_SYNC';
   timestamp: string;
   interval_minutes: number;
   threshold_minutes: number; // Near event threshold
+  mode: 'near_only' | 'full_scan'; // Nieuw: sync mode indicator
   events_scanned: number;
   events_near: number;
   events_far: number;
@@ -85,107 +86,40 @@ export class SyncServiceV2 {
     };
 
     try {
-      // Step 1: Get MY TEAM rider IDs (only sync our selected team)
-      console.log(`[RIDER SYNC] Fetching my team rider IDs...`);
-      const teamRiderIds = await supabase.getAllTeamRiderIds();
+      // Step 1: Get MY TEAM MEMBERS only (not full club roster)
+      console.log(`[RIDER SYNC] Fetching MY_TEAM_MEMBERS...`);
+      const riderIds = await supabase.getAllTeamRiderIds();
       
-      if (teamRiderIds.length === 0) {
-        console.warn(`[RIDER SYNC] No team members found in my_team_members`);
+      console.log(`[RIDER SYNC] Found ${riderIds.length} riders in my_team_members`);
+      metrics.riders_processed = riderIds.length;
+      
+      if (riderIds.length === 0) {
+        console.warn(`[RIDER SYNC] No riders found in my_team_members table`);
+        console.warn(`[RIDER SYNC] Use: POST /api/riders/my-team with rider_ids to add riders`);
         metrics.status = 'partial';
         metrics.duration_ms = Date.now() - startTime;
         return metrics;
       }
       
-      console.log(`[RIDER SYNC] Found ${teamRiderIds.length} team members to sync`);
-      metrics.riders_processed = teamRiderIds.length;
-      
-      // Step 2: Fetch full rider data for team members using smart strategy
-      console.log(`[RIDER SYNC] Fetching full rider data...`);
-      let ridersData: any[] = [];
-      
-      if (teamRiderIds.length === 1) {
-        // Single rider: GET
-        const rider = await zwiftClient.getRider(teamRiderIds[0]);
-        ridersData = [rider];
-      } else if (teamRiderIds.length <= 10) {
-        // Small batch: Sequential GET with delays
-        for (const riderId of teamRiderIds) {
-          try {
-            const rider = await zwiftClient.getRider(riderId);
-            ridersData.push(rider);
-            // Rate limit: 5/min = 12s between calls
-            if (teamRiderIds.indexOf(riderId) < teamRiderIds.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 12000));
-            }
-          } catch (err) {
-            console.warn(`[RIDER SYNC] Failed to fetch rider ${riderId}:`, err);
-            metrics.error_count++;
-          }
-        }
-      } else {
-        // Large batch: Bulk POST
-        console.log(`[RIDER SYNC] Using bulk POST for ${teamRiderIds.length} riders`);
-        ridersData = await zwiftClient.getBulkRiders(teamRiderIds);
-      }
-      
-      console.log(`[RIDER SYNC] Fetched ${ridersData.length}/${teamRiderIds.length} riders successfully`);
+      // Step 2: Bulk fetch full rider data
+      console.log(`[RIDER SYNC] Fetching full rider data for ${riderIds.length} riders...`);
+      const ridersData = await zwiftClient.getBulkRiders(riderIds);
       
       // Get existing riders to track new vs updated
       const existingRiders = await supabase.getRiders();
+      // Map rider_id from DB for comparison
       const existingIds = new Set(existingRiders.map(r => r.rider_id));
       
-      // Map to database format with ALL available fields (matching DbRider interface)
+      // Map to database format
       const riders = ridersData.map(rider => ({
-        // Core identifiers
         rider_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`,
-        
-        // Demographics
-        gender: rider.gender,
-        country: rider.country,
-        age: rider.age,
-        height: rider.height,
-        weight: rider.weight,
-        
-        // Zwift Performance
-        zp_category: rider.zpCategory,
-        zp_ftp: rider.zpFTP,
-        
-        // Power Data (18 fields from power object)
-        power_wkg5: rider.power?.wkg5,
-        power_wkg15: rider.power?.wkg15,
-        power_wkg30: rider.power?.wkg30,
-        power_wkg60: rider.power?.wkg60,
-        power_wkg120: rider.power?.wkg120,
-        power_wkg300: rider.power?.wkg300,
-        power_wkg1200: rider.power?.wkg1200,
-        power_w5: rider.power?.w5,
-        power_w15: rider.power?.w15,
-        power_w30: rider.power?.w30,
-        power_w60: rider.power?.w60,
-        power_w120: rider.power?.w120,
-        power_w300: rider.power?.w300,
-        power_w1200: rider.power?.w1200,
-        power_cp: rider.power?.CP,
-        power_awc: rider.power?.AWC,
-        power_compound_score: rider.power?.compoundScore,
-        power_rating: rider.power?.powerRating,
-        
-        // Race Stats (14 fields from race object)
-        race_last_rating: rider.race?.last?.rating,
-        race_last_date: rider.race?.last?.date,
-        race_last_category: rider.race?.last?.mixed?.category,
-        race_last_number: rider.race?.last?.mixed?.number,
-        race_current_rating: rider.race?.current?.rating,
-        race_current_date: rider.race?.current?.date,
-        race_max30_rating: rider.race?.max30?.rating,
-        race_max30_expires: rider.race?.max30?.expires,
-        race_max90_rating: rider.race?.max90?.rating,
-        race_max90_expires: rider.race?.max90?.expires,
-        race_finishes: rider.race?.finishes,
-        race_dnfs: rider.race?.dnfs,
-        race_wins: rider.race?.wins,
-        race_podiums: rider.race?.podiums,
+        zp_category: rider.zpCategory || null,
+        race_current_rating: rider.race?.current?.rating || null,
+        race_finishes: rider.race?.finishes || 0,
+        club_id: clubId,
+        club_name: rider.club?.name || null,
+        last_synced: new Date().toISOString(),
       }));
 
       // Upsert to database
@@ -197,16 +131,16 @@ export class SyncServiceV2 {
 
       // Log to sync_logs with clear RIDER_SYNC identifier
       await supabase.createSyncLog({
-        endpoint: `RIDER_SYNC (my team only)`,
-        status: metrics.error_count > 0 ? 'partial' : 'success',
+        endpoint: `RIDER_SYNC`,
+        status: 'success',
         records_processed: syncedRiders.length,
-        message: `Interval: ${config.intervalMinutes}min | Team: ${metrics.riders_processed} | Synced: ${syncedRiders.length} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated} | Errors: ${metrics.error_count} | All 50+ fields`,
+        message: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
       });
 
       metrics.duration_ms = Date.now() - startTime;
       
       console.log(`✅ [RIDER SYNC] Completed in ${metrics.duration_ms}ms`);
-      console.log(`   📊 Team: ${metrics.riders_processed} | Synced: ${syncedRiders.length} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated} | Errors: ${metrics.error_count}`);
+      console.log(`   📊 Total: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`);
       
       return metrics;
       
@@ -264,6 +198,7 @@ export class SyncServiceV2 {
       timestamp: new Date().toISOString(),
       interval_minutes: config.intervalMinutes,
       threshold_minutes: config.thresholdMinutes,
+      mode: 'near_only', // Legacy: near only
       events_scanned: 0,
       events_near: 0,
       events_far: 0,
@@ -412,6 +347,7 @@ export class SyncServiceV2 {
       timestamp: new Date().toISOString(),
       interval_minutes: config.intervalMinutes,
       threshold_minutes: config.thresholdMinutes,
+      mode: 'full_scan', // Legacy: full scan
       events_scanned: 0,
       events_near: 0,
       events_far: 0,
@@ -552,6 +488,171 @@ export class SyncServiceV2 {
   }
 
   /**
+   * COMBINED EVENT SYNC (Coordinated)
+   * Intelligente sync die near/far combineert:
+   * - Frequent runs (15min): Alleen NEAR events + signups
+   * - Periodic runs (2u): ALLE events + signups  
+   * 
+   * Voorkomt:
+   * - FAR_EVENT_SYNC die nooit triggert (near sync doet alles al)
+   * - Overlap tussen near/far logic
+   * - Onnodig scannen van far events bij elke run
+   */
+  async syncEventsCoordinated(config: {
+    intervalMinutes: number;
+    thresholdMinutes: number;
+    lookforwardHours: number;
+    mode: 'near_only' | 'full_scan'; // near_only = 15min runs, full_scan = 2u runs
+  }): Promise<EventSyncMetrics> {
+    return await syncCoordinator.queueSync('COMBINED_EVENT_SYNC' as any, async () => {
+      return await this.syncEventsCombined(config);
+    });
+  }
+  
+  /**
+   * COMBINED EVENT SYNC (Direct - internal)
+   * Implementatie van slimme event sync
+   */
+  async syncEventsCombined(config: {
+    intervalMinutes: number;
+    thresholdMinutes: number;
+    lookforwardHours: number;
+    mode: 'near_only' | 'full_scan';
+  }): Promise<EventSyncMetrics> {
+    const startTime = Date.now();
+    const isFullScan = config.mode === 'full_scan';
+    const syncLabel = isFullScan ? 'FULL EVENT SYNC' : 'NEAR EVENT SYNC';
+    
+    console.log(`🔄 [${syncLabel}] Starting (interval: ${config.intervalMinutes}min, threshold: ${config.thresholdMinutes}min)...`);
+    
+    const metrics: EventSyncMetrics = {
+      type: 'COMBINED_EVENT_SYNC',
+      timestamp: new Date().toISOString(),
+      interval_minutes: config.intervalMinutes,
+      threshold_minutes: config.thresholdMinutes,
+      mode: config.mode,
+      events_scanned: 0,
+      events_near: 0,
+      events_far: 0,
+      signups_synced: 0,
+      duration_ms: 0,
+      status: 'success',
+      error_count: 0,
+    };
+
+    try {
+      // Step 1: Haal alle events op van API
+      console.log(`[${syncLabel}] Fetching all events from API...`);
+      const allEvents = await zwiftClient.getEvents48Hours();
+      console.log(`[${syncLabel}] Found ${allEvents.length} events in next 48 hours`);
+      
+      if (allEvents.length === 0) {
+        console.log(`[${syncLabel}] No upcoming events`);
+        metrics.status = 'success';
+        metrics.duration_ms = Date.now() - startTime;
+        
+        await supabase.createSyncLog({
+          endpoint: `${syncLabel} (0 events)`,
+          status: 'success',
+          records_processed: 0,
+        });
+        
+        return metrics;
+      }
+
+      // Step 2: Save ALLE events naar database (altijd)
+      console.log(`[${syncLabel}] Saving ${allEvents.length} events to database...`);
+      const eventsToSave = allEvents.map(e => ({
+        event_id: e.eventId,
+        time_unix: e.time,
+        title: e.title,
+        event_type: e.type,
+        sub_type: e.subType,
+        distance_meters: e.distance ? Math.round(e.distance * 1000) : undefined,
+        route_id: (e as any).route?.id,
+        raw_response: JSON.stringify(e),
+        last_synced: new Date().toISOString(),
+      }));
+      
+      await supabase.upsertEvents(eventsToSave as any);
+      console.log(`[${syncLabel}] ✅ Saved ${eventsToSave.length} events to database`);
+      
+      // Step 3: Bepaal welke events signups nodig hebben
+      const now = Math.floor(Date.now() / 1000);
+      const nearThreshold = now + (config.thresholdMinutes * 60);
+      
+      let signupsCount = 0;
+      
+      for (const event of allEvents) {
+        metrics.events_scanned++;
+        const eventTime = event.time;
+        const isNear = eventTime < nearThreshold;
+        
+        if (isNear) {
+          metrics.events_near++;
+          // ALTIJD signups syncen voor near events
+          try {
+            const result = await this.syncEventSignups(event.eventId);
+            signupsCount += result.total;
+          } catch (err) {
+            metrics.error_count++;
+            console.warn(`Failed to sync signups for event ${event.eventId}:`, err);
+          }
+          await new Promise(resolve => setTimeout(resolve, 200)); // Rate limit
+        } else {
+          metrics.events_far++;
+          
+          // Far events: alleen signups bij full_scan
+          if (isFullScan) {
+            console.log(`[${syncLabel}] [FAR] Syncing: ${event.title || event.eventId}`);
+            try {
+              const result = await this.syncEventSignups(event.eventId);
+              signupsCount += result.total;
+            } catch (err) {
+              metrics.error_count++;
+              console.warn(`Failed to sync signups for far event ${event.eventId}:`, err);
+            }
+            await new Promise(resolve => setTimeout(resolve, 200)); // Rate limit
+          }
+        }
+      }
+      
+      metrics.signups_synced = signupsCount;
+      metrics.duration_ms = Date.now() - startTime;
+      metrics.status = metrics.error_count > 0 ? 'partial' : 'success';
+      
+      await supabase.createSyncLog({
+        endpoint: syncLabel,
+        status: metrics.status,
+        records_processed: allEvents.length,
+        error_message: `Mode: ${config.mode} | Events: ${allEvents.length} | Near: ${metrics.events_near} | Far: ${metrics.events_far} | Signups: ${metrics.signups_synced}`,
+      });
+      
+      console.log(`✅ [${syncLabel}] Completed in ${metrics.duration_ms}ms`);
+      console.log(`   📊 Mode: ${config.mode} | Events: ${allEvents.length} | Near: ${metrics.events_near} (synced) | Far: ${metrics.events_far} (${isFullScan ? 'synced' : 'skipped'}) | Signups: ${metrics.signups_synced}`);
+      
+      return metrics;
+      
+    } catch (error: any) {
+      metrics.status = 'error';
+      metrics.error_count++;
+      metrics.duration_ms = Date.now() - startTime;
+      
+      console.error(`❌ [${syncLabel}] Failed:`, error);
+      
+      await supabase.createSyncLog({
+        endpoint: syncLabel,
+        status: 'error',
+        records_processed: 0,
+        error_message: error instanceof Error ? error.message : String(error),
+        message: `Mode: ${config.mode} | Threshold: ${config.thresholdMinutes}min`,
+      }).catch(err => console.error('Failed to log error:', err));
+      
+      return metrics;
+    }
+  }
+
+  /**
    * Helper: Sync signups for specific event
    */
   private async syncEventSignups(eventId: string): Promise<{ total: number, byPen: Record<string, number> }> {
@@ -641,310 +742,6 @@ export class SyncServiceV2 {
       error_message: log.error_message || null,
     };
   }
-
-  // ========================================
-  // LEGACY UTILITY METHODS (from sync.service.ts)
-  // ========================================
-
-  /**
-   * Sync club informatie
-   */
-  async syncClub(clubId: number = TEAM_CLUB_ID): Promise<DbClub> {
-    console.log(`🔄 Syncing club ${clubId}...`);
-    
-    try {
-      const clubData = await zwiftClient.getClub(clubId);
-      
-      const club = await supabase.upsertClub({
-        id: clubData.id,
-        name: clubData.name,
-        description: clubData.description,
-        tag: clubData.tag,
-        member_count: clubData.memberCount,
-        last_synced: new Date().toISOString(),
-      });
-
-      await supabase.createSyncLog({
-        endpoint: 'GET /public/clubs/{id}',
-        status: 'success',
-        records_processed: 1,
-      });
-
-      console.log(`✅ Club synced: ${club.name}`);
-      return club;
-    } catch (error) {
-      await supabase.createSyncLog({
-        endpoint: 'GET /public/clubs/{id}',
-        status: 'error',
-        records_processed: 0,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Sync signups voor een specifiek event
-   */
-  async syncEventSignups(eventId: string): Promise<{ total: number, byPen: Record<string, number> }> {
-    console.log(`🔄 Syncing signups for event ${eventId}...`);
-    
-    try {
-      const pens = await zwiftClient.getEventSignups(eventId);
-      const signups: any[] = [];
-      const byPen: Record<string, number> = {};
-
-      for (const pen of pens) {
-        const penName = pen.name;
-        const riders = pen.riders || [];
-        byPen[penName] = riders.length;
-
-        for (const rider of riders) {
-          signups.push({
-            event_id: eventId,
-            pen_name: penName,
-            rider_id: rider.riderId,
-            rider_name: rider.name,
-            weight: rider.weight || null,
-            height: rider.height || null,
-            club_id: rider.club?.clubId || null,
-            club_name: rider.club?.name || null,
-            power_wkg5: rider.power?.wkg5 || null,
-            power_wkg30: rider.power?.wkg30 || null,
-            power_cp: rider.power?.CP || null,
-            race_rating: rider.race?.rating || null,
-            race_finishes: rider.race?.finishes || null,
-            race_wins: rider.race?.wins || null,
-            race_podiums: rider.race?.podiums || null,
-            phenotype: rider.phenotype || null,
-            raw_data: rider,
-          });
-        }
-      }
-
-      const inserted = await supabase.upsertEventSignups(signups);
-      console.log(`✅ Synced ${inserted} signups across ${pens.length} pens for event ${eventId}`);
-
-      return { total: inserted, byPen };
-    } catch (error) {
-      console.error(`❌ Failed to sync signups for event ${eventId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Sync event results
-   */
-  async syncEventResults(eventId: number): Promise<DbResult[]> {
-    console.log(`🔄 Syncing results for event ${eventId}...`);
-    
-    try {
-      const resultsData = await zwiftClient.getEventResults(eventId);
-      
-      const results = resultsData.map(result => ({
-        event_id: result.eventId,
-        rider_id: result.riderId,
-        position: result.position,
-        time_seconds: result.time,
-        points: result.points,
-      }));
-
-      const syncedResults = await supabase.upsertResults(results);
-
-      await supabase.createSyncLog({
-        endpoint: `GET /public/events/${eventId}/results`,
-        status: 'success',
-        records_processed: syncedResults.length,
-      });
-
-      console.log(`✅ Synced ${syncedResults.length} results`);
-      return syncedResults;
-    } catch (error) {
-      await supabase.createSyncLog({
-        endpoint: `GET /public/events/${eventId}/results`,
-        status: 'error',
-        records_processed: 0,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Sync rider history
-   */
-  async syncRiderHistory(riderId: number): Promise<void> {
-    console.log(`🔄 Syncing history for rider ${riderId}...`);
-    
-    try {
-      const historyData = await zwiftClient.getRiderHistory(riderId);
-      
-      const history = historyData.map(snapshot => ({
-        rider_id: riderId,
-        snapshot_date: snapshot.date,
-        ranking: snapshot.ranking,
-        points: snapshot.points,
-        category: snapshot.category,
-      }));
-
-      await supabase.insertRiderHistory(history);
-
-      await supabase.createSyncLog({
-        endpoint: `GET /public/riders/${riderId}/history`,
-        status: 'success',
-        records_processed: history.length,
-      });
-
-      console.log(`✅ Synced ${history.length} history snapshots`);
-    } catch (error) {
-      await supabase.createSyncLog({
-        endpoint: `GET /public/riders/${riderId}/history`,
-        status: 'error',
-        records_processed: 0,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Full sync: club + riders
-   */
-  async syncAll(clubId: number = TEAM_CLUB_ID): Promise<void> {
-    console.log('🚀 Starting full sync...');
-    
-    await this.syncClub(clubId);
-    await this.syncRiders({ intervalMinutes: 360, clubId });
-    
-    console.log('✅ Full sync completed!');
-  }
-
-  /**
-   * Bulk import upcoming events from /api/events/upcoming
-   */
-  async bulkImportUpcomingEvents(): Promise<{
-    events_imported: number;
-    signups_matched: number;
-    team_events: number;
-    errors: number;
-  }> {
-    console.log('🔄 [BulkImport] Starting 48h events import...');
-    
-    try {
-      const events = await zwiftClient.getEvents48Hours();
-      console.log(`✅ [BulkImport] Found ${events.length} events in next 48h`);
-      
-      const ourRiders = await supabase.getRiders();
-      const riderMap = new Map(ourRiders.map((r: DbRider) => [r.rider_id, r]));
-      
-      let eventsImported = 0;
-      let signupsMatched = 0;
-      let teamEvents = 0;
-      let errors = 0;
-
-      for (const event of events) {
-        try {
-          await supabase.upsertZwiftApiEvent({
-            event_id: event.eventId,
-            time_unix: event.time,
-            title: event.title,
-            event_type: event.type,
-            distance_meters: event.distance ? Math.floor(parseFloat(String(event.distance))) : null,
-            elevation_meters: event.elevation ? Math.floor(parseFloat(String(event.elevation))) : null,
-            organizer: event.organizer || null,
-            raw_response: JSON.stringify(event),
-            last_synced: new Date().toISOString(),
-          });
-          eventsImported++;
-
-          let hasTeamRiders = false;
-          if (event.pens && Array.isArray(event.pens)) {
-            for (const pen of event.pens) {
-              if (pen.results?.signups && Array.isArray(pen.results.signups)) {
-                for (const signup of pen.results.signups) {
-                  const riderId = signup.riderId || signup.rider_id;
-                  if (riderId && riderMap.has(riderId)) {
-                    try {
-                      await supabase.upsertEventSignup({
-                        event_id: event.eventId,
-                        rider_id: riderId,
-                        pen_name: pen.name || undefined,
-                        category: signup.category || undefined,
-                        status: 'confirmed',
-                      });
-                      signupsMatched++;
-                      hasTeamRiders = true;
-                    } catch (e) {
-                      // Ignore if table doesn't exist yet
-                    }
-                  }
-                }
-              }
-            }
-          }
-          
-          if (hasTeamRiders) teamEvents++;
-        } catch (error) {
-          errors++;
-          console.warn(`Error importing event ${event.eventId}:`, error);
-        }
-      }
-
-      await supabase.createSyncLog({
-        endpoint: 'Bulk import upcoming events',
-        status: 'success',
-        records_processed: eventsImported,
-      });
-
-      console.log(`✅ Imported ${eventsImported} events, ${signupsMatched} team signups, ${teamEvents} team events`);
-      
-      return { events_imported: eventsImported, signups_matched: signupsMatched, team_events: teamEvents, errors };
-    } catch (error) {
-      await supabase.createSyncLog({
-        endpoint: 'Bulk import upcoming events',
-        status: 'error',
-        records_processed: 0,
-        error_message: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * Sync upcoming events voor alle riders (deprecated, use bulkImportUpcomingEvents)
-   */
-  async syncRiderUpcomingEvents(hours: number = 48): Promise<{
-    riders_scanned: number;
-    events_found: number;
-    signups_created: number;
-    errors: number;
-  }> {
-    console.warn('⚠️  syncRiderUpcomingEvents() is deprecated - use bulkImportUpcomingEvents() instead');
-    const result = await this.bulkImportUpcomingEvents();
-    return {
-      riders_scanned: 0,
-      events_found: result.events_imported,
-      signups_created: result.signups_matched,
-      errors: result.errors,
-    };
-  }
-
-  /**
-   * LEGACY WRAPPER: syncRiders() met oude signature (retourneert DbRider[])
-   * Voor backwards compatibility met oude endpoints
-   */
-  async syncRidersLegacy(clubId: number = TEAM_CLUB_ID): Promise<DbRider[]> {
-    const metrics = await this.syncRiders({ intervalMinutes: 360, clubId });
-    // Haal riders op uit database na sync
-    const riders = await supabase.getRiders();
-    return riders;
-  }
 }
 
 export const syncServiceV2 = new SyncServiceV2();
-// Export as default name for backwards compatibility with both signatures
-export const syncService = {
-  ...syncServiceV2,
-  // Override syncRiders to return DbRider[] for legacy endpoints
-  syncRiders: (clubId?: number) => syncServiceV2.syncRidersLegacy(clubId),
-};

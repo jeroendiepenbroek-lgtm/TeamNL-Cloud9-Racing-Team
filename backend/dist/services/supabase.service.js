@@ -51,9 +51,25 @@ export class SupabaseService {
         return (data || []).map(r => r.rider_id);
     }
     // Get ALL rider IDs from riders table (our team members)
+    // UNIFIED: Use same fallback logic as getMyTeamMembers() for consistency
     async getAllTeamRiderIds() {
+        // Try view_my_team first (correct source via my_team_members)
+        try {
+            const { data, error } = await this.client
+                .from('view_my_team')
+                .select('rider_id');
+            if (error)
+                throw error;
+            if (data && data.length > 0) {
+                return data.map((r) => r.rider_id);
+            }
+        }
+        catch (viewError) {
+            console.warn('view_my_team not available, falling back to riders table:', viewError);
+        }
+        // Fallback: All riders in riders table (same as Matrix fallback)
         const { data, error } = await this.client
-            .from('view_my_team') // Use view_my_team for all team riders
+            .from('riders')
             .select('rider_id');
         if (error)
             throw error;

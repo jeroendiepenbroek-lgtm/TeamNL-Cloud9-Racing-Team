@@ -3,12 +3,12 @@
  * Beheer configureerbare sync intervals en parameters
  */
 const DEFAULT_CONFIG = {
-    nearEventThresholdMinutes: 60, // 1 hour
-    nearEventSyncIntervalMinutes: 10, // Sync every 10 minutes
-    farEventSyncIntervalMinutes: 60, // Sync every 60 minutes
+    nearEventThresholdMinutes: 120, // 2 hours (events binnen 2u = near)
+    nearEventSyncIntervalMinutes: 15, // Sync every 15 minutes
+    farEventSyncIntervalMinutes: 180, // Sync every 180 minutes (3 hours, veelvoud van 15!)
     riderSyncEnabled: true,
-    riderSyncIntervalMinutes: 360, // Sync every 6 hours
-    lookforwardHours: 36,
+    riderSyncIntervalMinutes: 90, // Sync every 90 minutes (POST rate limit safe: 1/15min)
+    lookforwardHours: 48, // 48 hours lookahead
     checkIntervalMinutes: 5,
 };
 class SyncConfigService {

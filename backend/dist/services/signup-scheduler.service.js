@@ -7,7 +7,7 @@
  * Intelligent scheduling voor signup updates gebaseerd op event timing
  */
 import cron from 'node-cron';
-import { syncService } from './sync.service.js';
+import { syncServiceV2 as syncService } from './sync-v2.service.js';
 import { supabase } from './supabase.service.js';
 export class SignupSchedulerService {
     hourlyJob = null;

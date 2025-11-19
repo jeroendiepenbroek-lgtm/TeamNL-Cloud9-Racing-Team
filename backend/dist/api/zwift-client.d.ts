@@ -160,6 +160,10 @@ export declare class ZwiftApiClient {
      * Matches routes within 0.5km tolerance
      */
     getRouteProfileByDistance(distanceKm: number, world?: string): Promise<string | null>;
+    /**
+     * Convert raw API URL naar user-friendly endpoint naam
+     */
+    private _getFriendlyEndpointName;
 }
 export declare const zwiftClient: ZwiftApiClient;
 //# sourceMappingURL=zwift-client.d.ts.map

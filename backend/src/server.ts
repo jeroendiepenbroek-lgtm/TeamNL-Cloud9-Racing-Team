@@ -148,16 +148,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   const config = syncConfigService.getConfig();
   const syncServiceV2 = new SyncServiceV2();
   
-  // Rider Sync Scheduler - Runs at :00 every 6 hours (matches coordinator time slot)
+  // Rider Sync Scheduler - Runs every 90 minutes (HIGHEST PRIORITY)
+  // Trigger: 00:00, 01:30, 03:00, 04:30, 06:00, 07:30, 09:00, 10:30, 12:00, 13:30, 15:00, 16:30, 18:00, 19:30, 21:00, 22:30
+  // POST rate limit: 1/15min → 90min interval = 6x safety margin
   if (config.riderSyncEnabled) {
-    const riderCronExpression = '0 */6 * * *'; // At :00 every 6 hours (00:00, 06:00, 12:00, 18:00)
-    console.log(`  ✅ Rider Sync: At :00 every 6 hours (coordinator time slot)`);
+    const riderCronExpression = '0,30 */3 * * *'; // At :00 and :30, every 3 hours (= every 90 min)
+    console.log(`  ✅ Rider Sync (P1): Every 90 min - Safe POST rate limit (16x/dag)`);
     
     cron.schedule(riderCronExpression, async () => {
-      console.log(`\n⏰ [CRON] Rider Sync triggered at ${new Date().toISOString()}`);
+      console.log(`\n⏰ [CRON] Rider Sync (PRIORITY 1) triggered at ${new Date().toISOString()}`);
       try {
         const metrics = await syncServiceV2.syncRidersCoordinated({
-          intervalMinutes: 360, // 6 hours
+          intervalMinutes: 90, // 90 minutes
         });
         console.log(`✅ [CRON] Rider Sync completed: ${metrics.riders_processed} riders (${metrics.riders_new} new, ${metrics.riders_updated} updated)`);
       } catch (error) {
@@ -168,39 +170,44 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`  ⏸️  Rider Sync: Disabled`);
   }
   
-  // Near Event Sync Scheduler - Runs at :05, :20, :35, :50 (matches coordinator time slot)
-  const nearEventCronExpression = '5,20,35,50 * * * *'; // Every hour at :05, :20, :35, :50
-  console.log(`  ✅ Near Event Sync: At :05, :20, :35, :50 every hour (coordinator time slot)`);
+  // Combined Event Sync - NEAR only mode (Frequent: every 15 min)
+  // Runs at :05, :20, :35, :50 - only syncs events < threshold (near events)
+  const nearEventCronExpression = '5,20,35,50 * * * *';
+  console.log(`  ✅ Event Sync NEAR (P2): At :05, :20, :35, :50 every hour`);
   
   cron.schedule(nearEventCronExpression, async () => {
-    console.log(`\n⏰ [CRON] Near Event Sync triggered at ${new Date().toISOString()}`);
+    console.log(`\n⏰ [CRON] Event Sync (NEAR) triggered at ${new Date().toISOString()}`);
     try {
-      const metrics = await syncServiceV2.syncNearEventsCoordinated({
+      const metrics = await syncServiceV2.syncEventsCoordinated({
         intervalMinutes: 15,
         thresholdMinutes: config.nearEventThresholdMinutes,
         lookforwardHours: config.lookforwardHours,
+        mode: 'near_only', // Alleen near events + signups
       });
-      console.log(`✅ [CRON] Near Event Sync completed: ${metrics.events_near} near events, ${metrics.signups_synced} signups`);
+      console.log(`✅ [CRON] Event Sync (NEAR) completed: ${metrics.events_near} near events, ${metrics.signups_synced} signups`);
     } catch (error) {
-      console.error(`❌ [CRON] Near Event Sync failed:`, error);
+      console.error(`❌ [CRON] Event Sync (NEAR) failed:`, error);
     }
   });
   
-  // Far Event Sync Scheduler - Runs at :30 every 2 hours (matches coordinator time slot)
-  const farEventCronExpression = '30 */2 * * *'; // At :30 every 2 hours (00:30, 02:30, 04:30, etc.)
-  console.log(`  ✅ Far Event Sync: At :30 every 2 hours (coordinator time slot)`);
+  // Combined Event Sync - FULL SCAN mode (Periodic: every 3 hours at :50)
+  // Runs at :50 every 3 hours - syncs ALL events (near + far)
+  // Samenvallend met NEAR run voor efficiency (00:50, 03:50, 06:50, 09:50, 12:50, 15:50, 18:50, 21:50)
+  const fullEventCronExpression = '50 */3 * * *';
+  console.log(`  ✅ Event Sync FULL (P2): At :50 every 3 hours (on NEAR slot!)`);
   
-  cron.schedule(farEventCronExpression, async () => {
-    console.log(`\n⏰ [CRON] Far Event Sync triggered at ${new Date().toISOString()}`);
+  cron.schedule(fullEventCronExpression, async () => {
+    console.log(`\n⏰ [CRON] Event Sync (FULL) triggered at ${new Date().toISOString()}`);
     try {
-      const metrics = await syncServiceV2.syncFarEventsCoordinated({
-        intervalMinutes: 120, // 2 hours
+      const metrics = await syncServiceV2.syncEventsCoordinated({
+        intervalMinutes: 180, // 3 hours
         thresholdMinutes: config.nearEventThresholdMinutes,
         lookforwardHours: config.lookforwardHours,
+        mode: 'full_scan', // Alle events + signups (near + far)
       });
-      console.log(`✅ [CRON] Far Event Sync completed: ${metrics.events_far} far events, ${metrics.signups_synced} signups`);
+      console.log(`✅ [CRON] Event Sync (FULL) completed: ${metrics.events_near} near + ${metrics.events_far} far events, ${metrics.signups_synced} signups`);
     } catch (error) {
-      console.error(`❌ [CRON] Far Event Sync failed:`, error);
+      console.error(`❌ [CRON] Event Sync (FULL) failed:`, error);
     }
   });
   

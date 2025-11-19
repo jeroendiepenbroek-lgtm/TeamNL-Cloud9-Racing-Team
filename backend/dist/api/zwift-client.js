@@ -10,6 +10,7 @@
  * Premium tier: 10x limiet voor clubs/riders, zelfde voor results
  */
 import axios from 'axios';
+import { rateLimiter } from '../utils/rate-limiter.js';
 const ZWIFT_API_BASE = 'https://zwift-ranking.herokuapp.com';
 const ZWIFT_API_KEY = process.env.ZWIFT_API_KEY || '';
 const TEAM_CLUB_ID = 11818;
@@ -39,8 +40,10 @@ export class ZwiftApiClient {
             const status = error.response?.status || 'TIMEOUT';
             const url = error.config?.url || 'unknown';
             if (status === 429) {
+                // Parse endpoint voor user-friendly message
+                const friendlyEndpoint = this._getFriendlyEndpointName(url);
                 console.error(`[ZwiftAPI] 🚫 RATE LIMIT (429) ${url} - Too many requests`);
-                error.message = `Rate limit exceeded for ${url}. Please wait before retrying.`;
+                error.message = `Rate limit exceeded: ${friendlyEndpoint}. Wait before retrying.`;
             }
             else if (status === 'TIMEOUT') {
                 console.error(`[ZwiftAPI] ⏱️  TIMEOUT ${url}`);
@@ -62,8 +65,10 @@ export class ZwiftApiClient {
      * Rate limit: 1/60min (Standard)
      */
     async getClubMembers(clubId = TEAM_CLUB_ID) {
-        const response = await this.client.get(`/public/clubs/${clubId}`);
-        return response.data;
+        return await rateLimiter.executeWithLimit('club_members', async () => {
+            const response = await this.client.get(`/public/clubs/${clubId}`);
+            return response.data;
+        });
     }
     /**
      * GET /public/clubs/<id>/<riderId>
@@ -84,8 +89,10 @@ export class ZwiftApiClient {
      * Rate limit: 1/1min
      */
     async getEventResults(eventId) {
-        const response = await this.client.get(`/public/results/${eventId}`);
-        return response.data;
+        return await rateLimiter.executeWithLimit('event_results', async () => {
+            const response = await this.client.get(`/public/results/${eventId}`);
+            return response.data;
+        });
     }
     /**
      * GET /public/zp/<eventId>/results
@@ -105,8 +112,10 @@ export class ZwiftApiClient {
      * Rate limit: 5/1min (Standard)
      */
     async getRider(riderId) {
-        const response = await this.client.get(`/public/riders/${riderId}`);
-        return response.data;
+        return await rateLimiter.executeWithLimit('rider_individual', async () => {
+            const response = await this.client.get(`/public/riders/${riderId}`);
+            return response.data;
+        });
     }
     /**
      * GET /public/riders/<riderId>/<time>
@@ -131,8 +140,10 @@ export class ZwiftApiClient {
         if (riderIds.length > 1000) {
             throw new Error('Maximum 1000 rider IDs per bulk request');
         }
-        const response = await this.client.post('/public/riders', riderIds);
-        return response.data;
+        return await rateLimiter.executeWithLimit('rider_bulk', async () => {
+            const response = await this.client.post('/public/riders', riderIds);
+            return response.data;
+        });
     }
     /**
      * POST /public/riders/<time>
@@ -168,11 +179,13 @@ export class ZwiftApiClient {
      * - categories, signups (comma-separated strings)
      */
     async getUpcomingEvents() {
-        const response = await this.client.get('/api/events/upcoming');
-        // Response is direct array, not wrapped in { events: [] }
-        const events = Array.isArray(response.data) ? response.data : [];
-        console.log(`[ZwiftAPI] ✅ /api/events/upcoming returned ${events.length} upcoming events`);
-        return events;
+        return await rateLimiter.executeWithLimit('events_upcoming', async () => {
+            const response = await this.client.get('/api/events/upcoming');
+            // Response is direct array, not wrapped in { events: [] }
+            const events = Array.isArray(response.data) ? response.data : [];
+            console.log(`[ZwiftAPI] ✅ /api/events/upcoming returned ${events.length} upcoming events`);
+            return events;
+        });
     }
     /**
      * Get upcoming events in next 48 hours
@@ -191,8 +204,10 @@ export class ZwiftApiClient {
      * Returns detailed event data including participants (pens)
      */
     async getEventDetails(eventId) {
-        const response = await this.client.get(`/api/events/${eventId}`);
-        return response.data;
+        return await rateLimiter.executeWithLimit('event_details', async () => {
+            const response = await this.client.get(`/api/events/${eventId}`);
+            return response.data;
+        });
     }
     /**
      * GET /api/events/{eventId}/signups
@@ -207,9 +222,11 @@ export class ZwiftApiClient {
      * - phenotype (rider type)
      */
     async getEventSignups(eventId) {
-        const response = await this.client.get(`/api/events/${eventId}/signups`);
-        console.log(`[ZwiftAPI] ✅ /api/events/${eventId}/signups returned ${response.data.length} pens`);
-        return response.data;
+        return await rateLimiter.executeWithLimit('event_signups', async () => {
+            const response = await this.client.get(`/api/events/${eventId}/signups`);
+            console.log(`[ZwiftAPI] ✅ /api/events/${eventId}/signups returned ${response.data.length} pens`);
+            return response.data;
+        });
     }
     // ============================================================================
     // LEGACY / DEPRECATED METHODS (behouden voor backwards compatibility)
@@ -398,6 +415,38 @@ export class ZwiftApiClient {
         // Return first match with profile
         const withProfile = matchingRoutes.find((r) => r.profile);
         return withProfile?.profile || null;
+    }
+    /**
+     * Convert raw API URL naar user-friendly endpoint naam
+     */
+    _getFriendlyEndpointName(url) {
+        // Parse club endpoint
+        if (url.includes('/public/clubs/')) {
+            return 'Team members sync (club API)';
+        }
+        // Parse rider endpoints
+        if (url.includes('/public/riders') && !url.includes('/public/riders/')) {
+            return 'Rider bulk sync (POST)';
+        }
+        if (url.includes('/public/riders/')) {
+            return 'Individual rider sync (GET)';
+        }
+        // Parse event endpoints
+        if (url.includes('/api/events/upcoming')) {
+            return 'Upcoming events sync';
+        }
+        if (url.includes('/api/events/') && url.includes('/signups')) {
+            return 'Event signups sync';
+        }
+        if (url.includes('/api/events/')) {
+            return 'Event details sync';
+        }
+        // Parse results
+        if (url.includes('/public/results/')) {
+            return 'Event results sync';
+        }
+        // Fallback: return URL
+        return url;
     }
 }
 export const zwiftClient = new ZwiftApiClient();

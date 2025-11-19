@@ -354,41 +354,47 @@ export default function Events() {
                     </div>
                   )}
 
-                  {/* US4: Route Info + Distance & Elevation in header - Mobile responsive */}
+                  {/* US4: Route Info - Simpel in header */}
                   {event.route_name && (
-                    <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-white/90 text-xs sm:text-sm">
-                      <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-                      <span className="font-medium truncate max-w-[150px] sm:max-w-none">{event.route_name}</span>
+                    <div className="flex flex-wrap items-center gap-2 text-white/90 text-sm">
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="font-medium">{event.route_name}</span>
                       {event.route_world && (
-                        <span className="text-white/70 hidden sm:inline">•</span>
-                      )}
-                      {event.route_world && (
-                        <span className="text-white/70 truncate max-w-[100px] sm:max-w-none">{event.route_world}</span>
-                      )}
-                      {event.distance_km && (
-                        <span className="text-white/70 whitespace-nowrap">• {event.distance_km}km</span>
-                      )}
-                      {event.elevation_m !== undefined && (
-                        <span className="text-white/70 whitespace-nowrap">• {event.elevation_m}m</span>
+                        <>
+                          <span className="text-white/60">•</span>
+                          <span className="text-white/80">{event.route_world}</span>
+                        </>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Card Body - Mobile responsive padding */}
-                <div className="p-4 sm:p-6">
-                  {/* Route Profile Badge */}
-                  <div className="mb-4">
+                {/* Card Body - Compacter met prominente route info */}
+                <div className="p-4">
+                  {/* Route Info Box - Prominente positie met km, hoogtemeters en profiel */}
+                  <div className="mb-4 flex items-center gap-3 flex-wrap">
                     {routeProfile && (
-                      <div className={`inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg ${routeProfile.color} font-medium text-xs sm:text-sm`}>
-                        <RouteIcon className="w-4 h-4" />
+                      <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg ${routeProfile.color} font-bold text-sm shadow-sm`}>
+                        <RouteIcon className="w-5 h-5" />
                         <span>{routeProfile.label}</span>
+                      </div>
+                    )}
+                    {event.distance_km && (
+                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 font-bold text-sm shadow-sm">
+                        <span>📏</span>
+                        <span>{event.distance_km} km</span>
+                      </div>
+                    )}
+                    {event.elevation_m !== undefined && event.elevation_m > 0 && (
+                      <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-50 text-orange-700 font-bold text-sm shadow-sm">
+                        <span>⛰️</span>
+                        <span>{event.elevation_m} m</span>
                       </div>
                     )}
                   </div>
 
-                  {/* US3, US4, US5: Compacte horizontale stats row - alleen iconen + getallen - Mobile responsive */}
-                  <div className="flex items-center gap-3 sm:gap-6 mb-6 pb-4 border-b border-slate-200 overflow-x-auto">
+                  {/* US3, US4, US5: Compacte horizontale stats row */}
+                  <div className="flex items-center gap-3 sm:gap-4 mb-4 pb-4 border-b border-slate-200 overflow-x-auto">
                     {/* Total signups (multi-person icon) */}
                     {event.total_signups !== undefined && (
                       <div className="flex items-center gap-1.5 sm:gap-2 text-slate-600">
@@ -428,7 +434,7 @@ export default function Events() {
 
                   {/* US6: Collapsible team member sections per category */}
                   {event.team_signups_by_category && Object.keys(event.team_signups_by_category).length > 0 && (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {Object.entries(event.team_signups_by_category)
                         .filter(([_, riders]) => riders.length > 0)
                         .map(([cat, riders]) => {

@@ -6,6 +6,8 @@ import EventsModern from './pages/EventsModern'
 import SyncStatusModern from './pages/SyncStatusModern'
 import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
 import RidersModern from './pages/RidersModern'
+import ResultsDashboard from './pages/ResultsDashboard'
+import RiderResultsView from './pages/RiderResultsView'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
 import AdminHome from './pages/AdminHome'
@@ -141,6 +143,13 @@ function Navigation() {
               >
                 🏁 Events
               </Link>
+              <Link 
+                to="/results" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-4 py-3 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition"
+              >
+                🏆 Resultaten
+              </Link>
               
               {user && (
                 <Link 
@@ -254,6 +263,8 @@ function AppContent() {
           
           {/* Public Pages */}
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><EventsModern /></div>} />
+          <Route path="/results" element={<ResultsDashboard />} />
+          <Route path="/results/rider/:riderId" element={<RiderResultsView />} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
           

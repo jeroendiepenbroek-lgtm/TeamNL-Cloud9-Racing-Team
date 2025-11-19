@@ -7,7 +7,7 @@
  * Intelligent scheduling voor event updates gebaseerd op afstand tot evenement
  */
 import cron from 'node-cron';
-import { syncService } from './sync.service.js';
+import { syncServiceV2 as syncService } from './sync-v2.service.js';
 import { supabase } from './supabase.service.js';
 export class EventSchedulerService {
     hourlyJob = null;

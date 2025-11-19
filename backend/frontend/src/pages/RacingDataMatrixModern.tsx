@@ -728,25 +728,25 @@ export default function RacingDataMatrixModern() {
                   <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
                     DNF
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w5')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w5')}>
                     5s
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w15')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w15')}>
                     15s
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w30')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w30')}>
                     30s
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w60')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w60')}>
                     1m
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w120')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w120')}>
                     2m
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w300')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w300')}>
                     5m
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap" onClick={() => handleSort('power_w1200')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w1200')}>
                     20m
                   </th>
                 </tr>

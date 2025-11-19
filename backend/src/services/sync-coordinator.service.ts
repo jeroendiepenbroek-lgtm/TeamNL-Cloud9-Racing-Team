@@ -11,7 +11,7 @@
 
 import { rateLimiter } from '../utils/rate-limiter.js';
 
-type SyncType = 'RIDER_SYNC' | 'NEAR_EVENT_SYNC' | 'FAR_EVENT_SYNC';
+type SyncType = 'RIDER_SYNC' | 'NEAR_EVENT_SYNC' | 'FAR_EVENT_SYNC' | 'COMBINED_EVENT_SYNC';
 
 interface SyncRequest {
   type: SyncType;
@@ -26,21 +26,28 @@ class SyncCoordinator {
   private isProcessing: boolean = false;
   
   // Time slots voor elke sync type (om overlaps te voorkomen)
-  private readonly timeSlots = {
+  private readonly timeSlots: Record<SyncType, { intervalMinutes: number; offsetMinutes: number }> = {
     RIDER_SYNC: {
-      // Draait elke 6 uur op :00 minuten
-      intervalMinutes: 360,
+      // Draait elke 90 min op :00 en :30 (PRIORITY 1)
+      // POST rate limit: 1/15min → 90min = 6x safety margin
+      intervalMinutes: 90,
       offsetMinutes: 0,
     },
     NEAR_EVENT_SYNC: {
-      // Draait elke 15 min op :05, :20, :35, :50
+      // Legacy - draait elke 15 min op :05, :20, :35, :50
       intervalMinutes: 15,
       offsetMinutes: 5,
     },
     FAR_EVENT_SYNC: {
-      // Draait elke 2 uur op :30 minuten
+      // Legacy - draait elke 2 uur op :30 minuten
       intervalMinutes: 120,
       offsetMinutes: 30,
+    },
+    COMBINED_EVENT_SYNC: {
+      // Draait elke 15 min op :05, :20, :35, :50 (NEAR)
+      // + elke 3u op :50 (FULL) - veelvoud van NEAR interval!
+      intervalMinutes: 15,
+      offsetMinutes: 5,
     },
   };
   
@@ -139,6 +146,7 @@ class SyncCoordinator {
         
       case 'NEAR_EVENT_SYNC':
       case 'FAR_EVENT_SYNC':
+      case 'COMBINED_EVENT_SYNC':
         // Gebruikt: events_upcoming + event_signups
         if (!status.events_upcoming.canCall) {
           return { canRun: false, blockedBy: 'events_upcoming' };
@@ -153,12 +161,13 @@ class SyncCoordinator {
   }
   
   private _getPriority(type: SyncType): number {
-    // NEAR_EVENT_SYNC = highest (events binnen 24u zijn urgent)
-    // RIDER_SYNC = medium (team data)
-    // FAR_EVENT_SYNC = lowest (events ver weg)
+    // RIDER_SYNC = highest (team member data is meest critical)
+    // COMBINED_EVENT_SYNC = medium (event data + signups)
+    // Legacy syncs = lowest
     switch (type) {
-      case 'NEAR_EVENT_SYNC': return 1;
-      case 'RIDER_SYNC': return 2;
+      case 'RIDER_SYNC': return 1; // PRIORITY 1 - Team data first!
+      case 'COMBINED_EVENT_SYNC': return 2;
+      case 'NEAR_EVENT_SYNC': return 2; // Legacy - zelfde als combined
       case 'FAR_EVENT_SYNC': return 3;
       default: return 99;
     }

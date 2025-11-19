@@ -20,10 +20,11 @@ export interface RiderSyncMetrics {
     error_count: number;
 }
 export interface EventSyncMetrics {
-    type: 'NEAR_EVENT_SYNC' | 'FAR_EVENT_SYNC';
+    type: 'NEAR_EVENT_SYNC' | 'FAR_EVENT_SYNC' | 'COMBINED_EVENT_SYNC';
     timestamp: string;
     interval_minutes: number;
     threshold_minutes: number;
+    mode: 'near_only' | 'full_scan';
     events_scanned: number;
     events_near: number;
     events_far: number;
@@ -34,7 +35,15 @@ export interface EventSyncMetrics {
 }
 export declare class SyncServiceV2 {
     /**
-     * RIDER SYNC
+     * RIDER SYNC (Coordinated)
+     * Uses sync coordinator to prevent conflicts
+     */
+    syncRidersCoordinated(config: {
+        intervalMinutes: number;
+        clubId?: number;
+    }): Promise<RiderSyncMetrics>;
+    /**
+     * RIDER SYNC (Direct - internal use)
      * Syncs all club members with full rider data
      * Tracks: interval, rider count, new vs updated
      */
@@ -43,7 +52,16 @@ export declare class SyncServiceV2 {
         clubId?: number;
     }): Promise<RiderSyncMetrics>;
     /**
-     * EVENT SYNC - NEAR EVENTS
+     * NEAR EVENT SYNC (Coordinated)
+     * Uses sync coordinator to prevent conflicts
+     */
+    syncNearEventsCoordinated(config: {
+        intervalMinutes: number;
+        thresholdMinutes: number;
+        lookforwardHours: number;
+    }): Promise<EventSyncMetrics>;
+    /**
+     * EVENT SYNC - NEAR EVENTS (Direct - internal use)
      * Syncs events that are close to starting (more frequent updates)
      */
     syncNearEvents(config: {
@@ -52,13 +70,52 @@ export declare class SyncServiceV2 {
         lookforwardHours: number;
     }): Promise<EventSyncMetrics>;
     /**
-     * EVENT SYNC - FAR EVENTS
+     * FAR EVENT SYNC (Coordinated)
+     * Uses sync coordinator to prevent conflicts
+     */
+    syncFarEventsCoordinated(config: {
+        intervalMinutes: number;
+        thresholdMinutes: number;
+        lookforwardHours: number;
+        force?: boolean;
+    }): Promise<EventSyncMetrics>;
+    /**
+     * EVENT SYNC - FAR EVENTS (Direct - internal use)
      * Syncs events that are far in the future (less frequent updates)
+     * @param config.force - If true, sync ALL events (not just new ones)
      */
     syncFarEvents(config: {
         intervalMinutes: number;
         thresholdMinutes: number;
         lookforwardHours: number;
+        force?: boolean;
+    }): Promise<EventSyncMetrics>;
+    /**
+     * COMBINED EVENT SYNC (Coordinated)
+     * Intelligente sync die near/far combineert:
+     * - Frequent runs (15min): Alleen NEAR events + signups
+     * - Periodic runs (2u): ALLE events + signups
+     *
+     * Voorkomt:
+     * - FAR_EVENT_SYNC die nooit triggert (near sync doet alles al)
+     * - Overlap tussen near/far logic
+     * - Onnodig scannen van far events bij elke run
+     */
+    syncEventsCoordinated(config: {
+        intervalMinutes: number;
+        thresholdMinutes: number;
+        lookforwardHours: number;
+        mode: 'near_only' | 'full_scan';
+    }): Promise<EventSyncMetrics>;
+    /**
+     * COMBINED EVENT SYNC (Direct - internal)
+     * Implementatie van slimme event sync
+     */
+    syncEventsCombined(config: {
+        intervalMinutes: number;
+        thresholdMinutes: number;
+        lookforwardHours: number;
+        mode: 'near_only' | 'full_scan';
     }): Promise<EventSyncMetrics>;
     /**
      * Helper: Sync signups for specific event

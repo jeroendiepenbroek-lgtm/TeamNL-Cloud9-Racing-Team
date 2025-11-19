@@ -5,7 +5,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncService } from '../../services/sync-v2.service.js';
+import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
 import { zwiftClient } from '../zwift-client.js'; // US11
 import { syncConfigService } from '../../services/sync-config.service.js'; // US: Dynamic lookforward
 
