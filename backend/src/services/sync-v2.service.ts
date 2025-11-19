@@ -114,11 +114,11 @@ export class SyncServiceV2 {
       const riders = ridersData.map(rider => ({
         rider_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`,
-        zp_category: rider.zpCategory || null,
-        race_current_rating: rider.race?.current?.rating || null,
+        zp_category: rider.zpCategory || undefined,
+        race_current_rating: rider.race?.current?.rating || undefined,
         race_finishes: rider.race?.finishes || 0,
         club_id: clubId,
-        club_name: rider.club?.name || null,
+        club_name: rider.club?.name || undefined,
         last_synced: new Date().toISOString(),
       }));
 
@@ -134,7 +134,7 @@ export class SyncServiceV2 {
         endpoint: `RIDER_SYNC`,
         status: 'success',
         records_processed: syncedRiders.length,
-        message: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
+        error_message: `Interval: ${config.intervalMinutes}min | Processed: ${metrics.riders_processed} | New: ${metrics.riders_new} | Updated: ${metrics.riders_updated}`,
       });
 
       metrics.duration_ms = Date.now() - startTime;
@@ -158,8 +158,7 @@ export class SyncServiceV2 {
         endpoint: 'RIDER_SYNC',
         status: 'error',
         records_processed: 0,
-        error_message: errorMessage,
-        message: `Interval: ${config.intervalMinutes}min`,
+        error_message: `${errorMessage} | Interval: ${config.intervalMinutes}min`,
       }).catch(err => console.error('Failed to log error:', err));
       
       return metrics;
@@ -304,8 +303,7 @@ export class SyncServiceV2 {
         endpoint: 'NEAR_EVENT_SYNC',
         status: 'error',
         records_processed: 0,
-        error_message: error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error)),
-        message: `Threshold: ${config.thresholdMinutes}min | Interval: ${config.intervalMinutes}min`,
+        error_message: `${error instanceof Error ? error.message : (typeof error === 'object' ? JSON.stringify(error) : String(error))} | Threshold: ${config.thresholdMinutes}min | Interval: ${config.intervalMinutes}min`,
       }).catch(err => console.error('Failed to log error:', err));
       
       return metrics;
@@ -401,7 +399,7 @@ export class SyncServiceV2 {
       let existingEventIds = new Set<string>();
       if (!config.force) {
         const existingEvents = await supabase.getEvents();
-        existingEventIds = new Set(existingEvents.map(e => e.event_id || e.zwift_event_id?.toString()));
+        existingEventIds = new Set(existingEvents.map(e => e.zwift_event_id?.toString()).filter(Boolean) as string[]);
         console.log(`[FAR EVENT SYNC] Found ${existingEventIds.size} existing events in database`);
       } else {
         console.log(`[FAR EVENT SYNC] FORCE mode - will sync ALL events`);
@@ -521,7 +519,7 @@ export class SyncServiceV2 {
   }): Promise<EventSyncMetrics> {
     const startTime = Date.now();
     const isFullScan = config.mode === 'full_scan';
-    const syncLabel = isFullScan ? 'FULL EVENT SYNC' : 'NEAR EVENT SYNC';
+    const syncLabel = isFullScan ? 'FAR_EVENT_SYNC' : 'NEAR_EVENT_SYNC'; // FAR voor full_scan (dashboard compatibility)
     
     console.log(`🔄 [${syncLabel}] Starting (interval: ${config.intervalMinutes}min, threshold: ${config.thresholdMinutes}min)...`);
     
@@ -644,8 +642,7 @@ export class SyncServiceV2 {
         endpoint: syncLabel,
         status: 'error',
         records_processed: 0,
-        error_message: error instanceof Error ? error.message : String(error),
-        message: `Mode: ${config.mode} | Threshold: ${config.thresholdMinutes}min`,
+        error_message: `${error instanceof Error ? error.message : String(error)} | Mode: ${config.mode} | Threshold: ${config.thresholdMinutes}min`,
       }).catch(err => console.error('Failed to log error:', err));
       
       return metrics;
@@ -716,10 +713,15 @@ export class SyncServiceV2 {
       (l.endpoint?.includes('bulk') || l.endpoint?.includes('RIDER_SYNC')) && !isStaleRunning(l)
     );
     const nearLog = logs.find(l => 
-      (l.endpoint?.includes('NEAR_EVENT_SYNC') || l.endpoint === 'NEAR_EVENT_SYNC') && !isStaleRunning(l)
+      (l.endpoint?.includes('NEAR_EVENT_SYNC') || 
+       l.endpoint === 'NEAR_EVENT_SYNC' || 
+       l.endpoint?.includes('NEAR EVENT SYNC')) && !isStaleRunning(l)
     );
     const farLog = logs.find(l => 
-      (l.endpoint?.includes('FAR_EVENT_SYNC') || l.endpoint === 'FAR_EVENT_SYNC') && !isStaleRunning(l)
+      (l.endpoint?.includes('FAR_EVENT_SYNC') || 
+       l.endpoint === 'FAR_EVENT_SYNC' || 
+       l.endpoint?.includes('FULL EVENT SYNC') || 
+       l.endpoint === 'FULL_EVENT_SYNC') && !isStaleRunning(l)
     );
     
     return {
