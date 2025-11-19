@@ -580,6 +580,8 @@ export class SyncServiceV2 {
           routeData = zwiftClient.getCachedRouteById(e.routeId);
         }
         
+        const elevationValue = routeData?.elevation || e.elevation || null;
+        
         return {
           event_id: e.eventId,
           time_unix: e.time,
@@ -588,8 +590,8 @@ export class SyncServiceV2 {
           sub_type: e.subType,
           // Distance is AL in meters van API - niet * 1000!
           distance_meters: e.distance ? Math.round(Number(e.distance)) : null,
-          // Route data uit cache (US2, US4, US5, US6)
-          elevation_m: routeData?.elevation || e.elevation || null,
+          // Route data uit cache (US2, US4, US5, US6) - elevation_m is INTEGER kolom!
+          elevation_m: elevationValue ? Math.round(Number(elevationValue)) : null,
           route_id: e.routeId ? parseInt(String(e.routeId)) : null,
           route_name: routeData?.name || null,
           route_world: routeData?.world || null,
