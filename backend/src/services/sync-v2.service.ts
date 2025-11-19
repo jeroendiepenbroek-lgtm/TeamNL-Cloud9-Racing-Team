@@ -587,10 +587,10 @@ export class SyncServiceV2 {
           event_type: e.type,
           sub_type: e.subType,
           // Distance is AL in meters van API - niet * 1000!
-          distance_meters: e.distance ? Math.round(Number(e.distance)) : undefined,
+          distance_meters: e.distance ? Math.round(Number(e.distance)) : null,
           // Route data uit cache (US2, US4, US5, US6)
           elevation_m: routeData?.elevation || e.elevation || null,
-          route_id: e.routeId || null,
+          route_id: e.routeId ? String(e.routeId) : null,
           route_name: routeData?.name || null,
           route_world: routeData?.world || null,
           route_profile: routeData?.profile || null,

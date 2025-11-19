@@ -144,6 +144,7 @@ export interface ZwiftEvent {
   distance?: number;
   elevation?: number;
   numLaps?: number;
+  routeId?: string; // Top-level routeId (from API)
   route?: {
     _id?: string;
     routeId?: string;
