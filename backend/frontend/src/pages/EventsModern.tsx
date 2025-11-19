@@ -36,6 +36,8 @@ interface Event {
   event_id: string | number;
   title?: string;
   event_date: string;
+  event_type?: string;
+  sub_type?: string;
   route_name?: string;
   route_world?: string;
   route_profile?: string;
@@ -351,6 +353,17 @@ export default function Events() {
                       <span>{dateTimeInfo.date}</span>
                       <span className="text-white/70">•</span>
                       <span className="font-bold">{dateTimeInfo.time}</span>
+                    </div>
+                  )}
+
+                  {/* US1: Event Type - Race/Group Ride + sub_type */}
+                  {(event.event_type || event.sub_type) && (
+                    <div className="flex items-center gap-2 text-white/90 text-xs font-medium">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>
+                        {event.event_type}
+                        {event.sub_type && ` - ${event.sub_type}`}
+                      </span>
                     </div>
                   )}
 
