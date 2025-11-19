@@ -242,7 +242,7 @@ export class SyncServiceV2 {
         last_synced: new Date().toISOString(),
       }));
       
-      await supabase.upsertEvents(eventsToSave as any);
+      await supabase.upsertZwiftApiEvents(eventsToSave);
       console.log(`[NEAR EVENT SYNC] ✅ Saved ${eventsToSave.length} events to database`);
       
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
@@ -391,7 +391,7 @@ export class SyncServiceV2 {
         last_synced: new Date().toISOString(),
       }));
       
-      await supabase.upsertEvents(eventsToSave as any);
+      await supabase.upsertZwiftApiEvents(eventsToSave);
       console.log(`[FAR EVENT SYNC] ✅ Saved ${eventsToSave.length} events to database`);
       
       const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
@@ -603,7 +603,7 @@ export class SyncServiceV2 {
       
       console.log(`[${syncLabel}] Saving ${eventsToSave.length} events to database...`);
       
-      await supabase.upsertEvents(eventsToSave as any);
+      await supabase.upsertZwiftApiEvents(eventsToSave);
       console.log(`[${syncLabel}] ✅ Saved ${eventsToSave.length} events to database`);
       
       // Step 3: Bepaal welke events signups nodig hebben (hergebruik 'now' van regel 550)
