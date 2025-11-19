@@ -664,16 +664,23 @@ export class SyncServiceV2 {
       metrics.error_count++;
       metrics.duration_ms = Date.now() - startTime;
       
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error?.stack?.substring(0, 300) || '';
+      
       console.error(`❌ [${syncLabel}] CRITICAL ERROR:`, error);
       console.error(`   Stack:`, error?.stack);
-      console.error(`   Message:`, error?.message || String(error));
+      console.error(`   Message:`, errorMessage);
       
       await supabase.createSyncLog({
         endpoint: syncLabel,
         status: 'error',
         records_processed: 0,
-        error_message: `${error instanceof Error ? error.message : String(error)} | Stack: ${error?.stack?.substring(0, 200)} | Mode: ${config.mode} | Threshold: ${config.thresholdMinutes}min`,
+        error_message: `${errorMessage} | Stack: ${errorStack} | Mode: ${config.mode} | Threshold: ${config.thresholdMinutes}min`,
       }).catch(err => console.error('Failed to log error:', err));
+      
+      // Add error message to metrics for debugging
+      (metrics as any).error_message = errorMessage;
+      (metrics as any).error_stack = errorStack;
       
       return metrics;
     }
