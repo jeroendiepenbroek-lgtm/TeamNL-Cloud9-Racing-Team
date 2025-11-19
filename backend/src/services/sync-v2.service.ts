@@ -235,7 +235,8 @@ export class SyncServiceV2 {
         title: e.title,
         event_type: e.type,
         sub_type: e.subType,
-        distance_meters: e.distance ? Math.round(e.distance * 1000) : undefined,
+        // Distance is AL in meters van API - niet * 1000!
+        distance_meters: e.distance ? Math.round(parseFloat(e.distance)) : undefined,
         route_id: (e as any).route?.id,
         raw_response: JSON.stringify(e),
         last_synced: new Date().toISOString(),
@@ -383,7 +384,8 @@ export class SyncServiceV2 {
         title: e.title,
         event_type: e.type,
         sub_type: e.subType,
-        distance_meters: e.distance ? Math.round(e.distance * 1000) : undefined,
+        // Distance is AL in meters van API - niet * 1000!
+        distance_meters: e.distance ? Math.round(parseFloat(e.distance)) : undefined,
         route_id: (e as any).route?.id,
         raw_response: JSON.stringify(e),
         last_synced: new Date().toISOString(),
@@ -566,7 +568,8 @@ export class SyncServiceV2 {
         title: e.title,
         event_type: e.type,
         sub_type: e.subType,
-        distance_meters: e.distance ? Math.round(e.distance * 1000) : undefined,
+        // Distance is AL in meters van API - niet * 1000!
+        distance_meters: e.distance ? Math.round(parseFloat(e.distance)) : undefined,
         elevation_m: e.elevation || e.route?.elevation || null,
         route_id: e.route?.routeId || (e as any).route?.id || null,
         route_name: e.route?.name || null,
