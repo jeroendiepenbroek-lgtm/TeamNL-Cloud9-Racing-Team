@@ -26,7 +26,6 @@ SELECT
   e.event_type,
   e.sub_type,
   e.distance_meters,
-  CAST(e.distance_meters AS TEXT) AS distance_km,  -- Voor backwards compatibility
   e.elevation_m,
   e.route_id,
   e.route_name,
@@ -63,7 +62,6 @@ SELECT
   e.event_type,
   e.sub_type,
   e.distance_meters,
-  CAST(e.distance_meters AS TEXT) AS distance_km,
   e.elevation_m,
   e.route_id,
   e.route_name,
