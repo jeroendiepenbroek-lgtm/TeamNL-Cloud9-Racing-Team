@@ -13,8 +13,12 @@ ALTER TABLE zwift_api_events
 CREATE INDEX IF NOT EXISTS idx_zwift_api_events_route_id 
   ON zwift_api_events(route_id);
 
--- Update bestaande view_upcoming_events om nieuwe kolommen te includeren
-CREATE OR REPLACE VIEW view_upcoming_events AS
+-- Drop bestaande views (nodig voor kolom toevoegingen)
+DROP VIEW IF EXISTS view_upcoming_events CASCADE;
+DROP VIEW IF EXISTS view_team_events CASCADE;
+
+-- Recreate view_upcoming_events met nieuwe kolommen
+CREATE VIEW view_upcoming_events AS
 SELECT 
   e.event_id,
   e.title,
@@ -50,8 +54,8 @@ GROUP BY
   e.last_synced
 ORDER BY e.time_unix ASC;
 
--- Update view_team_events om nieuwe kolommen te includeren
-CREATE OR REPLACE VIEW view_team_events AS
+-- Recreate view_team_events met nieuwe kolommen
+CREATE VIEW view_team_events AS
 SELECT 
   e.event_id,
   e.title,
