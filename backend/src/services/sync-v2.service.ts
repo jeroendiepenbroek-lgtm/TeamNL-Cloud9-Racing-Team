@@ -541,6 +541,10 @@ export class SyncServiceV2 {
     };
 
     try {
+      // Step 0: Zorg dat routes cache geladen is (1x bij startup, dan 24u gecached)
+      console.log(`[${syncLabel}] Ensuring routes cache is loaded...`);
+      await zwiftClient.getAllRoutes();
+      
       // Step 1: Haal alle events op van API
       console.log(`[${syncLabel}] Fetching all events from API...`);
       const allEvents = await zwiftClient.getEvents48Hours();
@@ -560,24 +564,35 @@ export class SyncServiceV2 {
         return metrics;
       }
 
-      // Step 2: Save ALLE events naar database (altijd) - inclusief route + elevation data
-      console.log(`[${syncLabel}] Saving ${allEvents.length} events to database...`);
-      const eventsToSave = allEvents.map(e => ({
-        event_id: e.eventId,
-        time_unix: e.time,
-        title: e.title,
-        event_type: e.type,
-        sub_type: e.subType,
-        // Distance is AL in meters van API - niet * 1000!
-        distance_meters: e.distance ? Math.round(Number(e.distance)) : undefined,
-        elevation_m: e.elevation || e.route?.elevation || null,
-        route_id: e.route?.routeId || (e as any).route?.id || null,
-        route_name: e.route?.name || null,
-        route_world: e.route?.world || null,
-        route_profile: e.route?.profile || null,
-        raw_response: JSON.stringify(e),
-        last_synced: new Date().toISOString(),
-      }));
+      // Step 2: Save ALLE events naar database met enriched route data
+      console.log(`[${syncLabel}] Enriching ${allEvents.length} events with route data...`);
+      const eventsToSave = allEvents.map(e => {
+        // Lookup route details van cache (SYNC - geen async!)
+        let routeData = null;
+        if (e.routeId) {
+          routeData = zwiftClient.getCachedRouteById(e.routeId);
+        }
+        
+        return {
+          event_id: e.eventId,
+          time_unix: e.time,
+          title: e.title,
+          event_type: e.type,
+          sub_type: e.subType,
+          // Distance is AL in meters van API - niet * 1000!
+          distance_meters: e.distance ? Math.round(Number(e.distance)) : undefined,
+          // Route data uit cache (US2, US4, US5, US6)
+          elevation_m: routeData?.elevation || e.elevation || null,
+          route_id: e.routeId || null,
+          route_name: routeData?.name || null,
+          route_world: routeData?.world || null,
+          route_profile: routeData?.profile || null,
+          raw_response: JSON.stringify(e),
+          last_synced: new Date().toISOString(),
+        };
+      });
+      
+      console.log(`[${syncLabel}] Saving ${eventsToSave.length} events to database...`);
       
       await supabase.upsertEvents(eventsToSave as any);
       console.log(`[${syncLabel}] ✅ Saved ${eventsToSave.length} events to database`);
