@@ -323,91 +323,97 @@ export default function Events() {
                 key={event.event_id}
                 className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-200 group"
               >
-                {/* Card Header with Countdown */}
+                {/* Card Header - Moderne 2-koloms layout */}
                 <div className={`p-6 border-b ${
-                  timeInfo?.veryUrgent ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' :
-                  timeInfo?.urgent ? 'bg-gradient-to-r from-orange-500 to-yellow-500 text-white' :
-                  'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+                  timeInfo?.veryUrgent ? 'bg-gradient-to-r from-red-500 to-orange-500' :
+                  timeInfo?.urgent ? 'bg-gradient-to-r from-orange-500 to-yellow-500' :
+                  'bg-gradient-to-r from-blue-500 to-indigo-500'
                 }`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold flex-1 pr-4">
+                  {/* Top Row: Title + Countdown */}
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <h3 className="text-xl font-bold text-white flex-1">
                       {event.title || 'Untitled Event'}
                     </h3>
                     {timeInfo && (
-                      <div className={`px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 ${
-                        timeInfo.veryUrgent ? 'bg-white/30 backdrop-blur-sm animate-pulse' :
-                        timeInfo.urgent ? 'bg-white/20 backdrop-blur-sm' :
-                        'bg-white/10 backdrop-blur-sm'
+                      <div className={`px-3 py-1.5 rounded-lg font-bold text-sm flex items-center gap-2 bg-white/20 backdrop-blur-sm flex-shrink-0 ${
+                        timeInfo.veryUrgent ? 'animate-pulse' : ''
                       }`}>
-                        <Timer className="w-4 h-4" />
-                        {timeInfo.text}
+                        <Timer className="w-4 h-4 text-white" />
+                        <span className="text-white">{timeInfo.text}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* US2: Datum en tijd */}
-                  {dateTimeInfo && (
-                    <div className="flex items-center gap-2 text-white/90 text-sm font-medium mb-3 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg inline-flex">
-                      <Calendar className="w-4 h-4" />
-                      <span className="font-bold">{dateTimeInfo.dayName}</span>
-                      <span>{dateTimeInfo.date}</span>
-                      <span className="text-white/70">•</span>
-                      <span className="font-bold">{dateTimeInfo.time}</span>
-                    </div>
-                  )}
-
-                  {/* Compact Row: Event Type + Route Info met icons en badges */}
-                  <div className="space-y-2">
-                    {/* Event Type Badge */}
-                    {(event.event_type || event.sub_type) && (
-                      <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/95 text-xs font-semibold">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>
-                          {event.event_type}
-                          {event.sub_type && ` · ${event.sub_type}`}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Route Details Grid - Moderne badges layout */}
-                    {event.route_name && (
-                      <div className="grid gap-2">
-                        {/* Route Name + World */}
-                        <div className="flex items-center gap-2 text-white/95 text-sm font-medium">
-                          <MapPin className="w-4 h-4 flex-shrink-0" />
-                          <span className="font-semibold">{event.route_name}</span>
+                  {/* 2-Column Layout: Links = Route Info (groot), Rechts = Details */}
+                  <div className="grid md:grid-cols-[2fr,1fr] gap-4">
+                    {/* LEFT: Route Info - PROMINENT */}
+                    <div className="space-y-3">
+                      {/* US2: Route Name + World - GROOT EN STRAK */}
+                      {event.route_name && (
+                        <div>
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <MapPin className="w-5 h-5 text-white/90 flex-shrink-0" />
+                            <h4 className="text-2xl font-bold text-white leading-tight">
+                              {event.route_name}
+                            </h4>
+                          </div>
                           {event.route_world && (
-                            <span className="text-white/70 text-xs">({event.route_world})</span>
+                            <div className="text-white/80 text-base font-semibold ml-7">
+                              {event.route_world}
+                            </div>
                           )}
                         </div>
+                      )}
 
-                        {/* Route Stats - Icon Badges */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          {/* Profile Badge - Prominent */}
-                          {routeProfile && (
-                            <div className={`inline-flex items-center gap-1.5 ${routeProfile.color} px-2.5 py-1 rounded-md shadow-sm`}>
-                              <RouteIcon className="w-3.5 h-3.5" />
-                              <span className="text-xs font-bold">{routeProfile.label}</span>
-                            </div>
-                          )}
-                          
-                          {/* Distance Badge */}
-                          {event.distance_km && (
-                            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/95">
-                              <span className="text-xs font-semibold">{event.distance_km} km</span>
-                            </div>
-                          )}
-                          
-                          {/* Elevation Badge */}
-                          {event.elevation_m !== undefined && event.elevation_m > 0 && (
-                            <div className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-md text-white/95">
-                              <TrendingUp className="w-3.5 h-3.5" />
-                              <span className="text-xs font-semibold">{event.elevation_m}m</span>
-                            </div>
-                          )}
-                        </div>
+                      {/* Route Stats - Horizontal Icon Badges */}
+                      <div className="flex flex-wrap items-center gap-2 ml-7">
+                        {/* Profile Badge - PROMINENT */}
+                        {routeProfile && (
+                          <div className={`inline-flex items-center gap-1.5 ${routeProfile.color} px-3 py-1.5 rounded-lg shadow-md`}>
+                            <RouteIcon className="w-4 h-4" />
+                            <span className="text-sm font-bold">{routeProfile.label}</span>
+                          </div>
+                        )}
+                        
+                        {/* Distance */}
+                        {event.distance_km && (
+                          <div className="inline-flex items-center gap-1.5 bg-white/25 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+                            <span className="text-sm font-bold text-white">{event.distance_km} km</span>
+                          </div>
+                        )}
+                        
+                        {/* Elevation */}
+                        {event.elevation_m !== undefined && event.elevation_m > 0 && (
+                          <div className="inline-flex items-center gap-1.5 bg-white/25 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+                            <TrendingUp className="w-4 h-4 text-white" />
+                            <span className="text-sm font-bold text-white">{event.elevation_m}m</span>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
+
+                    {/* RIGHT: Event Type + DateTime */}
+                    <div className="space-y-2 flex flex-col items-end text-right">
+                      {/* Event Type Badge */}
+                      {(event.event_type || event.sub_type) && (
+                        <div className="inline-flex items-center gap-1.5 bg-white/25 backdrop-blur-sm px-3 py-1.5 rounded-lg">
+                          <Calendar className="w-4 h-4 text-white" />
+                          <span className="text-sm font-semibold text-white whitespace-nowrap">
+                            {event.event_type}
+                            {event.sub_type && ` · ${event.sub_type}`}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* DateTime */}
+                      {dateTimeInfo && (
+                        <div className="text-white/90 text-sm font-medium">
+                          <div className="font-bold">{dateTimeInfo.dayName}</div>
+                          <div>{dateTimeInfo.date}</div>
+                          <div className="font-bold text-base">{dateTimeInfo.time}</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
