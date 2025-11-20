@@ -316,7 +316,7 @@ export default function ResultsModern() {
   const [events, setEvents] = useState<EventResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState(90);
+  const [days, setDays] = useState(365);
   const [limit, setLimit] = useState(50);
 
   // Fetch team results
@@ -380,6 +380,7 @@ export default function ResultsModern() {
                 <option value={60}>Laatste 60 dagen</option>
                 <option value={90}>Laatste 90 dagen</option>
                 <option value={180}>Laatste 180 dagen</option>
+                <option value={365}>Laatste 365 dagen</option>
               </select>
             </div>
             
