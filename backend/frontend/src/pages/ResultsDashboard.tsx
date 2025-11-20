@@ -3,11 +3,10 @@
  * Minimale versie om crashes te voorkomen
  */
 
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
 
 export default function ResultsDashboard() {
-  const { riderId } = useParams<{ riderId: string }>();
   const navigate = useNavigate();
 
   return (
