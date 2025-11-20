@@ -296,8 +296,8 @@ export class SupabaseService {
 
   // ========== RESULTS ==========
   async getEventResults(eventId: number): Promise<DbResult[]> {
-    const { data, error } = await this.client
-      .from('results')
+    const { data, error} = await this.client
+      .from('zwift_api_race_results')
       .select('*')
       .eq('event_id', eventId);
 
@@ -307,12 +307,114 @@ export class SupabaseService {
 
   async upsertResults(results: Partial<DbResult>[]): Promise<DbResult[]> {
     const { data, error } = await this.client
-      .from('results')
+      .from('zwift_api_race_results')
       .upsert(results)
       .select();
 
     if (error) throw error;
     return data;
+  }
+
+  // Results Dashboard - Team Recent Results
+  async getTeamRecentResults(days: number = 90, limit: number = 100): Promise<any[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const { data, error } = await this.client
+      .from('zwift_api_race_results')
+      .select(`
+        *,
+        rider:riders!inner(rider_id, name, zwift_category, velo_rating)
+      `)
+      .gte('event_date', cutoffDate.toISOString())
+      .not('event_name', 'is', null)
+      .order('event_date', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  // Results Dashboard - Individual Rider Results
+  async getRiderResults(riderId: number, days: number = 90, limit: number = 50): Promise<any[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const { data, error } = await this.client
+      .from('zwift_api_race_results')
+      .select('*')
+      .eq('rider_id', riderId)
+      .gte('event_date', cutoffDate.toISOString())
+      .order('event_date', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  // Results Dashboard - Rider Personal Records
+  async getRiderPersonalRecords(riderId: number): Promise<any[]> {
+    const { data, error } = await this.client
+      .from('rider_personal_records')
+      .select('*')
+      .eq('rider_id', riderId)
+      .order('duration');
+
+    if (error) throw error;
+    return data || [];
+  }
+
+  // Results Dashboard - Rider Stats
+  async getRiderStats(riderId: number, days: number = 90): Promise<any> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const { data, error } = await this.client
+      .from('zwift_api_race_results')
+      .select('*')
+      .eq('rider_id', riderId)
+      .gte('event_date', cutoffDate.toISOString());
+
+    if (error) throw error;
+
+    const results = data || [];
+    const totalRaces = results.length;
+
+    if (totalRaces === 0) {
+      return {
+        rider_id: riderId,
+        period_days: days,
+        total_races: 0,
+        wins: 0,
+        podiums: 0,
+        top10: 0,
+        avg_rank: 0,
+        avg_wkg: 0,
+        avg_effort_score: 0,
+        total_race_points: 0
+      };
+    }
+
+    const wins = results.filter(r => r.rank === 1).length;
+    const podiums = results.filter(r => r.rank && r.rank <= 3).length;
+    const top10 = results.filter(r => r.rank && r.rank <= 10).length;
+    const avgRank = results.reduce((sum, r) => sum + (r.rank || 0), 0) / totalRaces;
+    const avgWkg = results.reduce((sum, r) => sum + (r.avg_wkg || 0), 0) / totalRaces;
+    const avgEffort = results.reduce((sum, r) => sum + (r.effort_score || 0), 0) / totalRaces;
+    const totalRacePoints = results.reduce((sum, r) => sum + (r.race_points || 0), 0);
+
+    return {
+      rider_id: riderId,
+      period_days: days,
+      total_races: totalRaces,
+      wins,
+      podiums,
+      top10,
+      avg_rank: Math.round(avgRank * 10) / 10,
+      avg_wkg: Math.round(avgWkg * 100) / 100,
+      avg_effort_score: Math.round(avgEffort),
+      total_race_points: Math.round(totalRacePoints * 100) / 100
+    };
   }
 
   // ========== RIDER HISTORY ==========

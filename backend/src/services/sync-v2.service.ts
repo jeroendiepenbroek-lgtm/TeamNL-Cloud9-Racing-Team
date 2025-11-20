@@ -258,7 +258,8 @@ export class SyncServiceV2 {
         const eventTime = event.time;
         
         // Check if event is "near" (starting within threshold)
-        if (eventTime < nearThreshold) {
+        // FIXED: Event is near if it's in the future AND within threshold window
+        if (eventTime >= now && eventTime <= nearThreshold) {
           metrics.events_near++;
           
           // Sync signups for near events
@@ -614,7 +615,8 @@ export class SyncServiceV2 {
       for (const event of allEvents) {
         metrics.events_scanned++;
         const eventTime = event.time;
-        const isNear = eventTime < nearThreshold;
+        // FIXED: Event is near if it's in the future AND within threshold window
+        const isNear = eventTime >= now && eventTime <= nearThreshold;
         
         if (isNear) {
           metrics.events_near++;
