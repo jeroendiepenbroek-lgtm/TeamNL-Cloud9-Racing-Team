@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { 
   Trophy, TrendingUp, TrendingDown, Minus, Calendar, MapPin,
-  Zap, Award, Clock, Users, ChevronDown, ChevronUp
+  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2
 } from 'lucide-react';
 
 // vELO Rating tiers - Matrix style (zoals RacingDataMatrixModern)
@@ -69,8 +69,11 @@ interface EventResult {
   pen: string | null;
   total_riders: number | null;
   // US6: Route details (zoals Event Cards)
+  event_type?: string;
+  sub_type?: string;
   route_world?: string;
   route_name?: string;
+  route_profile?: string;
   distance_km?: string;
   elevation_m?: number;
   laps?: number;
@@ -137,29 +140,28 @@ function VeloBadge({ rating, change }: { rating: number | null; change: number |
   }
   
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-start gap-2">
       {/* Rank Circle Badge - Matrix style */}
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm`}>
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm flex-shrink-0`}>
         {tier.rank}
       </div>
       
-      {/* Rating + Tier Name */}
-      <div className="flex flex-col items-start">
+      {/* Rating + Tier Name + Trend ONDER (voor strakke uitlijning) */}
+      <div className="flex flex-col items-start min-w-[60px]">
         <div className="font-bold text-gray-900 text-sm">
           {Math.floor(rating)}
         </div>
         <div className="text-[10px] text-gray-500 leading-tight">
           {tier.name}
         </div>
+        {/* Trend ONDER rating */}
+        {change !== null && change !== 0 && (
+          <div className={`flex items-center gap-0.5 ${trendColor} mt-0.5`}>
+            <TrendIcon className="w-2.5 h-2.5" />
+            <span className="text-[10px] font-semibold">{change > 0 ? `+${change}` : change}</span>
+          </div>
+        )}
       </div>
-      
-      {/* US7: Trend RECHTS naast rating (niet onder) */}
-      {change !== null && change !== 0 && (
-        <div className={`flex items-center gap-0.5 ${trendColor} ml-1`}>
-          <TrendIcon className="w-3 h-3" />
-          <span className="text-xs font-semibold">{change > 0 ? `+${change}` : change}</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -238,47 +240,81 @@ function EventCard({ event }: { event: EventResult }) {
       >
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+            {/* Event Titel */}
+            <div className="flex items-center gap-3 mb-3">
               <Trophy className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-bold text-gray-900">{event.event_name}</h3>
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                <span>{formatDate(event.event_date)}</span>
-              </div>
-              
-              {/* US6: Route Details zoals Event Cards */}
-              {event.route_world && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="font-medium">{event.route_world}</span>
-                  {event.route_name && <span className="text-gray-500">· {event.route_name}</span>}
-                </div>
-              )}
-              
-              {event.distance_km && (
-                <div className="flex items-center gap-1">
-                  <span className="font-mono font-medium">{event.distance_km} km</span>
+            {/* 2-kolom layout: Links = Route Info, Rechts = Meta */}
+            <div className="grid md:grid-cols-[2fr,1fr] gap-4">
+              {/* LEFT: Route Details - zoals Event Cards */}
+              <div className="space-y-2">
+                {/* Route World + Name */}
+                {event.route_world && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-blue-500" />
+                    <span className="font-bold text-gray-900">{event.route_world}</span>
+                    {event.route_name && (
+                      <span className="text-sm text-gray-600">· {event.route_name}</span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Distance + Elevation + Profile */}
+                <div className="flex items-center gap-3 text-sm">
+                  {event.distance_km && (
+                    <span className="font-mono font-bold text-gray-900">{event.distance_km} km</span>
+                  )}
                   {event.elevation_m && (
-                    <span className="text-gray-500">· {event.elevation_m}m ↑</span>
+                    <span className="text-gray-600">{event.elevation_m}m ↑</span>
+                  )}
+                  {event.route_profile && (
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                      {event.route_profile}
+                    </span>
                   )}
                   {event.laps && event.laps > 1 && (
-                    <span className="text-gray-500">· {event.laps} laps</span>
+                    <span className="text-gray-600">{event.laps} laps</span>
                   )}
                 </div>
-              )}
+                
+                {/* Event Type + SubType */}
+                {(event.event_type || event.sub_type) && (
+                  <div className="flex items-center gap-2 text-xs">
+                    {event.event_type && (
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-medium">
+                        {event.event_type}
+                      </span>
+                    )}
+                    {event.sub_type && (
+                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-medium">
+                        {event.sub_type}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
               
-              {event.total_riders && (
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{event.total_riders} riders</span>
+              {/* RIGHT: Datum + Riders count */}
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>{formatDate(event.event_date)}</span>
                 </div>
-              )}
               
-              <div className="flex items-center gap-1 text-blue-600 font-medium">
-                <span>{event.results.length} team riders</span>
+                {event.total_riders && (
+                  <div className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    <span>{event.total_riders} riders</span>
+                  </div>
+                )}
+                
+                {/* Team Riders met oranje borstbeeld icon */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 text-orange-700 rounded-lg border border-orange-200">
+                  <UserCheck2 className="w-4 h-4" />
+                  <span className="font-bold">{event.results.length}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -363,19 +399,21 @@ function EventCard({ event }: { event: EventResult }) {
                     </div>
                   </td>
                   
-                  {/* US4: Time met delta RECHTS inline, US3: Nr.1 heeft geen delta (blank) */}
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <Clock className="w-3 h-3 text-gray-400" />
-                      <span className="text-sm font-mono font-medium text-gray-900">
-                        {formatTime(result.time_seconds)}
-                      </span>
-                      {/* US3+US4: Delta alleen voor rank > 1, klein rechts */}
-                      {result.rank > 1 && result.delta_winner_seconds && result.delta_winner_seconds > 0 && (
-                        <span className="text-[10px] font-mono text-gray-500 ml-0.5">
-                          ({formatDeltaTime(result.delta_winner_seconds)})
+                  {/* Time: LINKS uitlijnen met clock icon */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-sm font-mono font-medium text-gray-900">
+                          {formatTime(result.time_seconds)}
                         </span>
-                      )}
+                        {/* US3+US4: Delta alleen voor rank > 1, klein rechts */}
+                        {result.rank > 1 && result.delta_winner_seconds && result.delta_winner_seconds > 0 && (
+                          <span className="text-[10px] font-mono text-gray-500">
+                            +{formatDeltaTime(result.delta_winner_seconds)?.replace('+', '')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   
