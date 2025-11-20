@@ -400,7 +400,7 @@ function EventCard({ event }: { event: EventResult }) {
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rank</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rider</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">vELO Live</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">vELO Live</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Time</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Avg W/kg</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">5s</th>
@@ -424,13 +424,11 @@ function EventCard({ event }: { event: EventResult }) {
                         </td>
                         
                         <td className="px-4 py-3">
-                          <div className="flex justify-center">
-                            <VeloBadge 
-                              rating={result.velo_rating} 
-                              previous={result.velo_previous}
-                              change={result.velo_change} 
-                            />
-                          </div>
+                          <VeloBadge 
+                            rating={result.velo_rating} 
+                            previous={result.velo_previous}
+                            change={result.velo_change} 
+                          />
                         </td>
                         
                         <td className="px-4 py-3">
