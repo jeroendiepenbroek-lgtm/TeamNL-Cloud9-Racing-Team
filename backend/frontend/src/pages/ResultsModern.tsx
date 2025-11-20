@@ -403,11 +403,13 @@ function EventCard({ event }: { event: EventResult }) {
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">vELO Live</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Time</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Avg W/kg</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">5s</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">15s</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">1m</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">5m</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">20m</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">5s</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">15s</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">30s</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">1m</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">2m</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">5m</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">20m</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -463,7 +465,13 @@ function EventCard({ event }: { event: EventResult }) {
                           <PowerBadge value={result.power_15s} />
                         </td>
                         <td className="px-4 py-3 text-center">
+                          <PowerBadge value={result.power_30s} />
+                        </td>
+                        <td className="px-4 py-3 text-center">
                           <PowerBadge value={result.power_1m} />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <PowerBadge value={result.power_2m} />
                         </td>
                         <td className="px-4 py-3 text-center">
                           <PowerBadge value={result.power_5m} />
