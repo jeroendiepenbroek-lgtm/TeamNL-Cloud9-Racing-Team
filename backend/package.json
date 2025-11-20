@@ -11,7 +11,8 @@
     "build": "cd frontend && npm install && npm run build",
     "build:frontend": "cd frontend && npm run build",
     "sync:event-signups": "npx tsx ../scripts/sync-event-signups.ts",
-    "import:events": "npx tsx ../scripts/import-events.ts"
+    "import:events": "npx tsx ../scripts/import-events.ts",
+    "sync:live": "npx tsx ../scripts/sync-live.ts"
   },
   "keywords": [
     "zwift",
