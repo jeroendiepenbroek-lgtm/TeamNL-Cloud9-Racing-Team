@@ -55,12 +55,13 @@ async function main() {
     console.log('📅 Fetching recent events (last 30 days)...');
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
+    const cutoffUnix = Math.floor(cutoff.getTime() / 1000);
     
     const { data: events, error: eventsError } = await supabase
       .from('zwift_api_events')
-      .select('event_id, name, event_start')
-      .gte('event_start', cutoff.toISOString())
-      .order('event_start', { ascending: false })
+      .select('event_id, title, time_unix')
+      .gte('time_unix', cutoffUnix)
+      .order('time_unix', { ascending: false })
       .limit(20); // Max 20 events
     
     if (eventsError) throw eventsError;
@@ -75,9 +76,11 @@ async function main() {
     const allResults: any[] = [];
     let eventsProcessed = 0;
     
-    for (const event of events.slice(0, 10)) { // Max 10 events
+    console.log(`\n⏳ Starting sync with 60s rate limit between calls...\n`);
+    
+    for (const event of events.slice(0, 3)) { // Test met 3 events eerst
       try {
-        console.log(`🔍 Event ${event.event_id}: ${event.name}`);
+        console.log(`🔍 Event ${event.event_id}: ${event.title}`);
         
         const response = await zwiftApi.get(`/public/results/${event.event_id}`);
         const results = response.data;
@@ -107,8 +110,8 @@ async function main() {
           
           allResults.push({
             event_id: event.event_id.toString(),
-            event_name: event.name || 'Unknown',
-            event_date: event.event_start,
+            event_name: event.title || 'Unknown',
+            event_date: new Date(event.time_unix * 1000).toISOString(),
             rider_id: riderId,
             rider_name: rider?.name || result.riderName || result.name || 'Unknown',
             rank: result.rank || result.position || 0,
@@ -134,14 +137,24 @@ async function main() {
         
         eventsProcessed++;
         
-        // Rate limiting: 1/min
-        if (eventsProcessed < events.length) {
-          console.log(`   ⏳ Waiting 60s (rate limit)...`);
-          await new Promise(resolve => setTimeout(resolve, 60000));
-        }
         
       } catch (error: any) {
-        console.error(`   ❌ Error: ${error.message}`);
+        const msg = error.response?.status === 429 
+          ? 'Rate limit reached'
+          : error.message || 'Unknown error';
+        console.log(`   ❌ Error: ${msg}`);
+        
+        // Bij 429 stoppen we
+        if (error.response?.status === 429) {
+          console.log(`\n⚠️  API rate limit bereikt. Stop sync.\n`);
+          break;
+        }
+      }
+      
+      // Rate limiting: 60s wachttijd tussen elke event
+      if (eventsProcessed < 3) {
+        console.log(`   ⏳ Waiting 60s (rate limit)...`);
+        await new Promise(resolve => setTimeout(resolve, 60000));
       }
     }
     

@@ -327,14 +327,13 @@ export class SupabaseService {
   async getRecentEvents(days: number = 30): Promise<any[]> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
-
+    const cutoffUnix = Math.floor(cutoffDate.getTime() / 1000);
+    
     const { data, error } = await this.client
       .from('zwift_api_events')
       .select('*')
-      .gte('event_start', cutoffDate.toISOString())
-      .order('event_start', { ascending: false });
-
-    if (error) throw error;
+      .gte('time_unix', cutoffUnix)
+      .order('time_unix', { ascending: false });    if (error) throw error;
     return data || [];
   }
 
