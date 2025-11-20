@@ -1,29 +1,28 @@
 /**
- * Feature: Results Dashboard - STATE-OF-THE-ART UI/UX
- * US1: Team Recent Results met power curves en vELO tracking
+ * Results Dashboard V2 - Team Dashboard UX + All Improvements
+ * Met progressbar bij vELO, trend naast rating, filters, route details
  */
 
 import { useEffect, useState } from 'react';
 import { 
   Trophy, TrendingUp, TrendingDown, Minus, Calendar, MapPin,
-  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2
+  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter
 } from 'lucide-react';
 
-// vELO Rating tiers - Matrix style (zoals RacingDataMatrixModern)
+// vELO Tiers - exacte copy van Team Dashboard
 const VELO_TIERS = [
-  { rank: 1, name: 'Diamond', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-white' },
-  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-white' },
-  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-white' },
-  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-white' },
-  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-white' },
-  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-white' },
+  { rank: 1, name: 'Diamond', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100' },
+  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-red-100' },
+  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100' },
+  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100' },
+  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100' },
+  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100' },
   { rank: 7, name: 'Gold', min: 1000, max: 1150, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900' },
   { rank: 8, name: 'Silver', min: 850, max: 1000, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700' },
   { rank: 9, name: 'Bronze', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900' },
-  { rank: 10, name: 'Copper', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-white' },
+  { rank: 10, name: 'Copper', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-orange-100' },
 ];
 
-// Helper: Bepaal vELO tier op basis van rating
 const getVeloTier = (rating: number | null) => {
   if (!rating) return null;
   return VELO_TIERS.find(tier => 
@@ -31,13 +30,20 @@ const getVeloTier = (rating: number | null) => {
   );
 };
 
-// US2: PEN kleuren zoals ZP Categories (A=rood, B=groen, C=blauw, D=geel, E=paars)
-const PEN_COLORS: Record<string, { bg: string; text: string; border: string; label: string }> = {
-  'A': { bg: 'bg-red-50', text: 'text-red-800', border: 'border-red-300', label: 'A' },
-  'B': { bg: 'bg-green-50', text: 'text-green-800', border: 'border-green-300', label: 'B' },
-  'C': { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-300', label: 'C' },
-  'D': { bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-yellow-300', label: 'D' },
-  'E': { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300', label: 'E' },
+const getTierProgress = (rating: number, tier: typeof VELO_TIERS[0]): number => {
+  if (!tier.max) return 100;
+  const range = tier.max - tier.min;
+  const progress = rating - tier.min;
+  return Math.min(100, Math.max(0, (progress / range) * 100));
+};
+
+// PEN kleuren
+const PEN_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  'A': { bg: 'bg-red-50', text: 'text-red-800', border: 'border-red-300' },
+  'B': { bg: 'bg-green-50', text: 'text-green-800', border: 'border-green-300' },
+  'C': { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-300' },
+  'D': { bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-yellow-300' },
+  'E': { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300' },
 };
 
 interface RaceResult {
@@ -46,9 +52,9 @@ interface RaceResult {
   rank: number;
   time_seconds: number;
   avg_wkg: number;
-  pen: string | null;  // US1: PEN per result
+  pen: string | null;
   velo_rating: number | null;
-  velo_previous: number | null;  // US2: Voor delta berekening
+  velo_previous: number | null;
   velo_change: number | null;
   power_5s: number | null;
   power_15s: number | null;
@@ -59,7 +65,7 @@ interface RaceResult {
   power_20m: number | null;
   effort_score: number | null;
   race_points: number | null;
-  delta_winner_seconds: number | null;  // US5: Delta tijd
+  delta_winner_seconds: number | null;
 }
 
 interface EventResult {
@@ -68,7 +74,6 @@ interface EventResult {
   event_date: string;
   pen: string | null;
   total_riders: number | null;
-  // US6: Route details (zoals Event Cards)
   event_type?: string;
   sub_type?: string;
   route_world?: string;
@@ -89,22 +94,19 @@ interface ApiResponse {
   events: EventResult[];
 }
 
-// Format tijd in MM:SS formaat
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// US5: Format delta tijd t.o.v. winnaar
 function formatDeltaTime(deltaSeconds: number | null): string | null {
   if (!deltaSeconds || deltaSeconds === 0) return null;
   const mins = Math.floor(deltaSeconds / 60);
   const secs = Math.floor(deltaSeconds % 60);
-  return `+${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// US7: Format datum + tijd
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   const dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
@@ -119,7 +121,7 @@ function formatDate(dateString: string): string {
   return `${dayName} ${day} ${month} ${hours}:${minutes}`;
 }
 
-// US5+US7: vELO Badge - Matrix style met rank circle + rating + trend RECHTS (zoals Team Matrix)
+// vELO Badge met progressbar EN trend naast rating
 function VeloBadge({ rating, change }: { rating: number | null; change: number | null }) {
   if (!rating) {
     return <span className="text-xs text-gray-400">-</span>;
@@ -127,6 +129,8 @@ function VeloBadge({ rating, change }: { rating: number | null; change: number |
   
   const tier = getVeloTier(rating);
   if (!tier) return <span className="text-xs text-gray-400">{Math.floor(rating)}</span>;
+  
+  const progress = getTierProgress(rating, tier);
   
   let TrendIcon = Minus;
   let trendColor = 'text-gray-400';
@@ -140,37 +144,41 @@ function VeloBadge({ rating, change }: { rating: number | null; change: number |
   }
   
   return (
-    <div className="flex items-start gap-2">
-      {/* Rank Circle Badge - Matrix style */}
+    <div className="flex items-center gap-2">
+      {/* Rank Circle Badge */}
       <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm flex-shrink-0`}>
         {tier.rank}
       </div>
       
-      {/* Rating + Tier Name + Trend ONDER (voor strakke uitlijning) */}
-      <div className="flex flex-col items-start min-w-[60px]">
+      {/* Rating + Progressbar + Tier Name */}
+      <div className="flex flex-col min-w-[60px]">
         <div className="font-bold text-gray-900 text-sm">
           {Math.floor(rating)}
         </div>
-        <div className="text-[10px] text-gray-500 leading-tight">
+        <div className="w-full bg-gray-200 rounded-full h-1 mt-0.5">
+          <div 
+            className={`h-1 rounded-full bg-gradient-to-r ${tier.color}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="text-[10px] text-gray-500 mt-0.5">
           {tier.name}
         </div>
-        {/* Trend ONDER rating */}
-        {change !== null && change !== 0 && (
-          <div className={`flex items-center gap-0.5 ${trendColor} mt-0.5`}>
-            <TrendIcon className="w-2.5 h-2.5" />
-            <span className="text-[10px] font-semibold">{change > 0 ? `+${change}` : change}</span>
-          </div>
-        )}
       </div>
+      
+      {/* Trend NAAST rating (niet onder) */}
+      {change !== null && change !== 0 && (
+        <div className={`flex items-center gap-0.5 ${trendColor}`}>
+          <TrendIcon className="w-3 h-3" />
+          <span className="text-xs font-semibold">{change > 0 ? `+${change}` : change}</span>
+        </div>
+      )}
     </div>
   );
 }
 
-// Power value badge met effort color coding
 function PowerBadge({ value }: { value: number | null }) {
   if (!value) return <span className="text-xs text-gray-300">-</span>;
-  
-  // Effort score color (simplified - kan later verfijnd worden met PR comparison)
   return (
     <span className="text-xs font-medium text-gray-700">
       {value.toFixed(1)}
@@ -178,8 +186,7 @@ function PowerBadge({ value }: { value: number | null }) {
   );
 }
 
-// Rank badge met medal icons voor top 3
-function RankBadge({ rank, totalRiders }: { rank: number; totalRiders: number | null }) {
+function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) {
     return (
       <div className="flex items-center gap-1 text-yellow-600">
@@ -207,20 +214,16 @@ function RankBadge({ rank, totalRiders }: { rank: number; totalRiders: number | 
     );
   }
   
-  // Voor andere ranks: show position/total
-  const totalText = totalRiders ? `/${totalRiders}` : '';
   return (
     <span className="text-sm font-medium text-gray-600">
-      {rank}{totalText}
+      {rank}
     </span>
   );
 }
 
-// Event card met collapsible results table - US1: Group by PEN
 function EventCard({ event }: { event: EventResult }) {
   const [expanded, setExpanded] = useState(true);
   
-  // US1: Groepeer results per PEN
   const resultsByPen = event.results.reduce((acc, result) => {
     const pen = result.pen || 'Unknown';
     if (!acc[pen]) acc[pen] = [];
@@ -228,129 +231,122 @@ function EventCard({ event }: { event: EventResult }) {
     return acc;
   }, {} as Record<string, RaceResult[]>);
   
-  // Sort PENs alphabetically (A, B, C, D, E)
   const sortedPens = Object.keys(resultsByPen).sort();
   
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
-      {/* Card Header - Event Info */}
+    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-200">
+      {/* Event Header - Volledige breedte gebruiken */}
       <div 
-        className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 cursor-pointer"
+        className="p-6 bg-gradient-to-r from-blue-500 to-indigo-500 cursor-pointer"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            {/* Event Titel */}
-            <div className="flex items-center gap-3 mb-3">
-              <Trophy className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-bold text-gray-900">{event.event_name}</h3>
-            </div>
+        <div className="flex items-start justify-between gap-4">
+          {/* LEFT: Event Title + Route Details */}
+          <div className="flex-1 min-w-0">
+            {/* Titel */}
+            <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
+              <Trophy className="w-5 h-5 flex-shrink-0" />
+              <span className="truncate">{event.event_name}</span>
+            </h3>
             
-            {/* 2-kolom layout: Links = Route Info, Rechts = Meta */}
-            <div className="grid md:grid-cols-[2fr,1fr] gap-4">
-              {/* LEFT: Route Details - zoals Event Cards */}
-              <div className="space-y-2">
-                {/* Route World + Name */}
-                {event.route_world && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-blue-500" />
-                    <span className="font-bold text-gray-900">{event.route_world}</span>
-                    {event.route_name && (
-                      <span className="text-sm text-gray-600">· {event.route_name}</span>
-                    )}
-                  </div>
-                )}
+            {/* Route Details (als beschikbaar) */}
+            {event.route_world && (
+              <div className="space-y-2 mb-3">
+                <div className="flex items-center gap-2 text-white/90">
+                  <MapPin className="w-4 h-4" />
+                  <span className="font-bold">{event.route_world}</span>
+                  {event.route_name && (
+                    <span className="text-white/70">· {event.route_name}</span>
+                  )}
+                </div>
                 
-                {/* Distance + Elevation + Profile */}
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm text-white/80 flex-wrap">
                   {event.distance_km && (
-                    <span className="font-mono font-bold text-gray-900">{event.distance_km} km</span>
+                    <span className="font-mono font-bold">{event.distance_km} km</span>
                   )}
                   {event.elevation_m && (
-                    <span className="text-gray-600">{event.elevation_m}m ↑</span>
+                    <span>{event.elevation_m}m ↑</span>
                   )}
                   {event.route_profile && (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                    <span className="px-2 py-0.5 bg-white/20 rounded text-xs">
                       {event.route_profile}
                     </span>
                   )}
                   {event.laps && event.laps > 1 && (
-                    <span className="text-gray-600">{event.laps} laps</span>
+                    <span>{event.laps} laps</span>
                   )}
                 </div>
                 
-                {/* Event Type + SubType */}
                 {(event.event_type || event.sub_type) && (
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2">
                     {event.event_type && (
-                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-medium">
+                      <span className="px-2 py-0.5 bg-white/20 text-white rounded text-xs font-medium">
                         {event.event_type}
                       </span>
                     )}
                     {event.sub_type && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded font-medium">
+                      <span className="px-2 py-0.5 bg-white/10 text-white/80 rounded text-xs">
                         {event.sub_type}
                       </span>
                     )}
                   </div>
                 )}
               </div>
+            )}
+            
+            {/* Datum + Riders */}
+            <div className="flex items-center gap-4 text-sm text-white/80">
+              <div className="flex items-center gap-1">
+                <Calendar className="w-4 h-4" />
+                <span>{formatDate(event.event_date)}</span>
+              </div>
               
-              {/* RIGHT: Datum + Riders count */}
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-1 text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>{formatDate(event.event_date)}</span>
+              {event.total_riders && (
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  <span>{event.total_riders}</span>
                 </div>
+              )}
               
-                {event.total_riders && (
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    <span>{event.total_riders} riders</span>
-                  </div>
-                )}
-                
-                {/* Team Riders met oranje borstbeeld icon */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-orange-50 text-orange-700 rounded-lg border border-orange-200">
-                  <UserCheck2 className="w-4 h-4" />
-                  <span className="font-bold">{event.results.length}</span>
-                </div>
+              {/* Team Riders - klein naast total zonder groot kader */}
+              <div className="flex items-center gap-1 text-orange-300">
+                <UserCheck2 className="w-4 h-4" />
+                <span className="font-bold">{event.results.length}</span>
               </div>
             </div>
           </div>
           
-          {/* Expand/Collapse Button */}
+          {/* RIGHT: Expand/Collapse */}
           <button 
-            className="p-2 hover:bg-white/50 rounded-lg transition"
+            className="p-2 hover:bg-white/10 rounded-lg transition flex-shrink-0"
             onClick={(e) => {
               e.stopPropagation();
               setExpanded(!expanded);
             }}
           >
             {expanded ? (
-              <ChevronUp className="w-5 h-5 text-gray-600" />
+              <ChevronUp className="w-5 h-5 text-white" />
             ) : (
-              <ChevronDown className="w-5 h-5 text-gray-600" />
+              <ChevronDown className="w-5 h-5 text-white" />
             )}
           </button>
         </div>
       </div>
       
-      {/* Results Table - Collapsible - US1: Grouped by PEN */}
+      {/* Results Table */}
       {expanded && (
         <div className="overflow-x-auto">
           {sortedPens.map((pen) => {
             const penResults = resultsByPen[pen].sort((a, b) => a.rank - b.rank);
-            
-            const penColor = PEN_COLORS[pen] || { bg: 'bg-gray-50', text: 'text-gray-800', border: 'border-gray-300', label: pen };
+            const penColor = PEN_COLORS[pen] || { bg: 'bg-gray-50', text: 'text-gray-800', border: 'border-gray-300' };
             
             return (
               <div key={pen} className="border-b border-gray-200 last:border-b-0">
-                {/* US1+US2: PEN Header met Category kleuren */}
+                {/* PEN Header */}
                 <div className={`${penColor.bg} px-4 py-2 border-b ${penColor.border}`}>
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 ${penColor.bg} ${penColor.text} border-2 ${penColor.border} rounded-md text-sm font-bold`}>
-                      PEN {penColor.label}
+                      PEN {pen}
                     </span>
                     <span className={`text-sm ${penColor.text}`}>
                       {penResults.length} team {penResults.length === 1 ? 'rider' : 'riders'}
@@ -364,7 +360,7 @@ function EventCard({ event }: { event: EventResult }) {
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rank</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rider</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">vELO Live</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Time</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Time</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Avg W/kg</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">5s</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">15s</th>
@@ -373,80 +369,70 @@ function EventCard({ event }: { event: EventResult }) {
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">20m</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {penResults.map((result, idx) => (
-                <tr 
-                  key={`${result.rider_id}-${idx}`}
-                  className="hover:bg-blue-50/50 transition-colors"
-                >
-                  {/* Rank */}
-                  <td className="px-4 py-3">
-                    <RankBadge rank={result.rank} totalRiders={event.total_riders} />
-                  </td>
-                  
-                  {/* Rider Name */}
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-gray-900">{result.rider_name}</span>
-                  </td>
-                  
-                  {/* vELO Badge - US2+US3 */}
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex justify-center">
-                      <VeloBadge 
-                        rating={result.velo_rating} 
-                        change={result.velo_change} 
-                      />
-                    </div>
-                  </td>
-                  
-                  {/* Time: LINKS uitlijnen met clock icon */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-sm font-mono font-medium text-gray-900">
-                          {formatTime(result.time_seconds)}
-                        </span>
-                        {/* US3+US4: Delta alleen voor rank > 1, klein rechts */}
-                        {result.rank > 1 && result.delta_winner_seconds && result.delta_winner_seconds > 0 && (
-                          <span className="text-[10px] font-mono text-gray-500">
-                            +{formatDeltaTime(result.delta_winner_seconds)?.replace('+', '')}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  
-                  {/* Avg W/kg */}
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Zap className="w-3 h-3 text-yellow-500" />
-                      <span className="text-sm font-medium text-gray-700">
-                        {result.avg_wkg.toFixed(2)}
-                      </span>
-                    </div>
-                  </td>
-                  
-                  {/* Power Curves */}
-                  <td className="px-4 py-3 text-center">
-                    <PowerBadge value={result.power_5s} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <PowerBadge value={result.power_15s} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <PowerBadge value={result.power_1m} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <PowerBadge value={result.power_5m} />
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <PowerBadge value={result.power_20m} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  <tbody>
+                    {penResults.map((result) => (
+                      <tr key={result.rider_id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <RankBadge rank={result.rank} />
+                        </td>
+                        
+                        <td className="px-4 py-3">
+                          <span className="font-medium text-gray-900">{result.rider_name}</span>
+                        </td>
+                        
+                        <td className="px-4 py-3">
+                          <div className="flex justify-center">
+                            <VeloBadge 
+                              rating={result.velo_rating} 
+                              change={result.velo_change} 
+                            />
+                          </div>
+                        </td>
+                        
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Clock className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-sm font-mono font-medium text-gray-900">
+                                {formatTime(result.time_seconds)}
+                              </span>
+                              {result.rank > 1 && result.delta_winner_seconds && result.delta_winner_seconds > 0 && (
+                                <span className="text-[10px] font-mono text-gray-500">
+                                  +{formatDeltaTime(result.delta_winner_seconds)?.replace('+', '')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Zap className="w-3 h-3 text-yellow-500" />
+                            <span className="text-sm font-medium text-gray-700">
+                              {result.avg_wkg.toFixed(2)}
+                            </span>
+                          </div>
+                        </td>
+                        
+                        <td className="px-4 py-3 text-center">
+                          <PowerBadge value={result.power_5s} />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <PowerBadge value={result.power_15s} />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <PowerBadge value={result.power_1m} />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <PowerBadge value={result.power_5m} />
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <PowerBadge value={result.power_20m} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             );
           })}
@@ -456,15 +442,14 @@ function EventCard({ event }: { event: EventResult }) {
   );
 }
 
-// Main Results Dashboard Component
 export default function ResultsModern() {
   const [events, setEvents] = useState<EventResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(365);
   const [limit, setLimit] = useState(50);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Fetch team results
   const fetchResults = async () => {
     setLoading(true);
     setError(null);
@@ -495,59 +480,104 @@ export default function ResultsModern() {
     fetchResults();
   }, [days, limit]);
 
+  // Filter events based on search
+  const filteredEvents = events.filter(event => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      event.event_name.toLowerCase().includes(term) ||
+      event.results.some(r => r.rider_name.toLowerCase().includes(term))
+    );
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-8 px-4 lg:px-8 shadow-lg">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 mb-2">
-            <Trophy className="w-8 h-8" />
-            <h1 className="text-3xl lg:text-4xl font-bold">Team Results</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-8">
+      {/* Hero Header - Team Dashboard Style */}
+      <div className="relative overflow-hidden mb-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-95"></div>
+        <div className="relative px-6 py-10">
+          <div className="max-w-[98vw] mx-auto">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-4 bg-white/20 backdrop-blur-lg rounded-2xl shadow-2xl">
+                <Trophy className="w-12 h-12 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-5xl font-black text-white tracking-tight">
+                  RESULTS DASHBOARD
+                </h1>
+                <p className="text-blue-100 text-xl font-semibold mt-2">
+                  TeamNL Cloud9 Racing · Recent Race Results
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-4 bg-white/10 backdrop-blur-lg rounded-xl px-5 py-3 border border-white/20 shadow-xl">
+              <span className="text-white/80 text-sm font-medium">Showing</span>
+              <span className="text-white font-bold text-2xl">{filteredEvents.length}</span>
+              <span className="text-white/80 text-sm font-medium">of</span>
+              <span className="text-white font-bold text-2xl">{events.length}</span>
+              <span className="text-white/80 text-sm font-medium">events</span>
+              {searchTerm && (
+                <>
+                  <span className="text-white/60">·</span>
+                  <span className="text-cyan-300 font-semibold text-sm">🔍 "{searchTerm}"</span>
+                </>
+              )}
+            </div>
           </div>
-          <p className="text-blue-100 text-lg">
-            Recent race results van TeamNL Cloud9 riders
-          </p>
         </div>
       </div>
 
-      {/* Filters Section */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
-        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
+      {/* Content Container */}
+      <div className="max-w-[98vw] mx-auto px-4">
+        {/* Filters - Subtiel en State of the Art */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 mb-6 border border-slate-200">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            {/* Search Bar */}
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="🔍 Zoek event of rider..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            
+            {/* Period Filter */}
             <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Periode:</label>
+              <Filter className="w-4 h-4 text-gray-500" />
               <select
                 value={days}
                 onChange={(e) => setDays(parseInt(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
               >
-                <option value={30}>Laatste 30 dagen</option>
-                <option value={60}>Laatste 60 dagen</option>
-                <option value={90}>Laatste 90 dagen</option>
-                <option value={180}>Laatste 180 dagen</option>
-                <option value={365}>Laatste 365 dagen</option>
+                <option value={30}>30 dagen</option>
+                <option value={60}>60 dagen</option>
+                <option value={90}>90 dagen</option>
+                <option value={180}>180 dagen</option>
+                <option value={365}>365 dagen</option>
               </select>
             </div>
             
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium text-gray-700">Max results:</label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(parseInt(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-                <option value={200}>200</option>
-              </select>
-            </div>
-            
-            {!loading && (
-              <div className="ml-auto text-sm text-gray-600">
-                <span className="font-medium">{events.length}</span> events geladen
-              </div>
-            )}
+            {/* Limit Filter */}
+            <select
+              value={limit}
+              onChange={(e) => setLimit(parseInt(e.target.value))}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
+            >
+              <option value={20}>20 results</option>
+              <option value={50}>50 results</option>
+              <option value={100}>100 results</option>
+              <option value={200}>200 results</option>
+            </select>
           </div>
         </div>
 
@@ -555,7 +585,7 @@ export default function ResultsModern() {
         {loading && (
           <div className="flex justify-center items-center py-20">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Results laden...</p>
             </div>
           </div>
@@ -563,7 +593,7 @@ export default function ResultsModern() {
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
             <p className="text-red-800 font-medium mb-2">⚠️ {error}</p>
             <button
               onClick={fetchResults}
@@ -577,14 +607,16 @@ export default function ResultsModern() {
         {/* Results List */}
         {!loading && !error && (
           <div className="space-y-4">
-            {events.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            {filteredEvents.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-12 text-center border border-slate-200">
                 <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg">Geen results gevonden voor deze periode</p>
-                <p className="text-gray-500 text-sm mt-2">Probeer een langere periode te selecteren</p>
+                <p className="text-gray-600 text-lg">Geen results gevonden</p>
+                <p className="text-gray-500 text-sm mt-2">
+                  {searchTerm ? 'Probeer een andere zoekterm' : 'Probeer een langere periode te selecteren'}
+                </p>
               </div>
             ) : (
-              events.map((event) => (
+              filteredEvents.map((event) => (
                 <EventCard key={event.event_id} event={event} />
               ))
             )}
