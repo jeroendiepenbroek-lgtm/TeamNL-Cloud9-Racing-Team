@@ -5,19 +5,39 @@
 
 import { useEffect, useState } from 'react';
 import { 
-  Trophy, TrendingUp, TrendingDown, Minus, Calendar,
+  Trophy, TrendingUp, TrendingDown, Minus, Calendar, MapPin,
   Zap, Award, Clock, Users, ChevronDown, ChevronUp
 } from 'lucide-react';
 
-// vELO Rating kleuren en badges
-const VELO_COLORS: Record<number, { bg: string; text: string; label: string }> = {
-  1: { bg: 'bg-red-100', text: 'text-red-800', label: 'vELO 1' },
-  2: { bg: 'bg-orange-100', text: 'text-orange-800', label: 'vELO 2' },
-  3: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'vELO 3' },
-  4: { bg: 'bg-green-100', text: 'text-green-800', label: 'vELO 4' },
-  5: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'vELO 5' },
-  6: { bg: 'bg-indigo-100', text: 'text-indigo-800', label: 'vELO 6' },
-  7: { bg: 'bg-purple-100', text: 'text-purple-800', label: 'vELO 7' },
+// vELO Rating tiers - Matrix style (zoals RacingDataMatrixModern)
+const VELO_TIERS = [
+  { rank: 1, name: 'Diamond', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-white' },
+  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-white' },
+  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-white' },
+  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-white' },
+  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-white' },
+  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-white' },
+  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900' },
+  { rank: 8, name: 'Silver', min: 850, max: 1000, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700' },
+  { rank: 9, name: 'Bronze', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900' },
+  { rank: 10, name: 'Copper', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-white' },
+];
+
+// Helper: Bepaal vELO tier op basis van rating
+const getVeloTier = (rating: number | null) => {
+  if (!rating) return null;
+  return VELO_TIERS.find(tier => 
+    rating >= tier.min && (!tier.max || rating < tier.max)
+  );
+};
+
+// US2: PEN kleuren zoals ZP Categories (A=rood, B=groen, C=blauw, D=geel, E=paars)
+const PEN_COLORS: Record<string, { bg: string; text: string; border: string; label: string }> = {
+  'A': { bg: 'bg-red-50', text: 'text-red-800', border: 'border-red-300', label: 'A' },
+  'B': { bg: 'bg-green-50', text: 'text-green-800', border: 'border-green-300', label: 'B' },
+  'C': { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-300', label: 'C' },
+  'D': { bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-yellow-300', label: 'D' },
+  'E': { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300', label: 'E' },
 };
 
 interface RaceResult {
@@ -48,6 +68,12 @@ interface EventResult {
   event_date: string;
   pen: string | null;
   total_riders: number | null;
+  // US6: Route details (zoals Event Cards)
+  route_world?: string;
+  route_name?: string;
+  distance_km?: string;
+  elevation_m?: number;
+  laps?: number;
   results: RaceResult[];
 }
 
@@ -90,13 +116,14 @@ function formatDate(dateString: string): string {
   return `${dayName} ${day} ${month} ${hours}:${minutes}`;
 }
 
-// vELO Badge component - US2: vELO Live + trend delta, US3: Matrix styling
+// US5+US7: vELO Badge - Matrix style met rank circle + rating + trend RECHTS (zoals Team Matrix)
 function VeloBadge({ rating, change }: { rating: number | null; change: number | null }) {
   if (!rating) {
     return <span className="text-xs text-gray-400">-</span>;
   }
   
-  const colors = VELO_COLORS[rating] || { bg: 'bg-gray-100', text: 'text-gray-800', label: `vELO ${rating}` };
+  const tier = getVeloTier(rating);
+  if (!tier) return <span className="text-xs text-gray-400">{Math.floor(rating)}</span>;
   
   let TrendIcon = Minus;
   let trendColor = 'text-gray-400';
@@ -110,16 +137,27 @@ function VeloBadge({ rating, change }: { rating: number | null; change: number |
   }
   
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      {/* vELO Live - Matrix style badge */}
-      <div className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full ${colors.bg} ${colors.text} font-bold text-sm min-w-[36px]`}>
-        {rating}
+    <div className="flex items-center gap-2">
+      {/* Rank Circle Badge - Matrix style */}
+      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm`}>
+        {tier.rank}
       </div>
-      {/* Delta met trend */}
+      
+      {/* Rating + Tier Name */}
+      <div className="flex flex-col items-start">
+        <div className="font-bold text-gray-900 text-sm">
+          {Math.floor(rating)}
+        </div>
+        <div className="text-[10px] text-gray-500 leading-tight">
+          {tier.name}
+        </div>
+      </div>
+      
+      {/* US7: Trend RECHTS naast rating (niet onder) */}
       {change !== null && change !== 0 && (
-        <div className={`flex items-center gap-0.5 text-xs ${trendColor} font-semibold`}>
+        <div className={`flex items-center gap-0.5 ${trendColor} ml-1`}>
           <TrendIcon className="w-3 h-3" />
-          <span>{change > 0 ? `+${change}` : change}</span>
+          <span className="text-xs font-semibold">{change > 0 ? `+${change}` : change}</span>
         </div>
       )}
     </div>
@@ -205,17 +243,30 @@ function EventCard({ event }: { event: EventResult }) {
               <h3 className="text-lg font-bold text-gray-900">{event.event_name}</h3>
             </div>
             
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
                 <span>{formatDate(event.event_date)}</span>
               </div>
               
-              {event.pen && (
+              {/* US6: Route Details zoals Event Cards */}
+              {event.route_world && (
                 <div className="flex items-center gap-1">
-                  <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-semibold">
-                    {event.pen}
-                  </span>
+                  <MapPin className="w-4 h-4 text-gray-500" />
+                  <span className="font-medium">{event.route_world}</span>
+                  {event.route_name && <span className="text-gray-500">· {event.route_name}</span>}
+                </div>
+              )}
+              
+              {event.distance_km && (
+                <div className="flex items-center gap-1">
+                  <span className="font-mono font-medium">{event.distance_km} km</span>
+                  {event.elevation_m && (
+                    <span className="text-gray-500">· {event.elevation_m}m ↑</span>
+                  )}
+                  {event.laps && event.laps > 1 && (
+                    <span className="text-gray-500">· {event.laps} laps</span>
+                  )}
                 </div>
               )}
               
@@ -255,15 +306,17 @@ function EventCard({ event }: { event: EventResult }) {
           {sortedPens.map((pen) => {
             const penResults = resultsByPen[pen].sort((a, b) => a.rank - b.rank);
             
+            const penColor = PEN_COLORS[pen] || { bg: 'bg-gray-50', text: 'text-gray-800', border: 'border-gray-300', label: pen };
+            
             return (
               <div key={pen} className="border-b border-gray-200 last:border-b-0">
-                {/* PEN Header - US1 */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 border-b border-purple-100">
+                {/* US1+US2: PEN Header met Category kleuren */}
+                <div className={`${penColor.bg} px-4 py-2 border-b ${penColor.border}`}>
                   <div className="flex items-center gap-2">
-                    <span className="px-3 py-1 bg-purple-600 text-white rounded-md text-sm font-bold">
-                      PEN {pen}
+                    <span className={`px-3 py-1 ${penColor.bg} ${penColor.text} border-2 ${penColor.border} rounded-md text-sm font-bold`}>
+                      PEN {penColor.label}
                     </span>
-                    <span className="text-sm text-gray-600">
+                    <span className={`text-sm ${penColor.text}`}>
                       {penResults.length} team {penResults.length === 1 ? 'rider' : 'riders'}
                     </span>
                   </div>
@@ -310,17 +363,16 @@ function EventCard({ event }: { event: EventResult }) {
                     </div>
                   </td>
                   
-                  {/* Time - US5: Met delta t.o.v. winnaar */}
+                  {/* US4: Time met delta RECHTS inline, US3: Nr.1 heeft geen delta (blank) */}
                   <td className="px-4 py-3 text-center">
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-gray-400" />
-                        <span className="text-sm font-mono font-medium text-gray-900">
-                          {formatTime(result.time_seconds)}
-                        </span>
-                      </div>
-                      {result.delta_winner_seconds && result.delta_winner_seconds > 0 && (
-                        <span className="text-xs font-mono text-gray-500">
+                    <div className="flex items-center justify-center gap-1.5">
+                      <Clock className="w-3 h-3 text-gray-400" />
+                      <span className="text-sm font-mono font-medium text-gray-900">
+                        {formatTime(result.time_seconds)}
+                      </span>
+                      {/* US3+US4: Delta alleen voor rank > 1, klein rechts */}
+                      {result.rank > 1 && result.delta_winner_seconds && result.delta_winner_seconds > 0 && (
+                        <span className="text-[10px] font-mono text-gray-500 ml-0.5">
                           ({formatDeltaTime(result.delta_winner_seconds)})
                         </span>
                       )}
