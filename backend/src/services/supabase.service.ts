@@ -322,10 +322,7 @@ export class SupabaseService {
 
     const { data, error } = await this.client
       .from('zwift_api_race_results')
-      .select(`
-        *,
-        rider:riders!fk_rider(rider_id, name, zp_category)
-      `)
+      .select('*')
       .gte('event_date', cutoffDate.toISOString())
       .not('event_name', 'is', null)
       .order('event_date', { ascending: false })
