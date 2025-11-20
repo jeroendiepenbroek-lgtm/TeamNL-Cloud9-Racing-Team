@@ -324,7 +324,7 @@ export class SupabaseService {
       .from('zwift_api_race_results')
       .select(`
         *,
-        rider:riders!fk_rider(zwift_id, name, category_racing, ranking)
+        rider:riders!fk_rider(rider_id, name, zp_category)
       `)
       .gte('event_date', cutoffDate.toISOString())
       .not('event_name', 'is', null)
