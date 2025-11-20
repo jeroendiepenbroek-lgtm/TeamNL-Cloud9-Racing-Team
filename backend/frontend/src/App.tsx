@@ -148,7 +148,7 @@ function Navigation() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-4 py-3 text-base font-medium text-gray-300 hover:text-white hover:bg-gray-800 rounded-md transition"
               >
-                🏆 Resultaten
+                🏆 Results
               </Link>
               
               {user && (
@@ -210,13 +210,13 @@ function BottomNavigation() {
         </Link>
         
         <Link 
-          to="/clubs" 
+          to="/results" 
           className={`flex flex-col items-center justify-center space-y-1 ${
-            location === '/clubs' ? 'text-blue-600' : 'text-gray-600'
+            location === '/results' || location.startsWith('/results/') ? 'text-blue-600' : 'text-gray-600'
           }`}
         >
-          <span className="text-xl">🏢</span>
-          <span className="text-xs font-medium">Clubs</span>
+          <span className="text-xl">🏆</span>
+          <span className="text-xs font-medium">Results</span>
         </Link>
         
         <Link 
