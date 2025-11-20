@@ -91,7 +91,7 @@ function formatDate(dateString: string): string {
 }
 
 // vELO Badge component - US2: vELO Live + trend delta, US3: Matrix styling
-function VeloBadge({ rating, previous, change }: { rating: number | null; previous: number | null; change: number | null }) {
+function VeloBadge({ rating, change }: { rating: number | null; change: number | null }) {
   if (!rating) {
     return <span className="text-xs text-gray-400">-</span>;
   }
@@ -305,7 +305,6 @@ function EventCard({ event }: { event: EventResult }) {
                     <div className="flex justify-center">
                       <VeloBadge 
                         rating={result.velo_rating} 
-                        previous={result.velo_previous}
                         change={result.velo_change} 
                       />
                     </div>
