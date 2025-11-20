@@ -26,7 +26,9 @@ interface RaceResult {
   rank: number;
   time_seconds: number;
   avg_wkg: number;
+  pen: string | null;  // US1: PEN per result
   velo_rating: number | null;
+  velo_previous: number | null;  // US2: Voor delta berekening
   velo_change: number | null;
   power_5s: number | null;
   power_15s: number | null;
@@ -37,7 +39,7 @@ interface RaceResult {
   power_20m: number | null;
   effort_score: number | null;
   race_points: number | null;
-  delta_winner_seconds: number | null;
+  delta_winner_seconds: number | null;  // US5: Delta tijd
 }
 
 interface EventResult {
@@ -65,7 +67,15 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Format datum (friendly format)
+// US5: Format delta tijd t.o.v. winnaar
+function formatDeltaTime(deltaSeconds: number | null): string | null {
+  if (!deltaSeconds || deltaSeconds === 0) return null;
+  const mins = Math.floor(deltaSeconds / 60);
+  const secs = Math.floor(deltaSeconds % 60);
+  return `+${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// US7: Format datum + tijd
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   const dayNames = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
@@ -74,12 +84,14 @@ function formatDate(dateString: string): string {
   const dayName = dayNames[date.getDay()];
   const day = date.getDate();
   const month = monthNames[date.getMonth()];
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
   
-  return `${dayName} ${day} ${month}`;
+  return `${dayName} ${day} ${month} ${hours}:${minutes}`;
 }
 
-// vELO Badge component met trend arrow
-function VeloBadge({ rating, change }: { rating: number | null; change: number | null }) {
+// vELO Badge component - US2: vELO Live + trend delta, US3: Matrix styling
+function VeloBadge({ rating, previous, change }: { rating: number | null; previous: number | null; change: number | null }) {
   if (!rating) {
     return <span className="text-xs text-gray-400">-</span>;
   }
@@ -98,12 +110,17 @@ function VeloBadge({ rating, change }: { rating: number | null; change: number |
   }
   
   return (
-    <div className="flex items-center gap-1">
-      <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors.bg} ${colors.text}`}>
+    <div className="flex flex-col items-center gap-0.5">
+      {/* vELO Live - Matrix style badge */}
+      <div className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full ${colors.bg} ${colors.text} font-bold text-sm min-w-[36px]`}>
         {rating}
-      </span>
+      </div>
+      {/* Delta met trend */}
       {change !== null && change !== 0 && (
-        <TrendIcon className={`w-3 h-3 ${trendColor}`} />
+        <div className={`flex items-center gap-0.5 text-xs ${trendColor} font-semibold`}>
+          <TrendIcon className="w-3 h-3" />
+          <span>{change > 0 ? `+${change}` : change}</span>
+        </div>
       )}
     </div>
   );
@@ -159,12 +176,20 @@ function RankBadge({ rank, totalRiders }: { rank: number; totalRiders: number | 
   );
 }
 
-// Event card met collapsible results table
+// Event card met collapsible results table - US1: Group by PEN
 function EventCard({ event }: { event: EventResult }) {
   const [expanded, setExpanded] = useState(true);
   
-  // Sort results by rank
-  const sortedResults = [...event.results].sort((a, b) => a.rank - b.rank);
+  // US1: Groepeer results per PEN
+  const resultsByPen = event.results.reduce((acc, result) => {
+    const pen = result.pen || 'Unknown';
+    if (!acc[pen]) acc[pen] = [];
+    acc[pen].push(result);
+    return acc;
+  }, {} as Record<string, RaceResult[]>);
+  
+  // Sort PENs alphabetically (A, B, C, D, E)
+  const sortedPens = Object.keys(resultsByPen).sort();
   
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
@@ -224,26 +249,43 @@ function EventCard({ event }: { event: EventResult }) {
         </div>
       </div>
       
-      {/* Results Table - Collapsible */}
+      {/* Results Table - Collapsible - US1: Grouped by PEN */}
       {expanded && (
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rank</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rider</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">vELO</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Time</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Avg W/kg</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">5s</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">15s</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">1m</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">5m</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">20m</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sortedResults.map((result, idx) => (
+          {sortedPens.map((pen) => {
+            const penResults = resultsByPen[pen].sort((a, b) => a.rank - b.rank);
+            
+            return (
+              <div key={pen} className="border-b border-gray-200 last:border-b-0">
+                {/* PEN Header - US1 */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 border-b border-purple-100">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-purple-600 text-white rounded-md text-sm font-bold">
+                      PEN {pen}
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      {penResults.length} team {penResults.length === 1 ? 'rider' : 'riders'}
+                    </span>
+                  </div>
+                </div>
+                
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rank</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rider</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">vELO Live</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Time</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Avg W/kg</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">5s</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">15s</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">1m</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">5m</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">20m</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {penResults.map((result, idx) => (
                 <tr 
                   key={`${result.rider_id}-${idx}`}
                   className="hover:bg-blue-50/50 transition-colors"
@@ -258,20 +300,31 @@ function EventCard({ event }: { event: EventResult }) {
                     <span className="font-medium text-gray-900">{result.rider_name}</span>
                   </td>
                   
-                  {/* vELO Badge */}
+                  {/* vELO Badge - US2+US3 */}
                   <td className="px-4 py-3 text-center">
                     <div className="flex justify-center">
-                      <VeloBadge rating={result.velo_rating} change={result.velo_change} />
+                      <VeloBadge 
+                        rating={result.velo_rating} 
+                        previous={result.velo_previous}
+                        change={result.velo_change} 
+                      />
                     </div>
                   </td>
                   
-                  {/* Time */}
+                  {/* Time - US5: Met delta t.o.v. winnaar */}
                   <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Clock className="w-3 h-3 text-gray-400" />
-                      <span className="text-sm font-mono text-gray-700">
-                        {formatTime(result.time_seconds)}
-                      </span>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-gray-400" />
+                        <span className="text-sm font-mono font-medium text-gray-900">
+                          {formatTime(result.time_seconds)}
+                        </span>
+                      </div>
+                      {result.delta_winner_seconds && result.delta_winner_seconds > 0 && (
+                        <span className="text-xs font-mono text-gray-500">
+                          ({formatDeltaTime(result.delta_winner_seconds)})
+                        </span>
+                      )}
                     </div>
                   </td>
                   
@@ -305,6 +358,9 @@ function EventCard({ event }: { event: EventResult }) {
               ))}
             </tbody>
           </table>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

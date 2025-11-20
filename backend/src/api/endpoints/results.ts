@@ -32,14 +32,16 @@ router.get('/team/recent', async (req: Request, res: Response) => {
         };
       }
       
-      // Format result met power curves
+      // Format result met power curves + US1/US2 fields
       acc[eventKey].results.push({
         rider_id: result.rider_id,
         rider_name: result.rider?.name || result.rider_name,
         rank: result.rank,
         time_seconds: result.time_seconds,
         avg_wkg: result.avg_wkg,
+        pen: result.pen,  // US1: PEN per result
         velo_rating: result.velo_rating,
+        velo_previous: result.velo_previous,  // US2: Voor delta
         velo_change: result.velo_change,
         power_5s: result.power_5s,
         power_15s: result.power_15s,
