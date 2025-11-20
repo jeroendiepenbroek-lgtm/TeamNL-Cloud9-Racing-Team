@@ -18,6 +18,7 @@ import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import syncConfigRouter from './api/endpoints/sync-config.js';
 import syncV2Router from './api/endpoints/sync-v2.js';
+import syncRealResultsRouter from './api/endpoints/sync-real-results.js';
 import adminStatsRouter from './api/endpoints/admin-stats.js';
 import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 import cleanupRouter from './api/endpoints/cleanup.js';
@@ -77,6 +78,7 @@ app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
 app.use('/api/sync', syncV2Router); // Modern sync V2 (prioriteit)
 app.use('/api/sync', syncConfigRouter); // Sync configuratie (fallback)
+app.use('/api/sync', syncRealResultsRouter); // Real-time results sync
 app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations

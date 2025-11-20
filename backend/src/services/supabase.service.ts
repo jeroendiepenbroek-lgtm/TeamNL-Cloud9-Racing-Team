@@ -315,6 +315,29 @@ export class SupabaseService {
     return data;
   }
 
+  async deleteResultsByEventIdPattern(pattern: string): Promise<void> {
+    const { error } = await this.client
+      .from('zwift_api_race_results')
+      .delete()
+      .ilike('event_id', pattern);
+
+    if (error) throw error;
+  }
+
+  async getRecentEvents(days: number = 30): Promise<any[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
+    const { data, error } = await this.client
+      .from('zwift_api_events')
+      .select('*')
+      .gte('event_start', cutoffDate.toISOString())
+      .order('event_start', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  }
+
   // Results Dashboard - Team Recent Results
   async getTeamRecentResults(days: number = 90, limit: number = 100): Promise<any[]> {
     const cutoffDate = new Date();
