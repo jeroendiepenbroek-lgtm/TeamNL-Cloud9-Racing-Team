@@ -9,11 +9,10 @@
 
 -- Step 1: Voeg foreign key constraint toe
 ALTER TABLE zwift_api_race_results
-ADD CONSTRAINT fk_results_rider_id
+ADD CONSTRAINT fk_rider
 FOREIGN KEY (rider_id) 
-REFERENCES riders(rider_id) 
-ON DELETE CASCADE
-ON UPDATE CASCADE;
+REFERENCES riders(zwift_id) 
+ON DELETE CASCADE;
 
 -- Step 2: Verifieer constraint is toegevoegd
 SELECT 
@@ -38,9 +37,9 @@ SELECT
   r.rank,
   r.event_name,
   rider.name AS rider_table_name,
-  rider.zwift_category
+  rider.category_racing
 FROM zwift_api_race_results r
-INNER JOIN riders rider ON r.rider_id = rider.rider_id
+INNER JOIN riders rider ON r.rider_id = rider.zwift_id
 LIMIT 5;
 
 -- Step 4: Controleer of alle rider_id's bestaan in riders tabel
@@ -48,7 +47,7 @@ LIMIT 5;
 SELECT DISTINCT r.rider_id
 FROM zwift_api_race_results r
 WHERE NOT EXISTS (
-  SELECT 1 FROM riders WHERE rider_id = r.rider_id
+  SELECT 1 FROM riders WHERE zwift_id = r.rider_id
 );
 
 -- Expected output: 0 rows (betekent alle rider_id's zijn valid)
