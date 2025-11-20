@@ -51,8 +51,9 @@ CREATE INDEX IF NOT EXISTS idx_results_event ON zwift_api_race_results(event_id,
 CREATE INDEX IF NOT EXISTS idx_results_event_date ON zwift_api_race_results(event_date DESC NULLS LAST);
 CREATE INDEX IF NOT EXISTS idx_results_velo ON zwift_api_race_results(rider_id, velo_rating) WHERE velo_rating IS NOT NULL;
 
--- Foreign key to riders table
-ALTER TABLE zwift_api_race_results ADD CONSTRAINT fk_rider FOREIGN KEY (rider_id) REFERENCES riders(rider_id) ON DELETE CASCADE;
+-- Foreign key to riders table (COMMENTED OUT for development - allows test data with fake rider IDs)
+-- Uncomment this line when using real production data:
+-- ALTER TABLE zwift_api_race_results ADD CONSTRAINT fk_rider FOREIGN KEY (rider_id) REFERENCES riders(rider_id) ON DELETE CASCADE;
 
 -- Verification
 SELECT 

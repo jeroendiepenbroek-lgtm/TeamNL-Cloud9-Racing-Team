@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { 
   Trophy, TrendingUp, TrendingDown, Minus, Calendar, MapPin,
-  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter
+  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter, DoorOpen
 } from 'lucide-react';
 
 // vELO Tiers - exacte copy van Team Dashboard
@@ -35,6 +35,19 @@ const getTierProgress = (rating: number, tier: typeof VELO_TIERS[0]): number => 
   const range = tier.max - tier.min;
   const progress = rating - tier.min;
   return Math.min(100, Math.max(0, (progress / range) * 100));
+};
+
+// Helper: Check of rijder een tier omhoog/omlaag is gegaan
+const getVeloRankChange = (rating: number | null, previous: number | null): 'up' | 'down' | null => {
+  if (!rating || !previous) return null;
+  const currentTier = getVeloTier(rating);
+  const previousTier = getVeloTier(previous);
+  if (!currentTier || !previousTier) return null;
+  
+  // Lower rank number = better (Diamond = 1, Copper = 10)
+  if (currentTier.rank < previousTier.rank) return 'up';
+  if (currentTier.rank > previousTier.rank) return 'down';
+  return null;
 };
 
 // PEN kleuren
@@ -66,6 +79,7 @@ interface RaceResult {
   effort_score: number | null;
   race_points: number | null;
   delta_winner_seconds: number | null;
+  dnf: boolean | null;
 }
 
 interface EventResult {
@@ -121,8 +135,8 @@ function formatDate(dateString: string): string {
   return `${dayName} ${day} ${month} ${hours}:${minutes}`;
 }
 
-// vELO Badge met progressbar EN trend naast rating
-function VeloBadge({ rating, change }: { rating: number | null; change: number | null }) {
+// vELO Badge met progressbar EN trend naast rating + tier change indicator
+function VeloBadge({ rating, previous, change }: { rating: number | null; previous: number | null; change: number | null }) {
   if (!rating) {
     return <span className="text-xs text-gray-400">-</span>;
   }
@@ -131,6 +145,7 @@ function VeloBadge({ rating, change }: { rating: number | null; change: number |
   if (!tier) return <span className="text-xs text-gray-400">{Math.floor(rating)}</span>;
   
   const progress = getTierProgress(rating, tier);
+  const rankChange = getVeloRankChange(rating, previous);
   
   let TrendIcon = Minus;
   let trendColor = 'text-gray-400';
@@ -145,9 +160,21 @@ function VeloBadge({ rating, change }: { rating: number | null; change: number |
   
   return (
     <div className="flex items-center gap-2">
-      {/* Rank Circle Badge */}
-      <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm flex-shrink-0`}>
-        {tier.rank}
+      {/* Rank Circle Badge met tier change indicator */}
+      <div className="relative">
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-sm flex-shrink-0`}>
+          {tier.rank}
+        </div>
+        {/* Tier Change Indicator (omhoog/omlaag in tier - bijv. Gold naar Platinum) */}
+        {rankChange && (
+          <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full ${rankChange === 'up' ? 'bg-green-500' : 'bg-red-500'} flex items-center justify-center shadow-md`}>
+            {rankChange === 'up' ? (
+              <ChevronUp className="w-3 h-3 text-white" strokeWidth={3} />
+            ) : (
+              <ChevronDown className="w-3 h-3 text-white" strokeWidth={3} />
+            )}
+          </div>
+        )}
       </div>
       
       {/* Rating + Progressbar + Tier Name */}
@@ -186,7 +213,21 @@ function PowerBadge({ value }: { value: number | null }) {
   );
 }
 
-function RankBadge({ rank }: { rank: number }) {
+// DNF Badge - Did Not Finish indicator
+function DNFBadge() {
+  return (
+    <div className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-800 rounded-md text-xs font-semibold border border-red-300">
+      <DoorOpen className="w-3 h-3" />
+      <span>DNF</span>
+    </div>
+  );
+}
+
+function RankBadge({ rank, dnf }: { rank: number; dnf: boolean | null }) {
+  // Toon DNF badge als rider niet gefinisht is
+  if (dnf) {
+    return <DNFBadge />;
+  }
   if (rank === 1) {
     return (
       <div className="flex items-center gap-1 text-yellow-600">
@@ -373,7 +414,7 @@ function EventCard({ event }: { event: EventResult }) {
                     {penResults.map((result) => (
                       <tr key={result.rider_id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
-                          <RankBadge rank={result.rank} />
+                          <RankBadge rank={result.rank} dnf={result.dnf} />
                         </td>
                         
                         <td className="px-4 py-3">
@@ -384,6 +425,7 @@ function EventCard({ event }: { event: EventResult }) {
                           <div className="flex justify-center">
                             <VeloBadge 
                               rating={result.velo_rating} 
+                              previous={result.velo_previous}
                               change={result.velo_change} 
                             />
                           </div>

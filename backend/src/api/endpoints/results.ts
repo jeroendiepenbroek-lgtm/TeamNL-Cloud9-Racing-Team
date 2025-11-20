@@ -28,11 +28,20 @@ router.get('/team/recent', async (req: Request, res: Response) => {
           event_date: result.event_date,
           pen: result.pen,
           total_riders: result.total_riders,
+          // Route details (US6)
+          route_world: result.route_world,
+          route_name: result.route_name,
+          route_profile: result.route_profile,
+          distance_km: result.distance_km,
+          elevation_m: result.elevation_m,
+          laps: result.laps,
+          event_type: result.event_type,
+          sub_type: result.sub_type,
           results: []
         };
       }
       
-      // Format result met power curves + US1/US2 fields
+      // Format result met power curves + US1/US2 fields + DNF
       acc[eventKey].results.push({
         rider_id: result.rider_id,
         rider_name: result.rider?.name || result.rider_name,
@@ -52,7 +61,8 @@ router.get('/team/recent', async (req: Request, res: Response) => {
         power_20m: result.power_20m,
         effort_score: result.effort_score,
         race_points: result.race_points,
-        delta_winner_seconds: result.delta_winner_seconds
+        delta_winner_seconds: result.delta_winner_seconds,
+        dnf: result.dnf || false  // DNF flag
       });
       
       return acc;
