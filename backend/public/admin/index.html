@@ -224,7 +224,7 @@
                 <span class="card-badge">Debug Tools</span>
             </a>
 
-            <a href="/api/riders" class="card">
+            <a href="/api/riders?limit=10" class="card">
                 <div class="card-icon">👥</div>
                 <div class="card-title">Riders API</div>
                 <div class="card-description">
@@ -242,7 +242,7 @@
                 <span class="card-badge">Next 48h</span>
             </a>
 
-            <a href="/api/sync/logs?limit=20" class="card">
+            <a href="/api/sync-logs?limit=20" class="card">
                 <div class="card-icon">📋</div>
                 <div class="card-title">Sync Logs</div>
                 <div class="card-description">
@@ -284,7 +284,7 @@
                 document.getElementById('riderCount').textContent = ridersData.count || '-';
 
                 // Last sync from logs
-                const logsRes = await fetch('/api/sync/logs?limit=1');
+                const logsRes = await fetch('/api/sync-logs?limit=1');
                 const logs = await logsRes.json();
                 
                 if (logs.logs && logs.logs.length > 0) {
