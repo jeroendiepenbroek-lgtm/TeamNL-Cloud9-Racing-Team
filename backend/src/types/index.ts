@@ -28,23 +28,24 @@ export interface ZwiftRider {
   zpFTP?: number;
   
   // Power object
+  // API returns intervals as arrays: [value, percentile, rank]
   power?: {
-    wkg5?: number;
-    wkg15?: number;
-    wkg30?: number;
-    wkg60?: number;
-    wkg120?: number;
-    wkg300?: number;
-    wkg1200?: number;
-    w5?: number;
-    w15?: number;
-    w30?: number;
-    w60?: number;
-    w120?: number;
-    w300?: number;
-    w1200?: number;
-    CP?: number;
-    AWC?: number;
+    wkg5?: number | [number, number, number];
+    wkg15?: number | [number, number, number];
+    wkg30?: number | [number, number, number];
+    wkg60?: number | [number, number, number];
+    wkg120?: number | [number, number, number];
+    wkg300?: number | [number, number, number];
+    wkg1200?: number | [number, number, number];
+    w5?: number | [number, number, number];
+    w15?: number | [number, number, number];
+    w30?: number | [number, number, number];
+    w60?: number | [number, number, number];
+    w120?: number | [number, number, number];
+    w300?: number | [number, number, number];
+    w1200?: number | [number, number, number];
+    CP?: number;  // Single number (not array)
+    AWC?: number; // Single number (not array)
     compoundScore?: number;
     powerRating?: number;
   };

@@ -86,6 +86,12 @@ export class SyncServiceV2 {
     };
 
     try {
+      // Helper to extract first element from power array [value, percentile, rank]
+      const extractPowerValue = (value: number | [number, number, number] | undefined): number | undefined => {
+        if (value === undefined) return undefined;
+        return Array.isArray(value) ? value[0] : value;
+      };
+
       // Step 1: Get MY TEAM MEMBERS only (not full club roster)
       console.log(`[RIDER SYNC] Fetching MY_TEAM_MEMBERS...`);
       const riderIds = await supabase.getAllTeamRiderIds();
@@ -119,29 +125,30 @@ export class SyncServiceV2 {
         race_finishes: rider.race?.finishes || 0,
         club_id: clubId,
         club_name: rider.club?.name || undefined,
-        // Physical attributes
-        weight_kg: rider.weight || undefined,
-        height_cm: rider.height || undefined,
-        ftp: rider.zpFTP || undefined,
+        // Physical attributes (correct column names!)
+        weight: rider.weight || undefined,
+        height: rider.height || undefined,
+        zp_ftp: rider.zpFTP || undefined,
         // vELO rating (from race.current.rating or race.last.rating)
-        velo_rating: rider.race?.current?.rating || rider.race?.last?.rating || undefined,
+        race_current_rating: rider.race?.current?.rating || rider.race?.last?.rating || undefined,
         // Power intervals - W/kg (5s, 15s, 30s, 1m, 2m, 5m, 20m)
-        power_wkg5: rider.power?.wkg5 || undefined,
-        power_wkg15: rider.power?.wkg15 || undefined,
-        power_wkg30: rider.power?.wkg30 || undefined,
-        power_wkg60: rider.power?.wkg60 || undefined,
-        power_wkg120: rider.power?.wkg120 || undefined,
-        power_wkg300: rider.power?.wkg300 || undefined,
-        power_wkg1200: rider.power?.wkg1200 || undefined,
+        // API returns arrays [value, percentile, rank] - extract first element
+        power_wkg5: extractPowerValue(rider.power?.wkg5),
+        power_wkg15: extractPowerValue(rider.power?.wkg15),
+        power_wkg30: extractPowerValue(rider.power?.wkg30),
+        power_wkg60: extractPowerValue(rider.power?.wkg60),
+        power_wkg120: extractPowerValue(rider.power?.wkg120),
+        power_wkg300: extractPowerValue(rider.power?.wkg300),
+        power_wkg1200: extractPowerValue(rider.power?.wkg1200),
         // Power intervals - Absolute Watts
-        power_w5: rider.power?.w5 || undefined,
-        power_w15: rider.power?.w15 || undefined,
-        power_w30: rider.power?.w30 || undefined,
-        power_w60: rider.power?.w60 || undefined,
-        power_w120: rider.power?.w120 || undefined,
-        power_w300: rider.power?.w300 || undefined,
-        power_w1200: rider.power?.w1200 || undefined,
-        // Critical Power metrics
+        power_w5: extractPowerValue(rider.power?.w5),
+        power_w15: extractPowerValue(rider.power?.w15),
+        power_w30: extractPowerValue(rider.power?.w30),
+        power_w60: extractPowerValue(rider.power?.w60),
+        power_w120: extractPowerValue(rider.power?.w120),
+        power_w300: extractPowerValue(rider.power?.w300),
+        power_w1200: extractPowerValue(rider.power?.w1200),
+        // Critical Power metrics (single numbers, not arrays)
         power_cp: rider.power?.CP || undefined,
         power_awc: rider.power?.AWC || undefined,
         last_synced: new Date().toISOString(),
