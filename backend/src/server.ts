@@ -84,6 +84,11 @@ app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 
+// Redirect /admin to /admin/ (HTML admin tools have priority over React router)
+app.get('/admin', (req: Request, res: Response) => {
+  res.redirect(301, '/admin/');
+});
+
 // 404 handler
 app.use((req: Request, res: Response) => {
   // If API call, return JSON error
@@ -92,6 +97,9 @@ app.use((req: Request, res: Response) => {
       error: 'Endpoint niet gevonden',
       path: req.path,
     });
+  } else if (req.path.startsWith('/admin/')) {
+    // Admin HTML tools - 404 if not found by static middleware
+    res.status(404).send('Admin tool niet gevonden');
   } else {
     // Otherwise, serve React app (SPA fallback for client-side routing)
     res.sendFile(path.join(__dirname, '../public/dist/index.html'));
