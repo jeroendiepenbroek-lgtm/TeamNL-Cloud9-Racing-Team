@@ -13,7 +13,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
         }
         h1 {
@@ -29,23 +29,80 @@
             margin-bottom: 30px;
             font-size: 1.1em;
         }
+        
+        .status-bar {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .status-item {
+            text-align: center;
+        }
+        .status-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .status-label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 4px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+        .status-badge.loading { background: #fef3c7; color: #92400e; }
+        .status-badge.success { background: #d1fae5; color: #065f46; }
+        .status-badge.error { background: #fee2e2; color: #991b1b; }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .tab {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+        
         .card {
             background: white;
             border-radius: 12px;
             padding: 30px;
             margin-bottom: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
         }
-        .status {
-            display: inline-block;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
+        .card.active {
+            display: block;
         }
-        .status.loading { background: #fef3c7; color: #92400e; }
-        .status.success { background: #d1fae5; color: #065f46; }
-        .status.error { background: #fee2e2; color: #991b1b; }
         
         table {
             width: 100%;
@@ -61,64 +118,30 @@
             background: #f9fafb;
             font-weight: 600;
             color: #374151;
+            position: sticky;
+            top: 0;
         }
         tr:hover {
             background: #f9fafb;
         }
-        .match { color: #059669; font-weight: 600; }
-        .mismatch { color: #dc2626; font-weight: 600; }
-        .missing { color: #f59e0b; font-weight: 600; }
         
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+        .db-col { color: #3b82f6; font-weight: 600; }
+        .api-col { color: #8b5cf6; font-weight: 600; }
+        
+        .status-icon {
+            font-size: 1.2em;
+            margin-right: 8px;
         }
-        .stat-box {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        .stat-label {
-            font-size: 0.875em;
-            color: #6b7280;
-            margin-bottom: 5px;
-        }
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: 700;
-            color: #111827;
-        }
-        .comparison {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .comparison-item {
-            flex: 1;
-            padding: 15px;
-            border-radius: 8px;
-            background: #f9fafb;
-        }
-        .comparison-item.db { border-left: 4px solid #3b82f6; }
-        .comparison-item.api { border-left: 4px solid #8b5cf6; }
-        .comparison-label {
-            font-size: 0.75em;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 5px;
-        }
-        .comparison-label.db { color: #3b82f6; }
-        .comparison-label.api { color: #8b5cf6; }
+        .status-match { color: #059669; }
+        .status-mismatch { color: #dc2626; }
+        .status-missing { color: #f59e0b; }
         
         .legend {
             display: flex;
             gap: 20px;
             margin-bottom: 20px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         .legend-item {
             display: flex;
@@ -143,8 +166,6 @@
             font-size: 1em;
             font-weight: 600;
             cursor: pointer;
-            display: block;
-            margin: 20px auto;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: all 0.3s;
         }
@@ -155,12 +176,9 @@
         }
         
         @media (max-width: 768px) {
-            .comparison {
-                flex-direction: column;
-            }
-            h1 {
-                font-size: 1.8em;
-            }
+            h1 { font-size: 1.8em; }
+            .tabs { gap: 5px; }
+            .tab { padding: 10px 16px; font-size: 0.9em; }
         }
     </style>
 </head>
@@ -169,211 +187,368 @@
         <h1>🔍 Rider Data Verificatie</h1>
         <p class="subtitle">Rider ID: 150437 (JRøne | CloudRacer-9 @YouTube)</p>
         
-        <div class="card">
-            <span id="status" class="status loading">⏳ Laden...</span>
-            <div id="sync-info" style="margin-top: 10px; color: #6b7280;"></div>
-        </div>
-
-        <div class="card">
-            <h2 style="margin-bottom: 20px;">📊 Basis Gegevens</h2>
-            <div id="basic-info"></div>
-        </div>
-
-        <div class="card">
-            <h2 style="margin-bottom: 20px;">⚡ Power Intervallen</h2>
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-dot match"></div>
-                    <span>Match</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot mismatch"></div>
-                    <span>Verschil</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-dot missing"></div>
-                    <span>Ontbreekt</span>
-                </div>
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-badge" id="statusBadge">⏳ Laden...</div>
             </div>
-            <div id="power-data"></div>
+            <div class="status-item">
+                <div class="status-value" id="syncTime">-</div>
+                <div class="status-label">Laatste Sync</div>
+            </div>
+            <div class="status-item">
+                <div class="status-value" id="matchCount">-</div>
+                <div class="status-label">Matches</div>
+            </div>
+            <div class="status-item">
+                <div class="status-value" id="mismatchCount">-</div>
+                <div class="status-label">Verschillen</div>
+            </div>
+            <div class="status-item">
+                <button class="refresh-btn" onclick="loadData()">🔄 Ververs</button>
+            </div>
         </div>
-
-        <button class="refresh-btn" onclick="loadData()">🔄 Ververs Data</button>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot match"></div>
+                <span>✓ Database = API</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot mismatch"></div>
+                <span>✗ Database ≠ API</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot missing"></div>
+                <span>⚠ Data Ontbreekt</span>
+            </div>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab(event, 'basic')">Basis Gegevens</button>
+            <button class="tab" onclick="showTab(event, 'physical')">Fysieke Attributen</button>
+            <button class="tab" onclick="showTab(event, 'power-wkg')">Power (W/kg)</button>
+            <button class="tab" onclick="showTab(event, 'power-w')">Power (Watts)</button>
+            <button class="tab" onclick="showTab(event, 'racing')">Racing Stats</button>
+            <button class="tab" onclick="showTab(event, 'phenotype')">Phenotype</button>
+        </div>
+        
+        <div id="basic-card" class="card active">
+            <h2>📋 Basis Gegevens</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Veld</th>
+                        <th style="width: 30%;" class="db-col">Database</th>
+                        <th style="width: 30%;" class="api-col">ZwiftRacing API</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="basic-body"></tbody>
+            </table>
+        </div>
+        
+        <div id="physical-card" class="card">
+            <h2>💪 Fysieke Attributen</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Veld</th>
+                        <th style="width: 30%;" class="db-col">Database</th>
+                        <th style="width: 30%;" class="api-col">ZwiftRacing API</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="physical-body"></tbody>
+            </table>
+        </div>
+        
+        <div id="power-wkg-card" class="card">
+            <h2>⚡ Power Intervals (W/kg)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Interval</th>
+                        <th style="width: 30%;" class="db-col">Database</th>
+                        <th style="width: 30%;" class="api-col">ZwiftRacing API</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="power-wkg-body"></tbody>
+            </table>
+        </div>
+        
+        <div id="power-w-card" class="card">
+            <h2>⚡ Power Intervals (Watts)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Interval</th>
+                        <th style="width: 30%;" class="db-col">Database</th>
+                        <th style="width: 30%;" class="api-col">ZwiftRacing API</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="power-w-body"></tbody>
+            </table>
+        </div>
+        
+        <div id="racing-card" class="card">
+            <h2>🏁 Racing Statistieken</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Veld</th>
+                        <th style="width: 30%;" class="db-col">Database</th>
+                        <th style="width: 30%;" class="api-col">ZwiftRacing API</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="racing-body"></tbody>
+            </table>
+        </div>
+        
+        <div id="phenotype-card" class="card">
+            <h2>🧬 Phenotype & Handicaps</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Veld</th>
+                        <th style="width: 30%;" class="db-col">Database</th>
+                        <th style="width: 30%;" class="api-col">ZwiftRacing API</th>
+                        <th style="width: 15%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="phenotype-body"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
         const RIDER_ID = 150437;
         const API_BASE = '/api';
         const ZWIFT_API = 'https://zwift-ranking.herokuapp.com/api';
+        
+        let dbData = null;
+        let apiData = null;
+
+        function showTab(event, tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update cards
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+            document.getElementById(tabName + '-card').classList.add('active');
+        }
+
+        function compareValues(dbVal, apiVal) {
+            if (dbVal === null || dbVal === undefined) {
+                if (apiVal === null || apiVal === undefined) {
+                    return { status: 'missing', icon: '⚠️' };
+                }
+                return { status: 'missing', icon: '⚠️' };
+            }
+            if (apiVal === null || apiVal === undefined) {
+                return { status: 'missing', icon: '⚠️' };
+            }
+            
+            // Compare numbers with tolerance
+            if (typeof dbVal === 'number' && typeof apiVal === 'number') {
+                const diff = Math.abs(dbVal - apiVal);
+                if (diff < 0.01) {
+                    return { status: 'match', icon: '✓' };
+                }
+                return { status: 'mismatch', icon: '✗' };
+            }
+            
+            // Compare strings
+            if (String(dbVal) === String(apiVal)) {
+                return { status: 'match', icon: '✓' };
+            }
+            
+            return { status: 'mismatch', icon: '✗' };
+        }
+
+        function formatValue(val) {
+            if (val === null || val === undefined) return '-';
+            if (typeof val === 'number') return val.toFixed(2);
+            return val;
+        }
+
+        function addRow(tbody, label, dbVal, apiVal) {
+            const comparison = compareValues(dbVal, apiVal);
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><strong>${label}</strong></td>
+                <td class="db-col">${formatValue(dbVal)}</td>
+                <td class="api-col">${formatValue(apiVal)}</td>
+                <td class="status-${comparison.status}">
+                    <span class="status-icon">${comparison.icon}</span>
+                </td>
+            `;
+            return comparison.status;
+        }
 
         async function loadData() {
-            const statusEl = document.getElementById('status');
-            statusEl.className = 'status loading';
-            statusEl.textContent = '⏳ Data ophalen...';
+            const statusBadge = document.getElementById('statusBadge');
+            statusBadge.className = 'status-badge loading';
+            statusBadge.textContent = '⏳ Data ophalen...';
 
             try {
                 // Fetch from both sources
-                const [dbData, apiData] = await Promise.all([
-                    fetch(`${API_BASE}/riders/${RIDER_ID}`).then(r => r.json()),
-                    fetch(`${ZWIFT_API}/riders/${RIDER_ID}`).then(r => r.json())
+                const [dbRes, apiRes] = await Promise.all([
+                    fetch(`${API_BASE}/riders/${RIDER_ID}`),
+                    fetch(`${ZWIFT_API}/riders/${RIDER_ID}`)
                 ]);
+                
+                dbData = await dbRes.json();
+                apiData = await apiRes.json();
 
-                displayBasicInfo(dbData, apiData);
-                displayPowerData(dbData, apiData);
-                displaySyncInfo(dbData);
+                // Update sync time
+                if (dbData.last_synced) {
+                    const syncDate = new Date(dbData.last_synced);
+                    const now = new Date();
+                    const diffMin = Math.floor((now - syncDate) / 60000);
+                    document.getElementById('syncTime').textContent = diffMin < 60 ? `${diffMin}m geleden` : `${Math.floor(diffMin/60)}h geleden`;
+                }
 
-                statusEl.className = 'status success';
-                statusEl.textContent = '✅ Data succesvol geladen';
+                // Render all tables
+                renderBasicTable();
+                renderPhysicalTable();
+                renderPowerWkgTable();
+                renderPowerWTable();
+                renderRacingTable();
+                renderPhenotypeTable();
+
+                statusBadge.className = 'status-badge success';
+                statusBadge.textContent = '✅ Data Geladen';
             } catch (error) {
-                statusEl.className = 'status error';
-                statusEl.textContent = '❌ Fout bij laden: ' + error.message;
+                statusBadge.className = 'status-badge error';
+                statusBadge.textContent = '❌ Fout: ' + error.message;
                 console.error(error);
             }
         }
 
-        function displaySyncInfo(dbData) {
-            const syncInfoEl = document.getElementById('sync-info');
-            const lastSynced = new Date(dbData.last_synced);
-            const now = new Date();
-            const diffMs = now - lastSynced;
-            const diffMin = Math.floor(diffMs / 60000);
-            
-            syncInfoEl.innerHTML = `
-                <strong>Laatste sync:</strong> ${lastSynced.toLocaleString('nl-NL')} 
-                (${diffMin} minuten geleden)
-            `;
-        }
-
-        function displayBasicInfo(dbData, apiData) {
-            const basicInfoEl = document.getElementById('basic-info');
+        function renderBasicTable() {
+            const tbody = document.getElementById('basic-body');
+            tbody.innerHTML = '';
             
             const fields = [
-                { key: 'name', label: 'Naam', dbKey: 'name', apiKey: 'name' },
-                { key: 'weight', label: 'Gewicht (kg)', dbKey: 'weight', apiKey: 'weight' },
-                { key: 'height', label: 'Lengte (cm)', dbKey: 'height', apiKey: 'height' },
-                { key: 'ftp', label: 'FTP (W)', dbKey: 'zp_ftp', apiKey: 'zpFTP' },
-                { key: 'velo', label: 'vELO Rating', dbKey: 'race_current_rating', apiKey: 'race.current.rating' },
-                { key: 'category', label: 'Categorie', dbKey: 'zp_category', apiKey: 'zpCategory' },
+                { label: 'Name', dbKey: 'name', apiKey: 'name' },
+                { label: 'Rider ID', dbKey: 'rider_id', apiKey: 'riderId' },
+                { label: 'Country', dbKey: 'country', apiKey: 'country' },
+                { label: 'Age Category', dbKey: 'age', apiKey: 'age' },
+                { label: 'Gender', dbKey: 'gender', apiKey: 'gender' },
+                { label: 'ZP Category', dbKey: 'zp_category', apiKey: 'zFTPClass' },
             ];
-
-            let html = '<table><thead><tr><th>Veld</th><th>Database</th><th>API</th><th>Status</th></tr></thead><tbody>';
-
-            fields.forEach(field => {
-                const dbValue = getNestedValue(dbData, field.dbKey);
-                const apiValue = getNestedValue(apiData, field.apiKey);
-                const status = compareValues(dbValue, apiValue);
-                
-                html += `
-                    <tr>
-                        <td><strong>${field.label}</strong></td>
-                        <td>${formatValue(dbValue)}</td>
-                        <td>${formatValue(apiValue)}</td>
-                        <td class="${status.class}">${status.icon} ${status.text}</td>
-                    </tr>
-                `;
+            
+            let matches = 0, mismatches = 0;
+            fields.forEach(f => {
+                const status = addRow(tbody, f.label, dbData[f.dbKey], apiData[f.apiKey]);
+                if (status === 'match') matches++;
+                if (status === 'mismatch') mismatches++;
             });
-
-            html += '</tbody></table>';
-            basicInfoEl.innerHTML = html;
+            
+            document.getElementById('matchCount').textContent = matches;
+            document.getElementById('mismatchCount').textContent = mismatches;
         }
 
-        function displayPowerData(dbData, apiData) {
-            const powerDataEl = document.getElementById('power-data');
+        function renderPhysicalTable() {
+            const tbody = document.getElementById('physical-body');
+            tbody.innerHTML = '';
             
-            const powerFields = [
-                { key: 'wkg5', label: '5s (W/kg)', dbKey: 'power_wkg5', apiKey: 'power.wkg5' },
-                { key: 'wkg15', label: '15s (W/kg)', dbKey: 'power_wkg15', apiKey: 'power.wkg15' },
-                { key: 'wkg30', label: '30s (W/kg)', dbKey: 'power_wkg30', apiKey: 'power.wkg30' },
-                { key: 'wkg60', label: '1m (W/kg)', dbKey: 'power_wkg60', apiKey: 'power.wkg60' },
-                { key: 'wkg120', label: '2m (W/kg)', dbKey: 'power_wkg120', apiKey: 'power.wkg120' },
-                { key: 'wkg300', label: '5m (W/kg)', dbKey: 'power_wkg300', apiKey: 'power.wkg300' },
-                { key: 'wkg1200', label: '20m (W/kg)', dbKey: 'power_wkg1200', apiKey: 'power.wkg1200' },
-                { key: 'w5', label: '5s (W)', dbKey: 'power_w5', apiKey: 'power.w5' },
-                { key: 'w15', label: '15s (W)', dbKey: 'power_w15', apiKey: 'power.w15' },
-                { key: 'w30', label: '30s (W)', dbKey: 'power_w30', apiKey: 'power.w30' },
-                { key: 'w60', label: '1m (W)', dbKey: 'power_w60', apiKey: 'power.w60' },
-                { key: 'w120', label: '2m (W)', dbKey: 'power_w120', apiKey: 'power.w120' },
-                { key: 'w300', label: '5m (W)', dbKey: 'power_w300', apiKey: 'power.w300' },
-                { key: 'w1200', label: '20m (W)', dbKey: 'power_w1200', apiKey: 'power.w1200' },
-                { key: 'cp', label: 'Critical Power', dbKey: 'power_cp', apiKey: 'power.CP' },
-                { key: 'awc', label: 'AWC', dbKey: 'power_awc', apiKey: 'power.AWC' },
+            addRow(tbody, 'Weight (kg)', dbData.weight, apiData.weight);
+            addRow(tbody, 'Height (cm)', dbData.height, apiData.height);
+            addRow(tbody, 'ZP FTP', dbData.zp_ftp, apiData.zpFTP);
+            addRow(tbody, 'Power/Weight Ratio', dbData.zp_ftp && dbData.weight ? (dbData.zp_ftp / dbData.weight).toFixed(2) : null, 
+                   apiData.zpFTP && apiData.weight ? (apiData.zpFTP / apiData.weight).toFixed(2) : null);
+        }
+
+        function renderPowerWkgTable() {
+            const tbody = document.getElementById('power-wkg-body');
+            tbody.innerHTML = '';
+            
+            const intervals = [
+                { label: '5 sec', dbKey: 'power_wkg5', apiKey: ['power', 'wkg5'] },
+                { label: '15 sec', dbKey: 'power_wkg15', apiKey: ['power', 'wkg15'] },
+                { label: '30 sec', dbKey: 'power_wkg30', apiKey: ['power', 'wkg30'] },
+                { label: '1 min', dbKey: 'power_wkg60', apiKey: ['power', 'wkg60'] },
+                { label: '2 min', dbKey: 'power_wkg120', apiKey: ['power', 'wkg120'] },
+                { label: '5 min', dbKey: 'power_wkg300', apiKey: ['power', 'wkg300'] },
+                { label: '20 min', dbKey: 'power_wkg1200', apiKey: ['power', 'wkg1200'] },
+                { label: 'CP', dbKey: 'power_cp', apiKey: ['power', 'CP'] },
+                { label: 'AWC', dbKey: 'power_awc', apiKey: ['power', 'AWC'] },
             ];
-
-            let html = '<table><thead><tr><th>Interval</th><th>Database</th><th>API (eerste waarde)</th><th>API (volledig)</th><th>Status</th></tr></thead><tbody>';
-
-            powerFields.forEach(field => {
-                let dbValue = getNestedValue(dbData, field.dbKey);
-                let apiValue = getNestedValue(apiData, field.apiKey);
-                let apiDisplay = apiValue;
-                
-                // Extract first element from array if it's an array
-                if (Array.isArray(apiValue)) {
-                    apiDisplay = `[${apiValue[0]}, ${apiValue[1]}, ${apiValue[2]}]`;
-                    apiValue = apiValue[0];
-                }
-                
-                const status = compareValues(dbValue, apiValue, 0.01); // 0.01 tolerance
-                
-                html += `
-                    <tr>
-                        <td><strong>${field.label}</strong></td>
-                        <td>${formatValue(dbValue, 2)}</td>
-                        <td>${formatValue(apiValue, 2)}</td>
-                        <td style="font-size: 0.9em; color: #6b7280;">${formatValue(apiDisplay)}</td>
-                        <td class="${status.class}">${status.icon} ${status.text}</td>
-                    </tr>
-                `;
-            });
-
-            html += '</tbody></table>';
-            powerDataEl.innerHTML = html;
-        }
-
-        function getNestedValue(obj, path) {
-            return path.split('.').reduce((current, key) => current?.[key], obj);
-        }
-
-        function formatValue(value, decimals = null) {
-            if (value === null || value === undefined) return '<em style="color: #9ca3af;">NULL</em>';
-            if (typeof value === 'number') {
-                return decimals !== null ? value.toFixed(decimals) : value;
-            }
-            if (typeof value === 'string' && value.length > 50) {
-                return value.substring(0, 50) + '...';
-            }
-            return value;
-        }
-
-        function compareValues(dbVal, apiVal, tolerance = 0) {
-            if (dbVal === null || dbVal === undefined) {
-                if (apiVal === null || apiVal === undefined) {
-                    return { class: 'match', icon: '⚪', text: 'Beide NULL' };
-                }
-                return { class: 'missing', icon: '⚠️', text: 'Ontbreekt in DB' };
-            }
-            if (apiVal === null || apiVal === undefined) {
-                return { class: 'mismatch', icon: '❌', text: 'Niet in API' };
-            }
-
-            // Numeric comparison with tolerance
-            if (typeof dbVal === 'number' && typeof apiVal === 'number') {
-                const diff = Math.abs(dbVal - apiVal);
-                if (diff <= tolerance) {
-                    return { class: 'match', icon: '✅', text: 'Match' };
-                }
-                return { class: 'mismatch', icon: '❌', text: `Verschil: ${diff.toFixed(3)}` };
-            }
-
-            // String comparison
-            if (dbVal === apiVal || String(dbVal) === String(apiVal)) {
-                return { class: 'match', icon: '✅', text: 'Match' };
-            }
             
-            return { class: 'mismatch', icon: '❌', text: 'Verschilt' };
+            intervals.forEach(interval => {
+                const apiVal = apiData.power ? 
+                    (Array.isArray(apiData.power[interval.apiKey[1]]) ? 
+                        apiData.power[interval.apiKey[1]][0] : 
+                        apiData.power[interval.apiKey[1]]) : null;
+                addRow(tbody, interval.label, dbData[interval.dbKey], apiVal);
+            });
         }
 
-        // Load data on page load
+        function renderPowerWTable() {
+            const tbody = document.getElementById('power-w-body');
+            tbody.innerHTML = '';
+            
+            const intervals = [
+                { label: '5 sec', dbKey: 'power_w5', apiKey: ['power', 'w5'] },
+                { label: '15 sec', dbKey: 'power_w15', apiKey: ['power', 'w15'] },
+                { label: '30 sec', dbKey: 'power_w30', apiKey: ['power', 'w30'] },
+                { label: '1 min', dbKey: 'power_w60', apiKey: ['power', 'w60'] },
+                { label: '2 min', dbKey: 'power_w120', apiKey: ['power', 'w120'] },
+                { label: '5 min', dbKey: 'power_w300', apiKey: ['power', 'w300'] },
+                { label: '20 min', dbKey: 'power_w1200', apiKey: ['power', 'w1200'] },
+            ];
+            
+            intervals.forEach(interval => {
+                const apiVal = apiData.power ? 
+                    (Array.isArray(apiData.power[interval.apiKey[1]]) ? 
+                        apiData.power[interval.apiKey[1]][0] : 
+                        apiData.power[interval.apiKey[1]]) : null;
+                addRow(tbody, interval.label, dbData[interval.dbKey], apiVal);
+            });
+        }
+
+        function renderRacingTable() {
+            const tbody = document.getElementById('racing-body');
+            tbody.innerHTML = '';
+            
+            addRow(tbody, 'Current Rating', dbData.race_current_rating, apiData.race?.current?.rating);
+            addRow(tbody, 'Last Rating', dbData.race_last_rating, apiData.race?.last?.rating);
+            addRow(tbody, 'Max 30d Rating', dbData.race_max30_rating, apiData.race?.max30?.rating);
+            addRow(tbody, 'Max 90d Rating', dbData.race_max90_rating, apiData.race?.max90?.rating);
+            addRow(tbody, 'Total Finishes', dbData.race_finishes, apiData.race?.finishes);
+            addRow(tbody, 'Total DNFs', dbData.race_dnfs, apiData.race?.dnfs);
+            addRow(tbody, 'Total Wins', dbData.race_wins, apiData.race?.wins);
+            addRow(tbody, 'Total Podiums', dbData.race_podiums, apiData.race?.podiums);
+        }
+
+        function renderPhenotypeTable() {
+            const tbody = document.getElementById('phenotype-body');
+            tbody.innerHTML = '';
+            
+            addRow(tbody, 'Sprinter', dbData.phenotype_sprinter, apiData.phenotype?.sprinter);
+            addRow(tbody, 'Puncheur', dbData.phenotype_puncheur, apiData.phenotype?.puncheur);
+            addRow(tbody, 'Pursuiter', dbData.phenotype_pursuiter, apiData.phenotype?.pursuiter);
+            addRow(tbody, 'Climber', dbData.phenotype_climber, apiData.phenotype?.climber);
+            addRow(tbody, 'Time Trialist', dbData.phenotype_tt, apiData.phenotype?.tt);
+            addRow(tbody, 'Phenotype Type', dbData.phenotype_value, apiData.phenotype?.value);
+            addRow(tbody, 'Phenotype Bias', dbData.phenotype_bias, apiData.phenotype?.bias);
+            tbody.insertRow().innerHTML = '<td colspan="4" style="height: 20px;"></td>';
+            addRow(tbody, 'Handicap Flat', dbData.handicap_flat, apiData.handicap?.flat);
+            addRow(tbody, 'Handicap Rolling', dbData.handicap_rolling, apiData.handicap?.rolling);
+            addRow(tbody, 'Handicap Hilly', dbData.handicap_hilly, apiData.handicap?.hilly);
+            addRow(tbody, 'Handicap Mountainous', dbData.handicap_mountainous, apiData.handicap?.mountainous);
+        }
+
+        // Load on page load
         loadData();
+
+        // Auto-refresh every 2 minutes
+        setInterval(loadData, 120000);
     </script>
 </body>
 </html>
