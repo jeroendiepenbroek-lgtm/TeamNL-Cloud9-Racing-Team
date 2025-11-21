@@ -12,7 +12,15 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
-    const logs = await supabase.getSyncLogs(limit);
+    const rawLogs = await supabase.getSyncLogs(limit);
+    
+    // Map database fields to expected frontend fields
+    const logs = rawLogs.map(log => ({
+      ...log,
+      type_label: log.endpoint,
+      items_synced: log.records_processed,
+      synced_at: log.created_at,
+    }));
     
     res.json({
       count: logs.length,
