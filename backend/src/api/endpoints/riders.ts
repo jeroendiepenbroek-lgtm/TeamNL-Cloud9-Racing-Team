@@ -12,7 +12,14 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     const clubId = req.query.clubId ? parseInt(req.query.clubId as string) : undefined;
-    const riders = await supabase.getRiders(clubId);
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    
+    let riders = await supabase.getRiders(clubId);
+    
+    // Apply limit if specified
+    if (limit && limit > 0) {
+      riders = riders.slice(0, limit);
+    }
     
     res.json({
       count: riders.length,

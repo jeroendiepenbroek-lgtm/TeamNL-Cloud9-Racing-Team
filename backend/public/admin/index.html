@@ -188,11 +188,31 @@
         </div>
 
         <div class="grid">
-            <a href="verification.html" class="card primary">
+            <!-- Primary Tools -->
+            <a href="team-manager.html" class="card primary">
+                <div class="card-icon">👥</div>
+                <div class="card-title">Team Manager</div>
+                <div class="card-description">
+                    Beheer TeamNL Cloud9 Racing Team. Voeg riders toe, sync data en bekijk team statistieken.
+                </div>
+                <span class="card-badge">Management</span>
+            </a>
+
+            <a href="sync-monitor.html" class="card primary">
+                <div class="card-icon">🔄</div>
+                <div class="card-title">Sync Monitor</div>
+                <div class="card-description">
+                    Real-time monitoring van alle sync schedules met countdown timers en live logs.
+                </div>
+                <span class="card-badge">Live Monitoring</span>
+            </a>
+
+            <!-- Verification & Debugging -->
+            <a href="verification.html" class="card">
                 <div class="card-icon">🔍</div>
                 <div class="card-title">Rider Verification</div>
                 <div class="card-description">
-                    Compare rider data between database and ZwiftRacing API. Real-time validation voor rider 150437.
+                    Vergelijk rider data tussen database en ZwiftRacing API. Real-time validatie met 6 tabs.
                 </div>
                 <span class="card-badge">Live Data</span>
             </a>
@@ -206,14 +226,7 @@
                 <span class="card-badge">4 Resources</span>
             </a>
 
-            <a href="../sync-scheduler.html" class="card">
-                <div class="card-icon">⏰</div>
-                <div class="card-title">Sync Scheduler</div>
-                <div class="card-description">
-                    Monitor en beheer automatische sync schedules. Rider, NEAR en FULL event synchronisatie.
-                </div>
-                <span class="card-badge">Cron Jobs</span>
-            </a>
+            <!-- Scheduling & Events -->
 
             <a href="../event-debugger.html" class="card">
                 <div class="card-icon">🐛</div>
@@ -224,11 +237,12 @@
                 <span class="card-badge">Debug Tools</span>
             </a>
 
+            <!-- API Endpoints -->
             <a href="/api/riders?limit=10" class="card">
-                <div class="card-icon">👥</div>
+                <div class="card-icon">🏃</div>
                 <div class="card-title">Riders API</div>
                 <div class="card-description">
-                    Direct toegang tot riders endpoint. JSON data van alle club members.
+                    Direct toegang tot riders endpoint. JSON data van eerste 10 club members.
                 </div>
                 <span class="card-badge">REST API</span>
             </a>
@@ -242,6 +256,7 @@
                 <span class="card-badge">Next 48h</span>
             </a>
 
+            <!-- Monitoring -->
             <a href="/api/sync-logs?limit=20" class="card">
                 <div class="card-icon">📋</div>
                 <div class="card-title">Sync Logs</div>
