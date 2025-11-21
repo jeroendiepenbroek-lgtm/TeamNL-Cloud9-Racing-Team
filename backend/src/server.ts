@@ -192,11 +192,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     }
   });
   
-  // Combined Event Sync - FULL SCAN mode (Periodic: every 3 hours at :50)
-  // Runs at :50 every 3 hours - syncs ALL events (near + far)
-  // Samenvallend met NEAR run voor efficiency (00:50, 03:50, 06:50, 09:50, 12:50, 15:50, 18:50, 21:50)
-  const fullEventCronExpression = '50 */3 * * *';
-  console.log(`  ✅ Event Sync FULL (P2): At :50 every 3 hours (on NEAR slot!)`);
+  // Combined Event Sync - FULL SCAN mode (Periodic: every 3 hours at :55)
+  // Runs at :55 every 3 hours - syncs ALL events (near + far)
+  // 5 min AFTER NEAR sync to prevent overlap (00:55, 03:55, 06:55, 09:55, 12:55, 15:55, 18:55, 21:55)
+  const fullEventCronExpression = '55 */3 * * *';
+  console.log(`  ✅ Event Sync FULL (P2): At :55 every 3 hours (5 min after NEAR)`);
   
   cron.schedule(fullEventCronExpression, async () => {
     console.log(`\n⏰ [CRON] Event Sync (FULL) triggered at ${new Date().toISOString()}`);
