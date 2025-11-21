@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API ↔ Database ↔ Frontend Mapping</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        .tab {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .tab.active {
+            background: white;
+            color: #667eea;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: none;
+        }
+        .card.active {
+            display: block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            position: sticky;
+            top: 0;
+        }
+        tr:hover {
+            background: #f9fafb;
+        }
+        
+        .api-col { color: #8b5cf6; font-weight: 600; }
+        .db-col { color: #3b82f6; font-weight: 600; }
+        .fe-col { color: #059669; font-weight: 600; }
+        
+        .type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .type-number { background: #dbeafe; color: #1e40af; }
+        .type-string { background: #fef3c7; color: #92400e; }
+        .type-boolean { background: #d1fae5; color: #065f46; }
+        .type-date { background: #fce7f3; color: #9f1239; }
+        .type-array { background: #e0e7ff; color: #3730a3; }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 20px;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .legend-color.api { background: #8b5cf6; }
+        .legend-color.db { background: #3b82f6; }
+        .legend-color.fe { background: #059669; }
+        
+        .endpoint-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .notes {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8em; }
+            .tabs { flex-direction: column; }
+            .legend { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Data Mapping Schema</h1>
+        <p class="subtitle">API ↔ Database ↔ Frontend Column Mapping</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('riders')">👤 Riders</button>
+            <button class="tab" onclick="showTab('events')">📅 Events</button>
+            <button class="tab" onclick="showTab('results')">🏁 Results</button>
+            <button class="tab" onclick="showTab('signups')">✍️ Signups</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color api"></div>
+                <span><strong>API Field</strong> (ZwiftRacing.app)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color db"></div>
+                <span><strong>Database Column</strong> (Supabase)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color fe"></div>
+                <span><strong>Frontend Key</strong> (Dashboard)</span>
+            </div>
+        </div>
+
+        <!-- RIDERS TAB -->
+        <div id="riders-tab" class="card active">
+            <h2>👤 Riders Mapping</h2>
+            <input type="text" class="search-box" placeholder="🔍 Zoek field..." onkeyup="filterTable('riders-table', this.value)">
+            
+            <div class="endpoint-badge">📡 API: POST /public/riders (bulk) | GET /api/riders/:id</div>
+            <div class="endpoint-badge">💾 DB: riders table</div>
+            <div class="endpoint-badge">🎨 FE: RiderCard, PowerCurve, RankingTable</div>
+            
+            <table id="riders-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="api-col">API Field</th>
+                        <th class="db-col">Database Column</th>
+                        <th class="fe-col">Frontend Key</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Basic Info -->
+                    <tr>
+                        <td rowspan="6"><strong>Basic</strong></td>
+                        <td class="api-col">riderId</td>
+                        <td class="db-col">rider_id</td>
+                        <td class="fe-col">riderId</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Primary identifier (Zwift ID)</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">name</td>
+                        <td class="db-col">name</td>
+                        <td class="fe-col">name</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Display name</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">gender</td>
+                        <td class="db-col">gender</td>
+                        <td class="fe-col">gender</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>M/F/null</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">age</td>
+                        <td class="db-col">age</td>
+                        <td class="fe-col">age</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Age group (e.g. "Vet", "40-49")</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">country</td>
+                        <td class="db-col">country</td>
+                        <td class="fe-col">country</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Country code (nl, uk, us)</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">club.name</td>
+                        <td class="db-col">club_name</td>
+                        <td class="fe-col">clubName</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Team/club name</td>
+                    </tr>
+
+                    <!-- Physical -->
+                    <tr>
+                        <td rowspan="3"><strong>Physical</strong></td>
+                        <td class="api-col">weight</td>
+                        <td class="db-col">weight</td>
+                        <td class="fe-col">weight</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Weight in kg</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">height</td>
+                        <td class="db-col">height</td>
+                        <td class="fe-col">height</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Height in cm</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">zpFTP</td>
+                        <td class="db-col">zp_ftp</td>
+                        <td class="fe-col">ftp</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>ZwiftPower FTP in watts</td>
+                    </tr>
+
+                    <!-- Category -->
+                    <tr>
+                        <td rowspan="1"><strong>Category</strong></td>
+                        <td class="api-col">zpCategory</td>
+                        <td class="db-col">zp_category</td>
+                        <td class="fe-col">category</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>A/B/C/D/E</td>
+                    </tr>
+
+                    <!-- vELO Rating -->
+                    <tr>
+                        <td rowspan="4"><strong>vELO</strong></td>
+                        <td class="api-col">race.current.rating</td>
+                        <td class="db-col">race_current_rating</td>
+                        <td class="fe-col">veloRating</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Current vELO rating</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">race.current.date</td>
+                        <td class="db-col">race_current_date</td>
+                        <td class="fe-col">veloDate</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Unix timestamp</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">race.last.rating</td>
+                        <td class="db-col">race_last_rating</td>
+                        <td class="fe-col">lastRating</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Previous race rating</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">race.finishes</td>
+                        <td class="db-col">race_finishes</td>
+                        <td class="fe-col">totalRaces</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Total races finished</td>
+                    </tr>
+
+                    <!-- Power W/kg -->
+                    <tr>
+                        <td rowspan="7"><strong>Power W/kg</strong></td>
+                        <td class="api-col">power.wkg5[0]</td>
+                        <td class="db-col">power_wkg5</td>
+                        <td class="fe-col">power.wkg5</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0] from [value, percentile, rank]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.wkg15[0]</td>
+                        <td class="db-col">power_wkg15</td>
+                        <td class="fe-col">power.wkg15</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.wkg30[0]</td>
+                        <td class="db-col">power_wkg30</td>
+                        <td class="fe-col">power.wkg30</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.wkg60[0]</td>
+                        <td class="db-col">power_wkg60</td>
+                        <td class="fe-col">power.wkg60</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.wkg120[0]</td>
+                        <td class="db-col">power_wkg120</td>
+                        <td class="fe-col">power.wkg120</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.wkg300[0]</td>
+                        <td class="db-col">power_wkg300</td>
+                        <td class="fe-col">power.wkg300</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.wkg1200[0]</td>
+                        <td class="db-col">power_wkg1200</td>
+                        <td class="fe-col">power.wkg1200</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+
+                    <!-- Power Watts -->
+                    <tr>
+                        <td rowspan="7"><strong>Power Watts</strong></td>
+                        <td class="api-col">power.w5[0]</td>
+                        <td class="db-col">power_w5</td>
+                        <td class="fe-col">power.w5</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.w15[0]</td>
+                        <td class="db-col">power_w15</td>
+                        <td class="fe-col">power.w15</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.w30[0]</td>
+                        <td class="db-col">power_w30</td>
+                        <td class="fe-col">power.w30</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.w60[0]</td>
+                        <td class="db-col">power_w60</td>
+                        <td class="fe-col">power.w60</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.w120[0]</td>
+                        <td class="db-col">power_w120</td>
+                        <td class="fe-col">power.w120</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.w300[0]</td>
+                        <td class="db-col">power_w300</td>
+                        <td class="fe-col">power.w300</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.w1200[0]</td>
+                        <td class="db-col">power_w1200</td>
+                        <td class="fe-col">power.w1200</td>
+                        <td><span class="type-badge type-array">array→num</span></td>
+                        <td>⚠️ Extract [0]</td>
+                    </tr>
+
+                    <!-- Critical Power -->
+                    <tr>
+                        <td rowspan="2"><strong>Critical Power</strong></td>
+                        <td class="api-col">power.CP</td>
+                        <td class="db-col">power_cp</td>
+                        <td class="fe-col">power.cp</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>✅ Single number (not array)</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power.AWC</td>
+                        <td class="db-col">power_awc</td>
+                        <td class="fe-col">power.awc</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>✅ Single number (not array)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="notes">
+                <strong>⚠️ Critical Notes:</strong>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                    <li>Power intervals are returned as arrays <code>[value, percentile, rank]</code> - always extract <code>[0]</code></li>
+                    <li>CP and AWC are single numbers (not arrays)</li>
+                    <li>Use <code>extractPowerValue()</code> helper for type-safe extraction</li>
+                    <li>Sync location: <code>backend/src/services/sync-v2.service.ts</code> line 88-155</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- EVENTS TAB -->
+        <div id="events-tab" class="card">
+            <h2>📅 Events Mapping</h2>
+            <input type="text" class="search-box" placeholder="🔍 Zoek field..." onkeyup="filterTable('events-table', this.value)">
+            
+            <div class="endpoint-badge">📡 API: GET /api/events/upcoming</div>
+            <div class="endpoint-badge">💾 DB: events table</div>
+            <div class="endpoint-badge">🎨 FE: EventCard, Calendar</div>
+            
+            <table id="events-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="api-col">API Field</th>
+                        <th class="db-col">Database Column</th>
+                        <th class="fe-col">Frontend Key</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="3"><strong>Basic</strong></td>
+                        <td class="api-col">id</td>
+                        <td class="db-col">event_id</td>
+                        <td class="fe-col">eventId</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Primary identifier</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">name</td>
+                        <td class="db-col">name</td>
+                        <td class="fe-col">name</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Event name</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">eventStart</td>
+                        <td class="db-col">event_start</td>
+                        <td class="fe-col">eventStart</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Unix timestamp (seconds)</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="4"><strong>Route</strong></td>
+                        <td class="api-col">route (via routes API)</td>
+                        <td class="db-col">route_name</td>
+                        <td class="fe-col">routeName</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Enriched from /api/routes</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">-</td>
+                        <td class="db-col">route_distance</td>
+                        <td class="fe-col">distance</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Meters (from routes cache)</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">-</td>
+                        <td class="db-col">route_elevation</td>
+                        <td class="fe-col">elevation</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Meters (from routes cache)</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">laps</td>
+                        <td class="db-col">laps</td>
+                        <td class="fe-col">laps</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Number of laps</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="2"><strong>Category</strong></td>
+                        <td class="api-col">eventType</td>
+                        <td class="db-col">event_type</td>
+                        <td class="fe-col">eventType</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>RACE/GROUP_RIDE/etc</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">sport</td>
+                        <td class="db-col">sport</td>
+                        <td class="fe-col">sport</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>CYCLING/RUNNING</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="notes">
+                <strong>⚠️ Critical Notes:</strong>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                    <li>Route data is enriched from <code>/api/routes</code> cache (275 routes cached for 24h)</li>
+                    <li>Event sync happens via <code>syncEventsCoordinated()</code></li>
+                    <li>NEAR sync: events within threshold (default 120min)</li>
+                    <li>FULL sync: all upcoming events (48h window)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- RESULTS TAB -->
+        <div id="results-tab" class="card">
+            <h2>🏁 Results Mapping</h2>
+            <input type="text" class="search-box" placeholder="🔍 Zoek field..." onkeyup="filterTable('results-table', this.value)">
+            
+            <div class="endpoint-badge">📡 API: GET /api/results/:eventId</div>
+            <div class="endpoint-badge">💾 DB: race_results table</div>
+            <div class="endpoint-badge">🎨 FE: ResultsTable, LeaderBoard</div>
+            
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="api-col">API Field</th>
+                        <th class="db-col">Database Column</th>
+                        <th class="fe-col">Frontend Key</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="4"><strong>Basic</strong></td>
+                        <td class="api-col">riderId</td>
+                        <td class="db-col">rider_id</td>
+                        <td class="fe-col">riderId</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>FK to riders table</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">eventId</td>
+                        <td class="db-col">event_id</td>
+                        <td class="fe-col">eventId</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>FK to events table</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">name</td>
+                        <td class="db-col">rider_name</td>
+                        <td class="fe-col">name</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Denormalized for performance</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">position</td>
+                        <td class="db-col">position</td>
+                        <td class="fe-col">position</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Overall finish position</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="3"><strong>Performance</strong></td>
+                        <td class="api-col">time</td>
+                        <td class="db-col">time_seconds</td>
+                        <td class="fe-col">time</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Finish time in seconds</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">wkg</td>
+                        <td class="db-col">avg_wkg</td>
+                        <td class="fe-col">avgWkg</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Average W/kg</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">power</td>
+                        <td class="db-col">avg_watts</td>
+                        <td class="fe-col">avgWatts</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>Average power in watts</td>
+                    </tr>
+
+                    <tr>
+                        <td rowspan="2"><strong>Status</strong></td>
+                        <td class="api-col">DNF (derived)</td>
+                        <td class="db-col">is_dnf</td>
+                        <td class="fe-col">isDNF</td>
+                        <td><span class="type-badge type-boolean">boolean</span></td>
+                        <td>Did Not Finish flag</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">category</td>
+                        <td class="db-col">category</td>
+                        <td class="fe-col">category</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>A/B/C/D/E</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="notes">
+                <strong>⚠️ Critical Notes:</strong>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                    <li>Results sync via <code>syncEventResults(eventId)</code></li>
+                    <li>DNF flag derived from incomplete race data</li>
+                    <li>Rate limit: 1 call per minute per event</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- SIGNUPS TAB -->
+        <div id="signups-tab" class="card">
+            <h2>✍️ Signups Mapping</h2>
+            <input type="text" class="search-box" placeholder="🔍 Zoek field..." onkeyup="filterTable('signups-table', this.value)">
+            
+            <div class="endpoint-badge">📡 API: GET /api/events/:eventId/signups</div>
+            <div class="endpoint-badge">💾 DB: event_signups table</div>
+            <div class="endpoint-badge">🎨 FE: SignupsList</div>
+            
+            <table id="signups-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th class="api-col">API Field</th>
+                        <th class="db-col">Database Column</th>
+                        <th class="fe-col">Frontend Key</th>
+                        <th>Type</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="5"><strong>Basic</strong></td>
+                        <td class="api-col">eventId</td>
+                        <td class="db-col">event_id</td>
+                        <td class="fe-col">eventId</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>FK to events</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">riderId</td>
+                        <td class="db-col">rider_id</td>
+                        <td class="fe-col">riderId</td>
+                        <td><span class="type-badge type-number">number</span></td>
+                        <td>FK to riders</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">name</td>
+                        <td class="db-col">rider_name</td>
+                        <td class="fe-col">name</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Denormalized</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">category</td>
+                        <td class="db-col">category</td>
+                        <td class="fe-col">category</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Signup category</td>
+                    </tr>
+                    <tr>
+                        <td class="api-col">pen</td>
+                        <td class="db-col">pen</td>
+                        <td class="fe-col">pen</td>
+                        <td><span class="type-badge type-string">string</span></td>
+                        <td>Start pen (A/B/C/D/E)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="notes">
+                <strong>⚠️ Critical Notes:</strong>
+                <ul style="margin-top: 8px; margin-left: 20px;">
+                    <li>Signups synced automatically for NEAR events (< threshold)</li>
+                    <li>Rate limit: 1 call per minute</li>
+                    <li>Returns array of pens with riders per pen</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function filterTable(tableId, searchText) {
+            const table = document.getElementById(tableId);
+            const rows = table.querySelectorAll('tbody tr');
+            const search = searchText.toLowerCase();
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(search) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

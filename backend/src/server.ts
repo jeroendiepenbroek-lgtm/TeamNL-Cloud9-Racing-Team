@@ -27,6 +27,7 @@ import cleanupRouter from './api/endpoints/cleanup.js';
 import { syncConfig } from './config/sync.config.js';
 import { SyncServiceV2 } from './services/sync-v2.service.js';
 import { syncConfigService } from './services/sync-config.service.js';
+import { SyncConfigValidator } from './services/sync-config-validator.js';
 import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -148,6 +149,28 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // Modern V2 Auto-Sync Schedulers
   console.log('🔄 Configuring V2 Auto-Sync schedulers...');
   const config = syncConfigService.getConfig();
+  
+  // Validate sync configuration to prevent conflicts
+  const syncValidatorConfig = SyncConfigValidator.fromEnv(process.env);
+  const validation = SyncConfigValidator.validate(syncValidatorConfig);
+  
+  if (!validation.valid) {
+    console.error('\n❌ INVALID SYNC CONFIGURATION:');
+    validation.errors.forEach(err => console.error(`   ${err}`));
+    console.error('\n💡 Fix these errors in your .env or use recommended config\n');
+    process.exit(1);
+  }
+  
+  if (validation.warnings.length > 0) {
+    console.warn('\n⚠️  Sync Configuration Warnings:');
+    validation.warnings.forEach(warn => console.warn(`   ${warn}`));
+  }
+  
+  if (validation.suggestions.length > 0) {
+    console.log('\n💡 Suggestions:');
+    validation.suggestions.forEach(sug => console.log(`   ${sug}`));
+  }
+  
   const syncServiceV2 = new SyncServiceV2();
   
   // Rider Sync Scheduler - Runs every 60 minutes (HOURLY - HIGHEST PRIORITY)
