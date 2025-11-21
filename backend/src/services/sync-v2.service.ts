@@ -119,6 +119,12 @@ export class SyncServiceV2 {
         race_finishes: rider.race?.finishes || 0,
         club_id: clubId,
         club_name: rider.club?.name || undefined,
+        // Physical attributes
+        weight_kg: rider.weight || undefined,
+        height_cm: rider.height || undefined,
+        ftp: rider.zpFTP || undefined,
+        // vELO rating (from race.current.rating or race.last.rating)
+        velo_rating: rider.race?.current?.rating || rider.race?.last?.rating || undefined,
         last_synced: new Date().toISOString(),
       }));
 
