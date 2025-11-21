@@ -125,6 +125,25 @@ export class SyncServiceV2 {
         ftp: rider.zpFTP || undefined,
         // vELO rating (from race.current.rating or race.last.rating)
         velo_rating: rider.race?.current?.rating || rider.race?.last?.rating || undefined,
+        // Power intervals - W/kg (5s, 15s, 30s, 1m, 2m, 5m, 20m)
+        power_wkg5: rider.power?.wkg5 || undefined,
+        power_wkg15: rider.power?.wkg15 || undefined,
+        power_wkg30: rider.power?.wkg30 || undefined,
+        power_wkg60: rider.power?.wkg60 || undefined,
+        power_wkg120: rider.power?.wkg120 || undefined,
+        power_wkg300: rider.power?.wkg300 || undefined,
+        power_wkg1200: rider.power?.wkg1200 || undefined,
+        // Power intervals - Absolute Watts
+        power_w5: rider.power?.w5 || undefined,
+        power_w15: rider.power?.w15 || undefined,
+        power_w30: rider.power?.w30 || undefined,
+        power_w60: rider.power?.w60 || undefined,
+        power_w120: rider.power?.w120 || undefined,
+        power_w300: rider.power?.w300 || undefined,
+        power_w1200: rider.power?.w1200 || undefined,
+        // Critical Power metrics
+        power_cp: rider.power?.CP || undefined,
+        power_awc: rider.power?.AWC || undefined,
         last_synced: new Date().toISOString(),
       }));
 

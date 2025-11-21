@@ -150,18 +150,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   const config = syncConfigService.getConfig();
   const syncServiceV2 = new SyncServiceV2();
   
-  // Rider Sync Scheduler - Runs every 90 minutes (HIGHEST PRIORITY)
-  // Trigger: 00:00, 01:30, 03:00, 04:30, 06:00, 07:30, 09:00, 10:30, 12:00, 13:30, 15:00, 16:30, 18:00, 19:30, 21:00, 22:30
-  // POST rate limit: 1/15min → 90min interval = 6x safety margin
+  // Rider Sync Scheduler - Runs every 60 minutes (HOURLY - HIGHEST PRIORITY)
+  // Trigger: Every hour at :00 (00:00, 01:00, 02:00, ..., 23:00)
+  // POST rate limit: 1/15min → 60min interval = 4x safety margin
   if (config.riderSyncEnabled) {
-    const riderCronExpression = '0,30 */3 * * *'; // At :00 and :30, every 3 hours (= every 90 min)
-    console.log(`  ✅ Rider Sync (P1): Every 90 min - Safe POST rate limit (16x/dag)`);
+    const riderCronExpression = '0 * * * *'; // At :00 every hour
+    console.log(`  ✅ Rider Sync (P1): Every 60 min (hourly) - Safe POST rate limit (24x/dag)`);
     
     cron.schedule(riderCronExpression, async () => {
       console.log(`\n⏰ [CRON] Rider Sync (PRIORITY 1) triggered at ${new Date().toISOString()}`);
       try {
         const metrics = await syncServiceV2.syncRidersCoordinated({
-          intervalMinutes: 90, // 90 minutes
+          intervalMinutes: 60, // 60 minutes (hourly)
         });
         console.log(`✅ [CRON] Rider Sync completed: ${metrics.riders_processed} riders (${metrics.riders_new} new, ${metrics.riders_updated} updated)`);
       } catch (error) {
