@@ -30,7 +30,7 @@ export class ResultsSyncService {
 
     try {
       // 1. Haal alle actieve TeamNL riders op
-      const riders = await this.supabase.getAllRiders();
+      const riders = await this.supabase.getRiders();
       console.info(`📋 Found ${riders.length} riders to scan`);
 
       let totalResults = 0;
@@ -45,19 +45,13 @@ export class ResultsSyncService {
           // Haal rider profile met history op
           const riderProfile = await this.zwiftApi.getRider(rider.rider_id);
 
-          if (!riderProfile.history || riderProfile.history.length === 0) {
+          if (!riderProfile.recentResults || riderProfile.recentResults.length === 0) {
             console.info(`   ℹ️  No history found`);
             continue;
           }
 
-          // Filter results binnen de timeframe
-          const cutoffDate = new Date();
-          cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-          const cutoffTimestamp = Math.floor(cutoffDate.getTime() / 1000);
-
-          const recentResults = riderProfile.history.filter(
-            (h: any) => h.event?.time >= cutoffTimestamp
-          );
+          // Use recent results from API (already filtered)
+          const recentResults = riderProfile.recentResults;
 
           if (recentResults.length === 0) {
             console.info(`   ℹ️  No recent results (last ${daysBack} days)`);
@@ -94,12 +88,33 @@ export class ResultsSyncService {
                 event_date: new Date(result.event.time * 1000).toISOString(),
                 finish_status: result.dnf ? 'DNF' : 'FINISHED'
               });
-        }
+              
+              totalSaved++;
+            } catch (error) {
+              console.error(`   ⚠️  Error saving result for rider ${rider.rider_id}:`, error);
+              // Continue met volgende result
+            }
+          }
 
-      return recentResults.length;
+        } catch (error) {
+          console.error(`   ⚠️  Error processing rider ${rider.rider_id}:`, error);
+          // Continue met volgende rider
+        }
+      }
+
+      // 4. Return summary
+      console.info(`✅ Sync complete: ${totalSaved}/${totalResults} results saved from ${riders.length} riders`);
+      console.info(`📅 Discovered ${discoveredEvents.size} unique events`);
+
+      return {
+        riders_scanned: riders.length,
+        results_found: totalResults,
+        results_saved: totalSaved,
+        events_discovered: discoveredEvents.size
+      };
 
     } catch (error) {
-      console.error(`Error syncing rider ${riderId} results:`, error);
+      console.error('❌ Results sync failed:', error);
       throw error;
     }
   }
