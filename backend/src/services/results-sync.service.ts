@@ -44,14 +44,15 @@ export class ResultsSyncService {
 
           // Haal rider profile met history op
           const riderProfile = await this.zwiftApi.getRider(rider.rider_id);
+          const history = (riderProfile as any).history || [];
 
-          if (!riderProfile.recentResults || riderProfile.recentResults.length === 0) {
-            console.info(`   ℹ️  No history found`);
+          if (!history || history.length === 0) {
+            console.info(`   ℹ️  No recent results found`);
             continue;
           }
 
-          // Use recent results from API (already filtered)
-          const recentResults = riderProfile.recentResults;
+          // Use history from API
+          const recentResults = history;
 
           if (recentResults.length === 0) {
             console.info(`   ℹ️  No recent results (last ${daysBack} days)`);

@@ -177,7 +177,7 @@ export class UnifiedSyncService {
         riders_updated: ridersUpdated,
         riders_new: ridersNew,
         duration_ms: Date.now() - startTime,
-        error_message: errors.length > 0 ? errors.join('; ') : null
+        error_message: errors.length > 0 ? errors.join('; ') : undefined
       });
 
       console.log(`✅ [RIDER SYNC] Done: ${ridersUpdated} updated, ${ridersNew} new`);
@@ -272,7 +272,7 @@ export class UnifiedSyncService {
 
           // Upsert event
           await supabase.upsertEvents([{
-            event_id: event.eventId,
+            zwift_event_id: parseInt(event.eventId),
             name: event.title || 'Unknown Event',
             event_date: new Date(event.time * 1000).toISOString(),
             club_id: TEAM_CLUB_ID,
@@ -299,7 +299,7 @@ export class UnifiedSyncService {
         events_near: eventsNear,
         events_far: eventsFar,
         duration_ms: Date.now() - startTime,
-        error_message: errors.length > 0 ? errors.join('; ') : null
+        error_message: errors.length > 0 ? errors.join('; ') : undefined
       });
 
       console.log(`✅ [EVENT SYNC] Done: ${eventsNear} near, ${eventsFar} far`);
@@ -388,7 +388,7 @@ export class UnifiedSyncService {
         events_processed: eventsProcessed,
         signups_synced: signupsTotal,
         duration_ms: Date.now() - startTime,
-        error_message: errors.length > 0 ? errors.join('; ') : null
+        error_message: errors.length > 0 ? errors.join('; ') : undefined
       });
 
       console.log(`✅ [SIGNUP SYNC] Done: ${signupsTotal} signups from ${eventsProcessed} events`);
@@ -492,7 +492,7 @@ export class UnifiedSyncService {
         results_found: resultsFound,
         results_saved: resultsSaved,
         duration_ms: Date.now() - startTime,
-        error_message: errors.length > 0 ? errors.join('; ') : null
+        error_message: errors.length > 0 ? errors.join('; ') : undefined
       });
 
       console.log(`✅ [RESULT SYNC] Done: ${resultsSaved}/${resultsFound} results saved`);
@@ -648,7 +648,7 @@ export class UnifiedSyncService {
         });
         
         if (nearEvents.length > 0) {
-          await this.syncSignups(nearEvents.map(e => e.event_id));
+          await this.syncSignups(nearEvents.map(e => e.zwift_event_id));
         }
       } catch (err) {
         console.error('Scheduled signup sync failed:', err);

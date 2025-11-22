@@ -8,7 +8,7 @@
  */
 
 import cron from 'node-cron';
-import { syncServiceV2 as syncService } from './sync-v2.service.js';
+import { unifiedSync } from './unified-sync.service.js';
 import { supabase } from './supabase.service.js';
 
 export class SignupSchedulerService {
@@ -124,10 +124,10 @@ export class SignupSchedulerService {
       
       for (const event of batch) {
         try {
-          await syncService.syncEventSignups(event.event_id);
+          await unifiedSync.syncSignups([event.zwift_event_id]);
           synced++;
         } catch (error) {
-          console.error(`[SignupScheduler] Failed to sync event ${event.event_id}:`, error);
+          console.error(`[SignupScheduler] Failed to sync event ${event.zwift_event_id}:`, error);
           failed++;
         }
         
@@ -181,10 +181,10 @@ export class SignupSchedulerService {
       
       for (const event of batch) {
         try {
-          await syncService.syncEventSignups(event.event_id);
+          await unifiedSync.syncSignups([event.zwift_event_id]);
           synced++;
         } catch (error) {
-          console.error(`[SignupScheduler] Failed to sync event ${event.event_id}:`, error);
+          console.error(`[SignupScheduler] Failed to sync event ${event.zwift_event_id}:`, error);
           failed++;
         }
         
@@ -218,9 +218,9 @@ export class SignupSchedulerService {
       const oneHourFromNow = now + (60 * 60);
       const fortyEightHoursFromNow = now + (48 * 60 * 60);
 
-      const { data: events } = await supabase['client']
+      const { data: urgentEvents } = await supabase['client']
         .from('zwift_api_events')
-        .select('event_id')
+        .select('zwift_event_id')
         .gt('time_unix', oneHourFromNow)
         .lte('time_unix', fortyEightHoursFromNow)
         .limit(50);
@@ -229,10 +229,10 @@ export class SignupSchedulerService {
         let synced = 0;
         for (const event of events) {
           try {
-            await syncService.syncEventSignups(event.event_id);
+            await unifiedSync.syncSignups([event.zwift_event_id]);
             synced++;
           } catch (error) {
-            console.error(`[SignupScheduler] Failed: ${event.event_id}`);
+            console.error(`[SignupScheduler] Failed: ${event.zwift_event_id}`);
           }
           await new Promise(resolve => setTimeout(resolve, 200));
         }

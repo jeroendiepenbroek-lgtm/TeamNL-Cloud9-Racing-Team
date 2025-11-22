@@ -8,7 +8,7 @@
  */
 
 import cron from 'node-cron';
-import { syncServiceV2 as syncService } from './sync-v2.service.js';
+import { unifiedSync } from './unified-sync.service.js';
 import { supabase } from './supabase.service.js';
 
 export class EventSchedulerService {
@@ -38,8 +38,8 @@ export class EventSchedulerService {
     this.hourlyJob = cron.schedule('0 * * * *', async () => {
       console.log('\n[EventScheduler] ⏰ HOURLY: Running full 48h event sync...');
       try {
-        const result = await syncService.bulkImportUpcomingEvents();
-        console.log(`[EventScheduler] ✅ HOURLY: ${result.events_imported} events, ${result.team_events} team events`);
+        const result = await unifiedSync.syncEvents({ mode: 'all' });
+        console.log(`[EventScheduler] ✅ HOURLY: ${result.events_synced} events, ${result.events_synced} team events`);
       } catch (error) {
         console.error('[EventScheduler] ❌ HOURLY: Sync failed:', error);
       }
@@ -135,8 +135,8 @@ export class EventSchedulerService {
     console.log('[EventScheduler] 🔄 Running initial sync...');
     
     try {
-      const result = await syncService.bulkImportUpcomingEvents();
-      console.log(`[EventScheduler] ✅ Initial sync complete: ${result.events_imported} events imported`);
+      const result = await unifiedSync.syncEvents({ mode: 'all' });
+      console.log(`[EventScheduler] ✅ Initial sync complete: ${result.events_synced} events imported`);
     } catch (error) {
       console.error('[EventScheduler] ❌ Initial sync failed:', error);
     }
@@ -159,7 +159,7 @@ export class EventSchedulerService {
   async triggerHourlySync(): Promise<void> {
     console.log('[EventScheduler] 🔄 Manual hourly sync triggered...');
     const result = await syncService.bulkImportUpcomingEvents();
-    console.log(`[EventScheduler] ✅ Manual sync complete: ${result.events_imported} events`);
+    console.log(`[EventScheduler] ✅ Manual sync complete: ${result.events_synced} events`);
   }
 
   async triggerUrgentSync(): Promise<void> {
