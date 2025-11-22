@@ -166,7 +166,7 @@ export class ZwiftApiClient {
       throw new Error('Maximum 1000 rider IDs per bulk request');
     }
     return await rateLimiter.executeWithLimit('rider_bulk', async () => {
-      const response = await this.client.post('/riders', riderIds);
+      const response = await this.client.post('/public/riders', riderIds);
       return response.data;
     });
   }
@@ -182,7 +182,7 @@ export class ZwiftApiClient {
     if (riderIds.length > 1000) {
       throw new Error('Maximum 1000 rider IDs per bulk request');
     }
-    const response = await this.client.post(`/public/riders/${time}`, riderIds);
+    const response = await this.client.post(`/riders/${time}`, riderIds);
     return response.data;
   }
 
