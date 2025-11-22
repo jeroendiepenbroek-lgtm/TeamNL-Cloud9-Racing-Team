@@ -208,7 +208,7 @@ export class ZwiftApiClient {
    */
   async getUpcomingEvents(): Promise<ZwiftEvent[]> {
     return await rateLimiter.executeWithLimit('events_upcoming', async () => {
-      const response = await this.client.get('/api/events/upcoming');
+      const response = await this.client.get('/events/upcoming');
       
       // Response is direct array, not wrapped in { events: [] }
       const events = Array.isArray(response.data) ? response.data : [];
@@ -334,7 +334,7 @@ export class ZwiftApiClient {
     }
 
     console.log('[ZwiftAPI] Fetching routes from API...');
-    const response = await this.client.get('/api/routes');
+    const response = await this.client.get('/routes');
     const routes = response.data;
 
     // Build cache Map by routeId for O(1) lookup
