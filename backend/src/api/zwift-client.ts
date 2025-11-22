@@ -26,7 +26,7 @@ export class ZwiftApiClient {
 
   constructor() {
     this.client = axios.create({
-      baseURL: ZWIFT_API_BASE,
+      baseURL: `${ZWIFT_API_BASE}/api`, // Use /api for full data including history!
       headers: {
         'Authorization': ZWIFT_API_KEY,
       },
@@ -79,7 +79,7 @@ export class ZwiftApiClient {
    */
   async getClubMembers(clubId: number = TEAM_CLUB_ID): Promise<ZwiftRider[]> {
     return await rateLimiter.executeWithLimit('club_members', async () => {
-      const response = await this.client.get(`/public/clubs/${clubId}`);
+      const response = await this.client.get(`/clubs/${clubId}`);
       return response.data;
     });
   }
@@ -91,7 +91,7 @@ export class ZwiftApiClient {
    * Rate limit: 1/60min (Standard)
    */
   async getClubMembersPaginated(clubId: number, afterRiderId: number): Promise<ZwiftRider[]> {
-    const response = await this.client.get(`/public/clubs/${clubId}/${afterRiderId}`);
+    const response = await this.client.get(`/clubs/${clubId}/${afterRiderId}`);
     return response.data;
   }
 
@@ -106,7 +106,7 @@ export class ZwiftApiClient {
    */
   async getEventResults(eventId: number): Promise<ZwiftResult[]> {
     return await rateLimiter.executeWithLimit('event_results', async () => {
-      const response = await this.client.get(`/public/results/${eventId}`);
+      const response = await this.client.get(`/results/${eventId}`);
       return response.data;
     });
   }
@@ -117,7 +117,7 @@ export class ZwiftApiClient {
    * Rate limit: 1/1min
    */
   async getEventResultsZwiftPower(eventId: number): Promise<any[]> {
-    const response = await this.client.get(`/public/zp/${eventId}/results`);
+    const response = await this.client.get(`/zp/${eventId}/results`);
     return response.data;
   }
 
@@ -132,7 +132,10 @@ export class ZwiftApiClient {
    */
   async getRider(riderId: number): Promise<ZwiftRider> {
     return await rateLimiter.executeWithLimit('rider_individual', async () => {
-      const response = await this.client.get(`/public/riders/${riderId}`);
+      const response = await this.client.get(`/riders/${riderId}`);
+      // Debug: check if history exists
+      console.log(`[DEBUG] Rider ${riderId} keys:`, Object.keys(response.data).sort());
+      console.log(`[DEBUG] Rider ${riderId} history:`, response.data.history ? `${response.data.history.length} items` : 'MISSING');
       return response.data;
     });
   }
@@ -144,7 +147,7 @@ export class ZwiftApiClient {
    * @param time - Unix epoch (seconds, not milliseconds)
    */
   async getRiderAtTime(riderId: number, time: number): Promise<ZwiftRider> {
-    const response = await this.client.get(`/public/riders/${riderId}/${time}`);
+    const response = await this.client.get(`/riders/${riderId}/${time}`);
     return response.data;
   }
 
@@ -163,7 +166,7 @@ export class ZwiftApiClient {
       throw new Error('Maximum 1000 rider IDs per bulk request');
     }
     return await rateLimiter.executeWithLimit('rider_bulk', async () => {
-      const response = await this.client.post('/public/riders', riderIds);
+      const response = await this.client.post('/riders', riderIds);
       return response.data;
     });
   }
@@ -240,7 +243,7 @@ export class ZwiftApiClient {
    */
   async getEventDetails(eventId: number): Promise<ZwiftEvent> {
     return await rateLimiter.executeWithLimit('event_details', async () => {
-      const response = await this.client.get(`/api/events/${eventId}`);
+      const response = await this.client.get(`/events/${eventId}`);
       return response.data;
     });
   }
@@ -259,7 +262,7 @@ export class ZwiftApiClient {
    */
   async getEventSignups(eventId: string): Promise<any[]> {
     return await rateLimiter.executeWithLimit('event_signups', async () => {
-      const response = await this.client.get(`/api/events/${eventId}/signups`);
+      const response = await this.client.get(`/events/${eventId}/signups`);
       console.log(`[ZwiftAPI] ✅ /api/events/${eventId}/signups returned ${response.data.length} pens`);
       return response.data;
     });
@@ -274,7 +277,7 @@ export class ZwiftApiClient {
    */
   async getClub(clubId: number = TEAM_CLUB_ID): Promise<ZwiftClub> {
     console.warn('[ZwiftAPI] getClub() is deprecated, use getClubMembers()');
-    const response = await this.client.get(`/public/clubs/${clubId}`);
+    const response = await this.client.get(`/clubs/${clubId}`);
     return response.data;
   }
 

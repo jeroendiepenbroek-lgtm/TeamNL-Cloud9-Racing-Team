@@ -306,13 +306,23 @@ export class SupabaseService {
   }
 
   async upsertResults(results: Partial<DbResult>[]): Promise<DbResult[]> {
-    const { data, error } = await this.client
+    const { data, error} = await this.client
       .from('zwift_api_race_results')
       .upsert(results)
       .select();
 
     if (error) throw error;
     return data;
+  }
+
+  async saveRaceResult(result: any): Promise<void> {
+    const { error } = await this.client
+      .from('zwift_api_race_results')
+      .upsert(result, {
+        onConflict: 'event_id,rider_id' // Unieke combinatie
+      });
+
+    if (error) throw error;
   }
 
   async deleteResultsByEventIdPattern(pattern: string): Promise<void> {
