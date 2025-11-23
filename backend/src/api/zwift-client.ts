@@ -20,53 +20,68 @@ const TEAM_CLUB_ID = 11818;
 
 export class ZwiftApiClient {
   private client: AxiosInstance;
+  private publicClient: AxiosInstance; // For POST /public/riders (no /api prefix)
   private routesCache: Map<string, any> | null = null; // Cache voor route profiles
   private routesCacheExpiry: number = 0;
   private readonly ROUTES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 uur
 
   constructor() {
+    // API client - GET riders with full history (requires /api prefix)
     this.client = axios.create({
-      baseURL: `${ZWIFT_API_BASE}/api`, // Use /api for full data including history!
+      baseURL: `${ZWIFT_API_BASE}/api`,
       headers: {
         'Authorization': ZWIFT_API_KEY,
       },
       timeout: 30000,
     });
 
-    console.log(`[ZwiftAPI] ✅ Client initialized with header: Authorization: ${ZWIFT_API_KEY.substring(0, 10)}...`);
-
-    // Axios interceptor voor logging
-    this.client.interceptors.request.use((config) => {
-      console.log(`[ZwiftAPI] ${config.method?.toUpperCase()} ${config.url} | Header: Authorization: ${config.headers['Authorization']?.toString().substring(0, 10)}...`);
-      return config;
+    // Public client - POST bulk riders (NO /api prefix)
+    this.publicClient = axios.create({
+      baseURL: ZWIFT_API_BASE, // https://zwift-ranking.herokuapp.com
+      headers: {
+        'Authorization': ZWIFT_API_KEY,
+      },
+      timeout: 30000,
     });
 
-    this.client.interceptors.response.use(
-      (response) => {
-        console.log(`[ZwiftAPI] ✅ ${response.config.url} → ${response.status}`);
-        return response;
-      },
-      (error) => {
-        const status = error.response?.status || 'TIMEOUT';
-        const url = error.config?.url || 'unknown';
-        
-        if (status === 429) {
-          // Parse endpoint voor user-friendly message
-          const friendlyEndpoint = this._getFriendlyEndpointName(url);
-          console.error(`[ZwiftAPI] 🚫 RATE LIMIT (429) ${url} - Too many requests`);
-          error.message = `Rate limit exceeded: ${friendlyEndpoint}. Wait before retrying.`;
-        } else if (status === 'TIMEOUT') {
-          console.error(`[ZwiftAPI] ⏱️  TIMEOUT ${url}`);
-          error.message = `Request timeout for ${url}`;
-        } else {
-          console.error(`[ZwiftAPI] ❌ ${url} → ${status}`);
+    console.log(`[ZwiftAPI] ✅ Clients initialized (API + Public) | Auth: ${ZWIFT_API_KEY.substring(0, 10)}...`);
+
+    // Setup interceptors for BOTH clients
+    const setupInterceptors = (client: AxiosInstance, name: string) => {
+      client.interceptors.request.use((config) => {
+        console.log(`[ZwiftAPI-${name}] ${config.method?.toUpperCase()} ${config.url}`);
+        return config;
+      });
+
+      client.interceptors.response.use(
+        (response) => {
+          console.log(`[ZwiftAPI-${name}] ✅ ${response.config.url} → ${response.status}`);
+          return response;
+        },
+        (error) => {
+          const status = error.response?.status || 'TIMEOUT';
+          const url = error.config?.url || 'unknown';
+          
+          if (status === 429) {
+            console.error(`[ZwiftAPI-${name}] 🚫 RATE LIMIT (429) ${url}`);
+            error.message = `Rate limit exceeded for ${url}. Wait before retrying.`;
+          } else if (status === 'TIMEOUT') {
+            console.error(`[ZwiftAPI-${name}] ⏱️  TIMEOUT ${url}`);
+            error.message = `Request timeout for ${url}`;
+          } else {
+            console.error(`[ZwiftAPI-${name}] ❌ ${url} → ${status}`);
+          }
+          
+          throw error;
         }
-        
-        throw error;
-      }
-    );
+      );
+    };
+
+    setupInterceptors(this.client, 'API');
+    setupInterceptors(this.publicClient, 'Public');
   }
 
+  // Remove old interceptor code below
   // ============================================================================
   // CLUBS - Rate limit: 1/60min (Standard) | 10/60min (Premium)
   // ============================================================================
@@ -166,7 +181,7 @@ export class ZwiftApiClient {
       throw new Error('Maximum 1000 rider IDs per bulk request');
     }
     return await rateLimiter.executeWithLimit('rider_bulk', async () => {
-      const response = await this.client.post('/public/riders', riderIds);
+      const response = await this.publicClient.post('/public/riders', riderIds);
       return response.data;
     });
   }
@@ -182,7 +197,7 @@ export class ZwiftApiClient {
     if (riderIds.length > 1000) {
       throw new Error('Maximum 1000 rider IDs per bulk request');
     }
-    const response = await this.client.post(`/riders/${time}`, riderIds);
+    const response = await this.publicClient.post(`/public/riders/${time}`, riderIds);
     return response.data;
   }
 
