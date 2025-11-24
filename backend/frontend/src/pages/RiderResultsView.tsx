@@ -17,9 +17,19 @@ interface RaceResult {
   id: number;
   event_id: string;
   rider_id: number;
+  rider_name: string;
+  event_name: string;
+  event_date: string;
+  event_type?: string;
+  sub_type?: string;
+  route_world?: string;
+  route_name?: string;
+  route_profile?: string;
+  distance_km?: string;
+  elevation_m?: number;
   pen: string;
   rank: number;
-  total_riders: number;
+  total_riders?: number;
   velo_rating?: number;
   velo_previous?: number;
   velo_change?: number;
@@ -35,14 +45,6 @@ interface RaceResult {
   power_2m?: number;
   power_5m?: number;
   power_20m?: number;
-  event: {
-    event_id: string;
-    title: string;
-    event_type: string;
-    sub_type?: string;
-    route_name?: string;
-    time_unix: number;
-  };
 }
 
 interface RiderStats {
@@ -64,6 +66,13 @@ interface RiderResultsResponse {
   results: RaceResult[];
   personal_records: PersonalRecord[];
 }
+
+// US3: Decode HTML entities (ø → ø, etc.)
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
 
 const RiderResultsView: React.FC = () => {
   const { riderId } = useParams<{ riderId: string }>();
@@ -120,15 +129,6 @@ const RiderResultsView: React.FC = () => {
     if (!seconds) return '-';
     const sign = seconds > 0 ? '+' : '';
     return `${sign}${seconds}s`;
-  };
-
-  const formatDate = (unixTimestamp: number): string => {
-    const date = new Date(unixTimestamp * 1000);
-    return date.toLocaleDateString('nl-NL', { 
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const getVeloTrend = (change?: number): string => {
@@ -319,19 +319,27 @@ const RiderResultsView: React.FC = () => {
               {data?.results.map((result) => (
                 <tr key={result.id}>
                   <td className="date">
-                    {formatDate(result.event.time_unix)}
+                    {new Date(result.event_date).toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })}
                   </td>
                   <td className="event-name">
-                    <div className="event-title">{result.event.title}</div>
-                    {result.event.route_name && (
-                      <div className="event-route">{result.event.route_name}</div>
+                    <div className="event-title">
+                      {decodeHtmlEntities(result.event_name)}
+                    </div>
+                    {result.route_name && (
+                      <div className="event-route">
+                        {result.route_world && `${result.route_world} • `}
+                        {result.route_name}
+                        {result.route_profile && ` • ${result.route_profile}`}
+                        {result.distance_km && ` • ${result.distance_km}km`}
+                        {result.elevation_m && ` • ${result.elevation_m}m ↗`}
+                      </div>
                     )}
                   </td>
                   <td className={`pen pen-${result.pen?.toLowerCase()}`}>
                     {result.pen || '-'}
                   </td>
                   <td className={`rank ${getRankBadgeClass(result.rank)}`}>
-                    {result.rank}
+                    {result.rank || '-'}
                     {result.total_riders && (
                       <span className="total"> / {result.total_riders}</span>
                     )}

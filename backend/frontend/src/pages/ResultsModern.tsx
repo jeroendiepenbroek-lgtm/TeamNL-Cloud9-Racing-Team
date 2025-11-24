@@ -287,7 +287,7 @@ function EventCard({ event }: { event: EventResult }) {
             {/* Titel */}
             <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
               <Trophy className="w-5 h-5 flex-shrink-0" />
-              <span className="truncate">{event.event_name}</span>
+              <span className="truncate" dangerouslySetInnerHTML={{ __html: event.event_name }} />
             </h3>
             
             {/* Route Details (als beschikbaar) */}
@@ -420,7 +420,7 @@ function EventCard({ event }: { event: EventResult }) {
                         </td>
                         
                         <td className="px-4 py-3">
-                          <span className="font-medium text-gray-900">{result.rider_name}</span>
+                          <span className="font-medium text-gray-900" dangerouslySetInnerHTML={{ __html: result.rider_name }} />
                         </td>
                         
                         <td className="px-4 py-3">
