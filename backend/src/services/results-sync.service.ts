@@ -70,24 +70,31 @@ export class ResultsSyncService {
                 discoveredEvents.add(result.event.id);
               }
 
-              // Sla result op in zwift_api_race_results tabel (minimal fields)
+              // Map API response naar database schema
               await this.supabase.saveRaceResult({
-                event_id: parseInt(result.event.id),
+                event_id: String(result.event?.id || result.eventId),
                 rider_id: result.riderId,
-                position: result.position,
-                time_seconds: result.time,
-                power_avg: result.power?.avg,
-                power_max: result.power?.max,
-                heartrate_avg: result.heartRate?.avg,
-                heartrate_max: result.heartRate?.max,
-                weight: result.weight,
-                height: result.height,
-                category: result.category,
-                rating_before: result.ratingBefore,
-                rating_after: result.rating,
-                rating_change: result.ratingDelta,
-                event_date: new Date(result.event.time * 1000).toISOString(),
-                finish_status: result.dnf ? 'DNF' : 'FINISHED'
+                event_name: result.event?.name || null,
+                event_date: result.event?.time ? new Date(result.event.time * 1000) : null,
+                rider_name: result.name || null,
+                rank: result.position || null,
+                time_seconds: result.time || null,
+                avg_wkg: result.power?.avg || null,
+                pen: result.pen || null,
+                total_riders: result.totalRiders || null,
+                delta_winner_seconds: result.delta || null,
+                velo_rating: result.rating || null,
+                velo_previous: result.ratingBefore || null,
+                velo_change: result.ratingDelta || null,
+                power_5s: result.power?.['5s'] || null,
+                power_15s: result.power?.['15s'] || null,
+                power_30s: result.power?.['30s'] || null,
+                power_1m: result.power?.['1min'] || null,
+                power_2m: result.power?.['2min'] || null,
+                power_5m: result.power?.['5min'] || null,
+                power_20m: result.power?.['20min'] || null,
+                effort_score: result.effortScore || null,
+                race_points: result.points || null
               });
               
               totalSaved++;
@@ -143,24 +150,31 @@ export class ResultsSyncService {
       // Sla results op in database
       for (const result of history) {
         try {
-          // Sla result op
+          // Map API response naar database schema
           await this.supabase.saveRaceResult({
-            event_id: parseInt(result.event.id),
+            event_id: String(result.event?.id || result.eventId),
             rider_id: result.riderId,
-            position: result.position,
-            time_seconds: result.time,
-            power_avg: result.power?.avg || null,
-            power_max: result.power?.max || null,
-            heartrate_avg: result.heartRate?.avg || null,
-            heartrate_max: result.heartRate?.max || null,
-            weight: result.weight || null,
-            height: result.height || null,
-            category: result.category || null,
-            rating_before: result.ratingBefore || null,
-            rating_after: result.rating || null,
-            rating_change: result.ratingDelta || null,
-            event_date: new Date(result.event.time * 1000).toISOString(),
-            finish_status: result.dnf ? 'DNF' : 'FINISHED'
+            event_name: result.event?.name || null,
+            event_date: result.event?.time ? new Date(result.event.time * 1000) : null,
+            rider_name: result.name || null,
+            rank: result.position || null,
+            time_seconds: result.time || null,
+            avg_wkg: result.power?.avg || null,
+            pen: result.pen || null,
+            total_riders: result.totalRiders || null,
+            delta_winner_seconds: result.delta || null,
+            velo_rating: result.rating || null,
+            velo_previous: result.ratingBefore || null,
+            velo_change: result.ratingDelta || null,
+            power_5s: result.power?.['5s'] || null,
+            power_15s: result.power?.['15s'] || null,
+            power_30s: result.power?.['30s'] || null,
+            power_1m: result.power?.['1min'] || null,
+            power_2m: result.power?.['2min'] || null,
+            power_5m: result.power?.['5min'] || null,
+            power_20m: result.power?.['20min'] || null,
+            effort_score: result.effortScore || null,
+            race_points: result.points || null
           });
           
           totalSaved++;
