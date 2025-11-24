@@ -102,7 +102,7 @@ export class ResultsSyncService {
                 event_type: result.event?.type || null,
                 sub_type: result.event?.subType || null,
                 distance_km: result.event?.distance ? String(Math.round(result.event.distance * 10) / 10) : null,
-                elevation_m: result.event?.elevation || null,
+                elevation_m: result.event?.elevation ? Math.round(result.event.elevation) : null,
                 laps: result.event?.laps || null
               });
               
@@ -195,7 +195,7 @@ export class ResultsSyncService {
             event_type: result.event?.type || null,
             sub_type: result.event?.subType || null,
             distance_km: result.event?.distance ? String(Math.round(result.event.distance * 10) / 10) : null,
-            elevation_m: result.event?.elevation || null,
+            elevation_m: result.event?.elevation ? Math.round(result.event.elevation) : null,
             laps: result.event?.laps || null
           };
           
