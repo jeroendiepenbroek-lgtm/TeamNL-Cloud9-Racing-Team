@@ -84,12 +84,14 @@ router.post('/rider/:riderId', async (req: Request, res: Response) => {
     console.info(`🏁 Syncing results for rider ${riderId}`);
 
     // Use single rider sync (much faster!)
-    const resultCount = await resultsSyncService.syncSingleRiderResults(riderId, daysBack);
+    const result = await resultsSyncService.syncSingleRiderResults(riderId, daysBack);
 
     res.json({
       success: true,
-      message: `Synced ${resultCount} results for rider ${riderId}`,
-      results_synced: resultCount
+      message: `Synced ${result.totalSaved} results for rider ${riderId}`,
+      results_synced: result.totalSaved,
+      errors: result.errors,
+      error_count: result.errors.length
     });
 
   } catch (error: any) {

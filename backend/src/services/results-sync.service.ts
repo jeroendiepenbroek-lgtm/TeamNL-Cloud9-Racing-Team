@@ -130,8 +130,13 @@ export class ResultsSyncService {
   /**
    * Sync results voor SINGLE rider (sneller dan team sync)
    */
-  async syncSingleRiderResults(riderId: number, daysBack: number = 30): Promise<number> {
+  async syncSingleRiderResults(riderId: number, daysBack: number = 30): Promise<{
+    totalSaved: number;
+    errors: Array<{ event_id: string; error: string }>;
+  }> {
     console.info(`🏁 Starting single rider results sync for ${riderId} (${daysBack} days back)`);
+
+    const errors: Array<{ event_id: string; error: string }> = [];
 
     try {
       // Haal rider profile met history op
@@ -140,7 +145,7 @@ export class ResultsSyncService {
 
       if (!history || history.length === 0) {
         console.info(`   ℹ️  No history found for rider ${riderId}`);
-        return 0;
+        return { totalSaved: 0, errors };
       }
 
       console.info(`   ✅ Found ${history.length} history items for rider ${riderId}`);
@@ -182,17 +187,18 @@ export class ResultsSyncService {
           
           totalSaved++;
         } catch (error: any) {
-          console.error(`   ⚠️  Error saving result for event ${result.event?.id}:`, {
-            message: error.message,
-            code: error.code,
-            details: error.details
+          const errorMsg = error.message || JSON.stringify(error);
+          console.error(`   ⚠️  Error saving result for event ${result.event?.id}:`, errorMsg);
+          errors.push({
+            event_id: String(result.event?.id || 'unknown'),
+            error: errorMsg
           });
           // Continue met volgende result
         }
       }
 
       console.info(`✅ Saved ${totalSaved}/${history.length} results for rider ${riderId}`);
-      return totalSaved;
+      return { totalSaved, errors };
 
     } catch (error) {
       console.error(`❌ Single rider sync failed for ${riderId}:`, error);
