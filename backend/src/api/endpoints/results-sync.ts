@@ -71,7 +71,7 @@ router.get('/rider/:riderId/debug', async (req: Request, res: Response) => {
 // POST /api/sync/results/rider/:riderId - Sync single rider results
 router.post('/rider/:riderId', async (req: Request, res: Response) => {
   const riderId = parseInt(req.params.riderId);
-  const { daysBack = 30 } = req.body;
+  const { daysBack = 30, forceRefresh = false } = req.body;
 
   if (isNaN(riderId)) {
     return res.status(400).json({
@@ -81,7 +81,15 @@ router.post('/rider/:riderId', async (req: Request, res: Response) => {
   }
 
   try {
-    console.info(`🏁 Syncing results for rider ${riderId}`);
+    console.info(`🏁 Syncing results for rider ${riderId} (forceRefresh: ${forceRefresh})`);
+
+    // If forceRefresh, delete old results first
+    if (forceRefresh) {
+      const { SupabaseService } = await import('../../services/supabase.service.js');
+      const supabase = new SupabaseService();
+      await supabase.deleteRiderResults(riderId);
+      console.info(`   🗑️  Deleted old results for rider ${riderId}`);
+    }
 
     // Use single rider sync (much faster!)
     const result = await resultsSyncService.syncSingleRiderResults(riderId, daysBack);
@@ -91,7 +99,8 @@ router.post('/rider/:riderId', async (req: Request, res: Response) => {
       message: `Synced ${result.totalSaved} results for rider ${riderId}`,
       results_synced: result.totalSaved,
       errors: result.errors,
-      error_count: result.errors.length
+      error_count: result.errors.length,
+      force_refresh: forceRefresh
     });
 
   } catch (error: any) {

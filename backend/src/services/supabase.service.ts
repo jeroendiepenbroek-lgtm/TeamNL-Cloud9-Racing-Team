@@ -325,6 +325,15 @@ export class SupabaseService {
     if (error) throw error;
   }
 
+  async deleteRiderResults(riderId: number): Promise<void> {
+    const { error } = await this.client
+      .from('zwift_api_race_results')
+      .delete()
+      .eq('rider_id', riderId);
+
+    if (error) throw error;
+  }
+
   async deleteResultsByEventIdPattern(pattern: string): Promise<void> {
     const { error } = await this.client
       .from('zwift_api_race_results')
