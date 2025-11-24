@@ -77,15 +77,17 @@ export class ResultsSyncService {
                 event_name: result.event?.title || null,
                 event_date: result.event?.time ? new Date(result.event.time * 1000).toISOString() : null,
                 rider_name: result.name || null,
-                rank: result.position || null,
+                rank: result.position || result.positionInCategory || null,  // US: positionInCategory fallback
                 time_seconds: result.time ? Math.round(result.time) : null,
                 avg_wkg: result.wkgAvg || null,
-                pen: result.zpCat || null,  // US1: PEN category (A/B/C/D/E)
+                pen: result.zpCat || null,
                 total_riders: result.totalRiders || null,
                 delta_winner_seconds: result.gap ? Math.round(result.gap) : null,
-                velo_rating: result.rating ? Math.floor(result.rating) : null,  // US6: Afronden naar beneden
+                velo_rating: result.rating ? Math.floor(result.rating) : null,
                 velo_previous: result.ratingBefore ? Math.floor(result.ratingBefore) : null,
-                velo_change: result.ratingDelta ? Math.round(result.ratingDelta) : null,
+                velo_change: (result.rating && result.ratingBefore) ? Math.floor(result.rating) - Math.floor(result.ratingBefore) : null,  // US: Correct delta met floor
+                heartrate_avg: result.heartRate?.avg || null,  // US: Gem. hartslag toevoegen
+                heartrate_max: result.heartRate?.max || null,
                 power_5s: result.wkg5 || null,
                 power_15s: result.wkg15 || null,
                 power_30s: result.wkg30 || null,
@@ -170,15 +172,17 @@ export class ResultsSyncService {
             event_name: result.event?.title || null,
             event_date: result.event?.time ? new Date(result.event.time * 1000).toISOString() : null,
             rider_name: result.name || null,
-            rank: result.position || null,
+            rank: result.position || result.positionInCategory || null,  // US: positionInCategory fallback
             time_seconds: result.time ? Math.round(result.time) : null,
             avg_wkg: result.wkgAvg || null,
-            pen: result.zpCat || null,  // US1: PEN category (A/B/C/D/E)
+            pen: result.zpCat || null,
             total_riders: result.totalRiders || null,
             delta_winner_seconds: result.gap ? Math.round(result.gap) : null,
-            velo_rating: result.rating ? Math.floor(result.rating) : null,  // US6: Afronden naar beneden
+            velo_rating: result.rating ? Math.floor(result.rating) : null,
             velo_previous: result.ratingBefore ? Math.floor(result.ratingBefore) : null,
-            velo_change: result.ratingDelta ? Math.round(result.ratingDelta) : null,
+            velo_change: (result.rating && result.ratingBefore) ? Math.floor(result.rating) - Math.floor(result.ratingBefore) : null,  // US: Correct delta met floor
+            heartrate_avg: result.heartRate?.avg || null,  // US: Gem. hartslag
+            heartrate_max: result.heartRate?.max || null,
             power_5s: result.wkg5 || null,
             power_15s: result.wkg15 || null,
             power_30s: result.wkg30 || null,

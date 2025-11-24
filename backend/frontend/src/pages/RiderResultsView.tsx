@@ -38,6 +38,8 @@ interface RaceResult {
   avg_wkg: number;
   effort_score?: number;
   race_points?: number;
+  heartrate_avg?: number;
+  heartrate_max?: number;
   power_5s?: number;
   power_15s?: number;
   power_30s?: number;
@@ -346,6 +348,8 @@ const RiderResultsView: React.FC = () => {
                 <th>Tijd</th>
                 <th>Δ</th>
                 <th>Avg</th>
+                <th>HR Avg</th>
+                <th>HR Max</th>
                 <th>5s</th>
                 <th>15s</th>
                 <th>30s</th>
@@ -404,6 +408,8 @@ const RiderResultsView: React.FC = () => {
                   <td className="time">{formatTime(result.time_seconds)}</td>
                   <td className="delta">{formatDelta(result.delta_winner_seconds)}</td>
                   <td className="avg-wkg">{result.avg_wkg?.toFixed(2) || '-'}</td>
+                  <td className="heartrate">{result.heartrate_avg || '-'}</td>
+                  <td className="heartrate">{result.heartrate_max || '-'}</td>
                   <td className={getEffortClass(result.power_5s, '5s')}>
                     {result.power_5s?.toFixed(2) || '-'}
                   </td>
