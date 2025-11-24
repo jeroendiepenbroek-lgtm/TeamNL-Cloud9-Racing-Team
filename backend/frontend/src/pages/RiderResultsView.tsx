@@ -83,6 +83,8 @@ const RiderResultsView: React.FC = () => {
   const [data, setData] = useState<RiderResultsResponse | null>(null);
   const [stats, setStats] = useState<RiderStats | null>(null);
   const [days, setDays] = useState(90);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [limitResults, setLimitResults] = useState(50);
 
   useEffect(() => {
     if (riderId) {
@@ -97,15 +99,22 @@ const RiderResultsView: React.FC = () => {
       
       // Parallel fetch results and stats
       const [resultsRes, statsRes] = await Promise.all([
-        fetch(`/api/results/rider/${riderId}?days=${days}`),
+        fetch(`/api/results/rider/${riderId}?days=${days}&limit=100`),
         fetch(`/api/results/rider/${riderId}/stats?days=${days}`)
       ]);
-      
+
       if (!resultsRes.ok || !statsRes.ok) throw new Error('Failed to fetch rider data');
-      
+
       const resultsData = await resultsRes.json();
       const statsData = await statsRes.json();
-      
+
+      // US1: Ensure results stay in DESC order (recent first)
+      if (resultsData.results) {
+        resultsData.results.sort((a: RaceResult, b: RaceResult) => 
+          new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
+        );
+      }
+
       setData(resultsData);
       setStats(statsData);
     } catch (err) {
@@ -205,10 +214,10 @@ const RiderResultsView: React.FC = () => {
         <div className="period-selector">
           <label>Periode:</label>
           <select value={days} onChange={(e) => setDays(parseInt(e.target.value))}>
+            <option value="7">7 dagen</option>
             <option value="30">30 dagen</option>
             <option value="60">60 dagen</option>
-            <option value="90">90 dagen</option>
-            <option value="180">180 dagen</option>
+            <option value="90">90 dagen (max)</option>
           </select>
         </div>
       </div>
@@ -289,9 +298,41 @@ const RiderResultsView: React.FC = () => {
         </span>
       </div>
 
+      {/* US4: Filters */}
+      <div className="filters-section">
+        <div className="filter-group">
+          <input
+            type="text"
+            placeholder="Zoek op event of route..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+        <div className="filter-group">
+          <label>Toon:</label>
+          <select 
+            value={limitResults} 
+            onChange={(e) => setLimitResults(parseInt(e.target.value))}
+            className="limit-select"
+          >
+            <option value="10">10 resultaten</option>
+            <option value="25">25 resultaten</option>
+            <option value="50">50 resultaten</option>
+            <option value="100">Alle resultaten</option>
+          </select>
+        </div>
+      </div>
+
       {/* Results Table */}
       <div className="results-section">
-        <h2>Race Geschiedenis ({data?.count || 0} races)</h2>
+        <h2>Race Geschiedenis ({(() => {
+          const filtered = data?.results.filter(r => 
+            r.event_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (r.route_name && r.route_name.toLowerCase().includes(searchTerm.toLowerCase()))
+          ) || [];
+          return Math.min(filtered.length, limitResults);
+        })()} van {data?.count || 0} races)</h2>
         
         <div className="results-table-container">
           <table className="results-table">
@@ -316,7 +357,13 @@ const RiderResultsView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {data?.results.map((result) => (
+              {data?.results
+                .filter(result => 
+                  result.event_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (result.route_name && result.route_name.toLowerCase().includes(searchTerm.toLowerCase()))
+                )
+                .slice(0, limitResults)
+                .map((result) => (
                 <tr key={result.id}>
                   <td className="date">
                     {new Date(result.event_date).toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })}

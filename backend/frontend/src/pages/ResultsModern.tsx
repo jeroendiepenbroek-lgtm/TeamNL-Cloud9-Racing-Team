@@ -494,7 +494,7 @@ export default function ResultsModern() {
   const [events, setEvents] = useState<EventResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState(365);
+  const [days, setDays] = useState(90);  // US4: Max 90 dagen
   const [limit, setLimit] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -512,7 +512,11 @@ export default function ResultsModern() {
       const data: ApiResponse = await response.json();
       
       if (data.success) {
-        setEvents(data.events);
+        // US1: Ensure events are sorted DESC (recent first)
+        const sortedEvents = [...data.events].sort((a, b) => 
+          new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
+        );
+        setEvents(sortedEvents);
       } else {
         throw new Error('API returned success=false');
       }
@@ -599,7 +603,7 @@ export default function ResultsModern() {
               )}
             </div>
             
-            {/* Period Filter */}
+            {/* Period Filter - US4: Max 90 dagen */}
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select
@@ -607,11 +611,10 @@ export default function ResultsModern() {
                 onChange={(e) => setDays(parseInt(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
               >
+                <option value={7}>7 dagen</option>
                 <option value={30}>30 dagen</option>
                 <option value={60}>60 dagen</option>
-                <option value={90}>90 dagen</option>
-                <option value={180}>180 dagen</option>
-                <option value={365}>365 dagen</option>
+                <option value={90}>90 dagen (max)</option>
               </select>
             </div>
             
