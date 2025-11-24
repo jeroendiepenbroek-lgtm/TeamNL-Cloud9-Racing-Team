@@ -49,9 +49,8 @@ router.post('/rider/:riderId', async (req: Request, res: Response) => {
   try {
     console.info(`🏁 Syncing results for rider ${riderId}`);
 
-    // Use team results sync (includes all riders)
-    const stats = await resultsSyncService.syncTeamResultsFromHistory(daysBack);
-    const resultCount = stats.results_saved;
+    // Use single rider sync (much faster!)
+    const resultCount = await resultsSyncService.syncSingleRiderResults(riderId, daysBack);
 
     res.json({
       success: true,

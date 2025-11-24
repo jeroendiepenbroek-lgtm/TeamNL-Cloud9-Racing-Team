@@ -119,4 +119,63 @@ export class ResultsSyncService {
       throw error;
     }
   }
+
+  /**
+   * Sync results voor SINGLE rider (sneller dan team sync)
+   */
+  async syncSingleRiderResults(riderId: number, daysBack: number = 30): Promise<number> {
+    console.info(`🏁 Starting single rider results sync for ${riderId} (${daysBack} days back)`);
+
+    try {
+      // Haal rider profile met history op
+      const riderProfile = await this.zwiftApi.getRider(riderId);
+      const history = (riderProfile as any).history || [];
+
+      if (!history || history.length === 0) {
+        console.info(`   ℹ️  No history found for rider ${riderId}`);
+        return 0;
+      }
+
+      console.info(`   ✅ Found ${history.length} history items for rider ${riderId}`);
+
+      let totalSaved = 0;
+
+      // Sla results op in database
+      for (const result of history) {
+        try {
+          // Sla result op
+          await this.supabase.saveRaceResult({
+            event_id: parseInt(result.event.id),
+            rider_id: result.riderId,
+            position: result.position,
+            time_seconds: result.time,
+            power_avg: result.power?.avg || null,
+            power_max: result.power?.max || null,
+            heartrate_avg: result.heartRate?.avg || null,
+            heartrate_max: result.heartRate?.max || null,
+            weight: result.weight || null,
+            height: result.height || null,
+            category: result.category || null,
+            rating_before: result.ratingBefore || null,
+            rating_after: result.rating || null,
+            rating_change: result.ratingDelta || null,
+            event_date: new Date(result.event.time * 1000).toISOString(),
+            finish_status: result.dnf ? 'DNF' : 'FINISHED'
+          });
+          
+          totalSaved++;
+        } catch (error) {
+          console.error(`   ⚠️  Error saving result:`, error);
+          // Continue met volgende result
+        }
+      }
+
+      console.info(`✅ Saved ${totalSaved}/${history.length} results for rider ${riderId}`);
+      return totalSaved;
+
+    } catch (error) {
+      console.error(`❌ Single rider sync failed for ${riderId}:`, error);
+      throw error;
+    }
+  }
 }
