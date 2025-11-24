@@ -34,6 +34,40 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/sync/results/rider/:riderId/debug - Debug: see raw API response
+router.get('/rider/:riderId/debug', async (req: Request, res: Response) => {
+  const riderId = parseInt(req.params.riderId);
+
+  if (isNaN(riderId)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid rider ID'
+    });
+  }
+
+  try {
+    const { ZwiftApiClient } = await import('../../api/zwift-client.js');
+    const zwiftApi = new ZwiftApiClient();
+    const riderProfile = await zwiftApi.getRider(riderId);
+    
+    res.json({
+      rider_id: riderId,
+      has_history: !!(riderProfile as any).history,
+      history_length: ((riderProfile as any).history || []).length,
+      history_sample: ((riderProfile as any).history || []).slice(0, 2),
+      all_keys: Object.keys(riderProfile).sort()
+    });
+
+  } catch (error: any) {
+    console.error(`❌ Debug failed:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Debug failed',
+      message: error.message
+    });
+  }
+});
+
 // POST /api/sync/results/rider/:riderId - Sync single rider results
 router.post('/rider/:riderId', async (req: Request, res: Response) => {
   const riderId = parseInt(req.params.riderId);
