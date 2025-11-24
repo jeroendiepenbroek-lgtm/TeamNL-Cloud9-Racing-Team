@@ -150,8 +150,7 @@ export class ResultsSyncService {
       // Sla results op in database
       for (const result of history) {
         try {
-          // Map API response naar database schema
-          await this.supabase.saveRaceResult({
+          const raceResult = {
             event_id: String(result.event?.id || result.eventId),
             rider_id: result.riderId,
             event_name: result.event?.title || null,
@@ -175,11 +174,19 @@ export class ResultsSyncService {
             power_20m: result.wkg1200 || null,
             effort_score: result.load ? Math.round(result.load) : null,
             race_points: result.rankPoints || null
-          });
+          };
+          
+          console.log(`   💾 Saving result for event ${raceResult.event_id}...`);
+          await this.supabase.saveRaceResult(raceResult);
+          console.log(`   ✅ Saved!`);
           
           totalSaved++;
-        } catch (error) {
-          console.error(`   ⚠️  Error saving result:`, error);
+        } catch (error: any) {
+          console.error(`   ⚠️  Error saving result for event ${result.event?.id}:`, {
+            message: error.message,
+            code: error.code,
+            details: error.details
+          });
           // Continue met volgende result
         }
       }
