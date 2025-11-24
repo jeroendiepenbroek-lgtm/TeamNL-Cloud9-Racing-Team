@@ -80,11 +80,11 @@ export class ResultsSyncService {
                 rank: result.position || null,
                 time_seconds: result.time ? Math.round(result.time) : null,
                 avg_wkg: result.wkgAvg || null,
-                pen: result.penTotal ? String(result.penTotal) : null,
+                pen: result.zpCat || null,  // US1: PEN category (A/B/C/D/E)
                 total_riders: result.totalRiders || null,
                 delta_winner_seconds: result.gap ? Math.round(result.gap) : null,
-                velo_rating: result.rating ? Math.round(result.rating) : null,
-                velo_previous: result.ratingBefore ? Math.round(result.ratingBefore) : null,
+                velo_rating: result.rating ? Math.floor(result.rating) : null,  // US6: Afronden naar beneden
+                velo_previous: result.ratingBefore ? Math.floor(result.ratingBefore) : null,
                 velo_change: result.ratingDelta ? Math.round(result.ratingDelta) : null,
                 power_5s: result.wkg5 || null,
                 power_15s: result.wkg15 || null,
@@ -94,7 +94,16 @@ export class ResultsSyncService {
                 power_5m: result.wkg300 || null,
                 power_20m: result.wkg1200 || null,
                 effort_score: result.load ? Math.round(result.load) : null,
-                race_points: result.rankPoints || null
+                race_points: result.rankPoints || null,
+                // US4: Route details
+                route_world: result.event?.route?.world || null,
+                route_name: result.event?.route?.name || null,
+                route_profile: result.event?.route?.profile || null,
+                event_type: result.event?.type || null,
+                sub_type: result.event?.subType || null,
+                distance_km: result.event?.distance ? String(Math.round(result.event.distance * 10) / 10) : null,
+                elevation_m: result.event?.elevation || null,
+                laps: result.event?.laps || null
               });
               
               totalSaved++;
@@ -164,11 +173,11 @@ export class ResultsSyncService {
             rank: result.position || null,
             time_seconds: result.time ? Math.round(result.time) : null,
             avg_wkg: result.wkgAvg || null,
-            pen: result.penTotal ? String(result.penTotal) : null,
+            pen: result.zpCat || null,  // US1: PEN category (A/B/C/D/E)
             total_riders: result.totalRiders || null,
             delta_winner_seconds: result.gap ? Math.round(result.gap) : null,
-            velo_rating: result.rating ? Math.round(result.rating) : null,
-            velo_previous: result.ratingBefore ? Math.round(result.ratingBefore) : null,
+            velo_rating: result.rating ? Math.floor(result.rating) : null,  // US6: Afronden naar beneden
+            velo_previous: result.ratingBefore ? Math.floor(result.ratingBefore) : null,
             velo_change: result.ratingDelta ? Math.round(result.ratingDelta) : null,
             power_5s: result.wkg5 || null,
             power_15s: result.wkg15 || null,
@@ -178,7 +187,16 @@ export class ResultsSyncService {
             power_5m: result.wkg300 || null,
             power_20m: result.wkg1200 || null,
             effort_score: result.load ? Math.round(result.load) : null,
-            race_points: result.rankPoints || null
+            race_points: result.rankPoints || null,
+            // US4: Route details
+            route_world: result.event?.route?.world || null,
+            route_name: result.event?.route?.name || null,
+            route_profile: result.event?.route?.profile || null,
+            event_type: result.event?.type || null,
+            sub_type: result.event?.subType || null,
+            distance_km: result.event?.distance ? String(Math.round(result.event.distance * 10) / 10) : null,
+            elevation_m: result.event?.elevation || null,
+            laps: result.event?.laps || null
           };
           
           await this.supabase.saveRaceResult(raceResult);
