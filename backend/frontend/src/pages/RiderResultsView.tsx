@@ -28,6 +28,8 @@ interface RaceResult {
   distance_km?: string;
   elevation_m?: number;
   pen: string;
+  position?: number;
+  position_in_category?: number;
   rank: number;
   total_riders?: number;
   velo_rating?: number;
@@ -390,7 +392,18 @@ const RiderResultsView: React.FC = () => {
                     {result.pen || '-'}
                   </td>
                   <td className={`rank ${getRankBadgeClass(result.rank)}`}>
-                    {result.rank || '-'}
+                    {result.position ? (
+                      <>
+                        {result.position}
+                        {result.position_in_category && result.position !== result.position_in_category && (
+                          <span className="category-pos"> ({result.position_in_category})</span>
+                        )}
+                      </>
+                    ) : result.position_in_category ? (
+                      <span className="category-pos-only">{result.position_in_category}</span>
+                    ) : (
+                      '-'
+                    )}
                     {result.total_riders && (
                       <span className="total"> / {result.total_riders}</span>
                     )}

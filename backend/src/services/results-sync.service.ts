@@ -77,7 +77,9 @@ export class ResultsSyncService {
                 event_name: result.event?.title || null,
                 event_date: result.event?.time ? new Date(result.event.time * 1000).toISOString() : null,
                 rider_name: result.name || null,
-                rank: result.position || result.positionInCategory || null,  // US: positionInCategory fallback
+                position: result.position || null,  // US1: Overall position
+                position_in_category: result.positionInCategory || null,  // US1: Category position
+                rank: result.position || result.positionInCategory || null,  // Best available (backward compat)
                 time_seconds: result.time ? Math.round(result.time) : null,
                 avg_wkg: result.wkgAvg || null,
                 pen: result.zpCat || null,
@@ -172,7 +174,9 @@ export class ResultsSyncService {
             event_name: result.event?.title || null,
             event_date: result.event?.time ? new Date(result.event.time * 1000).toISOString() : null,
             rider_name: result.name || null,
-            rank: result.position || result.positionInCategory || null,  // US: positionInCategory fallback
+            position: result.position || null,  // US1: Overall position
+            position_in_category: result.positionInCategory || null,  // US1: Category position
+            rank: result.position || result.positionInCategory || null,  // Best available (backward compat)
             time_seconds: result.time ? Math.round(result.time) : null,
             avg_wkg: result.wkgAvg || null,
             pen: result.zpCat || null,

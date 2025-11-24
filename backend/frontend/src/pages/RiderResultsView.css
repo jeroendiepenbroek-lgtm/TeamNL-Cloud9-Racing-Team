@@ -367,6 +367,20 @@
   font-size: 0.75rem;
 }
 
+/* US1: Position indicators */
+.rank .category-pos {
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.8125rem;
+  margin-left: 0.125rem;
+}
+
+.rank .category-pos-only {
+  color: #f59e0b;
+  font-weight: 600;
+  font-style: italic;
+}
+
 /* vELO Badge */
 .velo-badge {
   display: inline-flex;
