@@ -181,10 +181,7 @@ export class ResultsSyncService {
             race_points: result.rankPoints || null
           };
           
-          console.log(`   💾 Saving result for event ${raceResult.event_id}...`);
           await this.supabase.saveRaceResult(raceResult);
-          console.log(`   ✅ Saved!`);
-          
           totalSaved++;
         } catch (error: any) {
           const errorMsg = error.message || JSON.stringify(error);

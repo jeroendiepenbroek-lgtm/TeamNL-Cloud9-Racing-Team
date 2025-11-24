@@ -148,9 +148,6 @@ export class ZwiftApiClient {
   async getRider(riderId: number): Promise<ZwiftRider> {
     return await rateLimiter.executeWithLimit('rider_individual', async () => {
       const response = await this.client.get(`/riders/${riderId}`);
-      // Debug: check if history exists
-      console.log(`[DEBUG] Rider ${riderId} keys:`, Object.keys(response.data).sort());
-      console.log(`[DEBUG] Rider ${riderId} history:`, response.data.history ? `${response.data.history.length} items` : 'MISSING');
       return response.data;
     });
   }
