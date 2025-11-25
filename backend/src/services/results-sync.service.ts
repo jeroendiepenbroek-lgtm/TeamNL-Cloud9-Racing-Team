@@ -74,6 +74,7 @@ export class ResultsSyncService {
                 event_id: parseInt(result.event.id),
                 rider_id: result.riderId,
                 position: result.position,
+                position_in_category: result.positionInCategory,
                 time_seconds: result.time,
                 power_avg: result.power?.avg,
                 power_max: result.power?.max,
@@ -85,6 +86,7 @@ export class ResultsSyncService {
                 rating_before: result.ratingBefore,
                 rating_after: result.rating,
                 rating_change: result.ratingDelta,
+                total_riders: result.penTotal, // 🎯 Total deelnemers in pen/category
                 event_date: new Date(result.event.time * 1000).toISOString(),
                 finish_status: result.dnf ? 'DNF' : 'FINISHED'
               });
