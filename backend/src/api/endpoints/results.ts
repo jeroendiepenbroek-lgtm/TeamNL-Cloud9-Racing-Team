@@ -41,11 +41,14 @@ router.get('/team/recent', async (req: Request, res: Response) => {
         };
       }
       
-      // Format result met power curves + US1/US2 fields + DNF
+      // Format result met power curves + US1/US2 fields + DNF + HR + position_in_category
       acc[eventKey].results.push({
         rider_id: result.rider_id,
         rider_name: result.rider?.name || result.rider_name,
         rank: result.rank,
+        position: result.position,  // Overall position
+        position_in_category: result.position_in_category,  // Position within category/pen
+        total_riders: result.total_riders,  // Total participants
         time_seconds: result.time_seconds,
         avg_wkg: result.avg_wkg,
         pen: result.pen,  // US1: PEN per result
@@ -62,6 +65,8 @@ router.get('/team/recent', async (req: Request, res: Response) => {
         effort_score: result.effort_score,
         race_points: result.race_points,
         delta_winner_seconds: result.delta_winner_seconds,
+        heartrate_avg: result.heartrate_avg,  // Average heartrate
+        heartrate_max: result.heartrate_max,  // Max heartrate
         dnf: result.dnf || false  // DNF flag
       });
       

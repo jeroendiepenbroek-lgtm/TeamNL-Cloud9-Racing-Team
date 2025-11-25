@@ -6,8 +6,15 @@
 import { useEffect, useState } from 'react';
 import { 
   Trophy, TrendingUp, TrendingDown, Minus, Calendar, MapPin,
-  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter, DoorOpen
+  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter, DoorOpen, Heart
 } from 'lucide-react';
+
+// Decode HTML entities (ø → ø, etc.)
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
 
 // vELO Tiers - exacte copy van Team Dashboard
 const VELO_TIERS = [
@@ -63,6 +70,9 @@ interface RaceResult {
   rider_id: number;
   rider_name: string;
   rank: number;
+  position: number | null;  // Overall finish position
+  position_in_category: number | null;  // Position within category/pen
+  total_riders: number | null;  // Total participants
   time_seconds: number;
   avg_wkg: number;
   pen: string | null;
@@ -79,6 +89,8 @@ interface RaceResult {
   effort_score: number | null;
   race_points: number | null;
   delta_winner_seconds: number | null;
+  heartrate_avg: number | null;  // Average heartrate
+  heartrate_max: number | null;  // Max heartrate
   dnf: boolean | null;
 }
 
@@ -223,16 +235,33 @@ function DNFBadge() {
   );
 }
 
-function RankBadge({ rank, dnf }: { rank: number; dnf: boolean | null }) {
+function RankBadge({ rank, position, positionInCategory, dnf }: { 
+  rank: number; 
+  position: number | null;
+  positionInCategory: number | null;
+  dnf: boolean | null 
+}) {
   // Toon DNF badge als rider niet gefinisht is
   if (dnf) {
     return <DNFBadge />;
   }
+  
+  // Primaire display: position_in_category (groot), overall position tussen haakjes (klein)
+  const mainDisplay = positionInCategory || position || rank;
+  
+  // Als we position_in_category hebben EN position, EN ze zijn verschillend, toon position tussen haakjes
+  const subDisplay = positionInCategory && position && position !== positionInCategory 
+    ? `(${position})`
+    : null;
+  
   if (rank === 1) {
     return (
       <div className="flex items-center gap-1 text-yellow-600">
         <Trophy className="w-4 h-4" />
         <span className="font-bold">1st</span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
+        )}
       </div>
     );
   }
@@ -242,6 +271,9 @@ function RankBadge({ rank, dnf }: { rank: number; dnf: boolean | null }) {
       <div className="flex items-center gap-1 text-gray-400">
         <Award className="w-4 h-4" />
         <span className="font-bold">2nd</span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
+        )}
       </div>
     );
   }
@@ -251,14 +283,24 @@ function RankBadge({ rank, dnf }: { rank: number; dnf: boolean | null }) {
       <div className="flex items-center gap-1 text-amber-700">
         <Award className="w-4 h-4" />
         <span className="font-bold">3rd</span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
+        )}
       </div>
     );
   }
   
   return (
-    <span className="text-sm font-medium text-gray-600">
-      {rank}
-    </span>
+    <div className="flex flex-col items-start">
+      <div className="flex items-baseline gap-1">
+        <span className="text-sm font-medium text-gray-600">
+          {mainDisplay}
+        </span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500">{subDisplay}</span>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -287,7 +329,7 @@ function EventCard({ event }: { event: EventResult }) {
             {/* Titel */}
             <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
               <Trophy className="w-5 h-5 flex-shrink-0" />
-              <span className="truncate">{event.event_name}</span>
+              <span className="truncate">{decodeHtmlEntities(event.event_name)}</span>
             </h3>
             
             {/* Route Details (als beschikbaar) */}
@@ -295,9 +337,9 @@ function EventCard({ event }: { event: EventResult }) {
               <div className="space-y-2 mb-3">
                 <div className="flex items-center gap-2 text-white/90">
                   <MapPin className="w-4 h-4" />
-                  <span className="font-bold">{event.route_world}</span>
+                  <span className="font-bold">{decodeHtmlEntities(event.route_world)}</span>
                   {event.route_name && (
-                    <span className="text-white/70">· {event.route_name}</span>
+                    <span className="text-white/70">· {decodeHtmlEntities(event.route_name)}</span>
                   )}
                 </div>
                 
@@ -342,18 +384,19 @@ function EventCard({ event }: { event: EventResult }) {
                 <span>{formatDate(event.event_date)}</span>
               </div>
               
-              {event.total_riders && (
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{event.total_riders}</span>
-                </div>
-              )}
-              
-              {/* Team Riders - klein naast total zonder groot kader */}
+              {/* Team Riders met vinkje */}
               <div className="flex items-center gap-1 text-orange-300">
                 <UserCheck2 className="w-4 h-4" />
                 <span className="font-bold">{event.results.length}</span>
               </div>
+              
+              {/* Totaal deelnemers met meervoudig borstbeeld */}
+              {event.total_riders && (
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  <span className="font-semibold">{event.total_riders}</span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -403,6 +446,8 @@ function EventCard({ event }: { event: EventResult }) {
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">vELO Live</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Time</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Avg W/kg</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">HR Avg</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">HR Max</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">5s</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">15s</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">30s</th>
@@ -416,11 +461,16 @@ function EventCard({ event }: { event: EventResult }) {
                     {penResults.map((result) => (
                       <tr key={result.rider_id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
-                          <RankBadge rank={result.rank} dnf={result.dnf} />
+                          <RankBadge 
+                            rank={result.rank} 
+                            position={result.position}
+                            positionInCategory={result.position_in_category}
+                            dnf={result.dnf} 
+                          />
                         </td>
                         
                         <td className="px-4 py-3">
-                          <span className="font-medium text-gray-900">{result.rider_name}</span>
+                          <span className="font-medium text-gray-900">{decodeHtmlEntities(result.rider_name)}</span>
                         </td>
                         
                         <td className="px-4 py-3">
@@ -454,6 +504,34 @@ function EventCard({ event }: { event: EventResult }) {
                               {result.avg_wkg.toFixed(2)}
                             </span>
                           </div>
+                        </td>
+                        
+                        {/* HR Avg */}
+                        <td className="px-4 py-3 text-center">
+                          {result.heartrate_avg ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <Heart className="w-3 h-3 text-red-500 fill-red-100" />
+                              <span className="text-xs font-medium text-red-600">
+                                {result.heartrate_avg}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-300">-</span>
+                          )}
+                        </td>
+                        
+                        {/* HR Max */}
+                        <td className="px-4 py-3 text-center">
+                          {result.heartrate_max ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <Heart className="w-3 h-3 text-red-700 fill-red-500" />
+                              <span className="text-xs font-semibold text-red-700">
+                                {result.heartrate_max}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-300">-</span>
+                          )}
                         </td>
                         
                         <td className="px-4 py-3 text-center">
