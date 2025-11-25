@@ -255,9 +255,6 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
     ? `(${position})`
     : null;
   
-  // Als geen totalRiders maar wel position/rank, toon dat het om een category positie gaat
-  const displaySuffix = !totalRiders && positionInCategory ? ' in cat' : null;
-  
   if (rank === 1) {
     return (
       <div className="flex flex-col items-start">
@@ -320,9 +317,6 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
         )}
         {totalRiders && (
           <span className="text-xs text-gray-400 ml-0.5">/{totalRiders}</span>
-        )}
-        {displaySuffix && (
-          <span className="text-[10px] text-gray-400 italic ml-0.5">{displaySuffix}</span>
         )}
       </div>
     </div>
