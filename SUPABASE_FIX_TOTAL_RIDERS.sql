@@ -1,21 +1,30 @@
--- Fix: Update total_riders voor alle events
--- NOTA: Voor oude events (>30 dagen) heeft Zwift API geen data meer
--- We schatten total_riders = MAX(position) van onze team members
--- Dit is een MINIMUM schatting - het echte getal kan hoger zijn
+-- Fix: Update total_riders voor oude events
+-- 
+-- DEFINITIE:
+-- - total_riders = penTotal (aantal deelnemers in de PEN/category, bijv. cat B)
+-- - position_in_category = rank binnen die pen
+--
+-- Voor NIEUWE events wordt penTotal correct opgeslagen via rider.history sync
+-- Voor OUDE events (>30 dagen) schatten we: MAX(position_in_category) per event+pen
 
--- Stap 1: Update total_riders gebaseerd op MAX(position) per event
--- position = overall position in event (niet gefilterd op team)
+-- Stap 1: Reset alle total_riders naar NULL (huidige waarden zijn incorrect)
+UPDATE zwift_api_race_results
+SET total_riders = NULL
+WHERE total_riders IS NOT NULL;
+
+-- Stap 2: Update total_riders = MAX(position_in_category) per event
+-- Dit is een SCHATTING voor oude data (nieuwe data krijgt accurate penTotal)
 UPDATE zwift_api_race_results
 SET total_riders = (
-  SELECT MAX(COALESCE(position, rank))
+  SELECT MAX(COALESCE(position_in_category, position, rank))
   FROM zwift_api_race_results sub
   WHERE sub.event_id = zwift_api_race_results.event_id
+    AND sub.pen = zwift_api_race_results.pen
 )
 WHERE total_riders IS NULL;
 
--- WAARSCHUWING: Dit is een SCHATTING!
--- Als onze slechtste team rider positie 139 heeft, 
--- dan waren er MINIMAAL 139 deelnemers (waarschijnlijk meer)
+-- NOTA: Voor oude events is dit een minimum schatting
+-- Nieuwe syncs slaan penTotal correct op uit rider.history[].penTotal
 
 -- Verificatie
 SELECT 
