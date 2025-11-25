@@ -31,7 +31,7 @@ import { syncConfig } from './config/sync.config.js';
 import { SyncServiceV2 } from './services/sync-v2.service.js';
 import { syncConfigService } from './services/sync-config.service.js';
 import { SyncConfigValidator } from './services/sync-config-validator.js';
-import { smartSyncScheduler } from './services/smart-sync-scheduler.service.js';
+import { unifiedScheduler } from './services/unified-scheduler.service.js';
 import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -152,134 +152,20 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ║  • POST /api/history/:riderId/sync             ║
 ║  • POST /api/sync-logs/full-sync               ║
 ║                                                ║
-║  ⏰ Auto-Sync (US8):                           ║
-║  • Enabled: ${syncConfig.enabled ? 'YES' : 'NO'}                              ║
-║  • Interval: Every ${syncConfig.intervalHours}h                      ║
 ╚════════════════════════════════════════════════╝
   `);
   
-  // US7 + US8: Legacy auto-sync scheduler - DISABLED to prevent conflicts with V2
-  // autoSyncService.start();  // ❌ DISABLED: conflicts with V2 syncs, causes rate limits
+  // ═══════════════════════════════════════════════════════════════
+  //  UNIFIED SYNC SCHEDULER - Modern & Professional
+  // ═══════════════════════════════════════════════════════════════
+  // Combineert beste van Legacy Cron + Smart Scheduler:
+  // ✅ Riders: Elk uur (:00)
+  // ✅ Events Near: Elke 15 min (:05, :20, :35, :50)
+  // ✅ Events Far: Elke 3u (:55)
+  // ✅ Results: Elke 4u (:30) - NIEUW!
+  // ✅ Cleanup: Zondag 03:00
   
-  // Choose scheduler mode: SMART (US4) or LEGACY (cron-based)
-  const useSmartScheduler = process.env.USE_SMART_SCHEDULER === 'true';
-  
-  if (useSmartScheduler) {
-    // US4: Smart Sync Scheduler (Adaptive, Dynamic)
-    console.log('\n🧠 Starting Smart Sync Scheduler (US4)...');
-    smartSyncScheduler.start();
-    console.log('✅ Smart Sync Scheduler active\n');
-  } else {
-    // Legacy V2 Cron-based Schedulers
-    console.log('🔄 Configuring V2 Auto-Sync schedulers (LEGACY)...');
-  }
-  
-  const config = syncConfigService.getConfig();
-  
-  // Validate sync configuration to prevent conflicts
-  const syncValidatorConfig = SyncConfigValidator.fromEnv(process.env);
-  const validation = SyncConfigValidator.validate(syncValidatorConfig);
-  
-  if (!validation.valid) {
-    console.error('\n❌ INVALID SYNC CONFIGURATION:');
-    validation.errors.forEach(err => console.error(`   ${err}`));
-    console.error('\n💡 Fix these errors in your .env or use recommended config\n');
-    process.exit(1);
-  }
-  
-  if (validation.warnings.length > 0) {
-    console.warn('\n⚠️  Sync Configuration Warnings:');
-    validation.warnings.forEach(warn => console.warn(`   ${warn}`));
-  }
-  
-  if (validation.suggestions.length > 0) {
-    console.log('\n💡 Suggestions:');
-    validation.suggestions.forEach(sug => console.log(`   ${sug}`));
-  }
-  
-  const syncServiceV2 = new SyncServiceV2();
-  
-  // Rider Sync Scheduler - Runs every 60 minutes (HOURLY - HIGHEST PRIORITY)
-  // Trigger: Every hour at :00 (00:00, 01:00, 02:00, ..., 23:00)
-  // POST rate limit: 1/15min → 60min interval = 4x safety margin
-  if (config.riderSyncEnabled) {
-    const riderCronExpression = '0 * * * *'; // At :00 every hour
-    console.log(`  ✅ Rider Sync (P1): Every 60 min (hourly) - Safe POST rate limit (24x/dag)`);
-    
-    cron.schedule(riderCronExpression, async () => {
-      console.log(`\n⏰ [CRON] Rider Sync (PRIORITY 1) triggered at ${new Date().toISOString()}`);
-      try {
-        const metrics = await syncServiceV2.syncRidersCoordinated({
-          intervalMinutes: 60, // 60 minutes (hourly)
-        });
-        console.log(`✅ [CRON] Rider Sync completed: ${metrics.riders_processed} riders (${metrics.riders_new} new, ${metrics.riders_updated} updated)`);
-      } catch (error) {
-        console.error(`❌ [CRON] Rider Sync failed:`, error);
-      }
-    });
-  } else {
-    console.log(`  ⏸️  Rider Sync: Disabled`);
-  }
-  
-  // Combined Event Sync - NEAR only mode (Frequent: every 15 min)
-  // Runs at :05, :20, :35, :50 - only syncs events < threshold (near events)
-  const nearEventCronExpression = '5,20,35,50 * * * *';
-  console.log(`  ✅ Event Sync NEAR (P2): At :05, :20, :35, :50 every hour`);
-  
-  cron.schedule(nearEventCronExpression, async () => {
-    console.log(`\n⏰ [CRON] Event Sync (NEAR) triggered at ${new Date().toISOString()}`);
-    try {
-      const metrics = await syncServiceV2.syncEventsCoordinated({
-        intervalMinutes: 15,
-        thresholdMinutes: config.nearEventThresholdMinutes,
-        lookforwardHours: config.lookforwardHours,
-        mode: 'near_only', // Alleen near events + signups
-      });
-      console.log(`✅ [CRON] Event Sync (NEAR) completed: ${metrics.events_near} near events, ${metrics.signups_synced} signups`);
-    } catch (error) {
-      console.error(`❌ [CRON] Event Sync (NEAR) failed:`, error);
-    }
-  });
-  
-  // Combined Event Sync - FULL SCAN mode (Periodic: every 3 hours at :55)
-  // Runs at :55 every 3 hours - syncs ALL events (near + far)
-  // 5 min AFTER NEAR sync to prevent overlap (00:55, 03:55, 06:55, 09:55, 12:55, 15:55, 18:55, 21:55)
-  const fullEventCronExpression = '55 */3 * * *';
-  console.log(`  ✅ Event Sync FULL (P2): At :55 every 3 hours (5 min after NEAR)`);
-  
-  cron.schedule(fullEventCronExpression, async () => {
-    console.log(`\n⏰ [CRON] Event Sync (FULL) triggered at ${new Date().toISOString()}`);
-    try {
-      const metrics = await syncServiceV2.syncEventsCoordinated({
-        intervalMinutes: 180, // 3 hours
-        thresholdMinutes: config.nearEventThresholdMinutes,
-        lookforwardHours: config.lookforwardHours,
-        mode: 'full_scan', // Alle events + signups (near + far)
-      });
-      console.log(`✅ [CRON] Event Sync (FULL) completed: ${metrics.events_near} near + ${metrics.events_far} far events, ${metrics.signups_synced} signups`);
-    } catch (error) {
-      console.error(`❌ [CRON] Event Sync (FULL) failed:`, error);
-    }
-  });
-  
-  console.log('✅ All V2 Auto-Sync schedulers configured\n');
-
-  // Weekly Event Cleanup - Zondag 03:00 (laag verkeer)
-  console.log('🧹 Configuring weekly event cleanup...');
-  
-  cron.schedule('0 3 * * 0', async () => {
-    console.log(`\n🧹 [CRON] Weekly event cleanup triggered at ${new Date().toISOString()}`);
-    try {
-      const { eventCleanupService } = await import('./services/event-cleanup.service.js');
-      const result = await eventCleanupService.runFullCleanup();
-      console.log(`✅ [CRON] Cleanup completed:`, result);
-    } catch (error) {
-      console.error(`❌ [CRON] Cleanup failed:`, error);
-    }
-  });
-  
-  console.log('  ✅ Weekly cleanup: Zondag 03:00 (past events + stale future)');
-  console.log('✅ Event cleanup scheduler configured\n');
+  unifiedScheduler.start();
 });
 
 // Server error handling

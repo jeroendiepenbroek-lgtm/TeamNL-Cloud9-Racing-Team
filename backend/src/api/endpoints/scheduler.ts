@@ -1,17 +1,17 @@
 /**
- * Smart Sync Scheduler API Endpoint
- * US4: Manage dynamische sync scheduler
+ * Unified Sync Scheduler API Endpoint
+ * Manage sync scheduler (riders, events, results, cleanup)
  */
 
 import { Router, Request, Response } from 'express';
-import { smartSyncScheduler } from '../../services/smart-sync-scheduler.service.js';
+import { unifiedScheduler } from '../../services/unified-scheduler.service.js';
 
 const router = Router();
 
 // GET /api/scheduler/status - Get scheduler status
 router.get('/status', (req: Request, res: Response) => {
   try {
-    const status = smartSyncScheduler.getStatus();
+    const status = unifiedScheduler.getStatus();
     
     res.json({
       success: true,
@@ -34,12 +34,12 @@ router.post('/restart', (req: Request, res: Response) => {
     const newConfig = req.body;
     
     console.log('[Scheduler] Restarting with config:', newConfig);
-    smartSyncScheduler.restart(newConfig);
+    unifiedScheduler.restart(newConfig);
     
     res.json({
       success: true,
       message: 'Scheduler restarted successfully',
-      status: smartSyncScheduler.getStatus()
+      status: unifiedScheduler.getStatus()
     });
     
   } catch (error: any) {
@@ -56,7 +56,7 @@ router.post('/restart', (req: Request, res: Response) => {
 router.post('/stop', (req: Request, res: Response) => {
   try {
     console.log('[Scheduler] Stopping...');
-    smartSyncScheduler.stop();
+    unifiedScheduler.stop();
     
     res.json({
       success: true,
@@ -77,12 +77,12 @@ router.post('/stop', (req: Request, res: Response) => {
 router.post('/start', (req: Request, res: Response) => {
   try {
     console.log('[Scheduler] Starting...');
-    smartSyncScheduler.start();
+    unifiedScheduler.start();
     
     res.json({
       success: true,
       message: 'Scheduler started successfully',
-      status: smartSyncScheduler.getStatus()
+      status: unifiedScheduler.getStatus()
     });
     
   } catch (error: any) {
@@ -90,6 +90,26 @@ router.post('/start', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Failed to start scheduler',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/scheduler/config - Get current config
+router.get('/config', (req: Request, res: Response) => {
+  try {
+    const config = unifiedScheduler.getConfig();
+    
+    res.json({
+      success: true,
+      config
+    });
+    
+  } catch (error: any) {
+    console.error('[Scheduler] Config error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get scheduler config',
       message: error.message
     });
   }
