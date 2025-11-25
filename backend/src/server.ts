@@ -31,7 +31,6 @@ import { syncConfig } from './config/sync.config.js';
 import { SyncServiceV2 } from './services/sync-v2.service.js';
 import { syncConfigService } from './services/sync-config.service.js';
 import { SyncConfigValidator } from './services/sync-config-validator.js';
-import { unifiedScheduler } from './services/unified-scheduler.service.js';
 import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -158,14 +157,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // ═══════════════════════════════════════════════════════════════
   //  UNIFIED SYNC SCHEDULER - Modern & Professional
   // ═══════════════════════════════════════════════════════════════
-  // Combineert beste van Legacy Cron + Smart Scheduler:
-  // ✅ Riders: Elk uur (:00)
-  // ✅ Events Near: Elke 15 min (:05, :20, :35, :50)
-  // ✅ Events Far: Elke 3u (:55)
-  // ✅ Results: Elke 4u (:30) - NIEUW!
-  // ✅ Cleanup: Zondag 03:00
-  
-  unifiedScheduler.start();
+  // Scheduler gestart via endpoints (admin controle)
+  // Zie /api/scheduler voor status en controle
+  console.log('✅ Server ready - schedulers beschikbaar via /api/scheduler');
 });
 
 // Server error handling
