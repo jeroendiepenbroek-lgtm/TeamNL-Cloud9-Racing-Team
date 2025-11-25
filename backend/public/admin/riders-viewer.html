@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riders Viewer - TeamNL Cloud9</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .riders-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-a { background: #fee2e2; color: #991b1b; }
+        .badge-b { background: #dcfce7; color: #166534; }
+        .badge-c { background: #dbeafe; color: #1e40af; }
+        .badge-d { background: #fef3c7; color: #92400e; }
+
+        .velo-rating {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 0.85rem;
+            }
+            
+            th, td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏃 Riders Viewer</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="index.html" class="btn btn-secondary">← Dashboard</a>
+                <button class="btn btn-primary" onclick="loadRiders()">🔄 Ververs</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalRiders">-</div>
+                <div class="stat-label">Total Riders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgVelo">-</div>
+                <div class="stat-label">Avg vELO Rating</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="catACount">-</div>
+                <div class="stat-label">Category A</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="catBCount">-</div>
+                <div class="stat-label">Category B</div>
+            </div>
+        </div>
+
+        <!-- Riders Table -->
+        <div class="riders-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rider Name</th>
+                        <th>Category</th>
+                        <th>vELO Rating</th>
+                        <th>FTP (W/kg)</th>
+                        <th>Weight</th>
+                        <th>Races</th>
+                        <th>Power 5min</th>
+                    </tr>
+                </thead>
+                <tbody id="ridersBody">
+                    <tr>
+                        <td colspan="7" class="loading">Laden...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : '';
+
+        async function loadRiders() {
+            try {
+                const res = await fetch(`${API_BASE}/api/riders?limit=50`);
+                const data = await res.json();
+                
+                if (data.success && data.riders) {
+                    displayRiders(data.riders, data.count);
+                } else {
+                    document.getElementById('ridersBody').innerHTML = 
+                        '<tr><td colspan="7" style="text-align: center; color: #f56565;">Error loading riders</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('ridersBody').innerHTML = 
+                    '<tr><td colspan="7" style="text-align: center; color: #f56565;">Failed to load riders</td></tr>';
+            }
+        }
+
+        function displayRiders(riders, totalCount) {
+            // Update stats
+            document.getElementById('totalRiders').textContent = totalCount;
+            
+            const validRatings = riders.filter(r => r.race_current_rating).map(r => r.race_current_rating);
+            const avgVelo = validRatings.length > 0 
+                ? Math.round(validRatings.reduce((a, b) => a + b, 0) / validRatings.length)
+                : '-';
+            document.getElementById('avgVelo').textContent = avgVelo;
+            
+            const catA = riders.filter(r => r.zp_category === 'A').length;
+            const catB = riders.filter(r => r.zp_category === 'B').length;
+            document.getElementById('catACount').textContent = catA;
+            document.getElementById('catBCount').textContent = catB;
+            
+            // Build table
+            const tbody = document.getElementById('ridersBody');
+            tbody.innerHTML = riders.map(rider => `
+                <tr>
+                    <td><strong>${rider.name || 'Unknown'}</strong></td>
+                    <td>
+                        ${rider.zp_category 
+                            ? `<span class="badge badge-${rider.zp_category.toLowerCase()}">${rider.zp_category}</span>`
+                            : '-'
+                        }
+                    </td>
+                    <td class="velo-rating">${rider.race_current_rating || '-'}</td>
+                    <td>${rider.zp_ftp ? rider.zp_ftp.toFixed(1) : '-'}</td>
+                    <td>${rider.weight ? rider.weight.toFixed(1) + ' kg' : '-'}</td>
+                    <td>${rider.race_finishes || 0}</td>
+                    <td>${rider.power_wkg300 ? rider.power_wkg300.toFixed(2) : '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        // Load on page load
+        loadRiders();
+        
+        // Auto-refresh every 60 seconds
+        setInterval(loadRiders, 60000);
+    </script>
+</body>
+</html>

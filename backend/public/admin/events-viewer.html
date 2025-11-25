@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Events - TeamNL Cloud9</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 0.85rem;
+            color: #718096;
+            font-weight: 600;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .event-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 25px;
+            transition: all 0.2s;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .event-header {
+            margin-bottom: 15px;
+        }
+
+        .event-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .event-date {
+            color: #667eea;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .event-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: #718096;
+        }
+
+        .detail-value {
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-soon {
+            background: #fed7aa;
+            color: #7c2d12;
+        }
+
+        .badge-today {
+            background: #fca5a5;
+            color: #7f1d1d;
+        }
+
+        .badge-tomorrow {
+            background: #fef08a;
+            color: #713f12;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Upcoming Events</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="index.html" class="btn btn-secondary">← Dashboard</a>
+                <button class="btn btn-primary" onclick="loadEvents()">🔄 Ververs</button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <div class="filter-group">
+                <label>Tijdvenster</label>
+                <select id="hoursSelect" onchange="loadEvents()">
+                    <option value="24">Volgende 24 uur</option>
+                    <option value="48" selected>Volgende 48 uur</option>
+                    <option value="72">Volgende 72 uur</option>
+                    <option value="168">Volgende week</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Events Grid -->
+        <div id="eventsContainer" class="loading">
+            <h2>Events laden...</h2>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : '';
+
+        async function loadEvents() {
+            try {
+                const hours = document.getElementById('hoursSelect').value;
+                const res = await fetch(`${API_BASE}/api/events/upcoming?hours=${hours}`);
+                const data = await res.json();
+                
+                if (data.success && data.events && data.events.length > 0) {
+                    displayEvents(data.events);
+                } else {
+                    document.getElementById('eventsContainer').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <h3>Geen aankomende events</h3>
+                            <p>Er zijn geen events gepland in dit tijdvenster</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('eventsContainer').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h3>Fout bij laden van events</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayEvents(events) {
+            const container = document.getElementById('eventsContainer');
+            container.className = 'events-grid';
+            
+            container.innerHTML = events.map(event => {
+                const eventDate = new Date(event.event_date);
+                const now = new Date();
+                const hoursUntil = Math.round((eventDate - now) / (1000 * 60 * 60));
+                
+                let timeBadge = '';
+                if (hoursUntil < 2) {
+                    timeBadge = '<span class="badge badge-today">🔥 Binnenkort!</span>';
+                } else if (hoursUntil < 24) {
+                    timeBadge = `<span class="badge badge-today">📍 Over ${hoursUntil}h</span>`;
+                } else if (hoursUntil < 48) {
+                    timeBadge = '<span class="badge badge-tomorrow">📆 Morgen</span>';
+                } else {
+                    timeBadge = `<span class="badge badge-soon">📅 Over ${Math.round(hoursUntil/24)} dagen</span>`;
+                }
+                
+                return `
+                    <div class="event-card">
+                        <div class="event-header">
+                            <div class="event-name">${event.name || 'Unnamed Event'}</div>
+                            <div class="event-date">
+                                ${eventDate.toLocaleString('nl-NL', { 
+                                    weekday: 'short', 
+                                    day: 'numeric', 
+                                    month: 'short', 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                })}
+                                ${timeBadge}
+                            </div>
+                        </div>
+                        
+                        <div class="event-details">
+                            ${event.event_type ? `
+                                <div class="detail-row">
+                                    <span class="detail-label">Type</span>
+                                    <span class="detail-value">${event.event_type}</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${event.sub_type ? `
+                                <div class="detail-row">
+                                    <span class="detail-label">Subtype</span>
+                                    <span class="detail-value">${event.sub_type}</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${event.distance_km ? `
+                                <div class="detail-row">
+                                    <span class="detail-label">📏 Afstand</span>
+                                    <span class="detail-value">${event.distance_km} km</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${event.elevation_m ? `
+                                <div class="detail-row">
+                                    <span class="detail-label">⛰️ Hoogtemeters</span>
+                                    <span class="detail-value">${event.elevation_m}m</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${event.route_name ? `
+                                <div class="detail-row">
+                                    <span class="detail-label">🗺️ Route</span>
+                                    <span class="detail-value">${event.route_name}</span>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="detail-row">
+                                <span class="detail-label">🆔 Event ID</span>
+                                <span class="detail-value">${event.event_id}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load on page load
+        loadEvents();
+        
+        // Auto-refresh every 60 seconds
+        setInterval(loadEvents, 60000);
+    </script>
+</body>
+</html>

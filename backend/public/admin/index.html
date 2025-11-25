@@ -246,51 +246,51 @@
                 <span class="card-badge">Debug Tools</span>
             </a>
 
-            <!-- API Endpoints -->
-            <a href="/api/riders?limit=10" class="card">
+            <!-- Data Viewers -->
+            <a href="riders-viewer.html" class="card">
                 <div class="card-icon">🏃</div>
-                <div class="card-title">Riders API</div>
+                <div class="card-title">Riders Viewer</div>
                 <div class="card-description">
-                    Direct toegang tot riders endpoint. JSON data van eerste 10 club members.
+                    Overzicht van alle club riders met vELO ratings, FTP, power curves en statistieken.
                 </div>
-                <span class="card-badge">REST API</span>
+                <span class="card-badge">Live Data</span>
             </a>
 
-            <a href="/api/riders/deltas?hours=24" class="card">
-                <div class="card-icon">📈</div>
-                <div class="card-title">Rider Deltas</div>
-                <div class="card-description">
-                    Real-time veranderingen in rider stats (vELO, FTP, power curves). Live Velo dashboard data.
-                </div>
-                <span class="card-badge">Nieuw ⚡</span>
-            </a>
-
-            <a href="/api/events/upcoming?hours=48" class="card">
+            <a href="events-viewer.html" class="card">
                 <div class="card-icon">📅</div>
                 <div class="card-title">Upcoming Events</div>
                 <div class="card-description">
-                    Overzicht van aankomende races in de volgende 48 uur. Event discovery output.
+                    Aankomende races met countdown timers, route details en event informatie.
                 </div>
                 <span class="card-badge">Next 48h</span>
             </a>
 
             <!-- Monitoring -->
-            <a href="/api/sync-logs?limit=20" class="card">
+            <a href="sync-logs-viewer.html" class="card">
                 <div class="card-icon">📋</div>
                 <div class="card-title">Sync Logs</div>
                 <div class="card-description">
-                    Bekijk laatste 20 synchronisatie logs. Success/error tracking en timing info.
+                    Timeline van alle synchronisaties met filters, status tracking en error details.
                 </div>
                 <span class="card-badge">Monitoring</span>
             </a>
 
-            <a href="/health" class="card">
+            <a href="/health" class="card" target="_blank">
                 <div class="card-icon">💚</div>
                 <div class="card-title">Health Check</div>
                 <div class="card-description">
-                    System health status, version info en uptime monitoring.
+                    System health status, version info en uptime monitoring (JSON).
                 </div>
                 <span class="card-badge">Status</span>
+            </a>
+            
+            <a href="/api/riders/deltas?hours=24" class="card" target="_blank">
+                <div class="card-icon">📈</div>
+                <div class="card-title">Rider Deltas API</div>
+                <div class="card-description">
+                    Raw JSON van rider veranderingen. Voor development en debugging.
+                </div>
+                <span class="card-badge">JSON</span>
             </a>
         </div>
     </div>
