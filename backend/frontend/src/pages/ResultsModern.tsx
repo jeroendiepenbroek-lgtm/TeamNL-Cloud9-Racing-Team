@@ -409,18 +409,19 @@ function EventCard({ event }: { event: EventResult }) {
                 <span>{formatDate(event.event_date)}</span>
               </div>
               
-              {event.total_riders && (
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{event.total_riders}</span>
-                </div>
-              )}
-              
-              {/* Team Riders - klein naast total zonder groot kader */}
+              {/* Team Riders met vinkje */}
               <div className="flex items-center gap-1 text-orange-300">
                 <UserCheck2 className="w-4 h-4" />
                 <span className="font-bold">{event.results.length}</span>
               </div>
+              
+              {/* Totaal deelnemers met meervoudig borstbeeld */}
+              {event.total_riders && (
+                <div className="flex items-center gap-1 text-white/70">
+                  <Users className="w-4 h-4" />
+                  <span>{event.total_riders}</span>
+                </div>
+              )}
             </div>
           </div>
           
