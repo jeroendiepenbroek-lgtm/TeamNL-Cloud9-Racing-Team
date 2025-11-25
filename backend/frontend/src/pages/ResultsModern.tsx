@@ -72,7 +72,8 @@ interface RaceResult {
   rank: number;
   position: number | null;  // Overall finish position
   position_in_category: number | null;  // Position within category/pen
-  total_riders: number | null;  // Total participants
+  total_riders: number | null;  // Total participants in event
+  pen_total: number | null;  // Total participants in pen/category
   time_seconds: number;
   avg_wkg: number;
   pen: string | null;
@@ -235,10 +236,11 @@ function DNFBadge() {
   );
 }
 
-function RankBadge({ rank, position, positionInCategory, dnf }: { 
+function RankBadge({ rank, position, positionInCategory, penTotal, dnf }: { 
   rank: number; 
   position: number | null;
   positionInCategory: number | null;
+  penTotal: number | null;
   dnf: boolean | null 
 }) {
   // Toon DNF badge als rider niet gefinisht is
@@ -246,12 +248,12 @@ function RankBadge({ rank, position, positionInCategory, dnf }: {
     return <DNFBadge />;
   }
   
-  // Primaire display: position_in_category (groot), overall position tussen haakjes (klein)
+  // Primaire display: position_in_category (groot), penTotal ernaast
   const mainDisplay = positionInCategory || position || rank;
   
-  // Als we position_in_category hebben EN position, EN ze zijn verschillend, toon position tussen haakjes
-  const subDisplay = positionInCategory && position && position !== positionInCategory 
-    ? `(${position})`
+  // Toon penTotal als we position_in_category hebben
+  const subDisplay = positionInCategory && penTotal
+    ? `/${penTotal}`
     : null;
   
   if (rank === 1) {
@@ -465,6 +467,7 @@ function EventCard({ event }: { event: EventResult }) {
                             rank={result.rank} 
                             position={result.position}
                             positionInCategory={result.position_in_category}
+                            penTotal={result.pen_total}
                             dnf={result.dnf} 
                           />
                         </td>
@@ -685,11 +688,10 @@ export default function ResultsModern() {
                 onChange={(e) => setDays(parseInt(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
               >
+                <option value={7}>7 dagen</option>
                 <option value={30}>30 dagen</option>
                 <option value={60}>60 dagen</option>
                 <option value={90}>90 dagen</option>
-                <option value={180}>180 dagen</option>
-                <option value={365}>365 dagen</option>
               </select>
             </div>
             
