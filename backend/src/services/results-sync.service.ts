@@ -44,15 +44,14 @@ export class ResultsSyncService {
 
           // Haal rider profile met history op
           const riderProfile = await this.zwiftApi.getRider(rider.rider_id);
-          const history = (riderProfile as any).history || [];
 
-          if (!history || history.length === 0) {
-            console.info(`   ℹ️  No recent results found`);
+          if (!riderProfile.recentResults || riderProfile.recentResults.length === 0) {
+            console.info(`   ℹ️  No history found`);
             continue;
           }
 
-          // Use history from API
-          const recentResults = history;
+          // Use recent results from API (already filtered)
+          const recentResults = riderProfile.recentResults;
 
           if (recentResults.length === 0) {
             console.info(`   ℹ️  No recent results (last ${daysBack} days)`);
@@ -70,44 +69,24 @@ export class ResultsSyncService {
                 discoveredEvents.add(result.event.id);
               }
 
-              // Map API response naar database schema
+              // Sla result op in zwift_api_race_results tabel (minimal fields)
               await this.supabase.saveRaceResult({
-                event_id: String(result.event?.id || result.eventId),
+                event_id: parseInt(result.event.id),
                 rider_id: result.riderId,
-                event_name: result.event?.title || null,
-                event_date: result.event?.time ? new Date(result.event.time * 1000).toISOString() : null,
-                rider_name: result.name || null,
-                position: result.position || null,  // US1: Overall position
-                position_in_category: result.positionInCategory || null,  // US1: Category position
-                rank: result.position || result.positionInCategory || null,  // Best available (backward compat)
-                time_seconds: result.time ? Math.round(result.time) : null,
-                avg_wkg: result.wkgAvg || null,
-                pen: result.zpCat || null,
-                total_riders: result.totalRiders || null,
-                delta_winner_seconds: result.gap ? Math.round(result.gap) : null,
-                velo_rating: result.rating ? Math.floor(result.rating) : null,
-                velo_previous: result.ratingBefore ? Math.floor(result.ratingBefore) : null,
-                velo_change: (result.rating && result.ratingBefore) ? Math.floor(result.rating) - Math.floor(result.ratingBefore) : null,  // US: Correct delta met floor
-                heartrate_avg: result.heartRate?.avg || null,  // US: Gem. hartslag toevoegen
-                heartrate_max: result.heartRate?.max || null,
-                power_5s: result.wkg5 || null,
-                power_15s: result.wkg15 || null,
-                power_30s: result.wkg30 || null,
-                power_1m: result.wkg60 || null,
-                power_2m: result.wkg120 || null,
-                power_5m: result.wkg300 || null,
-                power_20m: result.wkg1200 || null,
-                effort_score: result.load ? Math.round(result.load) : null,
-                race_points: result.rankPoints || null,
-                // US4: Route details
-                route_world: result.event?.route?.world || null,
-                route_name: result.event?.route?.name || null,
-                route_profile: result.event?.route?.profile || null,
-                event_type: result.event?.type || null,
-                sub_type: result.event?.subType || null,
-                distance_km: result.event?.distance ? String(Math.round(result.event.distance * 10) / 10) : null,
-                elevation_m: result.event?.elevation ? Math.round(result.event.elevation) : null,
-                laps: result.event?.laps || null
+                position: result.position,
+                time_seconds: result.time,
+                power_avg: result.power?.avg,
+                power_max: result.power?.max,
+                heartrate_avg: result.heartRate?.avg,
+                heartrate_max: result.heartRate?.max,
+                weight: result.weight,
+                height: result.height,
+                category: result.category,
+                rating_before: result.ratingBefore,
+                rating_after: result.rating,
+                rating_change: result.ratingDelta,
+                event_date: new Date(result.event.time * 1000).toISOString(),
+                finish_status: result.dnf ? 'DNF' : 'FINISHED'
               });
               
               totalSaved++;
@@ -136,95 +115,6 @@ export class ResultsSyncService {
 
     } catch (error) {
       console.error('❌ Results sync failed:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Sync results voor SINGLE rider (sneller dan team sync)
-   */
-  async syncSingleRiderResults(riderId: number, daysBack: number = 30): Promise<{
-    totalSaved: number;
-    errors: Array<{ event_id: string; error: string }>;
-  }> {
-    console.info(`🏁 Starting single rider results sync for ${riderId} (${daysBack} days back)`);
-
-    const errors: Array<{ event_id: string; error: string }> = [];
-
-    try {
-      // Haal rider profile met history op
-      const riderProfile = await this.zwiftApi.getRider(riderId);
-      const history = (riderProfile as any).history || [];
-
-      if (!history || history.length === 0) {
-        console.info(`   ℹ️  No history found for rider ${riderId}`);
-        return { totalSaved: 0, errors };
-      }
-
-      console.info(`   ✅ Found ${history.length} history items for rider ${riderId}`);
-
-      let totalSaved = 0;
-
-      // Sla results op in database
-      for (const result of history) {
-        try {
-          const raceResult = {
-            event_id: String(result.event?.id || result.eventId),
-            rider_id: result.riderId,
-            event_name: result.event?.title || null,
-            event_date: result.event?.time ? new Date(result.event.time * 1000).toISOString() : null,
-            rider_name: result.name || null,
-            position: result.position || null,  // US1: Overall position
-            position_in_category: result.positionInCategory || null,  // US1: Category position
-            rank: result.position || result.positionInCategory || null,  // Best available (backward compat)
-            time_seconds: result.time ? Math.round(result.time) : null,
-            avg_wkg: result.wkgAvg || null,
-            pen: result.zpCat || null,
-            total_riders: result.totalRiders || null,
-            delta_winner_seconds: result.gap ? Math.round(result.gap) : null,
-            velo_rating: result.rating ? Math.floor(result.rating) : null,
-            velo_previous: result.ratingBefore ? Math.floor(result.ratingBefore) : null,
-            velo_change: (result.rating && result.ratingBefore) ? Math.floor(result.rating) - Math.floor(result.ratingBefore) : null,  // US: Correct delta met floor
-            heartrate_avg: result.heartRate?.avg || null,  // US: Gem. hartslag
-            heartrate_max: result.heartRate?.max || null,
-            power_5s: result.wkg5 || null,
-            power_15s: result.wkg15 || null,
-            power_30s: result.wkg30 || null,
-            power_1m: result.wkg60 || null,
-            power_2m: result.wkg120 || null,
-            power_5m: result.wkg300 || null,
-            power_20m: result.wkg1200 || null,
-            effort_score: result.load ? Math.round(result.load) : null,
-            race_points: result.rankPoints || null,
-            // US4: Route details
-            route_world: result.event?.route?.world || null,
-            route_name: result.event?.route?.name || null,
-            route_profile: result.event?.route?.profile || null,
-            event_type: result.event?.type || null,
-            sub_type: result.event?.subType || null,
-            distance_km: result.event?.distance ? String(Math.round(result.event.distance * 10) / 10) : null,
-            elevation_m: result.event?.elevation ? Math.round(result.event.elevation) : null,
-            laps: result.event?.laps || null
-          };
-          
-          await this.supabase.saveRaceResult(raceResult);
-          totalSaved++;
-        } catch (error: any) {
-          const errorMsg = error.message || JSON.stringify(error);
-          console.error(`   ⚠️  Error saving result for event ${result.event?.id}:`, errorMsg);
-          errors.push({
-            event_id: String(result.event?.id || 'unknown'),
-            error: errorMsg
-          });
-          // Continue met volgende result
-        }
-      }
-
-      console.info(`✅ Saved ${totalSaved}/${history.length} results for rider ${riderId}`);
-      return { totalSaved, errors };
-
-    } catch (error) {
-      console.error(`❌ Single rider sync failed for ${riderId}:`, error);
       throw error;
     }
   }

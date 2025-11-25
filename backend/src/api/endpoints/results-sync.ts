@@ -34,44 +34,10 @@ router.post('/', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/sync/results/rider/:riderId/debug - Debug: see raw API response
-router.get('/rider/:riderId/debug', async (req: Request, res: Response) => {
-  const riderId = parseInt(req.params.riderId);
-
-  if (isNaN(riderId)) {
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid rider ID'
-    });
-  }
-
-  try {
-    const { ZwiftApiClient } = await import('../../api/zwift-client.js');
-    const zwiftApi = new ZwiftApiClient();
-    const riderProfile = await zwiftApi.getRider(riderId);
-    
-    res.json({
-      rider_id: riderId,
-      has_history: !!(riderProfile as any).history,
-      history_length: ((riderProfile as any).history || []).length,
-      history_sample: ((riderProfile as any).history || []).slice(0, 2),
-      all_keys: Object.keys(riderProfile).sort()
-    });
-
-  } catch (error: any) {
-    console.error(`❌ Debug failed:`, error);
-    res.status(500).json({
-      success: false,
-      error: 'Debug failed',
-      message: error.message
-    });
-  }
-});
-
 // POST /api/sync/results/rider/:riderId - Sync single rider results
 router.post('/rider/:riderId', async (req: Request, res: Response) => {
   const riderId = parseInt(req.params.riderId);
-  const { daysBack = 30, forceRefresh = false } = req.body;
+  const { daysBack = 30 } = req.body;
 
   if (isNaN(riderId)) {
     return res.status(400).json({
@@ -81,26 +47,14 @@ router.post('/rider/:riderId', async (req: Request, res: Response) => {
   }
 
   try {
-    console.info(`🏁 Syncing results for rider ${riderId} (forceRefresh: ${forceRefresh})`);
+    console.info(`🏁 Syncing results for rider ${riderId}`);
 
-    // If forceRefresh, delete old results first
-    if (forceRefresh) {
-      const { SupabaseService } = await import('../../services/supabase.service.js');
-      const supabase = new SupabaseService();
-      await supabase.deleteRiderResults(riderId);
-      console.info(`   🗑️  Deleted old results for rider ${riderId}`);
-    }
-
-    // Use single rider sync (much faster!)
-    const result = await resultsSyncService.syncSingleRiderResults(riderId, daysBack);
+    const resultCount = await resultsSyncService.syncSingleRiderResults(riderId, daysBack);
 
     res.json({
       success: true,
-      message: `Synced ${result.totalSaved} results for rider ${riderId}`,
-      results_synced: result.totalSaved,
-      errors: result.errors,
-      error_count: result.errors.length,
-      force_refresh: forceRefresh
+      message: `Synced ${resultCount} results for rider ${riderId}`,
+      results_synced: resultCount
     });
 
   } catch (error: any) {

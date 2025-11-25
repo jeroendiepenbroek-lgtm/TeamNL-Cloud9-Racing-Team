@@ -17,21 +17,9 @@ interface RaceResult {
   id: number;
   event_id: string;
   rider_id: number;
-  rider_name: string;
-  event_name: string;
-  event_date: string;
-  event_type?: string;
-  sub_type?: string;
-  route_world?: string;
-  route_name?: string;
-  route_profile?: string;
-  distance_km?: string;
-  elevation_m?: number;
   pen: string;
-  position?: number;
-  position_in_category?: number;
   rank: number;
-  total_riders?: number;
+  total_riders: number;
   velo_rating?: number;
   velo_previous?: number;
   velo_change?: number;
@@ -40,8 +28,6 @@ interface RaceResult {
   avg_wkg: number;
   effort_score?: number;
   race_points?: number;
-  heartrate_avg?: number;
-  heartrate_max?: number;
   power_5s?: number;
   power_15s?: number;
   power_30s?: number;
@@ -49,6 +35,14 @@ interface RaceResult {
   power_2m?: number;
   power_5m?: number;
   power_20m?: number;
+  event: {
+    event_id: string;
+    title: string;
+    event_type: string;
+    sub_type?: string;
+    route_name?: string;
+    time_unix: number;
+  };
 }
 
 interface RiderStats {
@@ -71,13 +65,6 @@ interface RiderResultsResponse {
   personal_records: PersonalRecord[];
 }
 
-// US3: Decode HTML entities (ø → ø, etc.)
-const decodeHtmlEntities = (text: string): string => {
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = text;
-  return textarea.value;
-};
-
 const RiderResultsView: React.FC = () => {
   const { riderId } = useParams<{ riderId: string }>();
   const navigate = useNavigate();
@@ -87,8 +74,6 @@ const RiderResultsView: React.FC = () => {
   const [data, setData] = useState<RiderResultsResponse | null>(null);
   const [stats, setStats] = useState<RiderStats | null>(null);
   const [days, setDays] = useState(90);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [limitResults, setLimitResults] = useState(50);
 
   useEffect(() => {
     if (riderId) {
@@ -103,22 +88,15 @@ const RiderResultsView: React.FC = () => {
       
       // Parallel fetch results and stats
       const [resultsRes, statsRes] = await Promise.all([
-        fetch(`/api/results/rider/${riderId}?days=${days}&limit=100`),
+        fetch(`/api/results/rider/${riderId}?days=${days}`),
         fetch(`/api/results/rider/${riderId}/stats?days=${days}`)
       ]);
-
+      
       if (!resultsRes.ok || !statsRes.ok) throw new Error('Failed to fetch rider data');
-
+      
       const resultsData = await resultsRes.json();
       const statsData = await statsRes.json();
-
-      // US1: Ensure results stay in DESC order (recent first)
-      if (resultsData.results) {
-        resultsData.results.sort((a: RaceResult, b: RaceResult) => 
-          new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
-        );
-      }
-
+      
       setData(resultsData);
       setStats(statsData);
     } catch (err) {
@@ -142,6 +120,15 @@ const RiderResultsView: React.FC = () => {
     if (!seconds) return '-';
     const sign = seconds > 0 ? '+' : '';
     return `${sign}${seconds}s`;
+  };
+
+  const formatDate = (unixTimestamp: number): string => {
+    const date = new Date(unixTimestamp * 1000);
+    return date.toLocaleDateString('nl-NL', { 
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const getVeloTrend = (change?: number): string => {
@@ -218,10 +205,10 @@ const RiderResultsView: React.FC = () => {
         <div className="period-selector">
           <label>Periode:</label>
           <select value={days} onChange={(e) => setDays(parseInt(e.target.value))}>
-            <option value="7">7 dagen</option>
             <option value="30">30 dagen</option>
             <option value="60">60 dagen</option>
-            <option value="90">90 dagen (max)</option>
+            <option value="90">90 dagen</option>
+            <option value="180">180 dagen</option>
           </select>
         </div>
       </div>
@@ -302,41 +289,9 @@ const RiderResultsView: React.FC = () => {
         </span>
       </div>
 
-      {/* US4: Filters */}
-      <div className="filters-section">
-        <div className="filter-group">
-          <input
-            type="text"
-            placeholder="Zoek op event of route..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-        <div className="filter-group">
-          <label>Toon:</label>
-          <select 
-            value={limitResults} 
-            onChange={(e) => setLimitResults(parseInt(e.target.value))}
-            className="limit-select"
-          >
-            <option value="10">10 resultaten</option>
-            <option value="25">25 resultaten</option>
-            <option value="50">50 resultaten</option>
-            <option value="100">Alle resultaten</option>
-          </select>
-        </div>
-      </div>
-
       {/* Results Table */}
       <div className="results-section">
-        <h2>Race Geschiedenis ({(() => {
-          const filtered = data?.results.filter(r => 
-            r.event_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (r.route_name && r.route_name.toLowerCase().includes(searchTerm.toLowerCase()))
-          ) || [];
-          return Math.min(filtered.length, limitResults);
-        })()} van {data?.count || 0} races)</h2>
+        <h2>Race Geschiedenis ({data?.count || 0} races)</h2>
         
         <div className="results-table-container">
           <table className="results-table">
@@ -350,8 +305,6 @@ const RiderResultsView: React.FC = () => {
                 <th>Tijd</th>
                 <th>Δ</th>
                 <th>Avg</th>
-                <th>HR Avg</th>
-                <th>HR Max</th>
                 <th>5s</th>
                 <th>15s</th>
                 <th>30s</th>
@@ -363,47 +316,22 @@ const RiderResultsView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {data?.results
-                .filter(result => 
-                  result.event_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (result.route_name && result.route_name.toLowerCase().includes(searchTerm.toLowerCase()))
-                )
-                .slice(0, limitResults)
-                .map((result) => (
+              {data?.results.map((result) => (
                 <tr key={result.id}>
                   <td className="date">
-                    {new Date(result.event_date).toLocaleDateString('nl-NL', { day: '2-digit', month: 'short' })}
+                    {formatDate(result.event.time_unix)}
                   </td>
                   <td className="event-name">
-                    <div className="event-title">
-                      {decodeHtmlEntities(result.event_name)}
-                    </div>
-                    {result.route_name && (
-                      <div className="event-route">
-                        {result.route_world && `${result.route_world} • `}
-                        {result.route_name}
-                        {result.route_profile && ` • ${result.route_profile}`}
-                        {result.distance_km && ` • ${result.distance_km}km`}
-                        {result.elevation_m && ` • ${result.elevation_m}m ↗`}
-                      </div>
+                    <div className="event-title">{result.event.title}</div>
+                    {result.event.route_name && (
+                      <div className="event-route">{result.event.route_name}</div>
                     )}
                   </td>
                   <td className={`pen pen-${result.pen?.toLowerCase()}`}>
                     {result.pen || '-'}
                   </td>
                   <td className={`rank ${getRankBadgeClass(result.rank)}`}>
-                    {result.position ? (
-                      <>
-                        {result.position}
-                        {result.position_in_category && result.position !== result.position_in_category && (
-                          <span className="category-pos"> ({result.position_in_category})</span>
-                        )}
-                      </>
-                    ) : result.position_in_category ? (
-                      <span className="category-pos-only">{result.position_in_category}</span>
-                    ) : (
-                      '-'
-                    )}
+                    {result.rank}
                     {result.total_riders && (
                       <span className="total"> / {result.total_riders}</span>
                     )}
@@ -421,8 +349,6 @@ const RiderResultsView: React.FC = () => {
                   <td className="time">{formatTime(result.time_seconds)}</td>
                   <td className="delta">{formatDelta(result.delta_winner_seconds)}</td>
                   <td className="avg-wkg">{result.avg_wkg?.toFixed(2) || '-'}</td>
-                  <td className="heartrate">{result.heartrate_avg || '-'}</td>
-                  <td className="heartrate">{result.heartrate_max || '-'}</td>
                   <td className={getEffortClass(result.power_5s, '5s')}>
                     {result.power_5s?.toFixed(2) || '-'}
                   </td>

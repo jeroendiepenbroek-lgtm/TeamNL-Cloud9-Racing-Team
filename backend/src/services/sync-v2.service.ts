@@ -130,6 +130,7 @@ export class SyncServiceV2 {
         height: rider.height || undefined,
         zp_ftp: rider.zpFTP || undefined,
         // vELO rating (from race.current.rating or race.last.rating)
+        race_current_rating: rider.race?.current?.rating || rider.race?.last?.rating || undefined,
         // Power intervals - W/kg (5s, 15s, 30s, 1m, 2m, 5m, 20m)
         // API returns arrays [value, percentile, rank] - extract first element
         power_wkg5: extractPowerValue(rider.power?.wkg5),

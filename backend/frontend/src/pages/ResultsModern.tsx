@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react';
 import { 
   Trophy, TrendingUp, TrendingDown, Minus, Calendar, MapPin,
-  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter, DoorOpen
+  Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter, DoorOpen, Heart
 } from 'lucide-react';
 
 // vELO Tiers - exacte copy van Team Dashboard
@@ -63,6 +63,8 @@ interface RaceResult {
   rider_id: number;
   rider_name: string;
   rank: number;
+  position: number | null;  // Overall finish position
+  total_riders: number | null;  // Total participants
   time_seconds: number;
   avg_wkg: number;
   pen: string | null;
@@ -79,6 +81,8 @@ interface RaceResult {
   effort_score: number | null;
   race_points: number | null;
   delta_winner_seconds: number | null;
+  heartrate_avg: number | null;  // Average heartrate
+  heartrate_max: number | null;  // Max heartrate
   dnf: boolean | null;
 }
 
@@ -223,42 +227,72 @@ function DNFBadge() {
   );
 }
 
-function RankBadge({ rank, dnf }: { rank: number; dnf: boolean | null }) {
+function RankBadge({ rank, position, totalRiders, dnf }: { 
+  rank: number; 
+  position: number | null;
+  totalRiders: number | null;
+  dnf: boolean | null 
+}) {
   // Toon DNF badge als rider niet gefinisht is
   if (dnf) {
     return <DNFBadge />;
   }
+  
+  // Helper om rank met totaal te tonen
+  const rankDisplay = position && totalRiders 
+    ? `${position}/${totalRiders}`
+    : position 
+    ? position.toString()
+    : rank.toString();
+  
   if (rank === 1) {
     return (
-      <div className="flex items-center gap-1 text-yellow-600">
-        <Trophy className="w-4 h-4" />
-        <span className="font-bold">1st</span>
+      <div className="flex flex-col items-start">
+        <div className="flex items-center gap-1 text-yellow-600">
+          <Trophy className="w-4 h-4" />
+          <span className="font-bold">1st</span>
+        </div>
+        {totalRiders && (
+          <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
+        )}
       </div>
     );
   }
   
   if (rank === 2) {
     return (
-      <div className="flex items-center gap-1 text-gray-400">
-        <Award className="w-4 h-4" />
-        <span className="font-bold">2nd</span>
+      <div className="flex flex-col items-start">
+        <div className="flex items-center gap-1 text-gray-400">
+          <Award className="w-4 h-4" />
+          <span className="font-bold">2nd</span>
+        </div>
+        {totalRiders && (
+          <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
+        )}
       </div>
     );
   }
   
   if (rank === 3) {
     return (
-      <div className="flex items-center gap-1 text-amber-700">
-        <Award className="w-4 h-4" />
-        <span className="font-bold">3rd</span>
+      <div className="flex flex-col items-start">
+        <div className="flex items-center gap-1 text-amber-700">
+          <Award className="w-4 h-4" />
+          <span className="font-bold">3rd</span>
+        </div>
+        {totalRiders && (
+          <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
+        )}
       </div>
     );
   }
   
   return (
-    <span className="text-sm font-medium text-gray-600">
-      {rank}
-    </span>
+    <div className="flex flex-col items-start">
+      <span className="text-sm font-medium text-gray-600">
+        {rankDisplay}
+      </span>
+    </div>
   );
 }
 
@@ -287,7 +321,7 @@ function EventCard({ event }: { event: EventResult }) {
             {/* Titel */}
             <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
               <Trophy className="w-5 h-5 flex-shrink-0" />
-              <span className="truncate" dangerouslySetInnerHTML={{ __html: event.event_name }} />
+              <span className="truncate">{event.event_name}</span>
             </h3>
             
             {/* Route Details (als beschikbaar) */}
@@ -403,6 +437,8 @@ function EventCard({ event }: { event: EventResult }) {
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">vELO Live</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Time</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Avg W/kg</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">HR Avg</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">HR Max</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">5s</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">15s</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-tight">30s</th>
@@ -416,11 +452,16 @@ function EventCard({ event }: { event: EventResult }) {
                     {penResults.map((result) => (
                       <tr key={result.rider_id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
-                          <RankBadge rank={result.rank} dnf={result.dnf} />
+                          <RankBadge 
+                            rank={result.rank} 
+                            position={result.position}
+                            totalRiders={result.total_riders}
+                            dnf={result.dnf} 
+                          />
                         </td>
                         
                         <td className="px-4 py-3">
-                          <span className="font-medium text-gray-900" dangerouslySetInnerHTML={{ __html: result.rider_name }} />
+                          <span className="font-medium text-gray-900">{result.rider_name}</span>
                         </td>
                         
                         <td className="px-4 py-3">
@@ -454,6 +495,34 @@ function EventCard({ event }: { event: EventResult }) {
                               {result.avg_wkg.toFixed(2)}
                             </span>
                           </div>
+                        </td>
+                        
+                        {/* HR Avg */}
+                        <td className="px-4 py-3 text-center">
+                          {result.heartrate_avg ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <Heart className="w-3 h-3 text-red-500 fill-red-100" />
+                              <span className="text-xs font-medium text-red-600">
+                                {result.heartrate_avg}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-300">-</span>
+                          )}
+                        </td>
+                        
+                        {/* HR Max */}
+                        <td className="px-4 py-3 text-center">
+                          {result.heartrate_max ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <Heart className="w-3 h-3 text-red-700 fill-red-500" />
+                              <span className="text-xs font-semibold text-red-700">
+                                {result.heartrate_max}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-300">-</span>
+                          )}
                         </td>
                         
                         <td className="px-4 py-3 text-center">
@@ -494,7 +563,7 @@ export default function ResultsModern() {
   const [events, setEvents] = useState<EventResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState(90);  // US4: Max 90 dagen
+  const [days, setDays] = useState(365);
   const [limit, setLimit] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -512,11 +581,7 @@ export default function ResultsModern() {
       const data: ApiResponse = await response.json();
       
       if (data.success) {
-        // US1: Ensure events are sorted DESC (recent first)
-        const sortedEvents = [...data.events].sort((a, b) => 
-          new Date(b.event_date).getTime() - new Date(a.event_date).getTime()
-        );
-        setEvents(sortedEvents);
+        setEvents(data.events);
       } else {
         throw new Error('API returned success=false');
       }
@@ -603,7 +668,7 @@ export default function ResultsModern() {
               )}
             </div>
             
-            {/* Period Filter - US4: Max 90 dagen */}
+            {/* Period Filter */}
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-gray-500" />
               <select
@@ -611,10 +676,11 @@ export default function ResultsModern() {
                 onChange={(e) => setDays(parseInt(e.target.value))}
                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 bg-white"
               >
-                <option value={7}>7 dagen</option>
                 <option value={30}>30 dagen</option>
                 <option value={60}>60 dagen</option>
-                <option value={90}>90 dagen (max)</option>
+                <option value={90}>90 dagen</option>
+                <option value={180}>180 dagen</option>
+                <option value={365}>365 dagen</option>
               </select>
             </div>
             

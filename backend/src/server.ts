@@ -23,8 +23,6 @@ import resultsSyncRouter from './api/endpoints/results-sync.js';
 import adminStatsRouter from './api/endpoints/admin-stats.js';
 import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 import cleanupRouter from './api/endpoints/cleanup.js';
-import unifiedSyncRouter from './api/endpoints/unified-sync.js';
-import riderSnapshotsRouter from './api/endpoints/rider-snapshots.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
@@ -87,8 +85,6 @@ app.use('/api/sync/results', resultsSyncRouter); // Results sync from rider hist
 app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
-app.use('/api/sync/unified', unifiedSyncRouter); // Unified sync service (NEW)
-app.use('/api/riders', riderSnapshotsRouter); // Historic rider snapshots
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
 app.get('/admin', (req: Request, res: Response) => {

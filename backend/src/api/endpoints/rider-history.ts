@@ -4,7 +4,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { unifiedSync } from '../../services/unified-sync.service.js';
+import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
 
 const router = Router();
 
@@ -29,8 +29,7 @@ router.get('/:riderId', async (req: Request, res: Response) => {
 router.post('/:riderId/sync', async (req: Request, res: Response) => {
   try {
     const riderId = parseInt(req.params.riderId);
-    // Sync single rider
-    await unifiedSync.syncRiders({ clubId: undefined, force: true });
+    await syncService.syncRiderHistory(riderId);
     
     const history = await supabase.getRiderHistory(riderId);
     

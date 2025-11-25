@@ -8,7 +8,7 @@
  */
 
 import cron from 'node-cron';
-import { unifiedSync } from './unified-sync.service.js';
+import { syncServiceV2 as syncService } from './sync-v2.service.js';
 import { supabase } from './supabase.service.js';
 
 export class SignupSchedulerService {
@@ -218,9 +218,9 @@ export class SignupSchedulerService {
       const oneHourFromNow = now + (60 * 60);
       const fortyEightHoursFromNow = now + (48 * 60 * 60);
 
-      const { data: urgentEvents } = await supabase['client']
+      const { data: events } = await supabase['client']
         .from('zwift_api_events')
-        .select('zwift_event_id')
+        .select('event_id')
         .gt('time_unix', oneHourFromNow)
         .lte('time_unix', fortyEightHoursFromNow)
         .limit(50);
