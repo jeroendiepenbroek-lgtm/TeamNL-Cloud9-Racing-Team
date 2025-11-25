@@ -44,7 +44,7 @@
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1400px;
             margin: 0 auto;
             position: relative;
             z-index: 1;
@@ -54,7 +54,7 @@
         header {
             text-align: center;
             color: white;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             animation: fadeInDown 0.6s ease;
         }
 
@@ -84,54 +84,6 @@
             text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
         }
 
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            justify-content: center;
-            animation: fadeIn 0.8s ease 0.1s both;
-        }
-
-        .tab {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 14px 28px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-        }
-
-        .tab:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-        }
-
-        .tab.active {
-            background: linear-gradient(135deg, #10b981, #059669);
-            border-color: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.4s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
         /* Status bar */
         .status-bar {
             background: rgba(255, 255, 255, 0.15);
@@ -140,6 +92,12 @@
             padding: 20px;
             margin-bottom: 30px;
             border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 0.8s ease 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .status-grid {
@@ -179,9 +137,15 @@
             padding: 28px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             transition: all 0.3s ease;
+            animation: fadeIn 0.8s ease both;
             position: relative;
             overflow: hidden;
         }
+
+        .sync-card:nth-child(1) { animation-delay: 0.1s; }
+        .sync-card:nth-child(2) { animation-delay: 0.2s; }
+        .sync-card:nth-child(3) { animation-delay: 0.3s; }
+        .sync-card:nth-child(4) { animation-delay: 0.4s; }
 
         .sync-card::before {
             content: '';
@@ -251,30 +215,6 @@
             border-radius: 8px;
         }
 
-        /* Countdown timer */
-        .countdown-timer {
-            background: rgba(16, 185, 129, 0.15);
-            border: 2px solid rgba(16, 185, 129, 0.3);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            text-align: center;
-        }
-
-        .countdown-label {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-        }
-
-        .countdown-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #10b981;
-            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-            font-variant-numeric: tabular-nums;
-        }
-
         /* Trigger button */
         .trigger-btn {
             width: 100%;
@@ -318,6 +258,24 @@
             cursor: wait;
         }
 
+        .trigger-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .trigger-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
         /* Cooldown progress bar */
         .cooldown-bar {
             margin-top: 10px;
@@ -339,76 +297,6 @@
             border-radius: 3px;
         }
 
-        /* Logs section */
-        .logs-section {
-            background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            padding: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-height: 600px;
-            overflow-y: auto;
-        }
-
-        .logs-section h2 {
-            color: white;
-            margin-bottom: 20px;
-            font-size: 1.5rem;
-        }
-
-        .log-entry {
-            background: rgba(255, 255, 255, 0.08);
-            border-left: 4px solid;
-            padding: 12px 16px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .log-entry.success {
-            border-left-color: #10b981;
-        }
-
-        .log-entry.error {
-            border-left-color: #ef4444;
-        }
-
-        .log-entry.info {
-            border-left-color: #3b82f6;
-        }
-
-        .log-meta {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-            font-size: 0.85rem;
-        }
-
-        .log-type {
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 600;
-        }
-
-        .log-time {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .log-message {
-            color: rgba(255, 255, 255, 0.85);
-            font-size: 0.95rem;
-        }
-
         /* Toast notifications */
         .toast {
             position: fixed;
@@ -422,12 +310,12 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            animation: slideInRight 0.3s ease;
+            animation: slideIn 0.3s ease;
             z-index: 1000;
             max-width: 400px;
         }
 
-        @keyframes slideInRight {
+        @keyframes slideIn {
             from {
                 transform: translateX(400px);
                 opacity: 0;
@@ -515,26 +403,6 @@
             h1 { font-size: 2rem; }
             .sync-grid { grid-template-columns: 1fr; }
             .toast { right: 20px; left: 20px; max-width: none; }
-            .tabs { justify-content: flex-start; overflow-x: auto; }
-        }
-
-        /* Scrollbar styling */
-        .logs-section::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .logs-section::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-        }
-
-        .logs-section::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-        }
-
-        .logs-section::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -547,21 +415,9 @@
 
     <div class="container">
         <header>
-            <h1>�� Sync Control Center</h1>
-            <p class="subtitle">Unified synchronisatie beheer • Manual triggers • Live monitoring • Smart scheduling</p>
+            <h1>🎮 Sync Control Center</h1>
+            <p class="subtitle">Real-time synchronisatie beheer voor alle data services</p>
         </header>
-
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('control')">
-                🎮 Control Panel
-            </div>
-            <div class="tab" onclick="switchTab('monitor')">
-                📊 Live Monitor
-            </div>
-            <div class="tab" onclick="switchTab('logs')">
-                📋 Sync Logs
-            </div>
-        </div>
 
         <div class="status-bar">
             <div class="status-grid">
@@ -578,65 +434,21 @@
                     <div class="status-value" id="activeSyncs">0</div>
                 </div>
                 <div class="status-item">
-                    <div class="status-label">Total Syncs Today</div>
-                    <div class="status-value" id="totalSyncs">0</div>
+                    <div class="status-label">Uptime</div>
+                    <div class="status-value" id="uptime">100%</div>
                 </div>
             </div>
         </div>
 
-        <!-- Tab 1: Control Panel -->
-        <div id="tab-control" class="tab-content active">
-            <div class="sync-grid" id="syncGrid">
-                <!-- Sync cards will be injected here -->
-            </div>
-        </div>
-
-        <!-- Tab 2: Live Monitor (with countdowns) -->
-        <div id="tab-monitor" class="tab-content">
-            <div class="sync-grid" id="monitorGrid">
-                <!-- Monitor cards with countdowns will be injected here -->
-            </div>
-        </div>
-
-        <!-- Tab 3: Sync Logs -->
-        <div id="tab-logs" class="tab-content">
-            <div class="logs-section">
-                <h2>📋 Recent Sync Logs</h2>
-                <div id="logsContainer">
-                    <p style="color: rgba(255,255,255,0.6); text-align: center; padding: 40px;">
-                        Laden van sync logs...
-                    </p>
-                </div>
-            </div>
+        <div class="sync-grid" id="syncGrid">
+            <!-- Sync cards will be injected here -->
         </div>
     </div>
 
     <script>
         // Configuration
-        const API_BASE = '';
+        const API_BASE = '/api/sync-control';
         let activeSyncs = 0;
-        let totalSyncsToday = 0;
-        let currentTab = 'control';
-
-        // Tab switching
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            // Update tab buttons
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab-' + tab).classList.add('active');
-            
-            // Load specific data for this tab
-            if (tab === 'logs') {
-                loadSyncLogs();
-            } else if (tab === 'monitor') {
-                startCountdowns();
-            }
-        }
 
         // Initialize particles
         function createParticles() {
@@ -660,108 +472,29 @@
                 key: 'riders',
                 icon: '👥',
                 title: 'Riders Sync',
-                color: '#3b82f6',
-                schedule: 'Every hour at :00',
-                nextScheduled: { hour: 0, minute: 0 }
+                color: '#3b82f6'
             },
             {
                 key: 'results',
                 icon: '🏆',
                 title: 'Results Sync',
-                color: '#f59e0b',
-                schedule: 'Every 4 hours at :30',
-                nextScheduled: { hour: 0, minute: 30, interval: 4 }
+                color: '#f59e0b'
             },
             {
                 key: 'nearEvents',
                 icon: '📅',
                 title: 'Near Events',
-                color: '#10b981',
-                schedule: 'Every 15 min (:05, :20, :35, :50)',
-                nextScheduled: { minute: 5, interval: 15 }
+                color: '#10b981'
             },
             {
                 key: 'farEvents',
                 icon: '🗓️',
                 title: 'Far Events',
-                color: '#8b5cf6',
-                schedule: 'Every 3 hours at :55',
-                nextScheduled: { hour: 0, minute: 55, interval: 3 }
+                color: '#8b5cf6'
             }
         ];
 
-        // Calculate next scheduled time
-        function calculateNextScheduledTime(config) {
-            const now = new Date();
-            const next = new Date(now);
-            
-            if (config.interval && config.minute !== undefined) {
-                // Interval-based (e.g., every 15 minutes)
-                const currentMinute = now.getMinutes();
-                const targetMinutes = [];
-                
-                for (let m = config.minute; m < 60; m += config.interval) {
-                    targetMinutes.push(m);
-                }
-                
-                const nextMinute = targetMinutes.find(m => m > currentMinute);
-                if (nextMinute) {
-                    next.setMinutes(nextMinute, 0, 0);
-                } else {
-                    next.setHours(next.getHours() + 1);
-                    next.setMinutes(targetMinutes[0], 0, 0);
-                }
-            } else if (config.hour === 0 && config.minute === 0) {
-                // Every hour at :00
-                if (now.getMinutes() === 0 && now.getSeconds() < 5) {
-                    return next;
-                }
-                next.setHours(next.getHours() + 1, 0, 0, 0);
-            } else if (config.hour === 0 && config.minute === 30 && config.interval === 4) {
-                // Every 4 hours at :30
-                const currentHour = now.getHours();
-                const targetHours = [0, 4, 8, 12, 16, 20];
-                const nextHour = targetHours.find(h => h > currentHour || (h === currentHour && now.getMinutes() < 30));
-                
-                if (nextHour !== undefined) {
-                    next.setHours(nextHour, 30, 0, 0);
-                } else {
-                    next.setDate(next.getDate() + 1);
-                    next.setHours(0, 30, 0, 0);
-                }
-            } else if (config.hour === 0 && config.minute === 55 && config.interval === 3) {
-                // Every 3 hours at :55
-                const currentHour = now.getHours();
-                const targetHours = [0, 3, 6, 9, 12, 15, 18, 21];
-                const nextHour = targetHours.find(h => h > currentHour || (h === currentHour && now.getMinutes() < 55));
-                
-                if (nextHour !== undefined) {
-                    next.setHours(nextHour, 55, 0, 0);
-                } else {
-                    next.setDate(next.getDate() + 1);
-                    next.setHours(0, 55, 0, 0);
-                }
-            }
-            
-            return next;
-        }
-
-        // Format countdown
-        function formatCountdown(ms) {
-            const seconds = Math.floor(ms / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            
-            if (hours > 0) {
-                return `${hours}h ${minutes % 60}m`;
-            } else if (minutes > 0) {
-                return `${minutes}m ${seconds % 60}s`;
-            } else {
-                return `${seconds}s`;
-            }
-        }
-
-        // Render sync cards (Control Panel)
+        // Render sync cards
         function renderSyncCards(statusData) {
             const grid = document.getElementById('syncGrid');
             grid.innerHTML = '';
@@ -817,89 +550,6 @@
             });
         }
 
-        // Render monitor cards (with countdowns)
-        function renderMonitorCards() {
-            const grid = document.getElementById('monitorGrid');
-            grid.innerHTML = '';
-
-            services.forEach(service => {
-                const card = document.createElement('div');
-                card.className = 'sync-card';
-                
-                const nextScheduled = calculateNextScheduledTime(service.nextScheduled);
-                const timeUntil = nextScheduled - new Date();
-                
-                card.innerHTML = `
-                    <div class="sync-header">
-                        <div class="sync-icon">${service.icon}</div>
-                        <div class="sync-title">${service.title}</div>
-                    </div>
-                    <div class="sync-description">
-                        Automatische sync volgens schema: ${service.schedule}
-                    </div>
-                    <div class="countdown-timer">
-                        <div class="countdown-label">Volgende sync over</div>
-                        <div class="countdown-value" id="countdown-${service.key}">
-                            ${formatCountdown(timeUntil)}
-                        </div>
-                    </div>
-                `;
-                
-                grid.appendChild(card);
-            });
-        }
-
-        // Start countdown timers
-        function startCountdowns() {
-            if (currentTab !== 'monitor') return;
-            
-            services.forEach(service => {
-                const element = document.getElementById('countdown-' + service.key);
-                if (!element) return;
-                
-                const nextScheduled = calculateNextScheduledTime(service.nextScheduled);
-                const timeUntil = nextScheduled - new Date();
-                element.textContent = formatCountdown(Math.max(0, timeUntil));
-            });
-            
-            setTimeout(startCountdowns, 1000);
-        }
-
-        // Load sync logs
-        async function loadSyncLogs() {
-            try {
-                const response = await fetch(`${API_BASE}/api/sync-logs?limit=50`);
-                const data = await response.json();
-                
-                const container = document.getElementById('logsContainer');
-                
-                if (data.success && data.data && data.data.length > 0) {
-                    container.innerHTML = data.data.map(log => {
-                        const type = log.status === 'SUCCESS' ? 'success' : log.status === 'ERROR' ? 'error' : 'info';
-                        const time = new Date(log.created_at).toLocaleString('nl-NL');
-                        
-                        return `
-                            <div class="log-entry ${type}">
-                                <div class="log-meta">
-                                    <span class="log-type">${log.sync_type || 'SYNC'}</span>
-                                    <span class="log-time">${time}</span>
-                                </div>
-                                <div class="log-message">
-                                    ${log.message || 'Sync completed'}
-                                    ${log.items_synced ? ` • ${log.items_synced} items` : ''}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                } else {
-                    container.innerHTML = '<p style="color: rgba(255,255,255,0.6); text-align: center; padding: 40px;">Geen sync logs beschikbaar</p>';
-                }
-            } catch (error) {
-                console.error('Failed to load sync logs:', error);
-                document.getElementById('logsContainer').innerHTML = '<p style="color: rgba(255,100,100,0.8); text-align: center; padding: 40px;">❌ Fout bij laden van logs</p>';
-            }
-        }
-
         // Get cooldown for service (milliseconds)
         function getServiceCooldown(key) {
             const cooldowns = {
@@ -914,7 +564,7 @@
         // Fetch status
         async function fetchStatus() {
             try {
-                const response = await fetch(`${API_BASE}/api/sync-control/status`);
+                const response = await fetch(`${API_BASE}/status`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -938,11 +588,10 @@
             btn.innerHTML = '<span class="spinner"></span>Syncing...';
             
             activeSyncs++;
-            totalSyncsToday++;
             updateStatusBar();
 
             try {
-                const response = await fetch(`${API_BASE}/api/sync-control/trigger/${service}`, {
+                const response = await fetch(`${API_BASE}/trigger/${service}`, {
                     method: 'POST'
                 });
                 const data = await response.json();
@@ -975,7 +624,6 @@
             document.getElementById('systemStatus').style.color = '#10b981';
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString('nl-NL');
             document.getElementById('activeSyncs').textContent = activeSyncs;
-            document.getElementById('totalSyncs').textContent = totalSyncsToday;
         }
 
         // Show toast notification
@@ -1000,7 +648,7 @@
             document.body.appendChild(toast);
             
             setTimeout(() => {
-                toast.style.animation = 'slideInRight 0.3s ease reverse';
+                toast.style.animation = 'slideIn 0.3s ease reverse';
                 setTimeout(() => toast.remove(), 300);
             }, 5000);
         }
@@ -1008,21 +656,9 @@
         // Initialize
         createParticles();
         fetchStatus();
-        renderMonitorCards();
         
         // Auto-refresh every 10 seconds
-        setInterval(() => {
-            if (currentTab === 'control') {
-                fetchStatus();
-            }
-        }, 10000);
-
-        // Refresh logs every 30 seconds when on logs tab
-        setInterval(() => {
-            if (currentTab === 'logs') {
-                loadSyncLogs();
-            }
-        }, 30000);
+        setInterval(fetchStatus, 10000);
     </script>
 </body>
 </html>
