@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
 import DashboardModern from './pages/DashboardModern'
 import EventsModern from './pages/EventsModern'
@@ -10,7 +10,6 @@ import ResultsDashboard from './pages/ResultsDashboard'
 import RiderResultsView from './pages/RiderResultsView'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
-import AdminHome from './pages/AdminHome'
 import { AccessRequests } from './pages/AccessRequests'
 import PendingAccess from './pages/PendingAccess'
 import UserManagement from './pages/UserManagement'
@@ -18,6 +17,24 @@ import Archive from './pages/Archive'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
+
+// Admin redirect component
+function AdminRedirect() {
+  useEffect(() => {
+    // Redirect to HTML admin tools
+    window.location.href = '/admin/'
+  }, [])
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="text-6xl mb-4">⚙️</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Redirecting to Admin Tools...</h2>
+        <p className="text-gray-600">Een moment geduld</p>
+      </div>
+    </div>
+  )
+}
 
 function Navigation() {
   const { user, signOut } = useAuth()
@@ -85,12 +102,12 @@ function Navigation() {
               
               {/* Admin Button - Only visible when logged in */}
               {user && (
-                <Link 
-                  to="/admin" 
+                <a 
+                  href="/admin/" 
                   className="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg hover:from-amber-600 hover:to-orange-600 shadow-md hover:shadow-lg transition-all duration-200"
                 >
                   ⚙️ Admin
-                </Link>
+                </a>
               )}
 
               {/* Login/Logout Button */}
@@ -155,13 +172,13 @@ function Navigation() {
               </Link>
               
               {user && (
-                <Link 
-                  to="/admin" 
+                <a 
+                  href="/admin/" 
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-4 py-3 text-base font-bold text-white bg-gradient-to-r from-amber-500 to-orange-500 rounded-md hover:from-amber-600 hover:to-orange-600 transition"
                 >
                   ⚙️ Admin
-                </Link>
+                </a>
               )}
 
               {user ? (
@@ -233,15 +250,15 @@ function BottomNavigation() {
         </Link>
         
         {user ? (
-          <Link 
-            to="/admin" 
+          <a 
+            href="/admin/" 
             className={`flex flex-col items-center justify-center space-y-1 ${
               location.startsWith('/admin') ? 'text-orange-600' : 'text-gray-600'
             }`}
           >
             <span className="text-xl">⚙️</span>
             <span className="text-xs font-medium">Admin</span>
-          </Link>
+          </a>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-1 text-gray-400">
             <span className="text-xl">👤</span>
@@ -271,12 +288,12 @@ function AppContent() {
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
           
-          {/* Admin Home - Dashboard met tegels */}
+          {/* Admin Home - Redirect to HTML admin tools */}
           <Route 
             path="/admin" 
             element={
               <ProtectedRoute>
-                <AdminHome />
+                <AdminRedirect />
               </ProtectedRoute>
             } 
           />
