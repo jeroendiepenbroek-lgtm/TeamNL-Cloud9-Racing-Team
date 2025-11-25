@@ -25,6 +25,7 @@ import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 import cleanupRouter from './api/endpoints/cleanup.js';
 import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
+import syncControlRouter from './api/endpoints/sync-control.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
@@ -89,6 +90,7 @@ app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
+app.use('/api/sync-control', syncControlRouter); // Modern sync control center
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
 app.get('/admin', (req: Request, res: Response) => {
