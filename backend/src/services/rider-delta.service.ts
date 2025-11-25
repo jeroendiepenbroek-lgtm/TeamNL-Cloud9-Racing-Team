@@ -215,16 +215,24 @@ export class RiderDeltaService {
    * Get all riders met recente changes (voor Live Velo dashboard)
    */
   async getRecentChanges(hours: number = 24): Promise<RiderDelta[]> {
-    // Dit zou uit een cache komen in productie, maar voor nu halen we uit history
-    const cutoffDate = new Date();
-    cutoffDate.setHours(cutoffDate.getHours() - hours);
-    
-    // Haal alle riders
-    const riders = await this.supabase.getRiders();
-    const deltas: RiderDelta[] = [];
-    
-    for (const rider of riders) {
-      const history = await this.supabase.getRiderHistory(rider.rider_id);
+    try {
+      // Dit zou uit een cache komen in productie, maar voor nu halen we uit history
+      const cutoffDate = new Date();
+      cutoffDate.setHours(cutoffDate.getHours() - hours);
+      
+      // Haal alle riders
+      const riders = await this.supabase.getRiders();
+      
+      if (!riders || riders.length === 0) {
+        console.log('[Rider Deltas] No riders found');
+        return [];
+      }
+      
+      const deltas: RiderDelta[] = [];
+      
+      for (const rider of riders) {
+        try {
+          const history = await this.supabase.getRiderHistory(rider.rider_id);
       
       // Filter recent history
       const recentHistory = history.filter(h => 
@@ -260,9 +268,18 @@ export class RiderDeltaService {
           timestamp: newest.snapshot_date
         });
       }
+        } catch (err) {
+          console.error(`Failed to get history for rider ${rider.rider_id}:`, err);
+          continue; // Skip this rider
+        }
+      }
+      
+      return deltas;
+      
+    } catch (error) {
+      console.error('[Rider Deltas] Failed to get recent changes:', error);
+      return []; // Return empty array instead of throwing
     }
-    
-    return deltas;
   }
 }
 
