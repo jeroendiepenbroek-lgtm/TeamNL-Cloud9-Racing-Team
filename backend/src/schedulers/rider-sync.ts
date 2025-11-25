@@ -5,12 +5,13 @@
 
 import { syncServiceV2 as syncService } from '../services/sync-v2.service.js';
 import { syncConfigService } from '../services/sync-config.service.js';
+import { RiderSyncService } from '../services/rider-sync.service.js';
 
 const TEAM_CLUB_ID = 11818;
 
 export class RiderSyncScheduler {
   private intervalId: NodeJS.Timeout | null = null;
-  private isSyncing: boolean = false;
+  // Note: isSyncing is now managed via RiderSyncService.isLocked() for shared state
 
   start() {
     const config = syncConfigService.getConfig();
@@ -52,28 +53,31 @@ export class RiderSyncScheduler {
   }
 
   private async syncRiders() {
-    if (this.isSyncing) {
-      console.log('[RiderSync] ⏭️  Already syncing, skipping...');
+    // Check shared lock (prevents conflicts with manual triggers)
+    if (RiderSyncService.isLocked()) {
+      console.log('[RiderSync Scheduler] ⏭️  Rider sync already in progress (manual trigger or previous run), skipping...');
       return;
     }
 
     try {
-      this.isSyncing = true;
-      console.log('[RiderSync] 🔄 Starting rider sync...');
+      RiderSyncService.setLock(true);
+      console.log('[RiderSync Scheduler] 🔄 Starting scheduled rider sync...');
+      console.log('[RiderSync Scheduler] 🔒 Lock acquired');
       
       const metrics = await syncService.syncRiders({ intervalMinutes: 60, clubId: TEAM_CLUB_ID });
       
-      console.log(`[RiderSync] ✅ Synced ${metrics.riders_processed} riders from club ${TEAM_CLUB_ID}`);
+      console.log(`[RiderSync Scheduler] ✅ Synced ${metrics.riders_processed} riders from club ${TEAM_CLUB_ID}`);
     } catch (error: any) {
-      console.error('[RiderSync] ❌ Rider sync failed:', error.message);
+      console.error('[RiderSync Scheduler] ❌ Rider sync failed:', error.message);
     } finally {
-      this.isSyncing = false;
+      RiderSyncService.setLock(false);
+      console.log('[RiderSync Scheduler] 🔓 Lock released');
     }
   }
   
-  // Manual trigger
+  // Manual trigger (now uses shared lock)
   async syncNow(): Promise<{ success: boolean; count?: number; error?: string }> {
-    if (this.isSyncing) {
+    if (RiderSyncService.isLocked()) {
       return {
         success: false,
         error: 'Rider sync already in progress'
@@ -81,7 +85,10 @@ export class RiderSyncScheduler {
     }
 
     try {
-      this.isSyncing = true;
+      RiderSyncService.setLock(true);
+      console.log('[RiderSync Scheduler] 🔄 Manual trigger via scheduler API...');
+      console.log('[RiderSync Scheduler] 🔒 Lock acquired');
+      
       const metrics = await syncService.syncRiders({ intervalMinutes: 60, clubId: TEAM_CLUB_ID });
       return {
         success: true,
@@ -93,7 +100,8 @@ export class RiderSyncScheduler {
         error: error.message || 'Unknown error'
       };
     } finally {
-      this.isSyncing = false;
+      RiderSyncService.setLock(false);
+      console.log('[RiderSync Scheduler] 🔓 Lock released');
     }
   }
 }
