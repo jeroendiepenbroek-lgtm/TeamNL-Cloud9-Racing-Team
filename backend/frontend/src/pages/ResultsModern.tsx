@@ -249,9 +249,14 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
   
   // Primaire display: position_in_category (groot), overall position tussen haakjes (klein)
   const mainDisplay = positionInCategory || position || rank;
+  
+  // Als we position_in_category hebben EN position, EN ze zijn verschillend, toon position tussen haakjes
   const subDisplay = positionInCategory && position && position !== positionInCategory 
     ? `(${position})`
     : null;
+  
+  // Als geen totalRiders maar wel position/rank, toon dat het om een category positie gaat
+  const displaySuffix = !totalRiders && positionInCategory ? ' in cat' : null;
   
   if (rank === 1) {
     return (
@@ -313,10 +318,13 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
         {subDisplay && (
           <span className="text-[10px] text-gray-500">{subDisplay}</span>
         )}
+        {totalRiders && (
+          <span className="text-xs text-gray-400 ml-0.5">/{totalRiders}</span>
+        )}
+        {displaySuffix && (
+          <span className="text-[10px] text-gray-400 italic ml-0.5">{displaySuffix}</span>
+        )}
       </div>
-      {totalRiders && (
-        <span className="text-[10px] text-gray-400">/{totalRiders}</span>
-      )}
     </div>
   );
 }
