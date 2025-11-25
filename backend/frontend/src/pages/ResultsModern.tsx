@@ -235,11 +235,10 @@ function DNFBadge() {
   );
 }
 
-function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: { 
+function RankBadge({ rank, position, positionInCategory, dnf }: { 
   rank: number; 
   position: number | null;
   positionInCategory: number | null;
-  totalRiders: number | null;
   dnf: boolean | null 
 }) {
   // Toon DNF badge als rider niet gefinisht is
@@ -257,16 +256,11 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
   
   if (rank === 1) {
     return (
-      <div className="flex flex-col items-start">
-        <div className="flex items-center gap-1 text-yellow-600">
-          <Trophy className="w-4 h-4" />
-          <span className="font-bold">1st</span>
-          {subDisplay && (
-            <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
-          )}
-        </div>
-        {totalRiders && (
-          <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
+      <div className="flex items-center gap-1 text-yellow-600">
+        <Trophy className="w-4 h-4" />
+        <span className="font-bold">1st</span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
         )}
       </div>
     );
@@ -274,16 +268,11 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
   
   if (rank === 2) {
     return (
-      <div className="flex flex-col items-start">
-        <div className="flex items-center gap-1 text-gray-400">
-          <Award className="w-4 h-4" />
-          <span className="font-bold">2nd</span>
-          {subDisplay && (
-            <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
-          )}
-        </div>
-        {totalRiders && (
-          <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
+      <div className="flex items-center gap-1 text-gray-400">
+        <Award className="w-4 h-4" />
+        <span className="font-bold">2nd</span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
         )}
       </div>
     );
@@ -291,16 +280,11 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
   
   if (rank === 3) {
     return (
-      <div className="flex flex-col items-start">
-        <div className="flex items-center gap-1 text-amber-700">
-          <Award className="w-4 h-4" />
-          <span className="font-bold">3rd</span>
-          {subDisplay && (
-            <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
-          )}
-        </div>
-        {totalRiders && (
-          <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
+      <div className="flex items-center gap-1 text-amber-700">
+        <Award className="w-4 h-4" />
+        <span className="font-bold">3rd</span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
         )}
       </div>
     );
@@ -314,9 +298,6 @@ function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: {
         </span>
         {subDisplay && (
           <span className="text-[10px] text-gray-500">{subDisplay}</span>
-        )}
-        {totalRiders && (
-          <span className="text-xs text-gray-400 ml-0.5">/{totalRiders}</span>
         )}
       </div>
     </div>
@@ -484,7 +465,6 @@ function EventCard({ event }: { event: EventResult }) {
                             rank={result.rank} 
                             position={result.position}
                             positionInCategory={result.position_in_category}
-                            totalRiders={result.total_riders}
                             dnf={result.dnf} 
                           />
                         </td>
