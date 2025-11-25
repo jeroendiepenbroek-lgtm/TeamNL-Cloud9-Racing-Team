@@ -9,6 +9,13 @@ import {
   Zap, Award, Clock, Users, ChevronDown, ChevronUp, UserCheck2, Filter, DoorOpen, Heart
 } from 'lucide-react';
 
+// Decode HTML entities (ø → ø, etc.)
+const decodeHtmlEntities = (text: string): string => {
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+};
+
 // vELO Tiers - exacte copy van Team Dashboard
 const VELO_TIERS = [
   { rank: 1, name: 'Diamond', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100' },
@@ -339,7 +346,7 @@ function EventCard({ event }: { event: EventResult }) {
             {/* Titel */}
             <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
               <Trophy className="w-5 h-5 flex-shrink-0" />
-              <span className="truncate">{event.event_name}</span>
+              <span className="truncate">{decodeHtmlEntities(event.event_name)}</span>
             </h3>
             
             {/* Route Details (als beschikbaar) */}
@@ -347,9 +354,9 @@ function EventCard({ event }: { event: EventResult }) {
               <div className="space-y-2 mb-3">
                 <div className="flex items-center gap-2 text-white/90">
                   <MapPin className="w-4 h-4" />
-                  <span className="font-bold">{event.route_world}</span>
+                  <span className="font-bold">{decodeHtmlEntities(event.route_world)}</span>
                   {event.route_name && (
-                    <span className="text-white/70">· {event.route_name}</span>
+                    <span className="text-white/70">· {decodeHtmlEntities(event.route_name)}</span>
                   )}
                 </div>
                 
@@ -480,7 +487,7 @@ function EventCard({ event }: { event: EventResult }) {
                         </td>
                         
                         <td className="px-4 py-3">
-                          <span className="font-medium text-gray-900">{result.rider_name}</span>
+                          <span className="font-medium text-gray-900">{decodeHtmlEntities(result.rider_name)}</span>
                         </td>
                         
                         <td className="px-4 py-3">
