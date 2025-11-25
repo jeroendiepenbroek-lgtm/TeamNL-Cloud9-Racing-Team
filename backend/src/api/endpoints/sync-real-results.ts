@@ -57,12 +57,13 @@ router.post('/real-results', async (req: Request, res: Response) => {
         
         // Filter alleen team members (cast naar any voor flexible API response)
         const apiResults: any[] = eventResults as any[];
+        const totalParticipants = apiResults.length; // 🎯 Totaal aantal deelnemers VOOR filtering
         const teamResults = apiResults.filter((result: any) => 
           teamRiderIds.includes(result.riderId || result.rider_id)
         );
         
         if (teamResults.length > 0) {
-          console.log(`   Found ${teamResults.length} team results`);
+          console.log(`   Found ${teamResults.length} team results uit ${totalParticipants} deelnemers`);
           
           // Converteer naar database format
           for (const result of teamResults) {
@@ -79,10 +80,14 @@ router.post('/real-results', async (req: Request, res: Response) => {
               time_seconds: result.timeInSeconds || result.time_seconds || 0,
               avg_wkg: result.avgWkg || result.avg_wkg || 0,
               pen: result.category || result.pen || 'A',
-              total_riders: eventResults.length,
+              total_riders: totalParticipants, // 🎯 FIX: Gebruik totaal aantal, niet gefilterd
               velo_rating: result.velo || result.veloRating || result.velo_rating || null,
               velo_previous: result.veloPrevious || result.velo_previous || null,
               velo_change: result.veloChange || result.velo_change || 0,
+              heartrate_avg: result.heartrateAvg || result.heartrate_avg || result.hrAvg || null, // 🎯 NEW: Heartrate
+              heartrate_max: result.heartrateMax || result.heartrate_max || result.hrMax || null, // 🎯 NEW: Heartrate
+              position: result.position || result.rank || null, // 🎯 NEW: Overall position
+              position_in_category: result.positionInCategory || result.position_in_category || result.categoryRank || null, // 🎯 NEW: Category position
               power_5s: result.power5s || result.power_5s || null,
               power_15s: result.power15s || result.power_15s || null,
               power_30s: result.power30s || result.power_30s || null,
