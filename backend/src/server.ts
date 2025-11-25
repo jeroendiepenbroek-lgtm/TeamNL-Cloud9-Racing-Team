@@ -23,12 +23,15 @@ import resultsSyncRouter from './api/endpoints/results-sync.js';
 import adminStatsRouter from './api/endpoints/admin-stats.js';
 import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 import cleanupRouter from './api/endpoints/cleanup.js';
+import riderDeltasRouter from './api/endpoints/rider-deltas.js';
+import schedulerRouter from './api/endpoints/scheduler.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
 import { SyncServiceV2 } from './services/sync-v2.service.js';
 import { syncConfigService } from './services/sync-config.service.js';
 import { SyncConfigValidator } from './services/sync-config-validator.js';
+import { smartSyncScheduler } from './services/smart-sync-scheduler.service.js';
 import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -85,6 +88,8 @@ app.use('/api/sync/results', resultsSyncRouter); // Results sync from rider hist
 app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
+app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
+app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
 app.get('/admin', (req: Request, res: Response) => {
@@ -156,8 +161,19 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // US7 + US8: Legacy auto-sync scheduler - DISABLED to prevent conflicts with V2
   // autoSyncService.start();  // ❌ DISABLED: conflicts with V2 syncs, causes rate limits
   
-  // Modern V2 Auto-Sync Schedulers
-  console.log('🔄 Configuring V2 Auto-Sync schedulers...');
+  // Choose scheduler mode: SMART (US4) or LEGACY (cron-based)
+  const useSmartScheduler = process.env.USE_SMART_SCHEDULER === 'true';
+  
+  if (useSmartScheduler) {
+    // US4: Smart Sync Scheduler (Adaptive, Dynamic)
+    console.log('\n🧠 Starting Smart Sync Scheduler (US4)...');
+    smartSyncScheduler.start();
+    console.log('✅ Smart Sync Scheduler active\n');
+  } else {
+    // Legacy V2 Cron-based Schedulers
+    console.log('🔄 Configuring V2 Auto-Sync schedulers (LEGACY)...');
+  }
+  
   const config = syncConfigService.getConfig();
   
   // Validate sync configuration to prevent conflicts

@@ -13,6 +13,7 @@ import { zwiftClient } from '../api/zwift-client.js';
 import { supabase } from './supabase.service.js';
 import { DbRider, DbEvent } from '../types/index.js';
 import { syncCoordinator } from './sync-coordinator.service.js';
+import { riderDeltaService } from './rider-delta.service.js';
 
 const TEAM_CLUB_ID = 11818;
 
@@ -121,7 +122,6 @@ export class SyncServiceV2 {
         rider_id: rider.riderId,
         name: rider.name || `Rider ${rider.riderId}`,
         zp_category: rider.zpCategory || undefined,
-        race_current_rating: rider.race?.current?.rating || undefined,
         race_finishes: rider.race?.finishes || 0,
         club_id: clubId,
         club_name: rider.club?.name || undefined,
@@ -129,7 +129,7 @@ export class SyncServiceV2 {
         weight: rider.weight || undefined,
         height: rider.height || undefined,
         zp_ftp: rider.zpFTP || undefined,
-        // vELO rating (from race.current.rating or race.last.rating)
+        // vELO rating (from race.current.rating or race.last.rating) - US3: ACTUELE API DATA
         race_current_rating: rider.race?.current?.rating || rider.race?.last?.rating || undefined,
         // Power intervals - W/kg (5s, 15s, 30s, 1m, 2m, 5m, 20m)
         // API returns arrays [value, percentile, rank] - extract first element
@@ -154,12 +154,21 @@ export class SyncServiceV2 {
         last_synced: new Date().toISOString(),
       }));
 
-      // Upsert to database
+      // US2: Detect deltas BEFORE upsert voor Live Velo dashboard
+      console.log(`[RIDER SYNC] Detecting changes for ${riders.length} riders...`);
+      const deltas = await riderDeltaService.detectAndTrackChanges(existingRiders, riders);
+      
+      // Upsert to database (US3: Met actuele API data)
       const syncedRiders = await supabase.upsertRiders(riders);
       
       // Calculate new vs updated
       metrics.riders_new = riders.filter(r => !existingIds.has(r.rider_id)).length;
       metrics.riders_updated = riders.length - metrics.riders_new;
+      
+      // Log delta summary
+      if (deltas.length > 0) {
+        console.log(`[RIDER SYNC] 📊 ${deltas.length} riders with tracked changes`);
+      }
 
       // Log to sync_logs with clear RIDER_SYNC identifier
       await supabase.createSyncLog({
