@@ -37,6 +37,12 @@
             font-size: 2rem;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .btn {
             padding: 12px 24px;
             border: none;
@@ -49,6 +55,11 @@
             display: inline-block;
         }
 
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn-secondary {
             background: #e2e8f0;
             color: #4a5568;
@@ -57,6 +68,31 @@
         .btn-primary {
             background: #667eea;
             color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover:not(:disabled) {
+            background: #dd6b20;
+            transform: translateY(-2px);
         }
 
         .filters {
@@ -185,9 +221,18 @@
     <div class="container">
         <div class="header">
             <h1>📋 Sync Logs</h1>
-            <div style="display: flex; gap: 10px;">
+            <div class="header-actions">
+                <button onclick="triggerSync('riders')" class="btn btn-success" id="btnRiders">
+                    🔄 Sync Riders
+                </button>
+                <button onclick="triggerSync('events-near')" class="btn btn-primary" id="btnEventsNear">
+                    ⚡ Sync Events (Near)
+                </button>
+                <button onclick="triggerSync('events-far')" class="btn btn-warning" id="btnEventsFar">
+                    🔭 Sync Events (Full)
+                </button>
+                <button class="btn btn-secondary" onclick="loadLogs()">🔄 Ververs</button>
                 <a href="index.html" class="btn btn-secondary">← Dashboard</a>
-                <button class="btn btn-primary" onclick="loadLogs()">🔄 Ververs</button>
             </div>
         </div>
 
@@ -309,6 +354,50 @@
                     </div>
                 `;
             }).join('');
+        }
+
+        // Manual sync triggers
+        async function triggerSync(type) {
+            const buttons = {
+                'riders': document.getElementById('btnRiders'),
+                'events-near': document.getElementById('btnEventsNear'),
+                'events-far': document.getElementById('btnEventsFar')
+            };
+            
+            const endpoints = {
+                'riders': '/api/sync/riders',
+                'events-near': '/api/sync/events/near',
+                'events-far': '/api/sync/events/far'
+            };
+            
+            const btn = buttons[type];
+            const originalText = btn.textContent;
+            
+            try {
+                btn.disabled = true;
+                btn.textContent = '⏳ Bezig...';
+                
+                const response = await fetch(endpoints[type], { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    btn.textContent = '✅ Gelukt!';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.disabled = false;
+                        loadLogs(); // Refresh logs
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Sync gefaald');
+                }
+            } catch (error) {
+                btn.textContent = '❌ Fout';
+                console.error(`Sync ${type} failed:`, error);
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                }, 3000);
+            }
         }
 
         // Load on page load
