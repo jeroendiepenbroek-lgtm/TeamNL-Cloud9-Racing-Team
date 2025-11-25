@@ -308,6 +308,9 @@
                 <button onclick="triggerSync('events-far')" class="btn btn-warning" id="btnEventsFar">
                     🔭 Sync Events (Full)
                 </button>
+                <button onclick="triggerSync('results')" class="btn btn-success" id="btnResults" style="background: #f59e0b;">
+                    🏁 Sync Results
+                </button>
                 <button class="btn btn-secondary" onclick="loadStatus()">🔄 Ververs</button>
                 <button class="btn btn-secondary" onclick="window.location.href='index.html'">← Dashboard</button>
             </div>
@@ -618,13 +621,15 @@
             const buttons = {
                 'riders': document.getElementById('btnRiders'),
                 'events-near': document.getElementById('btnEventsNear'),
-                'events-far': document.getElementById('btnEventsFar')
+                'events-far': document.getElementById('btnEventsFar'),
+                'results': document.getElementById('btnResults')
             };
             
             const endpoints = {
                 'riders': '/api/sync/riders',
                 'events-near': '/api/sync/events/near',
-                'events-far': '/api/sync/events/far'
+                'events-far': '/api/sync/events/far',
+                'results': '/api/sync/results'
             };
             
             const btn = buttons[type];
