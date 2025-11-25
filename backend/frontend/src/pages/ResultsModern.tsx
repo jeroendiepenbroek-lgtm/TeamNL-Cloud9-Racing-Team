@@ -411,9 +411,9 @@ function EventCard({ event }: { event: EventResult }) {
               
               {/* Totaal deelnemers met meervoudig borstbeeld */}
               {event.total_riders && (
-                <div className="flex items-center gap-1 text-white/70">
+                <div className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
-                  <span>{event.total_riders}</span>
+                  <span className="font-semibold">{event.total_riders}</span>
                 </div>
               )}
             </div>
