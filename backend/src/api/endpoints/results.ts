@@ -47,6 +47,7 @@ router.get('/team/recent', async (req: Request, res: Response) => {
         rider_name: result.rider?.name || result.rider_name,
         rank: result.rank,
         position: result.position,  // Overall finish position
+        position_in_category: result.position_in_category,  // Position within pen/category
         total_riders: result.total_riders,  // Total participants
         time_seconds: result.time_seconds,
         avg_wkg: result.avg_wkg,
@@ -73,6 +74,13 @@ router.get('/team/recent', async (req: Request, res: Response) => {
     }, {});
     
     const events = Object.values(groupedByEvent);
+    
+    // Sort events by date (newest first)
+    events.sort((a: any, b: any) => {
+      const dateA = new Date(a.event_date).getTime();
+      const dateB = new Date(b.event_date).getTime();
+      return dateB - dateA;  // Descending order (newest first)
+    });
     
     res.json({
       success: true,

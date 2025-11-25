@@ -64,6 +64,7 @@ interface RaceResult {
   rider_name: string;
   rank: number;
   position: number | null;  // Overall finish position
+  position_in_category: number | null;  // Position within category/pen
   total_riders: number | null;  // Total participants
   time_seconds: number;
   avg_wkg: number;
@@ -227,9 +228,10 @@ function DNFBadge() {
   );
 }
 
-function RankBadge({ rank, position, totalRiders, dnf }: { 
+function RankBadge({ rank, position, positionInCategory, totalRiders, dnf }: { 
   rank: number; 
   position: number | null;
+  positionInCategory: number | null;
   totalRiders: number | null;
   dnf: boolean | null 
 }) {
@@ -238,12 +240,11 @@ function RankBadge({ rank, position, totalRiders, dnf }: {
     return <DNFBadge />;
   }
   
-  // Helper om rank met totaal te tonen
-  const rankDisplay = position && totalRiders 
-    ? `${position}/${totalRiders}`
-    : position 
-    ? position.toString()
-    : rank.toString();
+  // Primaire display: position_in_category (groot), overall position tussen haakjes (klein)
+  const mainDisplay = positionInCategory || position || rank;
+  const subDisplay = positionInCategory && position && position !== positionInCategory 
+    ? `(${position})`
+    : null;
   
   if (rank === 1) {
     return (
@@ -251,6 +252,9 @@ function RankBadge({ rank, position, totalRiders, dnf }: {
         <div className="flex items-center gap-1 text-yellow-600">
           <Trophy className="w-4 h-4" />
           <span className="font-bold">1st</span>
+          {subDisplay && (
+            <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
+          )}
         </div>
         {totalRiders && (
           <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
@@ -265,6 +269,9 @@ function RankBadge({ rank, position, totalRiders, dnf }: {
         <div className="flex items-center gap-1 text-gray-400">
           <Award className="w-4 h-4" />
           <span className="font-bold">2nd</span>
+          {subDisplay && (
+            <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
+          )}
         </div>
         {totalRiders && (
           <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
@@ -279,6 +286,9 @@ function RankBadge({ rank, position, totalRiders, dnf }: {
         <div className="flex items-center gap-1 text-amber-700">
           <Award className="w-4 h-4" />
           <span className="font-bold">3rd</span>
+          {subDisplay && (
+            <span className="text-[10px] text-gray-500 ml-1">{subDisplay}</span>
+          )}
         </div>
         {totalRiders && (
           <span className="text-[10px] text-gray-500 ml-5">van {totalRiders}</span>
@@ -289,9 +299,17 @@ function RankBadge({ rank, position, totalRiders, dnf }: {
   
   return (
     <div className="flex flex-col items-start">
-      <span className="text-sm font-medium text-gray-600">
-        {rankDisplay}
-      </span>
+      <div className="flex items-baseline gap-1">
+        <span className="text-sm font-medium text-gray-600">
+          {mainDisplay}
+        </span>
+        {subDisplay && (
+          <span className="text-[10px] text-gray-500">{subDisplay}</span>
+        )}
+      </div>
+      {totalRiders && (
+        <span className="text-[10px] text-gray-400">/{totalRiders}</span>
+      )}
     </div>
   );
 }
@@ -455,6 +473,7 @@ function EventCard({ event }: { event: EventResult }) {
                           <RankBadge 
                             rank={result.rank} 
                             position={result.position}
+                            positionInCategory={result.position_in_category}
                             totalRiders={result.total_riders}
                             dnf={result.dnf} 
                           />
