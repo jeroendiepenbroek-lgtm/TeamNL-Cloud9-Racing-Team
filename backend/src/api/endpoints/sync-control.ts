@@ -38,24 +38,33 @@ const API_RATE_LIMITS = {
 /**
  * Get last successful sync time from database
  * Ensures accurate rate limiting across server restarts
+ * Uses optimized single-query method
  */
 async function getLastSuccessfulSync(syncType: string): Promise<Date | null> {
   try {
-    const { data, error } = await supabase['client']
-      .from('sync_logs')
-      .select('created_at')
-      .eq('endpoint', syncType)
-      .eq('status', 'success')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-    
-    if (error || !data) return null;
-    return new Date(data.created_at);
+    return await supabase.getLastSuccessfulSync(syncType);
   } catch (error) {
-    console.error(`[SyncControl] Failed to get last sync for ${syncType}:`, error);
+    console.error('[SyncControl] Failed to get last sync for ' + syncType + ':', error);
     return null;
   }
+}
+
+/**
+ * Calculate sync status (can trigger + cooldown remaining)
+ */
+function calculateStatus(lastSync: Date | null, rateLimit: number) {
+  if (!lastSync) {
+    return {
+      canTrigger: true,
+      cooldownRemaining: 0
+    };
+  }
+  const now = Date.now();
+  const timeSince = now - lastSync.getTime();
+  return {
+    canTrigger: timeSince >= rateLimit,
+    cooldownRemaining: Math.max(0, rateLimit - timeSince)
+  };
 }
 
 /**
@@ -64,8 +73,6 @@ async function getLastSuccessfulSync(syncType: string): Promise<Date | null> {
  */
 router.get('/status', async (req: Request, res: Response) => {
   try {
-    const now = Date.now();
-    
     // Get last successful syncs from database
     const [ridersLastSync, resultsLastSync, nearEventsLastSync, farEventsLastSync] = await Promise.all([
       getLastSuccessfulSync('RIDER_SYNC'),
@@ -74,26 +81,14 @@ router.get('/status', async (req: Request, res: Response) => {
       getLastSuccessfulSync('FAR_EVENT_SYNC')
     ]);
     
-    const calculateStatus = (lastSync: Date | null, rateLimit: number) => {
-      if (!lastSync) {
-        return {
-          canTrigger: true,
-          cooldownRemaining: 0
-        };
-      }
-      const timeSince = now - lastSync.getTime();
-      return {
-        canTrigger: timeSince >= rateLimit,
-        cooldownRemaining: Math.max(0, rateLimit - timeSince)
-      };
-    };
-    
+    // Calculate status for each service
     const ridersStatus = calculateStatus(ridersLastSync, API_RATE_LIMITS.riders);
     const resultsStatus = calculateStatus(resultsLastSync, API_RATE_LIMITS.results);
     const nearEventsStatus = calculateStatus(nearEventsLastSync, API_RATE_LIMITS.nearEvents);
     const farEventsStatus = calculateStatus(farEventsLastSync, API_RATE_LIMITS.farEvents);
     
-    const status = {
+    res.json({
+      success: true,
       timestamp: new Date().toISOString(),
       services: {
         riders: {
@@ -134,11 +129,6 @@ router.get('/status', async (req: Request, res: Response) => {
         }
       },
       health: 'ok'
-    };
-    
-    res.json({
-      success: true,
-      ...status
     });
     
   } catch (error: any) {
@@ -181,27 +171,15 @@ router.post('/trigger/riders', async (req: Request, res: Response) => {
       }
     }
     
-    console.log('[SyncControl] Manual trigger: Riders sync (API rate limit check passed)');
+    console.log('[SyncControl] Manual trigger: Riders sync (rate limit passed)');
     
-    // Check if sync is already running (via shared lock)
-    try {
-      await riderSync.syncAllRiders();
-      
-      res.json({
-        success: true,
-        message: 'Riders sync completed successfully',
-        triggeredAt: new Date(now).toISOString()
-      });
-    } catch (error: any) {
-      if (error.message === 'Rider sync already in progress') {
-        return res.status(409).json({
-          success: false,
-          error: 'Sync already in progress',
-          message: 'Rider sync is currently running (scheduled or manual). Please wait for it to complete.',
-        });
-      }
-      throw error; // Re-throw other errors
-    }
+    await riderSync.syncAllRiders();
+    
+    res.json({
+      success: true,
+      message: 'Riders sync completed successfully',
+      triggeredAt: new Date(now).toISOString()
+    });
     
   } catch (error: any) {
     console.error('[SyncControl] Riders trigger error:', error);
@@ -215,24 +193,32 @@ router.post('/trigger/riders', async (req: Request, res: Response) => {
 
 /**
  * POST /api/sync-control/trigger/results
- * Manually trigger results sync
+ * Manually trigger results sync with database-based rate limiting
  */
 router.post('/trigger/results', async (req: Request, res: Response) => {
   try {
+    const lastSync = await getLastSuccessfulSync('RESULTS_SYNC');
     const now = Date.now();
-    const timeSinceLastSync = now - lastSyncTimes.results;
     
-    if (timeSinceLastSync < COOLDOWNS.results) {
-      return res.status(429).json({
-        success: false,
-        error: 'Rate limit exceeded',
-        message: `Please wait ${Math.ceil((COOLDOWNS.results - timeSinceLastSync) / 1000)} seconds`,
-        cooldownRemaining: COOLDOWNS.results - timeSinceLastSync
-      });
+    if (lastSync) {
+      const timeSinceLastSync = now - lastSync.getTime();
+      const rateLimit = API_RATE_LIMITS.results;
+      
+      if (timeSinceLastSync < rateLimit) {
+        const waitSeconds = Math.ceil((rateLimit - timeSinceLastSync) / 1000);
+        const waitMinutes = Math.floor(waitSeconds / 60);
+        
+        return res.status(429).json({
+          success: false,
+          error: 'Rate limit active',
+          message: 'Please wait ' + waitMinutes + 'm ' + (waitSeconds % 60) + 's before triggering results sync.',
+          cooldownRemaining: rateLimit - timeSinceLastSync,
+          lastSync: lastSync.toISOString()
+        });
+      }
     }
     
     console.log('[SyncControl] Manual trigger: Results sync');
-    lastSyncTimes.results = now;
     
     resultsSync.syncAllResults().catch(error => {
       console.error('[SyncControl] Results sync error:', error);
@@ -256,24 +242,31 @@ router.post('/trigger/results', async (req: Request, res: Response) => {
 
 /**
  * POST /api/sync-control/trigger/near-events
- * Manually trigger near events sync
+ * Manually trigger near events sync with database-based rate limiting
  */
 router.post('/trigger/near-events', async (req: Request, res: Response) => {
   try {
+    const lastSync = await getLastSuccessfulSync('NEAR_EVENT_SYNC');
     const now = Date.now();
-    const timeSinceLastSync = now - lastSyncTimes.nearEvents;
     
-    if (timeSinceLastSync < COOLDOWNS.nearEvents) {
-      return res.status(429).json({
-        success: false,
-        error: 'Rate limit exceeded',
-        message: `Please wait ${Math.ceil((COOLDOWNS.nearEvents - timeSinceLastSync) / 1000)} seconds`,
-        cooldownRemaining: COOLDOWNS.nearEvents - timeSinceLastSync
-      });
+    if (lastSync) {
+      const timeSinceLastSync = now - lastSync.getTime();
+      const rateLimit = API_RATE_LIMITS.nearEvents;
+      
+      if (timeSinceLastSync < rateLimit) {
+        const waitSeconds = Math.ceil((rateLimit - timeSinceLastSync) / 1000);
+        
+        return res.status(429).json({
+          success: false,
+          error: 'Rate limit active',
+          message: 'Please wait ' + waitSeconds + 's before triggering near events sync.',
+          cooldownRemaining: rateLimit - timeSinceLastSync,
+          lastSync: lastSync.toISOString()
+        });
+      }
     }
     
     console.log('[SyncControl] Manual trigger: Near events sync');
-    lastSyncTimes.nearEvents = now;
     
     eventSync.syncNearEvents().catch(error => {
       console.error('[SyncControl] Near events sync error:', error);
@@ -297,24 +290,32 @@ router.post('/trigger/near-events', async (req: Request, res: Response) => {
 
 /**
  * POST /api/sync-control/trigger/far-events
- * Manually trigger far events sync
+ * Manually trigger far events sync with database-based rate limiting
  */
 router.post('/trigger/far-events', async (req: Request, res: Response) => {
   try {
+    const lastSync = await getLastSuccessfulSync('FAR_EVENT_SYNC');
     const now = Date.now();
-    const timeSinceLastSync = now - lastSyncTimes.farEvents;
     
-    if (timeSinceLastSync < COOLDOWNS.farEvents) {
-      return res.status(429).json({
-        success: false,
-        error: 'Rate limit exceeded',
-        message: `Please wait ${Math.ceil((COOLDOWNS.farEvents - timeSinceLastSync) / 1000)} seconds`,
-        cooldownRemaining: COOLDOWNS.farEvents - timeSinceLastSync
-      });
+    if (lastSync) {
+      const timeSinceLastSync = now - lastSync.getTime();
+      const rateLimit = API_RATE_LIMITS.farEvents;
+      
+      if (timeSinceLastSync < rateLimit) {
+        const waitSeconds = Math.ceil((rateLimit - timeSinceLastSync) / 1000);
+        const waitMinutes = Math.floor(waitSeconds / 60);
+        
+        return res.status(429).json({
+          success: false,
+          error: 'Rate limit active',
+          message: 'Please wait ' + waitMinutes + 'm ' + (waitSeconds % 60) + 's before triggering far events sync.',
+          cooldownRemaining: rateLimit - timeSinceLastSync,
+          lastSync: lastSync.toISOString()
+        });
+      }
     }
     
     console.log('[SyncControl] Manual trigger: Far events sync');
-    lastSyncTimes.farEvents = now;
     
     eventSync.syncFarEvents().catch(error => {
       console.error('[SyncControl] Far events sync error:', error);

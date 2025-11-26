@@ -480,6 +480,24 @@ export class SupabaseService {
     return data || [];
   }
 
+  /**
+   * Get last successful sync timestamp for specific endpoint
+   * Optimized: Single DB query instead of fetching all logs
+   */
+  async getLastSuccessfulSync(endpoint: string): Promise<Date | null> {
+    const { data, error } = await this.client
+      .from('sync_logs')
+      .select('created_at')
+      .eq('endpoint', endpoint)
+      .eq('status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return new Date(data.created_at);
+  }
+
   async createSyncLog(log: Partial<DbSyncLog>): Promise<DbSyncLog> {
     const { data, error } = await this.client
       .from('sync_logs')
