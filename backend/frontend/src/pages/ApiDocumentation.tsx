@@ -3,7 +3,7 @@
  * Complete overzicht van alle 3 APIs: ZwiftRacing.app, ZwiftPower, Zwift.com
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 interface ApiEndpoint {
@@ -141,7 +141,7 @@ export default function ApiDocumentation() {
     { id: 'zwift_com', label: 'Zwift.com Official', icon: '🌐', color: 'from-blue-500 to-indigo-600' }
   ] as const;
 
-  const renderEndpoints = (endpoints: Record<string, ApiEndpoint>, apiName: string) => {
+  const renderEndpoints = (endpoints: Record<string, ApiEndpoint>) => {
     return (
       <div className="space-y-4">
         {Object.entries(endpoints).map(([endpoint, data]) => (
@@ -304,9 +304,9 @@ export default function ApiDocumentation() {
 
         {/* Content */}
         <div className="bg-gray-800/30 border border-gray-700 rounded-lg p-6">
-          {activeTab === 'zwift_racing' && renderEndpoints(apiData.zwift_racing, 'ZwiftRacing')}
-          {activeTab === 'zwift_power' && renderEndpoints(apiData.zwift_power, 'ZwiftPower')}
-          {activeTab === 'zwift_com' && renderEndpoints(apiData.zwift_com, 'Zwift.com')}
+          {activeTab === 'zwift_racing' && renderEndpoints(apiData.zwift_racing)}
+          {activeTab === 'zwift_power' && renderEndpoints(apiData.zwift_power)}
+          {activeTab === 'zwift_com' && renderEndpoints(apiData.zwift_com)}
         </div>
 
         {/* Metadata */}
