@@ -27,6 +27,8 @@ import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
 import syncControlRouter from './api/endpoints/sync-control.js';
 import riderEnrichmentRouter from './api/endpoints/rider-enrichment.js';
+import zwiftpowerRouter from './api/endpoints/zwiftpower.js';
+import apiDocumentationRouter from './api/endpoints/api-documentation.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
@@ -93,6 +95,8 @@ app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Liv
 app.use('/api/riders', riderEnrichmentRouter); // Rider data enrichment with recent races
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
 app.use('/api/sync-control', syncControlRouter); // Modern sync control center
+app.use('/api/zwiftpower', zwiftpowerRouter); // ZwiftPower direct data access met category berekening
+app.use('/api/admin/api-documentation', apiDocumentationRouter); // Complete API documentation for all 3 APIs
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
 app.get('/admin', (req: Request, res: Response) => {

@@ -153,6 +153,14 @@ export default function AdminHome() {
           />
           
           <AdminTile
+            icon="📚"
+            title="API Documentation"
+            description="Complete API reference met live testing, endpoints, data fields en sourcing matrix voor alle 3 APIs"
+            to="/admin/api-documentation"
+            gradient="from-indigo-500 to-indigo-700"
+          />
+          
+          <AdminTile
             icon="📦"
             title="Dashboard Archief"
             description="Oude dashboard versies bewaard voor referentie en rollback"

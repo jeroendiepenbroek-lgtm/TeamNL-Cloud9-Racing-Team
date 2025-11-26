@@ -14,6 +14,7 @@ import { AccessRequests } from './pages/AccessRequests'
 import PendingAccess from './pages/PendingAccess'
 import UserManagement from './pages/UserManagement'
 import Archive from './pages/Archive'
+import ApiDocumentation from './pages/ApiDocumentation'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -342,6 +343,16 @@ function AppContent() {
             } 
           />
           <Route path="/auth/pending" element={<PendingAccess />} />
+          
+          {/* API Documentation */}
+          <Route 
+            path="/admin/api-documentation" 
+            element={
+              <ProtectedRoute>
+                <ApiDocumentation />
+              </ProtectedRoute>
+            } 
+          />
           
           {/* Archive - Legacy Dashboards */}
           <Route 
