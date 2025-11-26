@@ -26,6 +26,7 @@ import cleanupRouter from './api/endpoints/cleanup.js';
 import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
 import syncControlRouter from './api/endpoints/sync-control.js';
+import riderEnrichmentRouter from './api/endpoints/rider-enrichment.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
@@ -89,6 +90,7 @@ app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
+app.use('/api/riders', riderEnrichmentRouter); // Rider data enrichment with recent races
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
 app.use('/api/sync-control', syncControlRouter); // Modern sync control center
 

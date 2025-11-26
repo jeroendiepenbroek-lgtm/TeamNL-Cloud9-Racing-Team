@@ -3,9 +3,14 @@ import { supabase } from './src/services/supabase.service.js';
 
 const TEST_RIDER_ID = 150437;
 
+// VERWACHTE WAARDEN (recent gewijzigd)
+const EXPECTED_ZFTP = 234;
+const EXPECTED_CATEGORY = 'C';
+
 async function verifyRiderData() {
   console.log('=== DATA ACTUALITEIT VERIFICATIE ===');
-  console.log(`Test Rider: ${TEST_RIDER_ID}\n`);
+  console.log(`Test Rider: ${TEST_RIDER_ID}`);
+  console.log(`Verwacht: zFTP=${EXPECTED_ZFTP}W, Category=${EXPECTED_CATEGORY}\n`);
   
   try {
     // 1. Haal data uit ZwiftRacing API
@@ -14,8 +19,8 @@ async function verifyRiderData() {
     
     console.log('\n=== API DATA (ZwiftRacing.app) ===');
     console.log(`Name: ${apiData.name}`);
-    console.log(`ZP Category: ${apiData.zpCategory || 'N/A'}`);
-    console.log(`ZP FTP: ${apiData.zpFTP || 'N/A'}`);
+    console.log(`ZP Category: ${apiData.zpCategory || 'N/A'} ${apiData.zpCategory === EXPECTED_CATEGORY ? '✅' : '❌ VERWACHT: ' + EXPECTED_CATEGORY}`);
+    console.log(`ZP FTP: ${apiData.zpFTP || 'N/A'} ${apiData.zpFTP === EXPECTED_ZFTP ? '✅' : '❌ VERWACHT: ' + EXPECTED_ZFTP + 'W'}`);
     console.log(`Weight: ${apiData.weight || 'N/A'} kg`);
     console.log(`Height: ${apiData.height || 'N/A'} cm`);
     console.log(`Race Finishes: ${apiData.race?.finishes || 0}`);
@@ -43,13 +48,13 @@ async function verifyRiderData() {
     
     console.log('\n=== DATABASE DATA (Supabase) ===');
     console.log(`Name: ${dbData.name}`);
-    console.log(`ZP Category: ${dbData.zp_category || 'N/A'}`);
-    console.log(`ZP FTP: ${dbData.zp_ftp || 'N/A'}`);
+    console.log(`ZP Category: ${dbData.zp_category || 'N/A'} ${dbData.zp_category === EXPECTED_CATEGORY ? '✅' : '❌ VERWACHT: ' + EXPECTED_CATEGORY}`);
+    console.log(`ZP FTP: ${dbData.zp_ftp || 'N/A'} ${dbData.zp_ftp === EXPECTED_ZFTP ? '✅' : '❌ VERWACHT: ' + EXPECTED_ZFTP + 'W'}`);
     console.log(`Weight: ${dbData.weight || 'N/A'} kg`);
     console.log(`Height: ${dbData.height || 'N/A'} cm`);
     console.log(`Race Finishes: ${dbData.race_finishes || 0}`);
     console.log(`vELO Rating: ${dbData.race_current_rating || 'N/A'}`);
-    console.log(`Last Synced: ${dbData.last_synced || dbData.updated_at || 'N/A'}`);
+    console.log(`Last Synced: ${dbData.last_synced || 'N/A'}`);
     
     console.log('\nPower Profile (W/kg):');
     console.log(`  5s:   ${dbData.power_wkg5 || 'N/A'}`);
@@ -62,7 +67,7 @@ async function verifyRiderData() {
     // 3. Vergelijk actualiteit
     console.log('\n=== ACTUALITEIT CHECK ===');
     
-    const lastSync = new Date(dbData.last_synced || dbData.updated_at || 0);
+    const lastSync = new Date(dbData.last_synced || 0);
     const timeSince = Date.now() - lastSync.getTime();
     const hoursSince = Math.floor(timeSince / 3600000);
     const minutesSince = Math.floor((timeSince % 3600000) / 60000);
