@@ -161,6 +161,14 @@ export default function AdminHome() {
           />
           
           <AdminTile
+            icon="🏗️"
+            title="Data Architectuur"
+            description="Visueel overzicht van alle API integraties, endpoints, datavelden en authentication flows"
+            to="/admin/data-architecture"
+            gradient="from-teal-500 to-teal-700"
+          />
+          
+          <AdminTile
             icon="📦"
             title="Dashboard Archief"
             description="Oude dashboard versies bewaard voor referentie en rollback"

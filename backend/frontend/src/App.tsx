@@ -15,6 +15,7 @@ import PendingAccess from './pages/PendingAccess'
 import UserManagement from './pages/UserManagement'
 import Archive from './pages/Archive'
 import ApiDocumentation from './pages/ApiDocumentation'
+import DataArchitecture from './pages/DataArchitecture'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -350,6 +351,16 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <ApiDocumentation />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Data Architecture */}
+          <Route 
+            path="/admin/data-architecture" 
+            element={
+              <ProtectedRoute>
+                <DataArchitecture />
               </ProtectedRoute>
             } 
           />
