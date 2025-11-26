@@ -39,8 +39,10 @@ Zorg ervoor dat Railway deze variabelen heeft:
 - `NODE_ENV` (production)
 
 ### ❌ Moet worden toegevoegd
-- `ZWIFTPOWER_USERNAME` → jeroen.diepenbroek@gmail.com
-- `ZWIFTPOWER_PASSWORD` → CloudRacer-9
+- `ZWIFTPOWER_USERNAME` → jeroen.diepenbroek@gmail.com (PRIORITEIT)
+- `ZWIFTPOWER_PASSWORD` → CloudRacer-9 (PRIORITEIT)
+- `ZWIFT_USERNAME` → jeroen.diepenbroek@gmail.com (OPTIONEEL)
+- `ZWIFT_PASSWORD` → CloudRacer-9 (OPTIONEEL)
 
 ## 🚀 Na Toevoegen
 

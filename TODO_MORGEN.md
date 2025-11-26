@@ -16,10 +16,15 @@ De Data Architecture pagina en ZwiftPower API endpoints werken **lokaal** maar *
    - Klik op de backend service
    - Ga naar "Variables" tab
 
-2. **Voeg deze 2 environment variables toe:**
+2. **Voeg deze environment variables toe:**
    ```
+   # ZwiftPower credentials (PRIORITEIT - nodig voor API endpoints)
    ZWIFTPOWER_USERNAME=jeroen.diepenbroek@gmail.com
    ZWIFTPOWER_PASSWORD=CloudRacer-9
+   
+   # Zwift.com credentials (OPTIONEEL - alleen voor Python scripts)
+   ZWIFT_USERNAME=jeroen.diepenbroek@gmail.com
+   ZWIFT_PASSWORD=CloudRacer-9
    ```
 
 3. **Wacht op auto-redeploy** (gebeurt automatisch)
@@ -111,21 +116,28 @@ curl https://[railway-url]/api/zwiftpower/test
 
 ### ✅ Wat Werkt (Lokaal + Productie)
 - Frontend admin dashboard met 8 tegels
-- ZwiftRacing.app API (public, geen auth)
-- Database sync functies
-- User management
-- Access requests
+- ZwiftRacing.app API (public, geen auth) - 5 endpoints, 258+ fields
+- Database sync functies (club, riders, events, results)
+- User management & access requests
+- Data Architecture UI (pagina laadt, maar geen live data)
 
 ### ✅ Wat Werkt (Alleen Lokaal)
-- ZwiftPower API endpoints
-- Zwift.com OAuth access
-- Python bridge scripts (zp_robust_fetch.py, zwift_direct.py)
-- Data Architecture pagina met live data
+- **ZwiftPower API endpoints** (via TypeScript service)
+  - `/api/zwiftpower/rider/:id`
+  - `/api/zwiftpower/compare/:id`
+  - `/api/zwiftpower/calculate-category`
+  - Gebruikt: `ZWIFTPOWER_USERNAME` + `ZWIFTPOWER_PASSWORD`
+  
+- **Python Discovery Scripts** (voor documentatie)
+  - `complete_api_discovery.py` - Scans all 3 APIs
+  - `zp_robust_fetch.py` - ZwiftPower bridge
+  - `zwift_direct.py` - Zwift.com OAuth
+  - Gebruikt: Hardcoded credentials in scripts
 
 ### ❌ Wat Niet Werkt (Productie)
-- ZwiftPower API endpoints → **Oorzaak: Missing credentials in Railway**
-- API Documentation status indicators voor ZwiftPower/Zwift.com
-- Data Architecture expandable endpoints met échte data
+- **ZwiftPower API endpoints** → Missing `ZWIFTPOWER_USERNAME` + `ZWIFTPOWER_PASSWORD` in Railway
+- **API Documentation status** → Kan ZwiftPower/Zwift.com status niet checken
+- **Data Architecture live data** → Sample data niet beschikbaar zonder credentials
 
 ---
 
@@ -149,10 +161,19 @@ curl https://[railway-url]/api/zwiftpower/test
    - Verificatie checklist
 
 ### Credentials Locaties
-- **Lokaal**: `backend/.env` ✅ Geconfigureerd
-- **Git**: NIET gecommit (.gitignore) ✅ Veilig
-- **Railway**: ❌ MOET NOG WORDEN TOEGEVOEGD
-- **Code**: Hardcoded in discovery scripts (alleen voor testing)
+
+#### ZwiftPower Credentials
+- **Lokaal .env**: ✅ `ZWIFTPOWER_USERNAME` + `ZWIFTPOWER_PASSWORD` 
+- **Backend code**: ✅ Gebruikt `process.env.ZWIFTPOWER_*` in TypeScript services
+- **Railway**: ❌ MOET NOG WORDEN TOEGEVOEGD (KRITISCH)
+- **Status**: Werkt lokaal, faalt in productie
+
+#### Zwift.com Credentials  
+- **Lokaal .env**: ❌ NIET in .env file
+- **Python scripts**: ✅ Hardcoded in `complete_api_discovery.py` (alleen testing)
+- **Backend code**: ❌ Geen TypeScript service die deze gebruikt (nog)
+- **Railway**: ⚠️ Optioneel toevoegen voor toekomstige features
+- **Status**: Alleen gebruikt in discovery scripts (Python)
 
 ### Python Dependencies
 - `zpdatafetch` - ZwiftPower library
@@ -164,10 +185,13 @@ curl https://[railway-url]/api/zwiftpower/test
 ## 🚀 Stappenplan Morgen
 
 ### Stap 1: Railway Setup (5 min)
-- [ ] Open Railway dashboard
-- [ ] Voeg ZWIFTPOWER_USERNAME toe
-- [ ] Voeg ZWIFTPOWER_PASSWORD toe
-- [ ] Wacht op redeploy
+- [ ] Open Railway dashboard (https://railway.app)
+- [ ] Klik op TeamNL Cloud9 project → backend service → Variables
+- [ ] Voeg ZWIFTPOWER_USERNAME toe: `jeroen.diepenbroek@gmail.com`
+- [ ] Voeg ZWIFTPOWER_PASSWORD toe: `CloudRacer-9`
+- [ ] (Optioneel) Voeg ZWIFT_USERNAME toe: `jeroen.diepenbroek@gmail.com`
+- [ ] (Optioneel) Voeg ZWIFT_PASSWORD toe: `CloudRacer-9`
+- [ ] Wacht op auto-redeploy (~2 min)
 
 ### Stap 2: Verificatie (5 min)
 - [ ] Check Railway logs voor `✅ Credentials configured`
