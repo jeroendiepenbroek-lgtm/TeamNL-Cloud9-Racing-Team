@@ -77,6 +77,14 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dist/index.html'));
 });
 
+// CRITICAL: Admin route MUST serve React app (no redirect!)
+// This route is explicitly defined to override any caching/redirect issues
+app.get('/admin', (req: Request, res: Response) => {
+  console.log('🔥 ADMIN ROUTE HIT - Serving React AdminHome with 8 tiles');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+});
+
 // API Routes - 6 Endpoints
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
@@ -97,12 +105,6 @@ app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler managem
 app.use('/api/sync-control', syncControlRouter); // Modern sync control center
 app.use('/api/zwiftpower', zwiftpowerRouter); // ZwiftPower direct data access met category berekening
 app.use('/api/admin/api-documentation', apiDocumentationRouter); // Complete API documentation for all 3 APIs
-
-// Admin route - explicitly serve React app (to override any caching issues)
-app.get('/admin', (req: Request, res: Response) => {
-  console.log('Admin route accessed - serving React AdminHome');
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
-});
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -1,6 +1,6 @@
 {
   "name": "teamnl-cloud9-backend",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Clean MVP backend: 6 API endpoints + Supabase sync",
   "type": "module",
   "private": true,
