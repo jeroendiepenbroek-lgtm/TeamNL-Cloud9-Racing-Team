@@ -30,6 +30,7 @@ RUN npm ci --production
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/data ./data
 
 # Expose port
 EXPOSE 8080

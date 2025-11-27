@@ -16,7 +16,7 @@ const router = Router();
 router.get('/', async (req: Request, res: Response) => {
   try {
     // Read discovery results
-    const discoveryPath = '/tmp/complete_api_discovery.json';
+    const discoveryPath = path.join(__dirname, '../../data/complete_api_discovery.json');
     
     if (!fs.existsSync(discoveryPath)) {
       return res.status(404).json({
@@ -144,7 +144,7 @@ router.get('/status', async (req: Request, res: Response) => {
  */
 router.get('/fields', async (req: Request, res: Response) => {
   try {
-    const discoveryPath = '/tmp/complete_api_discovery.json';
+    const discoveryPath = path.join(__dirname, '../../data/complete_api_discovery.json');
     
     if (!fs.existsSync(discoveryPath)) {
       return res.status(404).json({
