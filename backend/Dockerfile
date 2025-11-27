@@ -12,11 +12,18 @@ COPY frontend/package*.json ./frontend/
 RUN npm ci --production=false
 RUN cd frontend && npm install
 
-# Copy ALL source code (including data directory)
-COPY . .
+# Copy data directory FIRST (explicit)
+COPY data ./data
+
+# Copy ALL other source code
+COPY src ./src
+COPY frontend ./frontend
+COPY public ./public
+COPY scripts ./scripts
+COPY tsconfig.json ./
 
 # Verify data directory exists
-RUN ls -la data/ || echo "⚠️  Warning: data directory not found"
+RUN echo "📊 Checking data directory..." && ls -lah data/
 
 # Build frontend
 RUN cd frontend && npm run build
