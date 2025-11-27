@@ -105,6 +105,28 @@ export class SupabaseService {
     return data;
   }
 
+  async upsertRider(rider: Partial<DbRider>): Promise<DbRider> {
+    const GENERATED_COLUMNS = ['watts_per_kg', 'rider_created_at', 'rider_updated_at', 'created_at', 'updated_at'];
+    const copy: any = { ...rider };
+    
+    for (const col of GENERATED_COLUMNS) {
+      if (col in copy) delete copy[col];
+    }
+    
+    for (const k of Object.keys(copy)) {
+      if (copy[k] === undefined) delete copy[k];
+    }
+
+    const { data, error } = await this.client
+      .from('riders')
+      .upsert(copy, { onConflict: 'rider_id' })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   async upsertRiders(riders: Partial<DbRider>[]): Promise<DbRider[]> {
     // Strip generated or read-only columns before upsert
     // Be defensief: verwijder expliciet bekende generated kolommen en gooi

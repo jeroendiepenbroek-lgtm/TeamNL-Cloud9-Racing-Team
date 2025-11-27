@@ -29,6 +29,7 @@ import syncControlRouter from './api/endpoints/sync-control.js';
 import riderEnrichmentRouter from './api/endpoints/rider-enrichment.js';
 import zwiftpowerRouter from './api/endpoints/zwiftpower.js';
 import apiDocumentationRouter from './api/endpoints/api-documentation.js';
+import unifiedDataRouter from './api/endpoints/unified-data.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
@@ -105,6 +106,7 @@ app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler managem
 app.use('/api/sync-control', syncControlRouter); // Modern sync control center
 app.use('/api/zwiftpower', zwiftpowerRouter); // ZwiftPower direct data access met category berekening
 app.use('/api/admin/api-documentation', apiDocumentationRouter); // Complete API documentation for all 3 APIs
+app.use('/api/unified', unifiedDataRouter); // Multi-source unified rider data (ZwiftRacing + Zwift.com + ZwiftPower)
 
 // 404 handler
 app.use((req: Request, res: Response) => {
