@@ -12,6 +12,7 @@ interface ApiEndpoint {
   count?: number;
   structure?: string;
   sample?: any;
+  sample_data?: any;  // Backwards compatibility
   top_level_keys?: string[];
   data_available?: string[];
   description?: string;
@@ -336,7 +337,12 @@ export default function DataArchitecture() {
                       )}
 
                       {/* All Fields - Recursive Extraction */}
-                      {data.sample && <FieldsTable sample={data.sample} totalFields={data.total_fields} />}
+                      {(data.sample || data.sample_data) && (
+                        <FieldsTable 
+                          sample={data.sample || data.sample_data} 
+                          totalFields={data.total_fields} 
+                        />
+                      )}
 
                       {/* Data Available */}
                       {data.data_available && (
@@ -353,11 +359,11 @@ export default function DataArchitecture() {
                       )}
 
                       {/* Sample Data */}
-                      {data.sample && (
+                      {(data.sample || data.sample_data) && (
                         <div>
                           <h4 className="text-xs font-semibold text-gray-700 mb-2">Sample Data:</h4>
                           <pre className="text-xs bg-gray-900 text-gray-100 p-3 rounded overflow-x-auto max-h-64">
-                            {JSON.stringify(data.sample, null, 2)}
+                            {JSON.stringify(data.sample || data.sample_data, null, 2)}
                           </pre>
                         </div>
                       )}

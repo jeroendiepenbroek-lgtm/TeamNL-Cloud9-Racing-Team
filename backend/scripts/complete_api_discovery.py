@@ -64,14 +64,7 @@ if r.status_code == 200:
         'status': 200,
         'total_fields': len(fields),
         'top_level_keys': list(data.keys()) if isinstance(data, dict) else 'array',
-        'sample_data': {
-            'name': data.get('name'),
-            'riderId': data.get('riderId'),
-            'ftp': data.get('power', {}).get('CP'),
-            'weight': data.get('weight'),
-            'vELO': data.get('race', {}).get('rating'),
-            'category': data.get('zpClass')
-        }
+        'sample': data  # Store FULL response for recursive field extraction
     }
     print(f"    ✅ {len(fields)} fields (including nested)")
 
