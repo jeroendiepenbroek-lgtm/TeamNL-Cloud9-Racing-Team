@@ -72,6 +72,105 @@ export default function DataArchitecture() {
     });
   };
 
+  // Extract all nested fields from sample data recursively
+  const extractAllFields = (obj: any, prefix = ''): Array<{path: string, type: string}> => {
+    const fields: Array<{path: string, type: string}> = [];
+    
+    if (obj === null || obj === undefined) return fields;
+    
+    if (Array.isArray(obj)) {
+      if (obj.length > 0) {
+        // Process first item in array
+        const arrayFields = extractAllFields(obj[0], prefix);
+        arrayFields.forEach(f => fields.push({...f, type: `${f.type}[]`}));
+      }
+    } else if (typeof obj === 'object') {
+      Object.keys(obj).forEach(key => {
+        const fullPath = prefix ? `${prefix}.${key}` : key;
+        const value = obj[key];
+        const valueType = Array.isArray(value) ? 'array' : typeof value;
+        
+        fields.push({ path: fullPath, type: valueType });
+        
+        // Recurse into nested objects/arrays
+        if (typeof value === 'object' && value !== null) {
+          const nestedFields = extractAllFields(value, fullPath);
+          fields.push(...nestedFields);
+        }
+      });
+    }
+    
+    return fields;
+  };
+
+  // Component voor het weergeven van alle fields met zoekfunctionaliteit
+  const FieldsTable = ({ sample, totalFields }: { sample: any, totalFields?: number }) => {
+    const [fieldSearch, setFieldSearch] = useState('');
+    const allFields = extractAllFields(sample);
+    
+    const filteredFields = fieldSearch 
+      ? allFields.filter(f => 
+          f.path.toLowerCase().includes(fieldSearch.toLowerCase()) ||
+          f.type.toLowerCase().includes(fieldSearch.toLowerCase())
+        )
+      : allFields;
+
+    const getTypeBadgeColor = (type: string) => {
+      if (type.includes('[]')) return 'bg-orange-100 text-orange-700';
+      switch (type) {
+        case 'string': return 'bg-blue-100 text-blue-700';
+        case 'number': return 'bg-green-100 text-green-700';
+        case 'boolean': return 'bg-purple-100 text-purple-700';
+        case 'object': return 'bg-gray-100 text-gray-700';
+        default: return 'bg-gray-100 text-gray-700';
+      }
+    };
+
+    return (
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-xs font-semibold text-gray-700">
+            Alle {totalFields || allFields.length} Fields:
+          </h4>
+          <input
+            type="text"
+            placeholder="Zoek field..."
+            value={fieldSearch}
+            onChange={(e) => setFieldSearch(e.target.value)}
+            className="px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        {fieldSearch && (
+          <p className="text-xs text-gray-500 mb-2">
+            Toon {filteredFields.length} van {allFields.length} fields
+          </p>
+        )}
+        <div className="max-h-96 overflow-y-auto border border-gray-200 rounded">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 sticky top-0">
+              <tr>
+                <th className="text-left p-2 font-semibold text-gray-700">Field Path</th>
+                <th className="text-left p-2 font-semibold text-gray-700 w-32">Type</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredFields.map((field, idx) => (
+                <tr key={idx} className="hover:bg-gray-50">
+                  <td className="p-2 font-mono text-gray-800">{field.path}</td>
+                  <td className="p-2">
+                    <span className={`inline-block px-2 py-0.5 rounded text-xs ${getTypeBadgeColor(field.type)}`}>
+                      {field.type}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   const getAuthBadge = (apiName: string) => {
     const authTypes = {
       'ZwiftRacing.app': { type: 'Public', color: 'bg-green-100 text-green-800', icon: '🔓' },
@@ -235,6 +334,9 @@ export default function DataArchitecture() {
                           </div>
                         </div>
                       )}
+
+                      {/* All Fields - Recursive Extraction */}
+                      {data.sample && <FieldsTable sample={data.sample} totalFields={data.total_fields} />}
 
                       {/* Data Available */}
                       {data.data_available && (
