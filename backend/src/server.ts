@@ -111,11 +111,12 @@ app.use((req: Request, res: Response) => {
       error: 'Endpoint niet gevonden',
       path: req.path,
     });
-  } else if (req.path.startsWith('/admin/')) {
-    // Admin HTML tools - 404 if not found by static middleware
+  } else if (req.path.startsWith('/admin/') && req.path.endsWith('.html')) {
+    // Admin HTML tools - only 404 if specifically requesting .html files
     res.status(404).send('Admin tool niet gevonden');
   } else {
     // Otherwise, serve React app (SPA fallback for client-side routing)
+    // This includes React admin routes like /admin/data-architecture
     res.sendFile(path.join(__dirname, '../public/dist/index.html'));
   }
 });
