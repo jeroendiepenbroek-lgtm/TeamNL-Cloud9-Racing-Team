@@ -305,7 +305,13 @@ output = {
     }
 }
 
-with open('/tmp/complete_api_discovery.json', 'w') as f:
+import os
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(script_dir, '..', 'data')
+os.makedirs(data_dir, exist_ok=True)
+output_path = os.path.join(data_dir, 'complete_api_discovery.json')
+
+with open(output_path, 'w') as f:
     json.dump(output, indent=2, fp=f, default=str)
 
-print("✅ Results saved to /tmp/complete_api_discovery.json\n")
+print(f"✅ Results saved to {output_path}\n")
