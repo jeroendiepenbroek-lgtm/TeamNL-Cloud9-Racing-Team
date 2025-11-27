@@ -487,6 +487,48 @@ export default function SyncStatusModern() {
           </div>
         </div>
 
+        {/* Smart Scheduler Status - NEW */}
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Smart Sync Scheduler</h2>
+                <p className="text-xs sm:text-sm text-gray-600">Adaptive automated synchronization</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
+                ✓ ACTIVE
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs sm:text-sm">
+            <div className="bg-white/60 rounded-lg p-3">
+              <div className="text-gray-600 mb-1">Rider Sync</div>
+              <div className="font-bold text-blue-700">Every 60min</div>
+            </div>
+            <div className="bg-white/60 rounded-lg p-3">
+              <div className="text-gray-600 mb-1">Results Sync</div>
+              <div className="font-bold text-green-700">Every 180min</div>
+            </div>
+            <div className="bg-white/60 rounded-lg p-3">
+              <div className="text-gray-600 mb-1">Near Events</div>
+              <div className="font-bold text-orange-700">Every 10min</div>
+            </div>
+            <div className="bg-white/60 rounded-lg p-3">
+              <div className="text-gray-600 mb-1">Far Events</div>
+              <div className="font-bold text-purple-700">Every 120min</div>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-3 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-indigo-600" />
+            Smart Scheduler automatically adapts intervals based on time of day and activity levels
+          </p>
+        </div>
+
         {/* Auto-Sync Configuration */}
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4 sm:mb-6">
