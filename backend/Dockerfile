@@ -1,4 +1,5 @@
 # Multi-stage build for TeamNL Cloud9 Backend
+# Context: /backend directory (Railway Root Directory)
 FROM node:22-alpine AS builder
 
 WORKDIR /app
@@ -11,8 +12,11 @@ COPY frontend/package*.json ./frontend/
 RUN npm ci --production=false
 RUN cd frontend && npm install
 
-# Copy source code
+# Copy ALL source code (including data directory)
 COPY . .
+
+# Verify data directory exists
+RUN ls -la data/ || echo "⚠️  Warning: data directory not found"
 
 # Build frontend
 RUN cd frontend && npm run build
@@ -30,7 +34,12 @@ RUN npm ci --production
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/scripts ./scripts
+
+# Copy data directory (API documentation)
 COPY --from=builder /app/data ./data
+
+# Verify data files exist
+RUN ls -lah data/ || echo "⚠️  Warning: data directory not copied"
 
 # Expose port
 EXPOSE 8080
