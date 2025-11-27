@@ -20,13 +20,41 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // Read discovery results
-    const discoveryPath = path.join(__dirname, '../../data/complete_api_discovery.json');
+    // Try multiple possible paths for data directory
+    const possiblePaths = [
+      path.join(__dirname, '../../data/complete_api_discovery.json'),
+      path.join(__dirname, '../../../data/complete_api_discovery.json'),
+      path.join(process.cwd(), 'data/complete_api_discovery.json'),
+      path.join(process.cwd(), 'backend/data/complete_api_discovery.json'),
+      '/app/data/complete_api_discovery.json'
+    ];
     
-    if (!fs.existsSync(discoveryPath)) {
+    let discoveryPath: string | null = null;
+    for (const testPath of possiblePaths) {
+      if (fs.existsSync(testPath)) {
+        discoveryPath = testPath;
+        break;
+      }
+    }
+    
+    if (!discoveryPath) {
+      // Debug info
+      const cwd = process.cwd();
+      const dirname = __dirname;
+      const existingFiles = fs.existsSync(path.join(__dirname, '../../data')) 
+        ? fs.readdirSync(path.join(__dirname, '../../data')) 
+        : [];
+      
       return res.status(404).json({
         error: 'API discovery data not found',
-        message: 'Run backend/scripts/complete_api_discovery.py first'
+        message: 'Run backend/scripts/complete_api_discovery.py first',
+        debug: {
+          cwd,
+          dirname,
+          tried_paths: possiblePaths,
+          data_dir_exists: fs.existsSync(path.join(__dirname, '../../data')),
+          data_dir_files: existingFiles
+        }
       });
     }
     
