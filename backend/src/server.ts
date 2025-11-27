@@ -98,6 +98,12 @@ app.use('/api/sync-control', syncControlRouter); // Modern sync control center
 app.use('/api/zwiftpower', zwiftpowerRouter); // ZwiftPower direct data access met category berekening
 app.use('/api/admin/api-documentation', apiDocumentationRouter); // Complete API documentation for all 3 APIs
 
+// Admin route - explicitly serve React app (to override any caching issues)
+app.get('/admin', (req: Request, res: Response) => {
+  console.log('Admin route accessed - serving React AdminHome');
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+});
+
 // 404 handler
 app.use((req: Request, res: Response) => {
   // If API call, return JSON error
