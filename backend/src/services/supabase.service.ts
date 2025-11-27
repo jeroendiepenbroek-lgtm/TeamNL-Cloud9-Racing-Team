@@ -481,6 +481,23 @@ export class SupabaseService {
   }
 
   /**
+   * Get last sync log for specific endpoint (any status)
+   * Used by sync-control metrics endpoint
+   */
+  async getLastSyncLog(endpoint: string): Promise<DbSyncLog | null> {
+    const { data, error } = await this.client
+      .from('sync_logs')
+      .select('*')
+      .eq('endpoint', endpoint)
+      .order('synced_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data;
+  }
+
+  /**
    * Get last successful sync timestamp for specific endpoint
    * Optimized: Single DB query instead of fetching all logs
    */

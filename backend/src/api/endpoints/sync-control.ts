@@ -68,6 +68,48 @@ function calculateStatus(lastSync: Date | null, rateLimit: number) {
 }
 
 /**
+ * GET /api/sync-control/metrics
+ * Get latest sync metrics from database (for Modern UI dashboard)
+ * Returns last sync for each service type with status and details
+ */
+router.get('/metrics', async (req: Request, res: Response) => {
+  try {
+    // Fetch latest sync logs for each type from database using service method
+    const [riderSync, resultsSync, nearEventSync, farEventSync] = await Promise.all([
+      supabase.getLastSyncLog('RIDER_SYNC'),
+      supabase.getLastSyncLog('RESULTS_SYNC'),
+      supabase.getLastSyncLog('NEAR_EVENT_SYNC'),
+      supabase.getLastSyncLog('FAR_EVENT_SYNC')
+    ]);
+    
+    // Transform to frontend format
+    const formatMetric = (data: any) => data ? {
+      type: data.endpoint,
+      timestamp: data.synced_at,
+      status: data.status,
+      records_processed: data.records_processed || 0,
+      details: data.message || data.details || '',
+      error_message: data.error_message || null
+    } : null;
+    
+    res.json({
+      rider_sync: formatMetric(riderSync),
+      results_sync: formatMetric(resultsSync),
+      near_event_sync: formatMetric(nearEventSync),
+      far_event_sync: formatMetric(farEventSync)
+    });
+    
+  } catch (error: any) {
+    console.error('[SyncControl] Metrics error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get sync metrics',
+      message: error.message
+    });
+  }
+});
+
+/**
  * GET /api/sync-control/status
  * Get current status of all sync services (database-based)
  */
