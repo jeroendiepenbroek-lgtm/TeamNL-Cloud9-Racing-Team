@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import DashboardModern from './pages/DashboardModern'
 import EventsModern from './pages/EventsModern'
@@ -16,27 +16,10 @@ import UserManagement from './pages/UserManagement'
 import Archive from './pages/Archive'
 import ApiDocumentation from './pages/ApiDocumentation'
 import DataArchitecture from './pages/DataArchitecture'
+import AdminHome from './pages/AdminHome'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
-
-// Admin redirect component
-function AdminRedirect() {
-  useEffect(() => {
-    // Redirect to HTML admin tools
-    window.location.href = '/admin/'
-  }, [])
-  
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="text-6xl mb-4">⚙️</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Redirecting to Admin Tools...</h2>
-        <p className="text-gray-600">Een moment geduld</p>
-      </div>
-    </div>
-  )
-}
 
 function Navigation() {
   const { user, signOut } = useAuth()
@@ -290,12 +273,12 @@ function AppContent() {
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
           
-          {/* Admin Home - Redirect to HTML admin tools */}
+          {/* Admin Home - Modern React Dashboard met 8 tiles */}
           <Route 
             path="/admin" 
             element={
               <ProtectedRoute>
-                <AdminRedirect />
+                <AdminHome />
               </ProtectedRoute>
             } 
           />
