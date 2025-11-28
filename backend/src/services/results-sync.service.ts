@@ -280,5 +280,5 @@ export class ResultsSyncService {
   }
 }
 
-// Singleton export
+// Export singleton instance for sync-control
 export const resultsSyncService = new ResultsSyncService();

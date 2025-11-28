@@ -1,6 +1,14 @@
 /**
- * Sync Control Center - Unified sync management
- * Manages all 4 sync types: Riders, Results, Near Events, Far Events
+ * Unified Sync Control Center
+ * US4: Centrale controle voor alle sync operaties
+ * 
+ * Endpoints:
+ * - GET /metrics - Status van alle 4 sync types
+ * - POST /trigger/riders - Handmatig rider sync triggeren
+ * - POST /trigger/results - Handmatig results sync triggeren
+ * - POST /trigger/near-events - Handmatig near events sync triggeren
+ * - POST /trigger/far-events - Handmatig far events sync triggeren
+ * - GET /scheduler/status - Smart scheduler status
  */
 
 import { Router, Request, Response } from 'express';
@@ -11,126 +19,122 @@ import { smartSyncScheduler } from '../../services/smart-sync-scheduler.service.
 
 const router = Router();
 
-// Rate limit configuration (database-based)
-const API_RATE_LIMITS = {
-  RIDER_SYNC: 15 * 60 * 1000,        // 15 minutes
-  RESULTS_SYNC: 10 * 60 * 1000,      // 10 minutes
-  NEAR_EVENT_SYNC: 2 * 60 * 1000,    // 2 minutes
-  FAR_EVENT_SYNC: 30 * 60 * 1000,    // 30 minutes
-};
-
 /**
  * GET /api/sync-control/metrics
- * Returns metrics for all 4 sync types
+ * Haal status van alle 4 sync types op
  */
 router.get('/metrics', async (req: Request, res: Response) => {
   try {
-    const [riderSync, resultsSync, nearEventSync, farEventSync] = await Promise.all([
-      supabase.getLastSyncLog('RIDER_SYNC'),
-      supabase.getLastSyncLog('RESULTS_SYNC'),
-      supabase.getLastSyncLog('NEAR_EVENT_SYNC'),
-      supabase.getLastSyncLog('FAR_EVENT_SYNC'),
-    ]);
+    // Haal laatste sync logs op voor elk type
+    const riderLog = await supabase.getLastSyncLog('/sync/riders');
+    const resultsLog = await supabase.getLastSyncLog('/sync/results');
+    const nearLog = await supabase.getLastSyncLog('/sync/near-events');
+    const farLog = await supabase.getLastSyncLog('/sync/far-events');
 
-    const formatMetric = (log: any, rateLimit: number) => {
-      if (!log) {
-        return {
-          status: 'never_synced',
-          last_sync: null,
-          duration: null,
-          items_synced: 0,
-          can_sync: true,
-          next_available: new Date().toISOString(),
-        };
-      }
-
-      const lastSyncTime = new Date(log.synced_at).getTime();
-      const now = Date.now();
-      const timeSinceSync = now - lastSyncTime;
-      const canSync = timeSinceSync >= rateLimit;
-      const nextAvailable = canSync
-        ? new Date().toISOString()
-        : new Date(lastSyncTime + rateLimit).toISOString();
-
-      return {
-        status: log.status || 'unknown',
-        last_sync: log.synced_at,
-        duration: log.duration_ms || null,
-        items_synced: log.items_synced || 0,
-        can_sync: canSync,
-        next_available: nextAvailable,
-        error: log.error || null,
-      };
+    // Helper functie voor rate limit check
+    const canTrigger = (log: any, cooldownMinutes: number): boolean => {
+      if (!log || !log.synced_at) return true;
+      const lastSync = new Date(log.synced_at);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - lastSync.getTime()) / 60000;
+      return diffMinutes >= cooldownMinutes;
     };
 
     res.json({
       success: true,
       timestamp: new Date().toISOString(),
-      rider_sync: formatMetric(riderSync, API_RATE_LIMITS.RIDER_SYNC),
-      results_sync: formatMetric(resultsSync, API_RATE_LIMITS.RESULTS_SYNC),
-      near_event_sync: formatMetric(nearEventSync, API_RATE_LIMITS.NEAR_EVENT_SYNC),
-      far_event_sync: formatMetric(farEventSync, API_RATE_LIMITS.FAR_EVENT_SYNC),
+      rider_sync: {
+        status: riderLog?.status || 'never_synced',
+        last_synced: riderLog?.synced_at || null,
+        items_synced: riderLog?.items_synced || 0,
+        duration_ms: riderLog?.duration_ms || 0,
+        can_trigger_now: canTrigger(riderLog, 15), // 15 min cooldown
+      },
+      results_sync: {
+        status: resultsLog?.status || 'never_synced',
+        last_synced: resultsLog?.synced_at || null,
+        items_synced: resultsLog?.items_synced || 0,
+        duration_ms: resultsLog?.duration_ms || 0,
+        can_trigger_now: canTrigger(resultsLog, 10), // 10 min cooldown
+      },
+      near_event_sync: {
+        status: nearLog?.status || 'never_synced',
+        last_synced: nearLog?.synced_at || null,
+        items_synced: nearLog?.items_synced || 0,
+        duration_ms: nearLog?.duration_ms || 0,
+        can_trigger_now: canTrigger(nearLog, 2), // 2 min cooldown
+      },
+      far_event_sync: {
+        status: farLog?.status || 'never_synced',
+        last_synced: farLog?.synced_at || null,
+        items_synced: farLog?.items_synced || 0,
+        duration_ms: farLog?.duration_ms || 0,
+        can_trigger_now: canTrigger(farLog, 30), // 30 min cooldown
+      },
     });
   } catch (error: any) {
-    console.error('[Sync Control] Error fetching metrics:', error);
+    console.error('Error fetching sync metrics:', error);
     res.status(500).json({
+      success: false,
       error: 'Failed to fetch sync metrics',
-      details: error.message,
+      message: error.message,
     });
   }
 });
 
 /**
  * POST /api/sync-control/trigger/riders
- * Manual trigger for rider sync
+ * Trigger handmatige rider sync
  */
 router.post('/trigger/riders', async (req: Request, res: Response) => {
   try {
-    // Check rate limit
-    const lastSync = await supabase.getLastSyncLog('RIDER_SYNC');
-    if (lastSync) {
-      const timeSinceSync = Date.now() - new Date(lastSync.synced_at).getTime();
-      if (timeSinceSync < API_RATE_LIMITS.RIDER_SYNC) {
-        const waitTime = Math.ceil((API_RATE_LIMITS.RIDER_SYNC - timeSinceSync) / 1000);
+    // Check rate limit (15 min)
+    const lastLog = await supabase.getLastSyncLog('/sync/riders');
+    if (lastLog && lastLog.synced_at) {
+      const lastSync = new Date(lastLog.synced_at);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - lastSync.getTime()) / 60000;
+      if (diffMinutes < 15) {
         return res.status(429).json({
-          error: 'Rate limit exceeded',
-          message: `Please wait ${Math.ceil(waitTime / 60)} more minutes`,
-          next_available: new Date(new Date(lastSync.synced_at).getTime() + API_RATE_LIMITS.RIDER_SYNC).toISOString(),
+          success: false,
+          error: 'Rate limit',
+          message: `Wacht nog ${Math.ceil(15 - diffMinutes)} minuten voor volgende sync`,
+          next_available: new Date(lastSync.getTime() + 15 * 60000).toISOString(),
         });
       }
     }
 
-    console.log('[Sync Control] 🔄 Manual rider sync triggered');
+    const startTime = Date.now();
+    console.log('🔄 Manual rider sync triggered...');
 
-    // Call coordinated rider sync
     const result = await syncServiceV2.syncRidersCoordinated({
       intervalMinutes: 60,
       clubId: 11818,
     });
 
-    // Log to database
+    const duration = Date.now() - startTime;
+
+    // Log sync
     await supabase.logSync({
-      endpoint: 'RIDER_SYNC',
-      status: result.status,
-      items_synced: result.riders_processed || 0,
-      duration_ms: result.duration_ms,
+      endpoint: '/sync/riders',
+      status: 'success',
+      items_synced: result.ridersProcessed || 0,
+      duration_ms: duration,
       synced_at: new Date().toISOString(),
     });
 
     res.json({
       success: true,
-      message: 'Rider sync completed',
-      riders_processed: result.riders_processed,
-      riders_new: result.riders_new,
-      riders_updated: result.riders_updated,
-      duration_ms: result.duration_ms,
+      message: 'Rider sync voltooid',
+      items_synced: result.ridersProcessed,
+      duration_ms: duration,
     });
   } catch (error: any) {
-    console.error('[Sync Control] ❌ Rider sync failed:', error);
+    console.error('Error triggering rider sync:', error);
     
-    // Log error to database
+    // Log error
     await supabase.logSync({
-      endpoint: 'RIDER_SYNC',
+      endpoint: '/sync/riders',
       status: 'error',
       items_synced: 0,
       duration_ms: 0,
@@ -139,61 +143,64 @@ router.post('/trigger/riders', async (req: Request, res: Response) => {
     });
 
     res.status(500).json({
+      success: false,
       error: 'Rider sync failed',
-      details: error.message,
+      message: error.message,
     });
   }
 });
 
 /**
  * POST /api/sync-control/trigger/results
- * Manual trigger for results sync
+ * Trigger handmatige results sync
  */
 router.post('/trigger/results', async (req: Request, res: Response) => {
   try {
-    // Check rate limit
-    const lastSync = await supabase.getLastSyncLog('RESULTS_SYNC');
-    if (lastSync) {
-      const timeSinceSync = Date.now() - new Date(lastSync.synced_at).getTime();
-      if (timeSinceSync < API_RATE_LIMITS.RESULTS_SYNC) {
-        const waitTime = Math.ceil((API_RATE_LIMITS.RESULTS_SYNC - timeSinceSync) / 1000);
+    // Check rate limit (10 min)
+    const lastLog = await supabase.getLastSyncLog('/sync/results');
+    if (lastLog && lastLog.synced_at) {
+      const lastSync = new Date(lastLog.synced_at);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - lastSync.getTime()) / 60000;
+      if (diffMinutes < 10) {
         return res.status(429).json({
-          error: 'Rate limit exceeded',
-          message: `Please wait ${Math.ceil(waitTime / 60)} more minutes`,
-          next_available: new Date(new Date(lastSync.synced_at).getTime() + API_RATE_LIMITS.RESULTS_SYNC).toISOString(),
+          success: false,
+          error: 'Rate limit',
+          message: `Wacht nog ${Math.ceil(10 - diffMinutes)} minuten voor volgende sync`,
+          next_available: new Date(lastSync.getTime() + 10 * 60000).toISOString(),
         });
       }
     }
 
-    console.log('[Sync Control] 🏁 Manual results sync triggered');
     const startTime = Date.now();
+    console.log('🔄 Manual results sync triggered...');
 
-    // Call results sync service
     const result = await resultsSyncService.syncTeamResultsFromHistory(30);
 
     const duration = Date.now() - startTime;
 
-    // Log to database
+    // Log sync
     await supabase.logSync({
-      endpoint: 'RESULTS_SYNC',
+      endpoint: '/sync/results',
       status: 'success',
-      items_synced: result.results_saved || 0,
+      items_synced: result.totalResultsSynced || 0,
       duration_ms: duration,
       synced_at: new Date().toISOString(),
     });
 
     res.json({
       success: true,
-      message: 'Results sync completed',
-      results_saved: result.results_saved,
-      events_processed: result.events_discovered,
+      message: 'Results sync voltooid',
+      items_synced: result.totalResultsSynced,
       duration_ms: duration,
+      details: result,
     });
   } catch (error: any) {
-    console.error('[Sync Control] ❌ Results sync failed:', error);
+    console.error('Error triggering results sync:', error);
     
+    // Log error
     await supabase.logSync({
-      endpoint: 'RESULTS_SYNC',
+      endpoint: '/sync/results',
       status: 'error',
       items_synced: 0,
       duration_ms: 0,
@@ -202,61 +209,67 @@ router.post('/trigger/results', async (req: Request, res: Response) => {
     });
 
     res.status(500).json({
+      success: false,
       error: 'Results sync failed',
-      details: error.message,
+      message: error.message,
     });
   }
 });
 
 /**
  * POST /api/sync-control/trigger/near-events
- * Manual trigger for near events sync
+ * Trigger handmatige near events sync
  */
 router.post('/trigger/near-events', async (req: Request, res: Response) => {
   try {
-    // Check rate limit
-    const lastSync = await supabase.getLastSyncLog('NEAR_EVENT_SYNC');
-    if (lastSync) {
-      const timeSinceSync = Date.now() - new Date(lastSync.synced_at).getTime();
-      if (timeSinceSync < API_RATE_LIMITS.NEAR_EVENT_SYNC) {
-        const waitTime = Math.ceil((API_RATE_LIMITS.NEAR_EVENT_SYNC - timeSinceSync) / 1000);
+    // Check rate limit (2 min)
+    const lastLog = await supabase.getLastSyncLog('/sync/near-events');
+    if (lastLog && lastLog.synced_at) {
+      const lastSync = new Date(lastLog.synced_at);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - lastSync.getTime()) / 60000;
+      if (diffMinutes < 2) {
         return res.status(429).json({
-          error: 'Rate limit exceeded',
-          message: `Please wait ${waitTime} more seconds`,
-          next_available: new Date(new Date(lastSync.synced_at).getTime() + API_RATE_LIMITS.NEAR_EVENT_SYNC).toISOString(),
+          success: false,
+          error: 'Rate limit',
+          message: `Wacht nog ${Math.ceil(2 - diffMinutes)} minuten voor volgende sync`,
+          next_available: new Date(lastSync.getTime() + 2 * 60000).toISOString(),
         });
       }
     }
 
-    console.log('[Sync Control] 📅 Manual near events sync triggered');
+    const startTime = Date.now();
+    console.log('🔄 Manual near events sync triggered...');
 
-    // Call coordinated near events sync
     const result = await syncServiceV2.syncNearEventsCoordinated({
       intervalMinutes: 10,
-      thresholdMinutes: 60 * 36, // 36 hours
+      thresholdMinutes: 2160, // 36 hours
       lookforwardHours: 36,
     });
 
+    const duration = Date.now() - startTime;
+
+    // Log sync
     await supabase.logSync({
-      endpoint: 'NEAR_EVENT_SYNC',
-      status: result.status,
-      items_synced: result.events_near || 0,
-      duration_ms: result.duration_ms,
+      endpoint: '/sync/near-events',
+      status: 'success',
+      items_synced: result.eventsProcessed || 0,
+      duration_ms: duration,
       synced_at: new Date().toISOString(),
     });
 
     res.json({
       success: true,
-      message: 'Near events sync completed',
-      events_near: result.events_near,
-      signups_synced: result.signups_synced,
-      duration_ms: result.duration_ms,
+      message: 'Near events sync voltooid',
+      items_synced: result.eventsProcessed,
+      duration_ms: duration,
     });
   } catch (error: any) {
-    console.error('[Sync Control] ❌ Near events sync failed:', error);
+    console.error('Error triggering near events sync:', error);
     
+    // Log error
     await supabase.logSync({
-      endpoint: 'NEAR_EVENT_SYNC',
+      endpoint: '/sync/near-events',
       status: 'error',
       items_synced: 0,
       duration_ms: 0,
@@ -265,61 +278,67 @@ router.post('/trigger/near-events', async (req: Request, res: Response) => {
     });
 
     res.status(500).json({
+      success: false,
       error: 'Near events sync failed',
-      details: error.message,
+      message: error.message,
     });
   }
 });
 
 /**
  * POST /api/sync-control/trigger/far-events
- * Manual trigger for far events sync
+ * Trigger handmatige far events sync
  */
 router.post('/trigger/far-events', async (req: Request, res: Response) => {
   try {
-    // Check rate limit
-    const lastSync = await supabase.getLastSyncLog('FAR_EVENT_SYNC');
-    if (lastSync) {
-      const timeSinceSync = Date.now() - new Date(lastSync.synced_at).getTime();
-      if (timeSinceSync < API_RATE_LIMITS.FAR_EVENT_SYNC) {
-        const waitTime = Math.ceil((API_RATE_LIMITS.FAR_EVENT_SYNC - timeSinceSync) / 1000);
+    // Check rate limit (30 min)
+    const lastLog = await supabase.getLastSyncLog('/sync/far-events');
+    if (lastLog && lastLog.synced_at) {
+      const lastSync = new Date(lastLog.synced_at);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - lastSync.getTime()) / 60000;
+      if (diffMinutes < 30) {
         return res.status(429).json({
-          error: 'Rate limit exceeded',
-          message: `Please wait ${Math.ceil(waitTime / 60)} more minutes`,
-          next_available: new Date(new Date(lastSync.synced_at).getTime() + API_RATE_LIMITS.FAR_EVENT_SYNC).toISOString(),
+          success: false,
+          error: 'Rate limit',
+          message: `Wacht nog ${Math.ceil(30 - diffMinutes)} minuten voor volgende sync`,
+          next_available: new Date(lastSync.getTime() + 30 * 60000).toISOString(),
         });
       }
     }
 
-    console.log('[Sync Control] 📆 Manual far events sync triggered');
+    const startTime = Date.now();
+    console.log('🔄 Manual far events sync triggered...');
 
-    // Call coordinated far events sync
     const result = await syncServiceV2.syncFarEventsCoordinated({
       intervalMinutes: 120,
-      thresholdMinutes: 60 * 36, // 36 hours threshold
+      thresholdMinutes: 2160, // 36 hours
       lookforwardHours: 168, // 7 days
     });
 
+    const duration = Date.now() - startTime;
+
+    // Log sync
     await supabase.logSync({
-      endpoint: 'FAR_EVENT_SYNC',
-      status: result.status,
-      items_synced: result.events_scanned || 0,
-      duration_ms: result.duration_ms,
+      endpoint: '/sync/far-events',
+      status: 'success',
+      items_synced: result.eventsProcessed || 0,
+      duration_ms: duration,
       synced_at: new Date().toISOString(),
     });
 
     res.json({
       success: true,
-      message: 'Far events sync completed',
-      events_scanned: result.events_scanned,
-      events_far: result.events_far,
-      duration_ms: result.duration_ms,
+      message: 'Far events sync voltooid',
+      items_synced: result.eventsProcessed,
+      duration_ms: duration,
     });
   } catch (error: any) {
-    console.error('[Sync Control] ❌ Far events sync failed:', error);
+    console.error('Error triggering far events sync:', error);
     
+    // Log error
     await supabase.logSync({
-      endpoint: 'FAR_EVENT_SYNC',
+      endpoint: '/sync/far-events',
       status: 'error',
       items_synced: 0,
       duration_ms: 0,
@@ -328,22 +347,32 @@ router.post('/trigger/far-events', async (req: Request, res: Response) => {
     });
 
     res.status(500).json({
+      success: false,
       error: 'Far events sync failed',
-      details: error.message,
+      message: error.message,
     });
   }
 });
 
 /**
  * GET /api/sync-control/scheduler/status
- * Get Smart Scheduler status
+ * Haal smart scheduler status op
  */
 router.get('/scheduler/status', (req: Request, res: Response) => {
-  const status = smartSyncScheduler.getStatus();
-  res.json({
-    success: true,
-    scheduler: status,
-  });
+  try {
+    const status = smartSyncScheduler.getStatus();
+    res.json({
+      success: true,
+      scheduler: status,
+    });
+  } catch (error: any) {
+    console.error('Error fetching scheduler status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch scheduler status',
+      message: error.message,
+    });
+  }
 });
 
 export default router;

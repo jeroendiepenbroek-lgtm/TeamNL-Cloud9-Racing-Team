@@ -762,11 +762,7 @@ export class SupabaseService {
     return data || [];
   }
 
-  // ========== SYNC LOGS ==========
-  
-  /**
-   * Get last sync log for a specific endpoint
-   */
+  // ========== SYNC LOGGING ==========
   async getLastSyncLog(endpoint: string): Promise<any | null> {
     const { data, error } = await this.client
       .from('sync_logs')
@@ -775,39 +771,34 @@ export class SupabaseService {
       .order('synced_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-
+    
     if (error) {
-      console.error(`[SupabaseService] Error getting last sync log for ${endpoint}:`, error);
+      console.error(`Error fetching last sync log for ${endpoint}:`, error);
       return null;
     }
-    
     return data;
   }
 
-  /**
-   * Log a sync operation
-   */
   async logSync(log: {
     endpoint: string;
-    status: string;
-    items_synced: number;
-    duration_ms: number;
+    status: 'success' | 'error';
+    items_synced?: number;
+    duration_ms?: number;
     error?: string;
     synced_at: string;
   }): Promise<void> {
-    const { error } = await this.client
-      .from('sync_logs')
-      .insert({
-        endpoint: log.endpoint,
-        status: log.status,
-        items_synced: log.items_synced,
-        duration_ms: log.duration_ms,
-        error: log.error || null,
-        synced_at: log.synced_at,
-      });
-
+    const { error } = await this.client.from('sync_logs').insert({
+      endpoint: log.endpoint,
+      status: log.status,
+      items_synced: log.items_synced || 0,
+      duration_ms: log.duration_ms || 0,
+      error: log.error,
+      synced_at: log.synced_at,
+    });
+    
     if (error) {
-      console.error('[SupabaseService] Error logging sync:', error);
+      console.error('Error logging sync:', error);
+      throw error;
     }
   }
 }

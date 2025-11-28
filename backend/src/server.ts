@@ -91,7 +91,7 @@ app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
-app.use('/api/sync-control', syncControlRouter); // Modern unified sync control center
+app.use('/api/sync-control', syncControlRouter); // US4: Unified sync control center
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
 app.get('/admin', (req: Request, res: Response) => {
@@ -158,16 +158,15 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   `);
   
   // ═══════════════════════════════════════════════════════════════
-  //  UNIFIED SYNC SCHEDULER - Modern & Professional
+  //  SMART SYNC SCHEDULER - Modern & Professional
   // ═══════════════════════════════════════════════════════════════
-  // Smart Scheduler met adaptive intervals:
-  // ✅ Riders: 60 min (adaptive)
-  // ✅ Near Events: 10 min (adaptive)
-  // ✅ Far Events: 120 min (adaptive)
-  // ✅ Results: 180 min (adaptive)
+  // Adaptieve sync scheduling:
+  // ✅ Riders: Elk uur (60min base, 30min peak)
+  // ✅ Events Near: Elke 10 min (<24h events)
+  // ✅ Events Far: Elke 2u (>24h events)
+  // ✅ Results: Elke 3u (180min base, 30min post-event)
   
   smartSyncScheduler.start();
-  console.log('✅ Smart Sync Scheduler started');
 });
 
 // Server error handling
