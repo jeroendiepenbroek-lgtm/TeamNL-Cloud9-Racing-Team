@@ -1,6 +1,5 @@
 # Railway Dockerfile - TeamNL Cloud9 Backend
 # Build backend + frontend, serve as single deployment
-# REBUILD FORCED: 2025-11-25-14:33 UTC
 
 FROM node:22-alpine AS base
 

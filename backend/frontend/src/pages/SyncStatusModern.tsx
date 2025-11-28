@@ -9,7 +9,6 @@ import { Activity, Users, Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2
 
 interface SyncMetrics {
   rider_sync: MetricItem | null
-  results_sync: MetricItem | null
   near_event_sync: MetricItem | null
   far_event_sync: MetricItem | null
 }
@@ -57,7 +56,7 @@ export default function SyncStatusModern() {
   const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery<SyncMetrics>({
     queryKey: ['sync-metrics'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/sync-control/metrics`)
+      const res = await fetch(`${API_BASE}/api/sync/metrics`)
       if (!res.ok) throw new Error('Failed to fetch metrics')
       return res.json()
     },
@@ -88,25 +87,20 @@ export default function SyncStatusModern() {
     refetchInterval: 30000, // Every 30s
   })
 
-  const handleTriggerSync = async (type: 'riders' | 'results' | 'near-events' | 'far-events') => {
+  const handleTriggerSync = async (type: 'riders' | 'near-events' | 'far-events') => {
     setTriggeringSync(type)
     try {
-      const endpoint = type === 'riders' ? '/api/sync-control/trigger/riders' : 
-                      type === 'results' ? '/api/sync-control/trigger/results' :
-                      type === 'near-events' ? '/api/sync-control/trigger/near-events' :
-                      '/api/sync-control/trigger/far-events'
+      const endpoint = type === 'riders' ? '/api/sync/riders' : 
+                      type === 'near-events' ? '/api/sync/events/near' :
+                      '/api/sync/events/far'
       
       const res = await fetch(endpoint, { method: 'POST' })
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.message || 'Sync failed')
-      }
+      if (!res.ok) throw new Error('Sync failed')
       
       // Refresh data
       await Promise.all([refetchMetrics(), refetchLogs()])
     } catch (error) {
       console.error('Sync trigger failed:', error)
-      alert(error instanceof Error ? error.message : 'Sync trigger failed')
     } finally {
       setTriggeringSync(null)
     }
@@ -289,7 +283,7 @@ export default function SyncStatusModern() {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 space-y-4 sm:space-y-6">
         {/* Sync Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Rider Sync Card */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 border-2 border-blue-100">
             <div className="flex items-center justify-between mb-4">
@@ -326,55 +320,6 @@ export default function SyncStatusModern() {
               className="w-full mt-4 px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {triggeringSync === 'riders' ? (
-                <>
-                  <Zap className="w-4 h-4 animate-pulse" />
-                  <span>Syncing...</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-4 h-4" />
-                  <span>Trigger Sync</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Results Sync Card */}
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 border-2 border-green-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-gray-900">Results Sync</h3>
-                  <p className="text-[10px] sm:text-xs text-gray-500">Race results</p>
-                </div>
-              </div>
-              {metrics?.results_sync && (
-                <div className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-br ${getStatusColor(metrics.results_sync.status)}`}>
-                  <div className="text-white">
-                    {getStatusIcon(metrics.results_sync.status)}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {metricsLoading ? (
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-              </div>
-            ) : (
-              renderMetricCard(metrics?.results_sync || null, 'rider')
-            )}
-
-            <button
-              onClick={() => handleTriggerSync('results')}
-              disabled={triggeringSync === 'results'}
-              className="w-full mt-4 px-3 sm:px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {triggeringSync === 'results' ? (
                 <>
                   <Zap className="w-4 h-4 animate-pulse" />
                   <span>Syncing...</span>
@@ -485,48 +430,6 @@ export default function SyncStatusModern() {
               )}
             </button>
           </div>
-        </div>
-
-        {/* Smart Scheduler Status - NEW */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
-                <Clock className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900">Smart Sync Scheduler</h2>
-                <p className="text-xs sm:text-sm text-gray-600">Adaptive automated synchronization</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                ✓ ACTIVE
-              </span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs sm:text-sm">
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="text-gray-600 mb-1">Rider Sync</div>
-              <div className="font-bold text-blue-700">Every 60min</div>
-            </div>
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="text-gray-600 mb-1">Results Sync</div>
-              <div className="font-bold text-green-700">Every 180min</div>
-            </div>
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="text-gray-600 mb-1">Near Events</div>
-              <div className="font-bold text-orange-700">Every 10min</div>
-            </div>
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="text-gray-600 mb-1">Far Events</div>
-              <div className="font-bold text-purple-700">Every 120min</div>
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-3 flex items-center gap-2">
-            <Zap className="w-4 h-4 text-indigo-600" />
-            Smart Scheduler automatically adapts intervals based on time of day and activity levels
-          </p>
         </div>
 
         {/* Auto-Sync Configuration */}

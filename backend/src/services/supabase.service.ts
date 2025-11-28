@@ -105,28 +105,6 @@ export class SupabaseService {
     return data;
   }
 
-  async upsertRider(rider: Partial<DbRider>): Promise<DbRider> {
-    const GENERATED_COLUMNS = ['watts_per_kg', 'rider_created_at', 'rider_updated_at', 'created_at', 'updated_at'];
-    const copy: any = { ...rider };
-    
-    for (const col of GENERATED_COLUMNS) {
-      if (col in copy) delete copy[col];
-    }
-    
-    for (const k of Object.keys(copy)) {
-      if (copy[k] === undefined) delete copy[k];
-    }
-
-    const { data, error } = await this.client
-      .from('riders')
-      .upsert(copy, { onConflict: 'rider_id' })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  }
-
   async upsertRiders(riders: Partial<DbRider>[]): Promise<DbRider[]> {
     // Strip generated or read-only columns before upsert
     // Be defensief: verwijder expliciet bekende generated kolommen en gooi
@@ -502,41 +480,6 @@ export class SupabaseService {
     return data || [];
   }
 
-  /**
-   * Get last sync log for specific endpoint (any status)
-   * Used by sync-control metrics endpoint
-   */
-  async getLastSyncLog(endpoint: string): Promise<DbSyncLog | null> {
-    const { data, error } = await this.client
-      .from('sync_logs')
-      .select('*')
-      .eq('endpoint', endpoint)
-      .order('synced_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !data) return null;
-    return data;
-  }
-
-  /**
-   * Get last successful sync timestamp for specific endpoint
-   * Optimized: Single DB query instead of fetching all logs
-   */
-  async getLastSuccessfulSync(endpoint: string): Promise<Date | null> {
-    const { data, error } = await this.client
-      .from('sync_logs')
-      .select('created_at')
-      .eq('endpoint', endpoint)
-      .eq('status', 'success')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (error || !data) return null;
-    return new Date(data.created_at);
-  }
-
   async createSyncLog(log: Partial<DbSyncLog>): Promise<DbSyncLog> {
     const { data, error } = await this.client
       .from('sync_logs')
@@ -817,6 +760,55 @@ export class SupabaseService {
 
     if (error) throw error;
     return data || [];
+  }
+
+  // ========== SYNC LOGS ==========
+  
+  /**
+   * Get last sync log for a specific endpoint
+   */
+  async getLastSyncLog(endpoint: string): Promise<any | null> {
+    const { data, error } = await this.client
+      .from('sync_logs')
+      .select('*')
+      .eq('endpoint', endpoint)
+      .order('synced_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error(`[SupabaseService] Error getting last sync log for ${endpoint}:`, error);
+      return null;
+    }
+    
+    return data;
+  }
+
+  /**
+   * Log a sync operation
+   */
+  async logSync(log: {
+    endpoint: string;
+    status: string;
+    items_synced: number;
+    duration_ms: number;
+    error?: string;
+    synced_at: string;
+  }): Promise<void> {
+    const { error } = await this.client
+      .from('sync_logs')
+      .insert({
+        endpoint: log.endpoint,
+        status: log.status,
+        items_synced: log.items_synced,
+        duration_ms: log.duration_ms,
+        error: log.error || null,
+        synced_at: log.synced_at,
+      });
+
+    if (error) {
+      console.error('[SupabaseService] Error logging sync:', error);
+    }
   }
 }
 

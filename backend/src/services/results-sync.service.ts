@@ -17,24 +17,6 @@ export class ResultsSyncService {
   }
 
   /**
-   * Sync all results (wrapper for control center)
-   * Default: last 30 days
-   */
-  async syncAllResults(daysBack: number = 30): Promise<void> {
-    try {
-      console.log(`[ResultsSync] 🏆 Starting results sync (${daysBack} days)...`);
-      
-      await this.syncTeamResultsFromHistory(daysBack);
-      
-      console.log('[ResultsSync] ✅ Results sync completed');
-    } catch (error: any) {
-      console.error('[ResultsSync] ❌ Results sync failed:', error.message);
-      // Don't re-throw - log error but don't crash
-      console.error('[ResultsSync] Error details:', error.stack);
-    }
-  }
-
-  /**
    * Sync results voor alle TeamNL riders via recent events
    * US1: Sync all riders to Results Dashboard
    */
@@ -297,3 +279,6 @@ export class ResultsSyncService {
     }
   }
 }
+
+// Singleton export
+export const resultsSyncService = new ResultsSyncService();

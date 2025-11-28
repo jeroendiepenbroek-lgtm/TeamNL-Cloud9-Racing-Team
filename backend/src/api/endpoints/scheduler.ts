@@ -1,6 +1,6 @@
 /**
- * Scheduler API Endpoint
- * Smart Sync Scheduler management
+ * Smart Sync Scheduler API Endpoint
+ * Manage adaptive sync scheduler (riders, events, results)
  */
 
 import { Router, Request, Response } from 'express';
@@ -12,66 +12,84 @@ const router = Router();
 router.get('/status', (req: Request, res: Response) => {
   try {
     const status = smartSyncScheduler.getStatus();
+    
     res.json({
       success: true,
-      running: status.running,
-      config: status.config,
-      currentMode: status.currentMode,
-      intervals: status.intervals,
-      message: status.running ? 'Smart Sync Scheduler is running' : 'Smart Sync Scheduler is stopped'
+      scheduler: status,
     });
+    
   } catch (error: any) {
+    console.error('[Scheduler] Status error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to get scheduler status',
+      message: error.message
     });
   }
 });
 
-// POST /api/scheduler/start
+// POST /api/scheduler/start - Start scheduler
 router.post('/start', (req: Request, res: Response) => {
   try {
+    console.log('[Scheduler] Starting...');
     smartSyncScheduler.start();
+    
     res.json({
       success: true,
-      message: 'Smart Sync Scheduler started'
+      message: 'Scheduler started successfully',
+      status: smartSyncScheduler.getStatus()
     });
+    
   } catch (error: any) {
+    console.error('[Scheduler] Start error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to start scheduler',
+      message: error.message
     });
   }
 });
 
-// POST /api/scheduler/stop
+// POST /api/scheduler/stop - Stop scheduler
 router.post('/stop', (req: Request, res: Response) => {
   try {
+    console.log('[Scheduler] Stopping...');
     smartSyncScheduler.stop();
+    
     res.json({
       success: true,
-      message: 'Smart Sync Scheduler stopped'
+      message: 'Scheduler stopped successfully'
     });
+    
   } catch (error: any) {
+    console.error('[Scheduler] Stop error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to stop scheduler',
+      message: error.message
     });
   }
 });
 
-// POST /api/scheduler/restart
+// POST /api/scheduler/restart - Restart scheduler
 router.post('/restart', (req: Request, res: Response) => {
   try {
-    smartSyncScheduler.restart(req.body.config);
+    console.log('[Scheduler] Restarting...');
+    smartSyncScheduler.stop();
+    smartSyncScheduler.start();
+    
     res.json({
       success: true,
-      message: 'Smart Sync Scheduler restarted'
+      message: 'Scheduler restarted successfully',
+      status: smartSyncScheduler.getStatus()
     });
+    
   } catch (error: any) {
+    console.error('[Scheduler] Restart error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to restart scheduler',
+      message: error.message
     });
   }
 });

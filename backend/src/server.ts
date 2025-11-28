@@ -26,16 +26,13 @@ import cleanupRouter from './api/endpoints/cleanup.js';
 import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
 import syncControlRouter from './api/endpoints/sync-control.js';
-import riderEnrichmentRouter from './api/endpoints/rider-enrichment.js';
-import zwiftpowerRouter from './api/endpoints/zwiftpower.js';
-import apiDocumentationRouter from './api/endpoints/api-documentation.js';
-import unifiedDataRouter from './api/endpoints/unified-data.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
 import { SyncServiceV2 } from './services/sync-v2.service.js';
 import { syncConfigService } from './services/sync-config.service.js';
 import { SyncConfigValidator } from './services/sync-config-validator.js';
+import { smartSyncScheduler } from './services/smart-sync-scheduler.service.js';
 import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -78,14 +75,6 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dist/index.html'));
 });
 
-// CRITICAL: Admin route MUST serve React app (no redirect!)
-// This route is explicitly defined to override any caching/redirect issues
-app.get('/admin', (req: Request, res: Response) => {
-  console.log('🔥 ADMIN ROUTE HIT - Serving React AdminHome with 8 tiles');
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
-});
-
 // API Routes - 6 Endpoints
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
@@ -101,12 +90,13 @@ app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
-app.use('/api/riders', riderEnrichmentRouter); // Rider data enrichment with recent races
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
-app.use('/api/sync-control', syncControlRouter); // Modern sync control center
-app.use('/api/zwiftpower', zwiftpowerRouter); // ZwiftPower direct data access met category berekening
-app.use('/api/admin/api-documentation', apiDocumentationRouter); // Complete API documentation for all 3 APIs
-app.use('/api/unified', unifiedDataRouter); // Multi-source unified rider data (ZwiftRacing + Zwift.com + ZwiftPower)
+app.use('/api/sync-control', syncControlRouter); // Modern unified sync control center
+
+// Redirect /admin to /admin/ (HTML admin tools have priority over React router)
+app.get('/admin', (req: Request, res: Response) => {
+  res.redirect(301, '/admin/');
+});
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -116,12 +106,11 @@ app.use((req: Request, res: Response) => {
       error: 'Endpoint niet gevonden',
       path: req.path,
     });
-  } else if (req.path.startsWith('/admin/') && req.path.endsWith('.html')) {
-    // Admin HTML tools - only 404 if specifically requesting .html files
+  } else if (req.path.startsWith('/admin/')) {
+    // Admin HTML tools - 404 if not found by static middleware
     res.status(404).send('Admin tool niet gevonden');
   } else {
     // Otherwise, serve React app (SPA fallback for client-side routing)
-    // This includes React admin routes like /admin/data-architecture
     res.sendFile(path.join(__dirname, '../public/dist/index.html'));
   }
 });
@@ -171,9 +160,14 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // ═══════════════════════════════════════════════════════════════
   //  UNIFIED SYNC SCHEDULER - Modern & Professional
   // ═══════════════════════════════════════════════════════════════
-  // Scheduler gestart via endpoints (admin controle)
-  // Zie /api/scheduler voor status en controle
-  console.log('✅ Server ready - schedulers beschikbaar via /api/scheduler');
+  // Smart Scheduler met adaptive intervals:
+  // ✅ Riders: 60 min (adaptive)
+  // ✅ Near Events: 10 min (adaptive)
+  // ✅ Far Events: 120 min (adaptive)
+  // ✅ Results: 180 min (adaptive)
+  
+  smartSyncScheduler.start();
+  console.log('✅ Smart Sync Scheduler started');
 });
 
 // Server error handling

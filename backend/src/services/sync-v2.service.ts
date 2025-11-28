@@ -108,13 +108,9 @@ export class SyncServiceV2 {
         return metrics;
       }
       
-      // Step 2: Bulk fetch full rider data with enrichment
+      // Step 2: Bulk fetch full rider data
       console.log(`[RIDER SYNC] Fetching full rider data for ${riderIds.length} riders...`);
       const ridersData = await zwiftClient.getBulkRiders(riderIds);
-      
-      // NOTE: Enrichment (FTP from recent races) is expensive for bulk
-      // For now, use profile data. Individual riders can be enriched on-demand.
-      // Future: Add background enrichment job for MY_TEAM members
       
       // Get existing riders to track new vs updated
       const existingRiders = await supabase.getRiders();
