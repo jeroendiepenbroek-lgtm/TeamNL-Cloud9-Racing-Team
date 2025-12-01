@@ -7,10 +7,12 @@
  * - Prioriteit aan near-event periods
  * - Rate limit awareness
  * - Auto-scaling gebaseerd op load
+ * - NIEUWE: Integrated batch sync mode
  */
 
 import { syncServiceV2 } from './sync-v2.service.js';
 import { supabase } from './supabase.service.js';
+import { integratedSyncCoordinator } from './integrated-sync-coordinator.service.js';
 
 interface SyncScheduleConfig {
   // Rider sync intervals (minuten)
@@ -28,6 +30,10 @@ interface SyncScheduleConfig {
   // Peak activity detection
   peakHoursStart: number;             // Default: 17 (5pm)
   peakHoursEnd: number;               // Default: 23 (11pm)
+  
+  // NIEUWE: Integrated batch mode
+  useBatchMode: boolean;              // Use integrated batch sync instead of separate syncs
+  batchSyncInterval: number;          // Interval for batch sync (default: 120min)
 }
 
 export class SmartSyncScheduler {
@@ -35,6 +41,7 @@ export class SmartSyncScheduler {
   private riderSyncTimer: NodeJS.Timeout | null = null;
   private eventSyncTimer: NodeJS.Timeout | null = null;
   private resultsSyncTimer: NodeJS.Timeout | null = null;
+  private batchSyncTimer: NodeJS.Timeout | null = null;
   private isRunning = false;
 
   constructor(config?: Partial<SyncScheduleConfig>) {
@@ -47,6 +54,8 @@ export class SmartSyncScheduler {
       resultsSyncPostEventInterval: 30,
       peakHoursStart: 17,
       peakHoursEnd: 23,
+      useBatchMode: false, // Default: legacy mode
+      batchSyncInterval: 120, // 2 hours
       ...config
     };
   }
@@ -61,25 +70,41 @@ export class SmartSyncScheduler {
     }
 
     console.log('\n🧠 [SmartSync] Starting intelligent sync scheduler...');
-    console.log(`   📋 Config:`, {
-      riderSync: `${this.config.riderSyncBaseInterval}min (peak: ${this.config.riderSyncPeakInterval}min)`,
-      eventSync: `near ${this.config.eventSyncNearInterval}min / far ${this.config.eventSyncFarInterval}min`,
-      resultsSync: `${this.config.resultsSyncInterval}min`,
-      peakHours: `${this.config.peakHoursStart}:00 - ${this.config.peakHoursEnd}:00`
-    });
+    
+    if (this.config.useBatchMode) {
+      // NIEUWE MODE: Integrated batch sync
+      console.log(`   🚀 Mode: INTEGRATED BATCH SYNC`);
+      console.log(`   📋 Config:`, {
+        batchInterval: `${this.config.batchSyncInterval}min`,
+        peakHours: `${this.config.peakHoursStart}:00 - ${this.config.peakHoursEnd}:00`
+      });
 
-    this.isRunning = true;
+      this.isRunning = true;
+      this.scheduleBatchSync();
+      console.log('✅ [SmartSync] Batch scheduler started\n');
+    } else {
+      // LEGACY MODE: Separate syncs
+      console.log(`   📋 Mode: LEGACY (separate syncs)`);
+      console.log(`   📋 Config:`, {
+        riderSync: `${this.config.riderSyncBaseInterval}min (peak: ${this.config.riderSyncPeakInterval}min)`,
+        eventSync: `near ${this.config.eventSyncNearInterval}min / far ${this.config.eventSyncFarInterval}min`,
+        resultsSync: `${this.config.resultsSyncInterval}min`,
+        peakHours: `${this.config.peakHoursStart}:00 - ${this.config.peakHoursEnd}:00`
+      });
 
-    // Schedule rider sync (adaptive)
-    this.scheduleRiderSync();
+      this.isRunning = true;
 
-    // Schedule event sync (dual mode)
-    this.scheduleEventSync();
+      // Schedule rider sync (adaptive)
+      this.scheduleRiderSync();
 
-    // Schedule results sync (post-event aware)
-    this.scheduleResultsSync();
+      // Schedule event sync (dual mode)
+      this.scheduleEventSync();
 
-    console.log('✅ [SmartSync] All schedulers started\n');
+      // Schedule results sync (post-event aware)
+      this.scheduleResultsSync();
+
+      console.log('✅ [SmartSync] All schedulers started\n');
+    }
   }
 
   /**
@@ -91,6 +116,7 @@ export class SmartSyncScheduler {
     if (this.riderSyncTimer) clearInterval(this.riderSyncTimer);
     if (this.eventSyncTimer) clearInterval(this.eventSyncTimer);
     if (this.resultsSyncTimer) clearInterval(this.resultsSyncTimer);
+    if (this.batchSyncTimer) clearInterval(this.batchSyncTimer);
     
     this.isRunning = false;
     console.log('✅ [SmartSync] Stopped');
@@ -242,14 +268,55 @@ export class SmartSyncScheduler {
   }
 
   /**
+   * NIEUWE: Batch sync scheduling
+   */
+  private scheduleBatchSync() {
+    const runBatchSync = async () => {
+      try {
+        console.log('\n⏰ [SmartSync] Batch sync triggered (integrated mode)');
+        
+        const metrics = await integratedSyncCoordinator.executeSmartSync();
+        
+        console.log(`✅ [SmartSync] Batch complete: ${metrics.riders.processed}r, ${metrics.events.near_scanned + metrics.events.far_scanned}e, ${metrics.results.results_saved}res\n`);
+        
+      } catch (error: any) {
+        console.error('❌ [SmartSync] Batch sync failed:', error.message);
+      }
+    };
+
+    // Initial sync (delayed 30s om server startup te laten voltooien)
+    setTimeout(() => runBatchSync(), 30000);
+
+    // Schedule periodiek
+    this.batchSyncTimer = setInterval(() => {
+      runBatchSync();
+    }, this.config.batchSyncInterval * 60 * 1000);
+  }
+
+  /**
    * Get scheduler status
    */
   getStatus() {
     const hour = new Date().getHours();
     const isPeak = hour >= this.config.peakHoursStart && hour <= this.config.peakHoursEnd;
     
+    if (this.config.useBatchMode) {
+      return {
+        running: this.isRunning,
+        mode: 'BATCH',
+        currentMode: isPeak ? 'PEAK' : 'NORMAL',
+        currentHour: hour,
+        intervals: {
+          batchSync: `${this.config.batchSyncInterval}min (smart)`
+        },
+        config: this.config,
+        batchStatus: integratedSyncCoordinator.getStatus()
+      };
+    }
+    
     return {
       running: this.isRunning,
+      mode: 'LEGACY',
       currentMode: isPeak ? 'PEAK' : 'NORMAL',
       currentHour: hour,
       intervals: {
@@ -262,5 +329,8 @@ export class SmartSyncScheduler {
   }
 }
 
-// Singleton instance
-export const smartSyncScheduler = new SmartSyncScheduler();
+// Singleton instance - DEFAULT: Batch mode enabled!
+export const smartSyncScheduler = new SmartSyncScheduler({
+  useBatchMode: true,  // Enable integrated batch sync
+  batchSyncInterval: 120  // Batch sync elke 2 uur
+});

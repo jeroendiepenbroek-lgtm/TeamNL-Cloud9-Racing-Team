@@ -19,17 +19,19 @@ export class ResultsSyncService {
   /**
    * Sync results voor alle TeamNL riders via recent events
    * US1: Sync all riders to Results Dashboard
+   * OPTIMIZED: Alleen events waar team riders geraced hebben
    */
   async syncTeamResultsFromHistory(daysBack: number = 30): Promise<{
     riders_scanned: number;
     results_found: number;
     results_saved: number;
     events_discovered: number;
+    totalResultsSynced?: number; // For backward compatibility
   }> {
     console.info(`🏁 [Results Sync] Starting (${daysBack} days back)`);
 
     try {
-      // 1. Haal alle actieve TeamNL riders op (UNIFIED: zelfde als rider_sync)
+      // 1. Haal alle actieve TeamNL riders op
       const riderIds = await this.supabase.getAllTeamRiderIds();
       console.info(`📋 [Results Sync] Found ${riderIds.length} riders (from my_team_members)`);
       
@@ -39,56 +41,90 @@ export class ResultsSyncService {
           riders_scanned: 0,
           results_found: 0,
           results_saved: 0,
-          events_discovered: 0
+          events_discovered: 0,
+          totalResultsSynced: 0
         };
       }
 
-      // 2. Haal recent events op uit database
-      const recentEvents = await this.supabase.getRecentEvents(daysBack);
-      console.info(`📅 [Results Sync] Found ${recentEvents.length} events in last ${daysBack} days`);
+      // 2. OPTIMIZATION: Filter events waar team riders signup hebben
+      const eventsWithTeamSignups = await this.supabase.getEventsWithTeamSignups(daysBack);
+      console.info(`📅 [Results Sync] Found ${eventsWithTeamSignups.length} events met team signups (laatste ${daysBack} dagen)`);
       
-      if (recentEvents.length === 0) {
-        console.info('ℹ️  [Results Sync] No recent events found');
+      if (eventsWithTeamSignups.length === 0) {
+        console.info('ℹ️  [Results Sync] Geen events met team signups gevonden');
         return {
           riders_scanned: riderIds.length,
           results_found: 0,
           results_saved: 0,
-          events_discovered: 0
+          events_discovered: 0,
+          totalResultsSynced: 0
         };
       }
 
+      // 3. Sort events: recent first (prioriteit voor nieuwe races)
+      const sortedEvents = eventsWithTeamSignups.sort((a, b) => {
+        const timeA = a.event_start ? new Date(a.event_start).getTime() : 0;
+        const timeB = b.event_start ? new Date(b.event_start).getTime() : 0;
+        return timeB - timeA; // Nieuwste eerst
+      });
+
+      console.info(`🔄 [Results Sync] Processing ${sortedEvents.length} events (batch mode)...`);
+
+      // 4. OPTIMIZATION: Batch processing met parallelle calls
+      const BATCH_SIZE = 3; // 3 parallel calls = safe (rate limit: 1/min)
+      const DELAY_MS = 20000; // 20s tussen calls = 3 calls/min
+      
+      const riderIdSet = new Set(riderIds);
       let totalResults = 0;
       let totalSaved = 0;
       const processedEvents = new Set<string>();
 
-      // 3. Voor elk event: sync results van TeamNL riders
-      for (const event of recentEvents) {
-        try {
-          processedEvents.add(event.event_id);
+      // Process events in batches
+      for (let i = 0; i < sortedEvents.length; i += BATCH_SIZE) {
+        const batch = sortedEvents.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(sortedEvents.length / BATCH_SIZE);
+        
+        console.info(`   📦 Batch ${batchNum}/${totalBatches}: ${batch.length} events`);
+        
+        // Parallel fetch met staggered delay
+        const batchPromises = batch.map((event, idx) => 
+          new Promise(resolve => setTimeout(resolve, idx * DELAY_MS))
+            .then(async () => {
+              try {
+                const results: any[] = await this.zwiftApi.getEventResults(event.event_id);
+                const teamResults = results.filter((r: any) => riderIdSet.has(r.riderId));
+                
+                if (teamResults.length > 0) {
+                  console.info(`      ✅ Event ${event.event_id} (${event.event_name}): ${teamResults.length} team results`);
+                }
+                
+                return { 
+                  eventId: event.event_id, 
+                  eventName: event.event_name,
+                  eventDate: event.event_start,
+                  results: teamResults 
+                };
+              } catch (error) {
+                console.error(`      ⚠️  Event ${event.event_id} failed:`, error);
+                return { eventId: event.event_id, eventName: '', eventDate: null, results: [] };
+              }
+            })
+        );
+        
+        const batchResults = await Promise.all(batchPromises);
+        
+        // Save all results from this batch
+        for (const { eventId, eventName, eventDate, results } of batchResults) {
+          if (results.length === 0) continue;
           
-          // Haal event results op van API
-          const results = await this.zwiftApi.getEventResults(event.event_id);
+          processedEvents.add(eventId.toString());
+          totalResults += results.length;
           
-          if (!results || results.length === 0) {
-            continue;
-          }
-          
-          // Filter alleen onze team riders
-          const teamResults = results.filter((r: any) => riderIds.includes(r.riderId));
-          
-          if (teamResults.length === 0) {
-            continue;
-          }
-          
-          console.info(`   ✅ Event ${event.event_id}: ${teamResults.length} team results`);
-          totalResults += teamResults.length;
-
-          // 4. Sla results op in database
-          for (const result of teamResults as any[]) {
+          for (const result of results) {
             try {
-              // Sla result op in zwift_api_race_results tabel
               await this.supabase.saveRaceResult({
-                event_id: event.event_id,
+                event_id: eventId,
                 rider_id: result.riderId,
                 rank: result.position || result.rank,
                 time_seconds: result.time,
@@ -104,21 +140,16 @@ export class ResultsSyncService {
                 race_points: result.racePoints,
                 velo_rating: result.rating || result.ratingAfter,
                 velo_change: result.ratingDelta,
-                event_date: event.time_unix ? new Date(event.time_unix * 1000).toISOString() : new Date().toISOString(),
-                event_name: event.title,
+                event_date: eventDate || new Date().toISOString(),
+                event_name: eventName || `Event ${eventId}`,
                 finish_status: result.dnf ? 'DNF' : 'FINISHED'
               });
               
               totalSaved++;
             } catch (error) {
-              console.error(`   ⚠️  Error saving result for rider ${result.riderId}:`, error);
-              // Continue met volgende result
+              console.error(`      ⚠️  Failed to save result for rider ${result.riderId}:`, error);
             }
           }
-
-        } catch (error) {
-          console.error(`   ⚠️  Error processing event ${event.event_id}:`, error);
-          // Continue met volgend event
         }
       }
 
@@ -129,7 +160,8 @@ export class ResultsSyncService {
         riders_scanned: riderIds.length,
         results_found: totalResults,
         results_saved: totalSaved,
-        events_discovered: processedEvents.size
+        events_discovered: processedEvents.size,
+        totalResultsSynced: totalSaved // For backward compatibility
       };
 
     } catch (error) {

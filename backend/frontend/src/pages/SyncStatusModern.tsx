@@ -8,9 +8,54 @@ import { useState } from 'react'
 import { Activity, Users, Calendar, Clock, TrendingUp, AlertCircle, CheckCircle2, Zap, Settings, Save, PlayCircle, PauseCircle } from 'lucide-react'
 
 interface SyncMetrics {
-  rider_sync: MetricItem | null
-  near_event_sync: MetricItem | null
-  far_event_sync: MetricItem | null
+  success: boolean
+  timestamp: string
+  rider_sync: {
+    status: string
+    last_synced: string | null
+    items_synced: number
+    duration_ms: number
+    can_trigger_now: boolean
+  }
+  results_sync: {
+    status: string
+    last_synced: string | null
+    items_synced: number
+    duration_ms: number
+    can_trigger_now: boolean
+  }
+  near_event_sync: {
+    status: string
+    last_synced: string | null
+    items_synced: number
+    duration_ms: number
+    can_trigger_now: boolean
+  }
+  far_event_sync: {
+    status: string
+    last_synced: string | null
+    items_synced: number
+    duration_ms: number
+    can_trigger_now: boolean
+  }
+}
+
+interface SchedulerStatus {
+  running: boolean
+  mode: 'BATCH' | 'LEGACY'
+  currentMode: 'PEAK' | 'NORMAL'
+  currentHour: number
+  intervals: {
+    batchSync?: string
+    riderSync?: string
+    eventSync?: string
+    resultsSync?: string
+  }
+  batchStatus?: {
+    isRunning: boolean
+    lastSyncTime: string | null
+    minutesSinceLastSync: number
+  }
 }
 
 interface MetricItem {
@@ -52,15 +97,26 @@ export default function SyncStatusModern() {
   const [editingConfig, setEditingConfig] = useState<SyncConfig | null>(null)
   const [savingConfig, setSavingConfig] = useState(false)
 
-  // Fetch sync metrics
+  // Fetch sync metrics (NEW integrated endpoint)
   const { data: metrics, isLoading: metricsLoading, refetch: refetchMetrics } = useQuery<SyncMetrics>({
-    queryKey: ['sync-metrics'],
+    queryKey: ['sync-control-metrics'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/sync/metrics`)
+      const res = await fetch(`${API_BASE}/api/sync-control/metrics`)
       if (!res.ok) throw new Error('Failed to fetch metrics')
       return res.json()
     },
     refetchInterval: 10000, // Every 10s
+  })
+
+  // Fetch scheduler status (NEW)
+  const { data: schedulerStatus, refetch: refetchScheduler } = useQuery<SchedulerStatus>({
+    queryKey: ['scheduler-status'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/sync-control/scheduler/status`)
+      if (!res.ok) throw new Error('Failed to fetch scheduler status')
+      return res.json()
+    },
+    refetchInterval: 15000, // Every 15s
   })
 
   // Fetch sync logs
@@ -87,15 +143,20 @@ export default function SyncStatusModern() {
     refetchInterval: 30000, // Every 30s
   })
 
-  const handleTriggerSync = async (type: 'riders' | 'near-events' | 'far-events') => {
+  const handleTriggerSync = async (type: 'riders' | 'near-events' | 'far-events' | 'results' | 'batch') => {
     setTriggeringSync(type)
     try {
-      const endpoint = type === 'riders' ? '/api/sync/riders' : 
-                      type === 'near-events' ? '/api/sync/events/near' :
-                      '/api/sync/events/far'
+      const endpoint = type === 'riders' ? '/api/sync-control/trigger/riders?force=true' : 
+                      type === 'results' ? '/api/sync-control/trigger/results?force=true' :
+                      type === 'near-events' ? '/api/sync-control/trigger/near-events?force=true' :
+                      type === 'far-events' ? '/api/sync-control/trigger/far-events?force=true' :
+                      '/api/sync-control/smart?force=true' // Smart batch sync
       
       const res = await fetch(endpoint, { method: 'POST' })
-      if (!res.ok) throw new Error('Sync failed')
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.message || 'Sync failed')
+      }
       
       // Refresh data
       await Promise.all([refetchMetrics(), refetchLogs()])
@@ -179,6 +240,27 @@ export default function SyncStatusModern() {
       case 'partial': return <AlertCircle className="w-5 h-5" />
       case 'error': return <AlertCircle className="w-5 h-5" />
       default: return <Clock className="w-5 h-5" />
+    }
+  }
+
+  // Helper: Map new metrics format to old MetricItem format
+  const mapMetricToLegacy = (syncData: {
+    status: string
+    last_synced: string | null
+    items_synced: number
+    duration_ms: number
+  } | undefined, type: string): MetricItem | null => {
+    if (!syncData) return null
+    
+    return {
+      type,
+      timestamp: syncData.last_synced || new Date().toISOString(),
+      status: syncData.status === 'success' ? 'success' : 
+              syncData.status === 'error' ? 'error' : 
+              syncData.status === 'never_synced' ? 'error' : 'success',
+      records_processed: syncData.items_synced || 0,
+      details: `${syncData.items_synced || 0} items in ${(syncData.duration_ms / 1000).toFixed(1)}s`,
+      error_message: syncData.status === 'error' ? 'Sync failed' : null
     }
   }
 
@@ -282,8 +364,52 @@ export default function SyncStatusModern() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 space-y-4 sm:space-y-6">
-        {/* Sync Metrics Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        {/* Scheduler Status Banner */}
+        {schedulerStatus && (
+          <div className="bg-white rounded-xl shadow-lg p-4 border-2 border-indigo-100">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${schedulerStatus.running ? 'bg-green-100' : 'bg-gray-100'}`}>
+                  {schedulerStatus.running ? (
+                    <PlayCircle className="w-5 h-5 text-green-600" />
+                  ) : (
+                    <PauseCircle className="w-5 h-5 text-gray-600" />
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Smart Sync Scheduler</h3>
+                  <p className="text-xs text-gray-500">
+                    Mode: <span className="font-semibold text-indigo-600">{schedulerStatus.mode}</span> | 
+                    {schedulerStatus.mode === 'BATCH' && schedulerStatus.batchStatus && (
+                      <span className="ml-1">
+                        {schedulerStatus.batchStatus.isRunning ? (
+                          <span className="text-orange-600 font-semibold">Running...</span>
+                        ) : (
+                          <span className="text-gray-600">
+                            Last sync: {schedulerStatus.batchStatus.minutesSinceLastSync === Infinity ? 'Never' : `${Math.floor(schedulerStatus.batchStatus.minutesSinceLastSync)}min ago`}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleTriggerSync('batch')}
+                  disabled={triggeringSync === 'batch' || schedulerStatus.batchStatus?.isRunning}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center gap-2 font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>{schedulerStatus.batchStatus?.isRunning ? 'Running...' : 'Smart Batch Sync'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sync Metrics Cards - 2x2 Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Rider Sync Card */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 border-2 border-blue-100">
             <div className="flex items-center justify-between mb-4">
@@ -311,7 +437,7 @@ export default function SyncStatusModern() {
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
               </div>
             ) : (
-              renderMetricCard(metrics?.rider_sync || null, 'rider')
+              renderMetricCard(mapMetricToLegacy(metrics?.rider_sync, 'rider'), 'rider')
             )}
 
             <button
@@ -360,7 +486,7 @@ export default function SyncStatusModern() {
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
               </div>
             ) : (
-              renderMetricCard(metrics?.near_event_sync || null, 'near')
+              renderMetricCard(mapMetricToLegacy(metrics?.near_event_sync, 'near'), 'near')
             )}
 
             <button
@@ -409,7 +535,7 @@ export default function SyncStatusModern() {
                 <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
               </div>
             ) : (
-              renderMetricCard(metrics?.far_event_sync || null, 'far')
+              renderMetricCard(mapMetricToLegacy(metrics?.far_event_sync, 'far'), 'far')
             )}
 
             <button
@@ -418,6 +544,55 @@ export default function SyncStatusModern() {
               className="w-full mt-4 px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {triggeringSync === 'far-events' ? (
+                <>
+                  <Zap className="w-4 h-4 animate-pulse" />
+                  <span>Syncing...</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  <span>Trigger Sync</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Results Sync Card */}
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 border-2 border-emerald-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900">Results Sync</h3>
+                  <p className="text-[10px] sm:text-xs text-gray-500">Race results</p>
+                </div>
+              </div>
+              {metrics?.results_sync && (
+                <div className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-br ${getStatusColor(metrics.results_sync.status)}`}>
+                  <div className="text-white">
+                    {getStatusIcon(metrics.results_sync.status)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {metricsLoading ? (
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+              </div>
+            ) : (
+              renderMetricCard(mapMetricToLegacy(metrics?.results_sync, 'results'), 'results')
+            )}
+
+            <button
+              onClick={() => handleTriggerSync('results')}
+              disabled={triggeringSync === 'results'}
+              className="w-full mt-4 px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all flex items-center justify-center gap-2 font-semibold text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {triggeringSync === 'results' ? (
                 <>
                   <Zap className="w-4 h-4 animate-pulse" />
                   <span>Syncing...</span>

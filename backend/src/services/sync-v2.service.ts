@@ -54,7 +54,15 @@ export class SyncServiceV2 {
   async syncRidersCoordinated(config: { 
     intervalMinutes: number;
     clubId?: number;
+    force?: boolean; // Bypass time slot check voor manual triggers
   }): Promise<RiderSyncMetrics> {
+    if (config.force) {
+      // Manual trigger - bypass time slot check
+      return await syncCoordinator.forceSync('RIDER_SYNC', async () => {
+        return await this.syncRiders(config);
+      });
+    }
+    
     return await syncCoordinator.queueSync('RIDER_SYNC', async () => {
       return await this.syncRiders(config);
     });
@@ -214,7 +222,15 @@ export class SyncServiceV2 {
     intervalMinutes: number;
     thresholdMinutes: number;
     lookforwardHours: number;
+    force?: boolean; // Bypass time slot check voor manual triggers
   }): Promise<EventSyncMetrics> {
+    if (config.force) {
+      // Manual trigger - bypass time slot check
+      return await syncCoordinator.forceSync('NEAR_EVENT_SYNC', async () => {
+        return await this.syncNearEvents(config);
+      });
+    }
+    
     return await syncCoordinator.queueSync('NEAR_EVENT_SYNC', async () => {
       return await this.syncNearEvents(config);
     });
@@ -363,6 +379,13 @@ export class SyncServiceV2 {
     lookforwardHours: number;
     force?: boolean;
   }): Promise<EventSyncMetrics> {
+    if (config.force) {
+      // Manual trigger - bypass time slot check
+      return await syncCoordinator.forceSync('FAR_EVENT_SYNC', async () => {
+        return await this.syncFarEvents(config);
+      });
+    }
+    
     return await syncCoordinator.queueSync('FAR_EVENT_SYNC', async () => {
       return await this.syncFarEvents(config);
     });
