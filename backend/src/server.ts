@@ -26,6 +26,7 @@ import cleanupRouter from './api/endpoints/cleanup.js';
 import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
 import syncControlRouter from './api/endpoints/sync-control.js';
+import unifiedDashboardRouter from './api/endpoints/unified-dashboard.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
@@ -92,6 +93,7 @@ app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
 app.use('/api/sync-control', syncControlRouter); // US4: Unified sync control center
+app.use('/api/v2', unifiedDashboardRouter); // V2: Unified dashboard endpoints (multi-source)
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
 app.get('/admin', (req: Request, res: Response) => {

@@ -8,6 +8,7 @@ import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
 import RidersModern from './pages/RidersModern'
 import ResultsDashboard from './pages/ResultsDashboard'
 import RiderResultsView from './pages/RiderResultsView'
+import RiderStatsPage from './pages/RiderStatsPage'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
 import { AccessRequests } from './pages/AccessRequests'
@@ -282,6 +283,7 @@ function AppContent() {
           <Route path="/" element={<RacingDataMatrixModern />} />
           
           {/* Public Pages */}
+          <Route path="/rider/:riderId" element={<RiderStatsPage />} />
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><EventsModern /></div>} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/results/rider/:riderId" element={<RiderResultsView />} />

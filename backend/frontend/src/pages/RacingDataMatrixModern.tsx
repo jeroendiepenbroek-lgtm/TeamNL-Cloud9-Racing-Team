@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useFavorites } from '../hooks/useFavorites'
 
@@ -238,6 +239,7 @@ function MultiSelectDropdown<T extends string | number>({
 }
 
 export default function RacingDataMatrixModern() {
+  const navigate = useNavigate()
   const [showLegend, setShowLegend] = useState(false)
   const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_last_rating')
   const [sortDesc, setSortDesc] = useState(true)
@@ -785,7 +787,12 @@ export default function RacingDataMatrixModern() {
                       </td>
                       <td className="px-2 sm:px-3 py-1 whitespace-nowrap font-semibold text-gray-900 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
-                          <span>{rider.name}</span>
+                          <button
+                            onClick={() => navigate(`/rider/${rider.rider_id}`)}
+                            className="text-indigo-600 hover:text-indigo-800 hover:underline transition-colors cursor-pointer text-left"
+                          >
+                            {rider.name}
+                          </button>
                           {rider.rider_id === 150437 && (
                             <a 
                               href="https://www.youtube.com/@CloudRacer-9/streams" 
