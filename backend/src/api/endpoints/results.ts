@@ -5,7 +5,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
+// Sync deprecated - use unified endpoints at /api/v2/*
 
 const router = Router();
 

@@ -5,7 +5,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
+// Sync deprecated - use unified endpoints at /api/v2/*
 import { zwiftClient } from '../zwift-client.js'; // US11
 import { syncConfigService } from '../../services/sync-config.service.js'; // US: Dynamic lookforward
 
@@ -298,51 +298,22 @@ router.get('/:eventId/signups', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/events/sync - Sync events vanaf ZwiftRacing API
+// POST /api/events/sync - DEPRECATED
 router.post('/sync', async (req: Request, res: Response) => {
-  try {
-    const result = await syncService.syncEventsCombined({ 
-      intervalMinutes: 60,
-      thresholdMinutes: 30,
-      lookforwardHours: 168,
-      mode: 'full_scan'
-    });
-    
-    res.json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    console.error('❌ [Events/Sync] FATAL ERROR:', error);
-    console.error('Stack:', (error as Error)?.stack);
-    res.status(500).json({ 
-      error: 'Fout bij synchroniseren events',
-      message: (error as Error)?.message,
-      details: String(error)
-    });
-  }
+  res.status(410).json({
+    error: 'This endpoint is deprecated',
+    message: 'Use /api/v2/sync/* endpoints for unified multi-source syncing',
+    migration: 'POST /api/v2/sync/events for event sync'
+  });
 });
 
-// POST /api/events/sync/rider-events - Sync events voor alle riders (Feature 1)
-// Scans all riders for their upcoming events
+// POST /api/events/sync/rider-events - DEPRECATED  
 router.post('/sync/rider-events', async (req: Request, res: Response) => {
-  try {
-    const hours = req.body.hours || 48;
-    const result = await syncService.syncEventsCombined({ 
-      intervalMinutes: 60,
-      thresholdMinutes: 30,
-      lookforwardHours: hours,
-      mode: 'near_only'
-    });
-    
-    res.json({
-      success: true,
-      ...result,
-    });
-  } catch (error) {
-    console.error('Error syncing rider events:', error);
-    res.status(500).json({ error: 'Fout bij synchroniseren rider events' });
-  }
+  res.status(410).json({
+    error: 'This endpoint is deprecated',
+    message: 'Use /api/v2/sync/* endpoints for unified multi-source syncing',
+    migration: 'POST /api/v2/sync/events for event sync'
+  });
 });
 
 export default router;

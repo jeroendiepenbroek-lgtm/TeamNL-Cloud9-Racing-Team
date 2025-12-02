@@ -4,7 +4,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
+// Sync deprecated - use unified endpoints at /api/v2/*
 
 const router = Router();
 
@@ -25,20 +25,13 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/clubs/:id/sync - Sync club vanaf ZwiftRacing API
+// POST /api/clubs/:id/sync - DEPRECATED
 router.post('/:id/sync', async (req: Request, res: Response) => {
-  try {
-    const clubId = parseInt(req.params.id);
-    const club = await syncService.syncClub(clubId);
-    
-    res.json({
-      success: true,
-      club,
-    });
-  } catch (error) {
-    console.error('Error syncing club:', error);
-    res.status(500).json({ error: 'Fout bij synchroniseren club' });
-  }
+  res.status(410).json({
+    error: 'This endpoint is deprecated',
+    message: 'Use /api/v2/sync/* endpoints for unified multi-source syncing',
+    migration: 'POST /api/v2/sync/riders for club member sync'
+  });
 });
 
 export default router;

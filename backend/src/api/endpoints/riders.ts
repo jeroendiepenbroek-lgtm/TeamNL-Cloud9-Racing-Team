@@ -4,7 +4,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-import { syncServiceV2 as syncService } from '../../services/sync-v2.service.js';
+import { unifiedRiderDataService } from '../../services/unified-rider-data.service.js';
 
 const router = Router();
 
@@ -87,16 +87,34 @@ router.get('/team', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/riders/sync - Sync riders vanaf ZwiftRacing API
+// POST /api/riders/sync - Sync riders multi-source
 router.post('/sync', async (req: Request, res: Response) => {
   try {
     const clubId = req.body.clubId || 11818;
-    const metrics = await syncService.syncRiders({ intervalMinutes: 60, clubId });
+    const riderIds = req.body.riderIds as number[] | undefined;
+    
+    console.log(`[Riders Sync] Syncing ${riderIds ? riderIds.length + ' specific riders' : 'all club riders'}...`);
+    
+    // Get rider list from database
+    const riders = riderIds 
+      ? await Promise.all(riderIds.map(id => supabase.getRider(id)))
+      : await supabase.getRiders(clubId);
+    
+    const validRiders = riders.filter(r => r !== null);
+    
+    // Sync each rider with multi-source data
+    const results = await unifiedRiderDataService.getBulkUnifiedData(
+      validRiders.map(r => r!.rider_id)
+    );
     
     res.json({
       success: true,
-      count: metrics.riders_processed,
-      metrics,
+      count: results.length,
+      synced_riders: results.map(r => ({
+        rider_id: r.riderId,
+        name: r.name,
+        sources: r.enrichment.sources.filter((s: any) => s.available).map((s: any) => s.source)
+      }))
     });
   } catch (error) {
     console.error('Error syncing riders:', error);

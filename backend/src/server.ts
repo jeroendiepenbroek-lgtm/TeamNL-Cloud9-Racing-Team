@@ -17,24 +17,17 @@ import resultsRouter from './api/endpoints/results.js';
 import riderHistoryRouter from './api/endpoints/rider-history.js';
 import syncLogsRouter from './api/endpoints/sync-logs.js';
 import syncConfigRouter from './api/endpoints/sync-config.js';
-import syncV2Router from './api/endpoints/sync-v2.js';
-import syncRealResultsRouter from './api/endpoints/sync-real-results.js';
-import resultsSyncRouter from './api/endpoints/results-sync.js';
 import adminStatsRouter from './api/endpoints/admin-stats.js';
 import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 import cleanupRouter from './api/endpoints/cleanup.js';
 import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
-import syncControlRouter from './api/endpoints/sync-control.js';
 import unifiedDashboardRouter from './api/endpoints/unified-dashboard.js';
 
 // Sync services
 import { syncConfig } from './config/sync.config.js';
-import { SyncServiceV2 } from './services/sync-v2.service.js';
 import { syncConfigService } from './services/sync-config.service.js';
 import { SyncConfigValidator } from './services/sync-config-validator.js';
-import { smartSyncScheduler } from './services/smart-sync-scheduler.service.js';
-import cron from 'node-cron';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,23 +69,19 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dist/index.html'));
 });
 
-// API Routes - 6 Endpoints
+// API Routes - Core Endpoints
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/results', resultsRouter);
 app.use('/api/history', riderHistoryRouter);
 app.use('/api/sync-logs', syncLogsRouter);
-app.use('/api/sync', syncV2Router); // Modern sync V2 (prioriteit)
-app.use('/api/sync', syncConfigRouter); // Sync configuratie (fallback)
-app.use('/api/sync', syncRealResultsRouter); // Real-time results sync
-app.use('/api/sync/results', resultsSyncRouter); // Results sync from rider history
+app.use('/api/sync', syncConfigRouter); // Sync configuratie
 app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
 app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
-app.use('/api/sync-control', syncControlRouter); // US4: Unified sync control center
 app.use('/api/v2', unifiedDashboardRouter); // V2: Unified dashboard endpoints (multi-source)
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
@@ -159,16 +148,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ╚════════════════════════════════════════════════╝
   `);
   
-  // ═══════════════════════════════════════════════════════════════
-  //  SMART SYNC SCHEDULER - Modern & Professional
-  // ═══════════════════════════════════════════════════════════════
-  // Adaptieve sync scheduling:
-  // ✅ Riders: Elk uur (60min base, 30min peak)
-  // ✅ Events Near: Elke 10 min (<24h events)
-  // ✅ Events Far: Elke 2u (>24h events)
-  // ✅ Results: Elke 3u (180min base, 30min post-event)
-  
-  smartSyncScheduler.start();
+  // Multi-source sync is now handled by unified-dashboard endpoints
+  // Use /api/v2/sync/* for manual triggers
+  console.log('✅ Multi-source sync endpoints ready at /api/v2/*');
 });
 
 // Server error handling
