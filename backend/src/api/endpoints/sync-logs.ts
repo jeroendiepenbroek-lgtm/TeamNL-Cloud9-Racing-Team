@@ -4,7 +4,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-// Sync deprecated - use unified endpoints at /api/v2/*
+import { simpleSyncService as syncService } from '../../services/simple-sync.service.js';
 
 const router = Router();
 
@@ -32,13 +32,23 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/sync-logs/full-sync - DEPRECATED
+// POST /api/sync-logs/full-sync - Voer volledige sync uit
 router.post('/full-sync', async (req: Request, res: Response) => {
-  res.status(410).json({
-    error: 'This endpoint is deprecated',
-    message: 'Use /api/v2/sync/* endpoints for unified multi-source syncing',
-    migration: 'POST /api/v2/sync/all for full sync'
-  });
+  try {
+    const clubId = req.body.clubId || 11818;
+    await syncService.syncAll(clubId);
+    
+    const logs = await supabase.getSyncLogs(10);
+    
+    res.json({
+      success: true,
+      message: 'Volledige synchronisatie voltooid',
+      recentLogs: logs,
+    });
+  } catch (error) {
+    console.error('Error during full sync:', error);
+    res.status(500).json({ error: 'Fout bij volledige synchronisatie' });
+  }
 });
 
 export default router;

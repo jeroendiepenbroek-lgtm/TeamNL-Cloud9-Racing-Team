@@ -4,7 +4,7 @@
 
 import { Request, Response, Router } from 'express';
 import { supabase } from '../../services/supabase.service.js';
-// Sync deprecated - use unified endpoints at /api/v2/*
+import { simpleSyncService as syncService } from '../../services/simple-sync.service.js';
 
 const router = Router();
 
@@ -25,13 +25,24 @@ router.get('/:riderId', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/history/:riderId/sync - DEPRECATED
+// POST /api/history/:riderId/sync - Sync rider history vanaf ZwiftRacing API
 router.post('/:riderId/sync', async (req: Request, res: Response) => {
-  res.status(410).json({
-    error: 'This endpoint is deprecated',
-    message: 'Use /api/v2/riders/:id/detailed for multi-source rider data',
-    migration: 'GET /api/v2/riders/:id/detailed'
-  });
+  try {
+    const riderId = parseInt(req.params.riderId);
+    await syncService.syncRiderHistory(riderId);
+    
+    const history = await supabase.getRiderHistory(riderId);
+    
+    res.json({
+      success: true,
+      riderId,
+      count: history.length,
+      history,
+    });
+  } catch (error) {
+    console.error('Error syncing rider history:', error);
+    res.status(500).json({ error: 'Fout bij synchroniseren rider history' });
+  }
 });
 
 export default router;

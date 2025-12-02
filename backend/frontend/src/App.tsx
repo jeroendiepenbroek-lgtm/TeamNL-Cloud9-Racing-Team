@@ -1,14 +1,14 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import DashboardModern from './pages/DashboardModern'
 import EventsModern from './pages/EventsModern'
-import SyncStatusModern from './pages/SyncStatusModern'
+import SyncControl from './pages/SyncControl'
+import AdminHome from './pages/AdminHome'
 import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
 import RidersModern from './pages/RidersModern'
 import ResultsDashboard from './pages/ResultsDashboard'
 import RiderResultsView from './pages/RiderResultsView'
-import RiderStatsPage from './pages/RiderStatsPage'
 import Debug from './pages/Debug'
 import AuthDebug from './pages/AuthDebug'
 import { AccessRequests } from './pages/AccessRequests'
@@ -19,23 +19,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
 
-// Admin redirect component
-function AdminRedirect() {
-  useEffect(() => {
-    // Redirect to HTML admin tools
-    window.location.href = '/admin/'
-  }, [])
-  
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <div className="text-6xl mb-4">⚙️</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Redirecting to Admin Tools...</h2>
-        <p className="text-gray-600">Een moment geduld</p>
-      </div>
-    </div>
-  )
-}
+// No longer needed - AdminHome is now a React component
 
 function Navigation() {
   const { user, signOut } = useAuth()
@@ -283,19 +267,26 @@ function AppContent() {
           <Route path="/" element={<RacingDataMatrixModern />} />
           
           {/* Public Pages */}
-          <Route path="/rider/:riderId" element={<RiderStatsPage />} />
           <Route path="/events" element={<div className="max-w-7xl mx-auto"><EventsModern /></div>} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/results/rider/:riderId" element={<RiderResultsView />} />
           <Route path="/debug" element={<Debug />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
           
-          {/* Admin Home - Redirect to HTML admin tools */}
+          {/* Admin Pages */}
           <Route 
             path="/admin" 
             element={
               <ProtectedRoute>
-                <AdminRedirect />
+                <AdminHome />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/sync" 
+            element={
+              <ProtectedRoute>
+                <SyncControl />
               </ProtectedRoute>
             } 
           />
@@ -319,14 +310,7 @@ function AppContent() {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/sync" 
-            element={
-              <ProtectedRoute>
-                <SyncStatusModern />
-              </ProtectedRoute>
-            } 
-          />
+          {/* Sync is already defined above as /sync -> SyncControl */}
           <Route 
             path="/admin/users" 
             element={
@@ -355,7 +339,7 @@ function AppContent() {
             } 
           />
           <Route path="/admin/archive/dashboard" element={<ProtectedRoute><DashboardModern /></ProtectedRoute>} />
-          <Route path="/admin/archive/sync" element={<ProtectedRoute><SyncStatusModern /></ProtectedRoute>} />
+          <Route path="/admin/archive/sync" element={<ProtectedRoute><SyncControl /></ProtectedRoute>} />
           <Route path="/admin/archive/matrix" element={<ProtectedRoute><RacingDataMatrixModern /></ProtectedRoute>} />
           <Route path="/admin/archive/events" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><EventsModern /></div></ProtectedRoute>} />
           <Route path="/admin/archive/riders" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><RidersModern /></div></ProtectedRoute>} />

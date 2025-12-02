@@ -113,39 +113,21 @@ export class ZwiftPowerClient {
       // Try the cache API endpoint (often more reliable)
       const cacheResponse = await this.client.get(`/cache3/profile/${zwiftId}_all.json`);
       
-      if (cacheResponse.data && cacheResponse.data.data && cacheResponse.data.data.length > 0) {
-        // ZwiftPower _all.json returns: { data: [array of race results] }
-        // Rider info is in each result object - take from most recent (first)
-        const latestResult = cacheResponse.data.data[0];
-        
-        console.log(`[ZwiftPower] ✅ Profile from latest result:`, {
-          name: latestResult.name,
-          ftp: latestResult.ftp,
-          weight: latestResult.weight,
-          category: latestResult.category,
-          date: latestResult.time_gun ? new Date(latestResult.time_gun * 1000).toISOString() : 'unknown'
+      if (cacheResponse.data) {
+        const data = cacheResponse.data;
+        console.log(`[ZwiftPower] ✅ Cache data found:`, {
+          ftp: data.ftp,
+          category: data.category,
+          weight: data.weight,
         });
-        
-        // Parse weight (can be string or array)
-        const weightStr = Array.isArray(latestResult.weight) 
-          ? latestResult.weight[0] 
-          : latestResult.weight;
-        const weightKg = weightStr ? parseFloat(weightStr) : 0;
-        
-        // Parse height (can be number or array)
-        const heightVal = Array.isArray(latestResult.height)
-          ? latestResult.height[0]
-          : latestResult.height;
         
         return {
           zwid: zwiftId,
-          name: latestResult.name || '',
-          ftp: parseInt(latestResult.ftp) || 0,
-          weight: weightKg,
-          height: heightVal || 0,
-          category: latestResult.category || undefined,
-          flag: latestResult.flag || undefined,
-          position_in_category: latestResult.position_in_cat || undefined,
+          name: data.name || '',
+          ftp: parseInt(data.ftp) || 0,
+          weight: parseFloat(data.weight) || 0,
+          category: data.category || undefined,
+          flag: data.flag || undefined,
         };
       }
 
@@ -154,62 +136,6 @@ export class ZwiftPowerClient {
       
     } catch (error: any) {
       console.log(`[ZwiftPower] ❌ Could not fetch rider ${zwiftId}: ${error.message}`);
-      return null;
-    }
-  }
-
-  /**
-   * Get rider data from specific event (most accurate for recent races)
-   */
-  async getRiderFromEvent(eventId: number, zwiftId: number): Promise<ZwiftPowerRider | null> {
-    try {
-      await this.authenticate();
-      
-      console.log(`[ZwiftPower] Fetching rider ${zwiftId} from event ${eventId}...`);
-      
-      const response = await this.client.get(`/cache3/results/${eventId}_view.json`);
-      
-      if (response.data && response.data.data) {
-        // Find rider in event results
-        const riderResult = response.data.data.find((r: any) => r.zwid === zwiftId);
-        
-        if (riderResult) {
-          console.log(`[ZwiftPower] ✅ Rider data from event ${eventId}:`, {
-            name: riderResult.name,
-            ftp: riderResult.ftp,
-            weight: riderResult.weight,
-            category: riderResult.category
-          });
-          
-          // Parse weight (can be string or array)
-          const weightStr = Array.isArray(riderResult.weight) 
-            ? riderResult.weight[0] 
-            : riderResult.weight;
-          const weightKg = weightStr ? parseFloat(weightStr) : 0;
-          
-          // Parse height (can be number or array)
-          const heightVal = Array.isArray(riderResult.height)
-            ? riderResult.height[0]
-            : riderResult.height;
-          
-          return {
-            zwid: zwiftId,
-            name: riderResult.name || '',
-            ftp: parseInt(riderResult.ftp) || 0,
-            weight: weightKg,
-            height: heightVal || 0,
-            category: riderResult.category || undefined,
-            flag: riderResult.flag || undefined,
-            position_in_category: riderResult.position_in_cat || undefined,
-          };
-        }
-      }
-      
-      console.log(`[ZwiftPower] ⚠️  Rider ${zwiftId} not found in event ${eventId}`);
-      return null;
-      
-    } catch (error: any) {
-      console.log(`[ZwiftPower] ❌ Could not fetch event ${eventId}: ${error.message}`);
       return null;
     }
   }

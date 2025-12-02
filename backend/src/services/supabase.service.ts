@@ -347,69 +347,6 @@ export class SupabaseService {
     return data || [];
   }
 
-  /**
-   * OPTIMIZATION: Haal alleen events op waar team riders signup hebben
-   * Dit reduceert het aantal API calls drastisch!
-   */
-  async getEventsWithTeamSignups(days: number = 30): Promise<any[]> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-    
-    // Get team rider IDs
-    const teamRiderIds = await this.getAllTeamRiderIds();
-    if (teamRiderIds.length === 0) {
-      console.warn('⚠️  No team riders found');
-      return [];
-    }
-    
-    console.log(`🔍 Looking for events with ${teamRiderIds.length} team riders in last ${days} days...`);
-    
-    // Haal events op waar team riders signup hebben
-    const { data: signups, error } = await this.client
-      .from('zwift_api_event_signups')
-      .select('event_id, rider_id')
-      .in('rider_id', teamRiderIds);
-    
-    if (error) {
-      console.error('Error fetching team signups:', error);
-      // Fallback: return ALL recent events if signup query fails
-      return this.getRecentEvents(days);
-    }
-    
-    if (!signups || signups.length === 0) {
-      console.log('ℹ️  No team signups found, falling back to all recent events');
-      // Fallback: Als er geen signups zijn, haal gewoon alle recente events op
-      // De results sync zal dan team riders filteren uit de results
-      return this.getRecentEvents(days);
-    }
-    
-    // Get unique event IDs
-    const eventIds = [...new Set(signups.map(s => s.event_id))];
-    console.log(`✅ Found ${eventIds.length} events with team signups`);
-    
-    // Fetch event details for these event IDs
-    const cutoffUnix = Math.floor(cutoffDate.getTime() / 1000);
-    const { data: events, error: eventsError } = await this.client
-      .from('zwift_api_events')
-      .select('event_id, title, time_unix')
-      .in('event_id', eventIds)
-      .gte('time_unix', cutoffUnix)
-      .order('time_unix', { ascending: false });
-    
-    if (eventsError) {
-      console.error('Error fetching event details:', eventsError);
-      return [];
-    }
-    
-    // Map naar expected format
-    return (events || []).map(e => ({
-      event_id: e.event_id,
-      event_name: e.title,
-      event_start: new Date(e.time_unix * 1000).toISOString(),
-      time_unix: e.time_unix
-    }));
-  }
-
   // Results Dashboard - Team Recent Results
   async getTeamRecentResults(days: number = 90, limit: number = 100): Promise<any[]> {
     const cutoffDate = new Date();
@@ -823,46 +760,6 @@ export class SupabaseService {
 
     if (error) throw error;
     return data || [];
-  }
-
-  // ========== SYNC LOGGING ==========
-  async getLastSyncLog(endpoint: string): Promise<any | null> {
-    const { data, error } = await this.client
-      .from('sync_logs')
-      .select('*')
-      .eq('endpoint', endpoint)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    
-    if (error) {
-      console.error(`Error fetching last sync log for ${endpoint}:`, error);
-      return null;
-    }
-    return data;
-  }
-
-  async logSync(log: {
-    endpoint: string;
-    status: 'success' | 'error';
-    items_synced?: number;
-    duration_ms?: number;
-    error?: string;
-    synced_at: string;
-  }): Promise<void> {
-    const { error } = await this.client.from('sync_logs').insert({
-      endpoint: log.endpoint,
-      status: log.status,
-      records_processed: log.items_synced || 0,
-      duration_ms: log.duration_ms || 0,
-      error_message: log.error,
-      // created_at wordt automatisch gezet door database DEFAULT NOW()
-    });
-    
-    if (error) {
-      console.error('Error logging sync:', error);
-      throw error;
-    }
   }
 }
 
