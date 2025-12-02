@@ -145,6 +145,17 @@ export class SupabaseService {
     return data || [];
   }
 
+  async deleteOldEvents(beforeDate: string): Promise<number> {
+    const { data, error } = await this.client
+      .from('zwift_api_events')
+      .delete()
+      .lt('event_date', beforeDate)
+      .select();
+
+    if (error) throw error;
+    return data?.length || 0;
+  }
+
   // Get raw upcoming events (for schedulers) - alleen event_id, title, time_unix
   async getUpcomingEventsRaw(hours: number): Promise<Array<{ event_id: string; title: string; time_unix: number }>> {
     const now = Math.floor(Date.now() / 1000);
@@ -489,6 +500,11 @@ export class SupabaseService {
 
     if (error) throw error;
     return data;
+  }
+
+  // Alias for createSyncLog for convenience
+  async logSync(log: Partial<DbSyncLog>): Promise<DbSyncLog> {
+    return this.createSyncLog(log);
   }
 
   async updateSyncLog(id: number, updates: Partial<DbSyncLog>): Promise<DbSyncLog> {

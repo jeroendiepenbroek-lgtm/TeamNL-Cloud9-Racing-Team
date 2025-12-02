@@ -95,21 +95,89 @@ router.post('/start', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/scheduler/config - Get current config
-router.get('/config', (req: Request, res: Response) => {
+// POST /api/scheduler/trigger-rider - Manual rider sync
+router.post('/trigger-rider', async (req: Request, res: Response) => {
   try {
-    const config = unifiedScheduler.getConfig();
+    console.log('[Scheduler] Manual rider sync triggered');
+    await unifiedScheduler.triggerRiderSync();
     
     res.json({
       success: true,
-      config
+      message: 'Rider sync completed successfully',
+      status: unifiedScheduler.getStatus()
     });
     
   } catch (error: any) {
-    console.error('[Scheduler] Config error:', error);
+    console.error('[Scheduler] Rider sync error:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to get scheduler config',
+      error: 'Rider sync failed',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/scheduler/trigger-event - Manual event sync
+router.post('/trigger-event', async (req: Request, res: Response) => {
+  try {
+    console.log('[Scheduler] Manual event sync triggered');
+    await unifiedScheduler.triggerEventSync();
+    
+    res.json({
+      success: true,
+      message: 'Event sync completed successfully',
+      status: unifiedScheduler.getStatus()
+    });
+    
+  } catch (error: any) {
+    console.error('[Scheduler] Event sync error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Event sync failed',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/scheduler/trigger-results - Manual results sync
+router.post('/trigger-results', async (req: Request, res: Response) => {
+  try {
+    console.log('[Scheduler] Manual results sync triggered');
+    await unifiedScheduler.triggerResultsSync();
+    
+    res.json({
+      success: true,
+      message: 'Results sync completed successfully',
+      status: unifiedScheduler.getStatus()
+    });
+    
+  } catch (error: any) {
+    console.error('[Scheduler] Results sync error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Results sync failed',
+      message: error.message
+    });
+  }
+});
+
+// POST /api/scheduler/trigger-cleanup - Manual cleanup
+router.post('/trigger-cleanup', async (req: Request, res: Response) => {
+  try {
+    console.log('[Scheduler] Manual cleanup triggered');
+    await unifiedScheduler.triggerCleanup();
+    
+    res.json({
+      success: true,
+      message: 'Cleanup completed successfully',
+      status: unifiedScheduler.getStatus()
+    });
+    
+  } catch (error: any) {
+    console.error('[Scheduler] Cleanup error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Cleanup failed',
       message: error.message
     });
   }
