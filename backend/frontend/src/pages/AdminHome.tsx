@@ -47,15 +47,7 @@ function AdminTile({ icon, title, description, to, gradient }: AdminTileProps) {
 
 interface AdminStats {
   teamMembers: number
-  activeUsers: number
-  pendingRequests: number
   lastSync: string
-  lastSyncDetails: {
-    timestamp: string
-    endpoint: string
-    recordsProcessed: number
-  } | null
-  systemStatus: string
 }
 
 export default function AdminHome() {
@@ -118,100 +110,37 @@ export default function AdminHome() {
           )}
         </div>
 
-        {/* Admin Tiles Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          <AdminTile
-            icon="📊"
-            title="System Status"
-            description="Real-time systeem monitoring met moderne glassmorphism design"
-            to="/admin/dashboard"
-            gradient="from-orange-500 to-orange-700"
-          />
-          
-          <AdminTile
-            icon="🔄"
-            title="Sync Status"
-            description="Live sync metrics met auto-sync configuratie en manual triggers"
-            to="/sync"
-            gradient="from-purple-500 to-purple-700"
-          />
-          
+        {/* Admin: Team Management Only */}
+        <div className="max-w-2xl mx-auto mb-12">
           <AdminTile
             icon="🚴"
             title="Team Management"
-            description="Beheer je team leden met sync timestamps en moderne UI"
+            description="Voeg team members toe via Zwift ID - Data wordt automatisch gesynchroniseerd van ZwiftRacing API"
             to="/riders"
             gradient="from-blue-500 to-blue-700"
           />
-          
-          <AdminTile
-            icon="👥"
-            title="Gebruikersbeheer"
-            description="Beheer gebruikers, rollen en toegangsrechten. Bekijk en goedkeur nieuwe aanvragen."
-            to="/admin/access-requests"
-            gradient="from-green-500 to-green-700"
-          />
-          
-          <AdminTile
-            icon="📦"
-            title="Dashboard Archief"
-            description="Oude dashboard versies bewaard voor referentie en rollback"
-            to="/admin/archive"
-            gradient="from-slate-600 to-slate-800"
-          />
-          
-          <AdminTile
-            icon="🐛"
-            title="Debug Tools"
-            description="Debug auth status, API calls en troubleshoot problemen"
-            to="/auth/debug"
-            gradient="from-gray-600 to-gray-800"
-          />
         </div>
 
-        {/* Quick Stats */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Quick Stats</h2>
+        {/* Team Stats */}
+        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Team Overview</h2>
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
               <p className="text-gray-600 mt-2">Loading stats...</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="flex justify-center">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-1">
+                <div className="text-5xl font-bold text-blue-600 mb-2">
                   {stats?.teamMembers ?? '--'}
                 </div>
-                <div className="text-sm text-gray-600">Team Members</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600 mb-1">
-                  {stats?.activeUsers ?? '--'}
-                </div>
-                <div className="text-sm text-gray-600">Active Users</div>
-                {stats && stats.pendingRequests > 0 && (
-                  <div className="text-xs text-orange-600 font-medium mt-1">
-                    {stats.pendingRequests} pending
+                <div className="text-lg text-gray-600">Actieve Team Members</div>
+                {stats?.lastSync && (
+                  <div className="mt-4 text-sm text-gray-400">
+                    Last sync: {stats.lastSync}
                   </div>
                 )}
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600 mb-1">
-                  {stats?.lastSync ?? '--'}
-                </div>
-                <div className="text-sm text-gray-600">Last Sync</div>
-                {stats?.lastSyncDetails && (
-                  <div className="text-xs text-gray-400 mt-1">
-                    {stats.lastSyncDetails.recordsProcessed} records
-                  </div>
-                )}
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-orange-600 mb-1">
-                  {stats?.systemStatus === 'healthy' ? '✅' : '⚠️'}
-                </div>
-                <div className="text-sm text-gray-600">System Status</div>
               </div>
             </div>
           )}

@@ -6,7 +6,7 @@ import EventsModern from './pages/EventsModern'
 import SyncControl from './pages/SyncControl'
 import AdminHome from './pages/AdminHome'
 import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
-import RidersModern from './pages/RidersModern'
+import TeamManagement from './pages/TeamManagement'
 import ResultsDashboard from './pages/ResultsDashboard'
 import RiderResultsView from './pages/RiderResultsView'
 import Debug from './pages/Debug'
@@ -306,7 +306,7 @@ function AppContent() {
             path="/riders" 
             element={
               <ProtectedRoute>
-                <div className="max-w-7xl mx-auto"><RidersModern /></div>
+                <TeamManagement />
               </ProtectedRoute>
             } 
           />
@@ -342,7 +342,7 @@ function AppContent() {
           <Route path="/admin/archive/sync" element={<ProtectedRoute><SyncControl /></ProtectedRoute>} />
           <Route path="/admin/archive/matrix" element={<ProtectedRoute><RacingDataMatrixModern /></ProtectedRoute>} />
           <Route path="/admin/archive/events" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><EventsModern /></div></ProtectedRoute>} />
-          <Route path="/admin/archive/riders" element={<ProtectedRoute><div className="max-w-7xl mx-auto"><RidersModern /></div></ProtectedRoute>} />
+          {/* Archive route removed - simplified to Team Management only */}
         </Routes>
       </main>
 
