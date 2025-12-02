@@ -30,7 +30,7 @@ COPY tsconfig.json ./tsconfig.json
 RUN mkdir -p public/dist
 COPY --from=frontend-builder /frontend-dist/ ./public/dist/
 
-# Copy Railway startup script (relative to backend dir)
+# Copy Railway startup script
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
