@@ -1,6 +1,7 @@
 # Railway Configuration
-# Use Dockerfile for complete build control (bypass Railpack)
+# Use backend Dockerfile for complete build control (bypass Railpack)
 
 [build]
 builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "backend/Dockerfile"
+dockerContext = "backend"
