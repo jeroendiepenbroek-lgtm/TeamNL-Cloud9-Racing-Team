@@ -22,12 +22,13 @@ import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 import cleanupRouter from './api/endpoints/cleanup.js';
 import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
-import unifiedDashboardRouter from './api/endpoints/unified-dashboard.js';
 
 // Sync services
-import { syncConfig } from './config/sync.config.js';
-import { syncConfigService } from './services/sync-config.service.js';
-import { SyncConfigValidator } from './services/sync-config-validator.js';
+// import { syncConfig } from './config/sync.config.js'; // Not needed for now
+// import { SyncServiceV2 } from './services/sync-v2.service.js'; // Not needed for now
+// import { SyncConfigValidator } from './services/sync-config-validator.js'; // Not needed for now
+import { unifiedScheduler } from './services/unified-scheduler.service.js';
+// import cron from 'node-cron'; // Not needed for now
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,7 +70,7 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dist/index.html'));
 });
 
-// API Routes - Core Endpoints
+// API Routes - 6 Endpoints
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
 app.use('/api/events', eventsRouter);
@@ -82,7 +83,6 @@ app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
-app.use('/api/v2', unifiedDashboardRouter); // V2: Unified dashboard endpoints (multi-source)
 
 // Redirect /admin to /admin/ (HTML admin tools have priority over React router)
 app.get('/admin', (req: Request, res: Response) => {
@@ -148,9 +148,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 ╚════════════════════════════════════════════════╝
   `);
   
-  // Multi-source sync is now handled by unified-dashboard endpoints
-  // Use /api/v2/sync/* for manual triggers
-  console.log('✅ Multi-source sync endpoints ready at /api/v2/*');
+  // ═══════════════════════════════════════════════════════════════
+  //  UNIFIED SYNC SCHEDULER - Using stub service for Railway
+  // ═══════════════════════════════════════════════════════════════
+  // Note: Using minimal stub scheduler until full services restored
+  unifiedScheduler.start();
 });
 
 // Server error handling
