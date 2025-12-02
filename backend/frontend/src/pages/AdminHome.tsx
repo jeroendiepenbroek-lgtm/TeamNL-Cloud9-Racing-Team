@@ -117,7 +117,7 @@ export default function AdminHome() {
             title="Team Management"
             description="Voeg team members toe via Zwift ID - Data wordt automatisch gesynchroniseerd van ZwiftRacing API"
             to="/riders"
-            gradient="from-blue-500 to-blue-700"
+            gradient="from-emerald-400 to-cyan-500"
           />
         </div>
 
