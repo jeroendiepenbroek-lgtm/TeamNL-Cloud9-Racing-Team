@@ -87,6 +87,40 @@ router.get('/team', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/riders/search/:zwiftId - Zoek rider op ZwiftRacing API (voor add rider)
+router.get('/search/:zwiftId', async (req: Request, res: Response) => {
+  try {
+    const zwiftId = parseInt(req.params.zwiftId);
+    
+    if (isNaN(zwiftId)) {
+      return res.status(400).json({ error: 'Ongeldig Zwift ID' });
+    }
+    
+    // Haal rider data op van ZwiftRacing API
+    const { zwiftClient } = await import('../zwift-client.js');
+    const zwiftData = await zwiftClient.getRider(zwiftId);
+    
+    // Return simplified data voor UI
+    res.json({
+      rider_id: zwiftData.riderId,
+      name: zwiftData.name,
+      country: zwiftData.country,
+      weight: zwiftData.weight,
+      zp_category: zwiftData.zpCategory,
+      zp_ftp: zwiftData.zpFTP,
+      club_name: zwiftData.club?.name,
+      race_wins: zwiftData.race?.wins || 0,
+      race_podiums: zwiftData.race?.podiums || 0,
+    });
+  } catch (error: any) {
+    console.error('Error searching rider:', error);
+    if (error.message?.includes('404') || error.message?.includes('not found')) {
+      return res.status(404).json({ error: 'Rider niet gevonden op ZwiftRacing.app' });
+    }
+    res.status(500).json({ error: 'Fout bij zoeken rider' });
+  }
+});
+
 // POST /api/riders/sync - Sync riders vanaf ZwiftRacing API
 router.post('/sync', async (req: Request, res: Response) => {
   try {
