@@ -84,11 +84,6 @@ app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
 
-// Redirect /admin to /admin/ (HTML admin tools have priority over React router)
-app.get('/admin', (req: Request, res: Response) => {
-  res.redirect(301, '/admin/');
-});
-
 // 404 handler
 app.use((req: Request, res: Response) => {
   // If API call, return JSON error
@@ -97,11 +92,8 @@ app.use((req: Request, res: Response) => {
       error: 'Endpoint niet gevonden',
       path: req.path,
     });
-  } else if (req.path.startsWith('/admin/')) {
-    // Admin HTML tools - 404 if not found by static middleware
-    res.status(404).send('Admin tool niet gevonden');
   } else {
-    // Otherwise, serve React app (SPA fallback for client-side routing)
+    // All other routes -> serve React app (SPA handles routing including /admin)
     res.sendFile(path.join(__dirname, '../public/dist/index.html'));
   }
 });
