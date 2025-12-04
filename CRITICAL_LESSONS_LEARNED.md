@@ -264,11 +264,43 @@ npx tsx sync-specific-events.ts
 
 ---
 
+## ❌ Fout #5: Unified Tables zijn leeg
+
+### Symptoom
+```bash
+riders_unified: 1 row   # Alleen POC rider 150437
+my_team_members: 75 rows  # Alle team members
+# Gap: 74 riders missing!
+```
+
+### Waarom het faalt
+**Code sync mismatch**:
+- Sync service schrijft naar `riders` table (NULL rows)
+- Frontend leest van `riders_unified` (1 row)
+- Unified architectuur NIET actief sinds POC (3 dec)
+
+**Bewijs (getest 4 dec 2025)**:
+```typescript
+// backend/src/services/supabase.service.ts line 126
+.from('riders')  // ❌ FOUT - zou riders_unified moeten zijn
+.upsert(cleaned, { onConflict: 'rider_id' })
+```
+
+### ✅ Oplossing
+1. Fix `supabase.service.ts` → gebruik `riders_unified`
+2. Run full team sync: `POST /api/riders/sync`
+3. Verify: `SELECT COUNT(*) FROM riders_unified` → moet 75+ zijn
+
+**Multi-source sync**: Gebruikt 3 APIs zoals gedocumenteerd in `CLEAN_SOURCING_STRATEGY_V2.md`
+
+---
+
 ## 📊 Huidige Status (4 dec 2025)
 
 **Database**:
-- Tabel: `zwift_api_race_results`
-- Rider 150437: **28 events** (t/m 24-11-2025)
+- `zwift_api_race_results`: **28 events** (t/m 24-11-2025)
+- `riders_unified`: **1 rider** (❌ moet 75+ zijn!)
+- `my_team_members`: **75 riders**
 - Ontbreekt: Event 5206710 (27-11), Event 5229579 (30-11)
 
 **API Status**:
@@ -277,12 +309,14 @@ npx tsx sync-specific-events.ts
 - Local: ✅ http://localhost:3000 (running)
 
 **Sync Status**:
-- Rate limited: Laatste calls ~15:07 UTC
-- Volgende sync mogelijk: ~15:09 UTC (65 sec later)
-- Pending: Events 5206710 en 5229579
+- ❌ **KRITIEK**: Unified sync inactief sinds 3 dec (POC)
+- `riders` table target ≠ `riders_unified` frontend source
+- 74 riders NOT synced to unified table
 
 **Action Required**:
-Run `sync-specific-events.ts` om ontbrekende events toe te voegen.
+1. Fix table mismatch in `supabase.service.ts`
+2. Run team sync om unified te vullen
+3. Sync events 5206710 en 5229579
 
 ---
 

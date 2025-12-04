@@ -47,7 +47,7 @@ export class SupabaseService {
 
   // ========== RIDERS ==========
   async getRiders(clubId?: number): Promise<DbRider[]> {
-    let query = this.client.from('riders').select('*');
+    let query = this.client.from('riders_unified').select('*');
     
     if (clubId) {
       query = query.eq('club_id', clubId);
@@ -60,7 +60,7 @@ export class SupabaseService {
 
   async getRiderIdsByClub(clubId: number): Promise<number[]> {
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')
       .select('rider_id')
       .eq('club_id', clubId);
 
@@ -82,21 +82,22 @@ export class SupabaseService {
         return data.map((r: any) => r.rider_id);
       }
     } catch (viewError) {
-      console.warn('view_my_team not available, falling back to riders table:', viewError);
+      console.warn('view_my_team not available, falling back to riders_unified table:', viewError);
     }
 
-    // Fallback: All riders in riders table (same as Matrix fallback)
+    // Fallback: All riders in riders_unified table (same as Matrix fallback)
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')
       .select('rider_id');
 
     if (error) throw error;
     return (data || []).map((r: any) => r.rider_id);
   }
+  }
 
   async getRider(riderId: number): Promise<DbRider | null> {
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')  // ✅ FIXED: Use unified table
       .select('*')
       .eq('rider_id', riderId)
       .single();
@@ -124,7 +125,7 @@ export class SupabaseService {
     });
 
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')  // ✅ FIXED: Use unified table (multi-source architecture)
       .upsert(cleaned, { onConflict: 'rider_id' })
       .select();
 
@@ -546,12 +547,12 @@ export class SupabaseService {
       console.warn('Views not available:', viewError);
     }
 
-    // Final fallback: direct riders table
-    console.log('Falling back to riders table');
+    // Final fallback: direct riders_unified table
+    console.log('Falling back to riders_unified table');
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')
       .select('*')
-      .order('zwift_id', { ascending: true });
+      .order('rider_id', { ascending: true });
 
     if (error) throw error;
     return data || [];
