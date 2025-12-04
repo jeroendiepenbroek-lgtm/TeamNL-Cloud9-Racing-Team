@@ -1,5 +1,12 @@
 # Copilot Instructions - TeamNL Cloud9 Racing Team
 
+## ⚠️ LEES EERST: Kritieke Lessen
+**Voor elke sessie**: Lees `/CRITICAL_LESSONS_LEARNED.md` voor:
+- ZwiftPower werkt NIET voor rider 150437
+- Rider endpoint heeft GEEN history field
+- Rate limits zijn STRIKT (1/min voor events)
+- Database kolom `raw_data` bestaat NIET
+
 ## Project Overview
 Dashboard applicatie voor TeamNL Cloud9 racing team met ZwiftRacing.app API integratie. Backend-first architectuur met modulaire, type-safe TypeScript implementatie.
 
