@@ -377,17 +377,16 @@ export class SupabaseService {
 
   // Results Dashboard - Individual Rider Results
   async getRiderResults(riderId: number, days: number = 90, limit: number = 50): Promise<any[]> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - days);
-
+    console.log(`🔍 getRiderResults called: riderId=${riderId}, days=${days}, limit=${limit}`);
+    
     const { data, error } = await this.client
       .from('zwift_api_race_results')
       .select('*')
       .eq('rider_id', riderId)
-      .gte('event_date', cutoffDate.toISOString())
-      .order('event_date', { ascending: false })
       .limit(limit);
 
+    console.log(`✅ getRiderResults done: rows=${data?.length}, error=${error}`);
+    
     if (error) throw error;
     return data || [];
   }

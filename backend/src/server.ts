@@ -40,13 +40,7 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors());
 app.use(express.json());
 
-// Serve React frontend build (producti)
-app.use(express.static(path.join(__dirname, '../public/dist')));
-
-// Fallback: serve old public/index.html (development)
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Logging middleware
+// Logging middleware - FIRST to see all requests
 app.use((req: Request, res: Response, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
@@ -64,12 +58,6 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// Root route - Serve React app
-app.get('/', (req: Request, res: Response) => {
-  console.log('Root route accessed - serving React app');
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
-});
-
 // API Routes - 6 Endpoints
 app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
@@ -83,6 +71,18 @@ app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
+
+// Serve React frontend build (production) - AFTER API routes
+app.use(express.static(path.join(__dirname, '../public/dist')));
+
+// Fallback: serve old public/index.html (development) - AFTER API routes
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Root route - Serve React app
+app.get('/', (req: Request, res: Response) => {
+  console.log('Root route accessed - serving React app');
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+});
 
 // 404 handler
 app.use((req: Request, res: Response) => {
