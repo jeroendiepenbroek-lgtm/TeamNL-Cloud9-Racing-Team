@@ -93,7 +93,6 @@ export class SupabaseService {
     if (error) throw error;
     return (data || []).map((r: any) => r.rider_id);
   }
-  }
 
   async getRider(riderId: number): Promise<DbRider | null> {
     const { data, error } = await this.client

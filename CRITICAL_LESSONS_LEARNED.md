@@ -286,37 +286,77 @@ my_team_members: 75 rows  # Alle team members
 .upsert(cleaned, { onConflict: 'rider_id' })
 ```
 
-### ✅ Oplossing
-1. Fix `supabase.service.ts` → gebruik `riders_unified`
-2. Run full team sync: `POST /api/riders/sync`
+### ✅ Oplossing (GEFIXT 4 dec 2025)
+1. ✅ Fixed `supabase.service.ts` → alle refs naar `riders_unified` (commit 139d64c)
+2. **BELANGRIJK**: Run club sync om unified te vullen:
+   ```bash
+   # Via API (als server draait):
+   curl -X POST http://localhost:3000/api/riders/sync \
+     -H "Content-Type: application/json" \
+     -d '{"clubId": 11818}'
+   
+   # Of direct script maken:
+   npx tsx backend/sync-team-to-unified.ts
+   ```
 3. Verify: `SELECT COUNT(*) FROM riders_unified` → moet 75+ zijn
 
 **Multi-source sync**: Gebruikt 3 APIs zoals gedocumenteerd in `CLEAN_SOURCING_STRATEGY_V2.md`
 
+### ⚠️ NIET VERGETEN: Club Sync Endpoint
+
+**Endpoint**: `POST /api/riders/sync`  
+**Locatie**: `backend/src/api/endpoints/riders.ts` line 125  
+**Functie**: Sync alle club members naar `riders_unified` tabel
+
+```typescript
+// Request body (optioneel):
+{
+  "clubId": 11818  // Default als niet meegegeven
+}
+
+// Response:
+{
+  "success": true,
+  "count": 75,
+  "metrics": { riders_processed: 75, ... }
+}
+```
+
+**Rate Limit**: 1 call / 60 min (club members endpoint)  
+**Gebruik**: Na iedere table fix, na nieuwe team members toevoegen
+
 ---
 
-## 📊 Huidige Status (4 dec 2025)
+## 📊 Huidige Status (4 dec 2025 - 17:15 UTC)
 
 **Database**:
 - `zwift_api_race_results`: **28 events** (t/m 24-11-2025)
 - `riders_unified`: **1 rider** (❌ moet 75+ zijn!)
 - `my_team_members`: **75 riders**
-- Ontbreekt: Event 5206710 (27-11), Event 5229579 (30-11)
+- `zwift_api_events`: **1821 events** ✅
+- Ontbreekt: Event 5206710 (27-11) in results (event zelf staat in events tabel)
 
 **API Status**:
 - Production: ✅ https://teamnl-cloud9-racing-team-production.up.railway.app
 - Endpoint: ✅ GET /api/results/rider/150437?days=30 → 200 OK
-- Local: ✅ http://localhost:3000 (running)
+- Local: ✅ http://localhost:3000 (ready to start)
+
+**Dashboard Status** (getest 4 dec 17:00):
+1. ✅ **Racing Matrix**: Working (1/75 riders vanwege unified issue)
+2. ✅ **Results Dashboard**: Working (28 results, POC rider 150437)
+3. ✅ **Events Dashboard**: Working (1821 events, maar event 5229579 timestamp = 4-12?)
 
 **Sync Status**:
-- ❌ **KRITIEK**: Unified sync inactief sinds 3 dec (POC)
-- `riders` table target ≠ `riders_unified` frontend source
-- 74 riders NOT synced to unified table
+- ✅ **Code GEFIXT**: Alle table refs naar `riders_unified` (commit 139d64c)
+- ❌ **Nog uit te voeren**: Club sync om 74 ontbrekende riders toe te voegen
+- ❌ **Event signups**: Tabel `event_signups` bestaat niet in schema
 
 **Action Required**:
-1. Fix table mismatch in `supabase.service.ts`
-2. Run team sync om unified te vullen
-3. Sync events 5206710 en 5229579
+1. ✅ ~~Fix table mismatch in `supabase.service.ts`~~ DONE
+2. ⏳ Run team sync: `POST /api/riders/sync` met clubId 11818
+3. ⏳ Sync event 5206710 results (27-11)
+4. ❓ Check waarom event 5229579 timestamp = 4-12 (zou 30-11 moeten zijn)
+5. ❓ Onderzoek `event_signups` tabel (bestaat niet, wel gebruikt in code?)
 
 ---
 
