@@ -110,14 +110,60 @@ export default function AdminHome() {
           )}
         </div>
 
-        {/* Admin: Team Management Only */}
-        <div className="max-w-2xl mx-auto mb-12">
+        {/* Admin Tiles Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {/* Racing Matrix */}
+          <AdminTile
+            icon="🏆"
+            title="Racing Matrix"
+            description="Complete team performance overview met alle rider data - vELO ratings, phenotypes, power metrics en race history"
+            to="/racing-matrix"
+            gradient="from-blue-500 to-purple-600"
+          />
+
+          {/* Team Management */}
           <AdminTile
             icon="🚴"
             title="Team Management"
-            description="Voeg team members toe via Zwift ID - Data wordt automatisch gesynchroniseerd van ZwiftRacing API"
-            to="/riders"
+            description="Voeg riders toe (individueel of bulk), verwijder members - Data sync automatisch via ZwiftRacing + Official API"
+            to="/team-management"
             gradient="from-emerald-400 to-cyan-500"
+          />
+
+          {/* Sync Service Monitor */}
+          <AdminTile
+            icon="⚡"
+            title="Sync Service"
+            description="Monitor auto-sync scheduler (elk uur), bekijk sync logs, trigger handmatige syncs voor real-time data"
+            to="/sync-monitor"
+            gradient="from-purple-500 to-pink-500"
+          />
+
+          {/* Race Results (bestaand) */}
+          <AdminTile
+            icon="📊"
+            title="Race Results"
+            description="Bekijk alle race results en detailed performance analytics van je team members"
+            to="/results"
+            gradient="from-orange-400 to-red-500"
+          />
+
+          {/* User Management (bestaand als je wilt) */}
+          <AdminTile
+            icon="👥"
+            title="User Management"
+            description="Beheer toegang en rechten voor dashboard gebruikers"
+            to="/admin/users"
+            gradient="from-gray-600 to-gray-800"
+          />
+
+          {/* API Docs (bestaand als je wilt) */}
+          <AdminTile
+            icon="📚"
+            title="API Documentation"
+            description="Complete API endpoints documentatie en testing tools"
+            to="/api-docs"
+            gradient="from-indigo-500 to-blue-600"
           />
         </div>
 
