@@ -126,7 +126,7 @@ export default function AdminHome() {
             icon="🚴"
             title="Team Management"
             description="Voeg riders toe (individueel of bulk), verwijder members - Data sync automatisch via ZwiftRacing + Official API"
-            to="/team-management"
+            to="/team"
             gradient="from-emerald-400 to-cyan-500"
           />
 
@@ -135,7 +135,7 @@ export default function AdminHome() {
             icon="⚡"
             title="Sync Service"
             description="Monitor auto-sync scheduler (elk uur), bekijk sync logs, trigger handmatige syncs voor real-time data"
-            to="/sync-monitor"
+            to="/sync"
             gradient="from-purple-500 to-pink-500"
           />
 

@@ -21,6 +21,7 @@ interface RiderData {
   power_rating: number | null
   race_wins: number
   race_finishes: number
+  race_count: number
   race_last_rating: number | null
   last_race_date: string | null
   last_race_velo: number | null
@@ -123,6 +124,15 @@ export default function RacingMatrix() {
                 </option>
               ))}
             </select>
+            <button
+              onClick={() => {
+                setSortBy('velo')
+                setFilterCategory('all')
+              }}
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded-xl text-red-300 text-sm transition flex items-center gap-2"
+            >
+              <span>✕</span> Clear
+            </button>
           </div>
         </div>
 
@@ -285,7 +295,7 @@ export default function RacingMatrix() {
                           <span className="text-sm font-bold text-yellow-400">{rider.race_wins}</span>
                         </td>
                         <td className="px-4 py-4 text-center">
-                          <span className="text-sm text-gray-400">{rider.race_finishes}</span>
+                          <span className="text-sm text-gray-400">{rider.race_count || rider.race_finishes || 0}</span>
                         </td>
                         <td className="px-4 py-4">
                           {topPhenotype ? (

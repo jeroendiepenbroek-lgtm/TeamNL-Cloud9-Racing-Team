@@ -355,3 +355,161 @@ function AddRiderModal({ onClose }: { onClose: () => void }) {
     </div>
   )
 }
+
+// ============================================================================
+// Bulk Add Modal Component
+// ============================================================================
+
+function BulkAddModal({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient()
+  const [zwiftIds, setZwiftIds] = useState('')
+  const [results, setResults] = useState<Array<{zwiftId: number, status: string, message: string}>>([])
+
+  const mutation = useMutation({
+    mutationFn: async () => {
+      const ids = zwiftIds
+        .split(/[,\n\s]+/)
+        .map(id => id.trim())
+        .filter(id => id && /^\d+$/.test(id))
+        .map(id => parseInt(id))
+
+      if (ids.length === 0) {
+        throw new Error('Geen geldige Zwift IDs gevonden')
+      }
+
+      // Convert to correct format for backend
+      const riders = ids.map(zwiftId => ({ zwiftId }))
+
+      const res = await fetch(`${API_BASE}/api/riders/team/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ riders }),
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Bulk add failed')
+      }
+      
+      return res.json()
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['teamMembers'] })
+      
+      // Format results
+      const formatted = data.errors?.map((e: any) => ({
+        zwiftId: e.zwiftId,
+        status: 'error',
+        message: e.error
+      })) || []
+      
+      setResults(formatted)
+      
+      const successCount = data.success || 0
+      const errorCount = data.errors?.length || 0
+      
+      toast.success(`✅ ${successCount} riders toegevoegd${errorCount > 0 ? `, ${errorCount} errors` : ''}`)
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`)
+    },
+  })
+
+  const handleSubmit = () => {
+    setResults([])
+    mutation.mutate()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-slate-800/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-white/10 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-green-500/20 rounded-xl">
+            <Upload className="w-6 h-6 text-green-400" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-white">Bulk Add Riders</h2>
+            <p className="text-sm text-gray-400">Voeg meerdere riders tegelijk toe</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">
+              Zwift IDs <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              value={zwiftIds}
+              onChange={(e) => setZwiftIds(e.target.value)}
+              placeholder="150437, 234567, 345678&#10;Of één ID per regel:&#10;150437&#10;234567&#10;345678"
+              rows={8}
+              className="w-full px-4 py-2.5 text-sm bg-slate-900/50 border border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Gescheiden door komma's, spaties of nieuwe regels. Alle data wordt automatisch opgehaald.
+            </p>
+          </div>
+
+          {mutation.isPending && (
+            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-green-300 text-sm flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 animate-spin" />
+              <span>Riders toevoegen en data synchroniseren... Dit kan enkele minuten duren.</span>
+            </div>
+          )}
+
+          {results.length > 0 && (
+            <div className="bg-slate-900/50 rounded-xl p-4 border border-white/10 max-h-64 overflow-y-auto">
+              <h3 className="text-sm font-semibold text-white mb-3">Resultaten:</h3>
+              <div className="space-y-2">
+                {results.map((result, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-start gap-2 text-sm p-2 rounded bg-red-500/10 text-red-300"
+                  >
+                    <span className="font-mono">{result.zwiftId}:</span>
+                    <span className="flex-1">{result.message}</span>
+                    <span>✗</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {mutation.error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm">
+              {mutation.error.message}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <button
+              onClick={handleSubmit}
+              disabled={!zwiftIds.trim() || mutation.isPending}
+              className="flex-1 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl disabled:bg-gray-600 disabled:cursor-not-allowed transition shadow-lg font-medium text-sm flex items-center justify-center gap-2"
+            >
+              {mutation.isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  Bulk Add & Sync
+                </>
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              disabled={mutation.isPending}
+              className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition font-medium text-sm disabled:opacity-50"
+            >
+              {results.length > 0 ? 'Done' : 'Cancel'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
