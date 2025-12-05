@@ -4,7 +4,6 @@ import { Toaster } from 'react-hot-toast'
 import DashboardModern from './pages/DashboardModern'
 import EventsModern from './pages/EventsModern'
 import SyncControl from './pages/SyncControl'
-import AdminHome from './pages/AdminHome'
 import RacingDataMatrixModern from './pages/RacingDataMatrixModern'
 import TeamManagement from './pages/TeamManagement'
 import ResultsDashboard from './pages/ResultsDashboard'
@@ -15,6 +14,9 @@ import { AccessRequests } from './pages/AccessRequests'
 import PendingAccess from './pages/PendingAccess'
 import UserManagement from './pages/UserManagement'
 import Archive from './pages/Archive'
+import Admin from './pages/Admin'
+import RacingMatrix from './pages/RacingMatrix'
+import SyncMonitor from './pages/SyncMonitor'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { LoginModal } from './components/LoginModal'
@@ -278,7 +280,23 @@ function AppContent() {
             path="/admin" 
             element={
               <ProtectedRoute>
-                <AdminHome />
+                <Admin />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/racing-matrix" 
+            element={
+              <ProtectedRoute>
+                <RacingMatrix />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/team" 
+            element={
+              <ProtectedRoute>
+                <TeamManagement />
               </ProtectedRoute>
             } 
           />
@@ -286,7 +304,7 @@ function AppContent() {
             path="/sync" 
             element={
               <ProtectedRoute>
-                <SyncControl />
+                <SyncMonitor />
               </ProtectedRoute>
             } 
           />
