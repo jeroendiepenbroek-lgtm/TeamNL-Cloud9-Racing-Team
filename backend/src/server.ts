@@ -22,12 +22,14 @@ import rateLimiterRouter from './api/endpoints/rate-limiter.js';
 import cleanupRouter from './api/endpoints/cleanup.js';
 import riderDeltasRouter from './api/endpoints/rider-deltas.js';
 import schedulerRouter from './api/endpoints/scheduler.js';
+import teamRouter from './api/endpoints/team.js';
 
 // Sync services
 // import { syncConfig } from './config/sync.config.js'; // Not needed for now
 // import { SyncServiceV2 } from './services/sync-v2.service.js'; // Not needed for now
 // import { SyncConfigValidator } from './services/sync-config-validator.js'; // Not needed for now
 import { unifiedScheduler } from './services/unified-scheduler.service.js';
+import { teamAutoSync } from './services/team-auto-sync.service.js';
 // import cron from 'node-cron'; // Not needed for now
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,7 +42,13 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 app.use(cors());
 app.use(express.json());
 
-// Logging middleware - FIRST to see all requests
+// Serve React frontend build (producti)
+app.use(express.static(path.join(__dirname, '../public/dist')));
+
+// Fallback: serve old public/index.html (development)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Logging middleware
 app.use((req: Request, res: Response, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
@@ -53,9 +61,15 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'ok',
     service: 'TeamNL Cloud9 Backend',
     timestamp: new Date().toISOString(),
-    version: '2.0.0-clean',
+    version: '2.1.0-unified-sync',
     port: PORT,
   });
+});
+
+// Root route - Serve React app
+app.get('/', (req: Request, res: Response) => {
+  console.log('Root route accessed - serving React app');
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
 });
 
 // API Routes - 6 Endpoints
@@ -71,18 +85,7 @@ app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
 app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
 app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
 app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
-
-// Serve React frontend build (production) - AFTER API routes
-app.use(express.static(path.join(__dirname, '../public/dist')));
-
-// Fallback: serve old public/index.html (development) - AFTER API routes
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Root route - Serve React app
-app.get('/', (req: Request, res: Response) => {
-  console.log('Root route accessed - serving React app');
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
-});
+app.use('/api/team', teamRouter); // US2-US7: Team Management & Sync
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -145,6 +148,11 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // ═══════════════════════════════════════════════════════════════
   // Note: Using minimal stub scheduler until full services restored
   unifiedScheduler.start();
+  
+  // ═══════════════════════════════════════════════════════════════
+  //  US5: TEAM AUTO-SYNC SCHEDULER - Hourly team member sync
+  // ═══════════════════════════════════════════════════════════════
+  teamAutoSync.start();
 });
 
 // Server error handling
