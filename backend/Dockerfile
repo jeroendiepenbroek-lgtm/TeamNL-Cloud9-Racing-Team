@@ -6,9 +6,9 @@ FROM node:22-alpine AS base
 # === FRONTEND BUILD ===
 FROM base AS frontend-builder
 WORKDIR /frontend
-COPY ./frontend/package*.json ./
+COPY frontend/package*.json ./
 RUN npm ci --production=false
-COPY ./frontend/ ./
+COPY frontend/ ./
 # Build frontend (outputs to ../public/dist relative to frontend dir)
 # Since we're in /frontend, it will write to /public/dist
 # Override to write to /frontend-dist instead
@@ -19,12 +19,12 @@ FROM base AS final
 WORKDIR /app
 
 # Install backend dependencies
-COPY ./package*.json ./
+COPY package*.json ./
 RUN npm ci --production=false
 
 # Copy backend source code
-COPY ./src ./src
-COPY ./tsconfig.json ./tsconfig.json
+COPY src ./src
+COPY tsconfig.json ./tsconfig.json
 
 # Create public directory and copy frontend build
 RUN mkdir -p public/dist
