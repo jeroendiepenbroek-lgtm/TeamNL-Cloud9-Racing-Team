@@ -47,7 +47,7 @@ export class SupabaseService {
 
   // ========== RIDERS ==========
   async getRiders(clubId?: number): Promise<DbRider[]> {
-    let query = this.client.from('riders_unified').select('*');
+    let query = this.client.from('riders').select('*');
     
     if (clubId) {
       query = query.eq('club_id', clubId);
@@ -60,7 +60,7 @@ export class SupabaseService {
 
   async getRiderIdsByClub(clubId: number): Promise<number[]> {
     const { data, error } = await this.client
-      .from('riders_unified')
+      .from('riders')
       .select('rider_id')
       .eq('club_id', clubId);
 
@@ -82,12 +82,12 @@ export class SupabaseService {
         return data.map((r: any) => r.rider_id);
       }
     } catch (viewError) {
-      console.warn('view_my_team not available, falling back to riders_unified table:', viewError);
+      console.warn('view_my_team not available, falling back to riders table:', viewError);
     }
 
-    // Fallback: All riders in riders_unified table (same as Matrix fallback)
+    // Fallback: All riders in riders table (same as Matrix fallback)
     const { data, error } = await this.client
-      .from('riders_unified')
+      .from('riders')
       .select('rider_id');
 
     if (error) throw error;
@@ -96,7 +96,7 @@ export class SupabaseService {
 
   async getRider(riderId: number): Promise<DbRider | null> {
     const { data, error } = await this.client
-      .from('riders_unified')  // ✅ FIXED: Use unified table
+      .from('riders')
       .select('*')
       .eq('rider_id', riderId)
       .single();
@@ -124,7 +124,7 @@ export class SupabaseService {
     });
 
     const { data, error } = await this.client
-      .from('riders_unified')  // ✅ FIXED: Use unified table (multi-source architecture)
+      .from('riders')
       .upsert(cleaned, { onConflict: 'rider_id' })
       .select();
 
@@ -377,16 +377,17 @@ export class SupabaseService {
 
   // Results Dashboard - Individual Rider Results
   async getRiderResults(riderId: number, days: number = 90, limit: number = 50): Promise<any[]> {
-    console.log(`🔍 getRiderResults called: riderId=${riderId}, days=${days}, limit=${limit}`);
-    
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+
     const { data, error } = await this.client
       .from('zwift_api_race_results')
       .select('*')
       .eq('rider_id', riderId)
+      .gte('event_date', cutoffDate.toISOString())
+      .order('event_date', { ascending: false })
       .limit(limit);
 
-    console.log(`✅ getRiderResults done: rows=${data?.length}, error=${error}`);
-    
     if (error) throw error;
     return data || [];
   }
@@ -546,12 +547,12 @@ export class SupabaseService {
       console.warn('Views not available:', viewError);
     }
 
-    // Final fallback: direct riders_unified table
-    console.log('Falling back to riders_unified table');
+    // Final fallback: direct riders table
+    console.log('Falling back to riders table');
     const { data, error } = await this.client
-      .from('riders_unified')
+      .from('riders')
       .select('*')
-      .order('rider_id', { ascending: true });
+      .order('zwift_id', { ascending: true });
 
     if (error) throw error;
     return data || [];

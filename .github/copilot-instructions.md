@@ -1,32 +1,9 @@
 # Copilot Instructions - TeamNL Cloud9 Racing Team
 
-## ⚠️ LEES EERST: Master Documentatie
-**Voor ELKE sessie, lees IN DEZE VOLGORDE**:
-
-1. **`/MASTER_PLAN_3_DASHBOARDS.md`** ← 🎯 SINGLE SOURCE OF TRUTH
-   - Alle 9 User Stories gedocumenteerd
-   - Architecture keuzes vastgelegd
-   - Sourcing strategie definitief
-   - Implementatie status actueel
-   
-2. **`/CRITICAL_LESSONS_LEARNED.md`** ← ⚠️ Veelgemaakte fouten
-   - ZwiftPower werkt NIET voor rider 150437
-   - Rider endpoint heeft GEEN history field
-   - Rate limits zijn STRIKT (1/min voor events)
-   - Database kolom `raw_data` bestaat NIET
-   - event_signups tabel bestaat NIET (moet aangemaakt)
-   
-3. **`/BASIS_FUNCTIONALITEIT_STATUS.md`** ← 📊 Huidige status
-   - Wat werkt (1/3): Results ophalen ✅
-   - Wat niet werkt (2/3): Sign-ups, Toekomstige events ❌
-   - Kritieke blokkades gedocumenteerd
-
-**VERGEET NOOIT**: Rider endpoint heeft GEEN history field! Results per event ophalen.
-
 ## Project Overview
-Dashboard applicatie voor TeamNL Cloud9 racing team met **multi-source** data aggregation (ZwiftRacing.app primary, Zwift.com + ZwiftPower enrichment). Backend-first architectuur met unified sourcing strategy.
+Dashboard applicatie voor TeamNL Cloud9 racing team met ZwiftRacing.app API integratie. Backend-first architectuur met modulaire, type-safe TypeScript implementatie.
 
-**Status**: Core werkend (results ✅), signups & future events TODO ❌
+**Status**: Backend volledig geïmplementeerd, frontend volgt nog.
 
 ## Tech Stack
 

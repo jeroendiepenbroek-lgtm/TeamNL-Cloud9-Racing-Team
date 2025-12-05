@@ -116,6 +116,28 @@ export class UnifiedSyncService {
   private tokenExpiry: number = 0;
 
   constructor() {
+    // ✅ ENVIRONMENT VARIABLE VALIDATION
+    const requiredEnvVars = [
+      'SUPABASE_URL',
+      'SUPABASE_ANON_KEY', 
+      'ZWIFT_API_KEY',
+      'ZWIFT_USERNAME',
+      'ZWIFT_PASSWORD'
+    ];
+    
+    const missing = requiredEnvVars.filter(key => !process.env[key]);
+    if (missing.length > 0) {
+      console.error('❌ FATAL: Missing required environment variables in Railway:');
+      missing.forEach(key => console.error(`   - ${key}`));
+      console.error('\n📋 Action required:');
+      console.error('   1. Go to Railway dashboard');
+      console.error('   2. Select backend service');
+      console.error('   3. Navigate to Variables tab');
+      console.error('   4. Add all 5 environment variables');
+      console.error('   5. Railway will auto-redeploy\n');
+      throw new Error(`Missing environment variables: ${missing.join(', ')}`);
+    }
+
     // Initialize Supabase with ANON key (service key is expired)
     const supabaseUrl = process.env.SUPABASE_URL!;
     // FORCE anon key usage - service key is invalid

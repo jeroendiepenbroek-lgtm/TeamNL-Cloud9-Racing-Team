@@ -95,34 +95,25 @@ router.get('/team/recent', async (req: Request, res: Response) => {
 
 // GET /api/results/rider/:riderId - Haal results voor specifieke rider op
 router.get('/rider/:riderId', async (req: Request, res: Response) => {
-  console.log('🎯 /api/results/rider/:riderId endpoint HIT');
   try {
     const riderId = parseInt(req.params.riderId);
     const days = parseInt(req.query.days as string) || 90;
     const limit = parseInt(req.query.limit as string) || 50;
     
-    console.log(`📊 Parameters: riderId=${riderId}, days=${days}, limit=${limit}`);
-    console.log('🔄 Calling supabase.getRiderResults...');
-    
-    // Use Supabase Service methodes - alleen results, geen PRs
+    // Use Supabase Service methodes
     const results = await supabase.getRiderResults(riderId, days, limit);
+    const personalRecords = await supabase.getRiderPersonalRecords(riderId);
     
-    console.log(`✅ Got ${results.length} results`);
-    console.log(`📦 Result size: ${JSON.stringify(results).length} bytes`);
-    
-    const response = {
+    res.json({
       success: true,
       rider_id: riderId,
       count: results.length,
       days,
-      results
-    };
-    
-    console.log('🚀 Sending JSON response...');
-    res.json(response);
-    console.log('✅ Response sent!');
+      results,
+      personal_records: personalRecords
+    });
   } catch (error) {
-    console.error('❌ Error fetching rider results:', error);
+    console.error('Error fetching rider results:', error);
     res.status(500).json({ error: 'Fout bij ophalen rider results' });
   }
 });
