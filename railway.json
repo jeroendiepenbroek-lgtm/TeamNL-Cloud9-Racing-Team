@@ -10,5 +10,3 @@
     "restartPolicyMaxRetries": 10
   }
 }
-# Railway rebuild trigger
-REBUILD_TIMESTAMP=2025-11-25T14:33:00Z
