@@ -1,5 +1,6 @@
 # Railway Dockerfile - TeamNL Cloud9 Backend
 # Build backend + frontend, serve as single deployment
+# dockerContext=backend means all paths are relative to backend/ directory
 
 FROM node:22-alpine AS base
 
