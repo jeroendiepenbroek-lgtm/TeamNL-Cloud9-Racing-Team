@@ -152,7 +152,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   // ═══════════════════════════════════════════════════════════════
   //  US5: TEAM AUTO-SYNC SCHEDULER - Hourly team member sync
   // ═══════════════════════════════════════════════════════════════
-  // teamAutoSync.start(); // TODO: Implement when team-auto-sync service is committed
+  teamAutoSync.start();
 });
 
 // Server error handling
