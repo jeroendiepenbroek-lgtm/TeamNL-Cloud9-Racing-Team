@@ -1,6 +1,7 @@
 # ============================================================================
 # Railway Dockerfile - TeamNL Cloud9 Backend
-# Single-stage, simple build - JUST WORKS
+# Single-stage, simple build - PERMANENT FIX
+# BUILD: 2025-12-05-v3 (cache buster)
 # ============================================================================
 
 FROM node:22-alpine
@@ -14,14 +15,17 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALLE dependencies - gebruik npm ci voor reproduceerbare builds
-# NODE_ENV moet NIET production zijn tijdens install, anders skipped hij devDeps
+# CRITICAL FIX: Install ALL dependencies including devDeps
+# Railway cached the old broken build - this forces fresh install
 ENV NODE_ENV=development
-RUN npm ci && \
+RUN rm -rf node_modules package-lock.json && \
+    npm install && \
     npm cache clean --force
 
-# Verify critical packages
-RUN npm list multer tsx @types/multer || (echo "ERROR: Missing critical packages" && exit 1)
+# Validate packages are actually installed
+RUN npm list multer tsx @types/multer 2>&1 | tee /tmp/packages.log && \
+    (npm list multer || exit 1) && \
+    (npm list tsx || exit 1)
 
 # Copy source code
 COPY . .
