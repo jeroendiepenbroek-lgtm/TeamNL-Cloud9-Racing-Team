@@ -119,7 +119,7 @@ export class UnifiedSyncService {
     // ✅ ENVIRONMENT VARIABLE VALIDATION
     const requiredEnvVars = [
       'SUPABASE_URL',
-      'SUPABASE_ANON_KEY', 
+      'SUPABASE_SERVICE_ROLE_KEY',
       'ZWIFT_API_KEY',
       'ZWIFT_USERNAME',
       'ZWIFT_PASSWORD'
@@ -138,11 +138,10 @@ export class UnifiedSyncService {
       throw new Error(`Missing environment variables: ${missing.join(', ')}`);
     }
 
-    // Initialize Supabase with ANON key (service key is expired)
+    // Initialize Supabase with SERVICE_ROLE_KEY for full access
     const supabaseUrl = process.env.SUPABASE_URL!;
-    // FORCE anon key usage - service key is invalid
-    const supabaseKey = process.env.SUPABASE_ANON_KEY!;
-    console.log(`🔧 Supabase: Using ANON key (${supabaseKey.length} chars)`);
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    console.log(`🔧 Supabase: Using SERVICE_ROLE key (${supabaseKey.length} chars)`);
     this.supabase = createClient(supabaseUrl, supabaseKey);
 
     // Initialize ZwiftRacing API client
