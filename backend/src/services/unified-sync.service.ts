@@ -533,48 +533,8 @@ export async function syncAllTeam(options?: SyncOptions): Promise<SyncResult[]> 
 }
 
 // ============================================================================
-// CLI USAGE (when run directly)
+// NOTE: This is a service class imported by server.ts
+// For CLI usage, use the API endpoints instead:
+//   - POST /api/team/sync/rider/:riderId
+//   - POST /api/team/sync/all
 // ============================================================================
-
-if (require.main === module) {
-  const riderId = process.argv[2] ? parseInt(process.argv[2]) : null;
-
-  if (!riderId) {
-    console.error('Usage: npx tsx unified-sync.service.ts <riderId>');
-    console.error('   OR: npx tsx unified-sync.service.ts --all');
-    process.exit(1);
-  }
-
-  (async () => {
-    try {
-      if (process.argv[2] === '--all') {
-        console.log('🔄 Syncing all team members...\n');
-        const results = await syncAllTeam({ includeEnrichment: true });
-        
-        const successful = results.filter(r => r.success).length;
-        console.log(`\n📊 SUMMARY:`);
-        console.log(`   ✅ Successful: ${successful}`);
-        console.log(`   ❌ Failed: ${results.length - successful}`);
-        
-      } else {
-        console.log(`🔄 Syncing rider ${riderId}...\n`);
-        const result = await syncRider(riderId, { includeEnrichment: true });
-        
-        console.log(`\n📊 RESULT:`);
-        console.log(`   Success: ${result.success ? '✅' : '❌'}`);
-        console.log(`   Name: ${result.name || 'N/A'}`);
-        console.log(`   Fields synced: ${result.synced_fields.total}`);
-        console.log(`     - ZwiftRacing: ${result.synced_fields.zwift_racing}`);
-        console.log(`     - Zwift Official: ${result.synced_fields.zwift_official}`);
-        if (result.errors.length > 0) {
-          console.log(`   Errors:`);
-          result.errors.forEach(err => console.log(`     - ${err}`));
-        }
-      }
-
-    } catch (error: any) {
-      console.error('❌ FATAL ERROR:', error.message);
-      process.exit(1);
-    }
-  })();
-}
