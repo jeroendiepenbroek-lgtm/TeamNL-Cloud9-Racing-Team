@@ -47,7 +47,7 @@ export class SupabaseService {
 
   // ========== RIDERS ==========
   async getRiders(clubId?: number): Promise<DbRider[]> {
-    let query = this.client.from('riders').select('*');
+    let query = this.client.from('riders_unified').select('*');
     
     if (clubId) {
       query = query.eq('club_id', clubId);
@@ -60,7 +60,7 @@ export class SupabaseService {
 
   async getRiderIdsByClub(clubId: number): Promise<number[]> {
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')
       .select('rider_id')
       .eq('club_id', clubId);
 
@@ -68,27 +68,12 @@ export class SupabaseService {
     return (data || []).map(r => r.rider_id);
   }
 
-  // Get ALL rider IDs from riders table (our team members)
-  // UNIFIED: Use same fallback logic as getMyTeamMembers() for consistency
+  // Get ALL rider IDs from riders_unified (team members via is_team_member flag)
   async getAllTeamRiderIds(): Promise<number[]> {
-    // Try view_my_team first (correct source via my_team_members)
-    try {
-      const { data, error } = await this.client
-        .from('view_my_team')
-        .select('rider_id');
-
-      if (error) throw error;
-      if (data && data.length > 0) {
-        return data.map((r: any) => r.rider_id);
-      }
-    } catch (viewError) {
-      console.warn('view_my_team not available, falling back to riders table:', viewError);
-    }
-
-    // Fallback: All riders in riders table (same as Matrix fallback)
     const { data, error } = await this.client
-      .from('riders')
-      .select('rider_id');
+      .from('riders_unified')
+      .select('rider_id')
+      .eq('is_team_member', true);
 
     if (error) throw error;
     return (data || []).map((r: any) => r.rider_id);
@@ -96,7 +81,7 @@ export class SupabaseService {
 
   async getRider(riderId: number): Promise<DbRider | null> {
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')
       .select('*')
       .eq('rider_id', riderId)
       .single();
@@ -124,7 +109,7 @@ export class SupabaseService {
     });
 
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')
       .upsert(cleaned, { onConflict: 'rider_id' })
       .select();
 
@@ -520,39 +505,13 @@ export class SupabaseService {
   }
 
   // ========== MY TEAM MEMBERS ==========
-  // Query via VIEW (niet direct riders tabel!)
+  // Query riders_unified met is_team_member flag
   async getMyTeamMembers(): Promise<any[]> {
-    // Try view_racing_data_matrix first (has all the racing stats)
-    try {
-      const { data, error } = await this.client
-        .from('view_racing_data_matrix')
-        .select('*')
-        .order('race_last_rating', { ascending: false, nullsFirst: false }); // DESC = hoogste rating eerst
-
-      if (error) throw error;
-      if (data && data.length > 0) return data;
-    } catch (matrixError) {
-      console.warn('view_racing_data_matrix not available, trying view_my_team:', matrixError);
-    }
-
-    // Fallback to view_my_team (without problematic sort)
-    try {
-      const { data, error } = await this.client
-        .from('view_my_team')
-        .select('*');
-
-      if (error) throw error;
-      if (data && data.length > 0) return data;
-    } catch (viewError) {
-      console.warn('Views not available:', viewError);
-    }
-
-    // Final fallback: direct riders table
-    console.log('Falling back to riders table');
     const { data, error } = await this.client
-      .from('riders')
+      .from('riders_unified')
       .select('*')
-      .order('zwift_id', { ascending: true });
+      .eq('is_team_member', true)
+      .order('velo_rating', { ascending: false, nullsFirst: false }); // Sorteer op vELO rating
 
     if (error) throw error;
     return data || [];
@@ -570,7 +529,16 @@ export class SupabaseService {
   }
 
   async removeMyTeamMember(riderId: number): Promise<void> {
-    const { error } = await this.client
+    const { error } = await this.supabase
+      .from('riders_unified')
+      .update({ is_team_member: false })
+      .eq('rider_id', riderId);
+
+    if (error) {
+      console.error('Error removing team member:', error);
+      throw error;
+    }
+  } = await this.client
       .from('my_team_members')
       .delete()
       .eq('rider_id', riderId);

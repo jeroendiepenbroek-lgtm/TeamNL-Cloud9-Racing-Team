@@ -52,7 +52,7 @@ router.get('/compare/:riderId', async (req: Request, res: Response) => {
 
     // Haal database data op
     const { data: dbRider, error: dbError } = await supabase
-      .from('riders')
+      .from('riders_unified')
       .select('rider_id, name, zp_ftp, zp_category, weight')
       .eq('rider_id', riderId)
       .single();
@@ -136,7 +136,7 @@ router.post('/sync-rider/:riderId', async (req: Request, res: Response) => {
 
     // Haal huidige database waarden op
     const { data: currentRider } = await supabase
-      .from('riders')
+      .from('riders_unified')
       .select('rider_id, zp_ftp, zp_category, weight')
       .eq('rider_id', riderId)
       .single();
@@ -153,12 +153,12 @@ router.post('/sync-rider/:riderId', async (req: Request, res: Response) => {
 
     // Update database met ZwiftPower data
     const { error: updateError } = await supabase
-      .from('riders')
+      .from('riders_unified')
       .update({
         zp_ftp: zpData.data.ftp,
         zp_category: zpData.data.category,
         weight: zpData.data.weight_kg,
-        last_synced: new Date().toISOString()
+        last_synced_zwift_official: new Date().toISOString()
       })
       .eq('rider_id', riderId);
 
