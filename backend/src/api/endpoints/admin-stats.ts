@@ -9,9 +9,9 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // 1. Team Members - Count active riders
-    const riders = await supabase.getRiders();
-    const teamMembersCount = riders.filter(r => r.is_active).length;
+    // 1. Team Members - Count team members from riders_unified
+    const riders = await supabase.getMyTeamMembers();
+    const teamMembersCount = riders.length;
 
     // 2. Active Users & Pending Requests - Query Supabase directly
     let activeUsersCount = 0;

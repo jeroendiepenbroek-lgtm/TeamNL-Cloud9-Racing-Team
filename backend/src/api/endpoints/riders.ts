@@ -36,47 +36,16 @@ router.get('/', async (req: Request, res: Response) => {
 // ============================================================================
 // IMPORTANT: These routes must be BEFORE /:zwiftId to avoid conflicts!
 
-// GET /api/riders/team - Haal "Mijn Team" riders op via VIEW
+// GET /api/riders/team - Haal "Mijn Team" riders op via riders_unified
 router.get('/team', async (req: Request, res: Response) => {
   try {
-    // DEBUG: Check what tables exist and have data
-    const { data: clubMembersCount } = await (supabase as any).client
-      .from('club_members')
-      .select('*', { count: 'exact', head: true });
+    console.log('📊 Fetching team members from riders_unified...');
     
-    const { data: ridersCount } = await (supabase as any).client
-      .from('riders')
-      .select('*', { count: 'exact', head: true });
-      
-    console.log('📊 Database check:');
-    console.log(`  - club_members: ${JSON.stringify(clubMembersCount)}`);
-    console.log(`  - riders: ${JSON.stringify(ridersCount)}`);
+    // Query riders_unified met is_team_member flag
+    const riders = await supabase.getMyTeamMembers();
     
-    // Try multiple sources in order of preference
-    let riders;
-    
-    // 1. Try view_racing_data_matrix (best: has all racing stats)
-    try {
-      riders = await supabase.getMyTeamMembers();
-      if (riders && riders.length > 0) {
-        console.log(`✅ Loaded ${riders.length} riders from views`);
-        return res.json(riders);
-      }
-    } catch (viewError) {
-      console.warn('Views not available:', viewError);
-    }
-    
-    // 2. Fallback: Direct query club_members table (ANY club_id)
-    console.log('Falling back to direct club_members query (all clubs)');
-    const { data, error } = await (supabase as any).client
-      .from('club_members')
-      .select('*')
-      .limit(100);
-    
-    if (error) throw error;
-    
-    console.log(`✅ Loaded ${data?.length || 0} riders from club_members table`);
-    res.json(data || []);
+    console.log(`✅ Loaded ${riders.length} team members`);
+    res.json(riders);
     
   } catch (error) {
     console.error('Error fetching team riders:', error);
