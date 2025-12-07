@@ -20,7 +20,6 @@ RUN npm ci --only=production && \
 # Copy source (selective to avoid .git bloat)
 COPY tsconfig.json ./
 COPY src ./src
-COPY prisma ./prisma
 
 # Runtime config
 ENV NODE_ENV=production
