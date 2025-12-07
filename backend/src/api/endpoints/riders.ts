@@ -44,8 +44,16 @@ router.get('/team', async (req: Request, res: Response) => {
     // Query riders_unified met is_team_member flag
     const riders = await supabase.getMyTeamMembers();
     
+    // Map database fields naar frontend-expected fields
+    const mappedRiders = riders.map(rider => ({
+      ...rider,
+      // Add aliases voor backwards compatibility
+      weight: rider.weight_kg,    // Frontend expects 'weight'
+      zp_ftp: rider.ftp,           // Frontend expects 'zp_ftp'
+    }));
+    
     console.log(`✅ Loaded ${riders.length} team members`);
-    res.json(riders);
+    res.json(mappedRiders);
     
   } catch (error) {
     console.error('Error fetching team riders:', error);
