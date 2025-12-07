@@ -1,12 +1,11 @@
 # Railway Configuration - DEFINITIVE (Dec 7, 2025)
-# Force clean rebuild - remove cache issues
+# ROOT context + backend Dockerfile
 
 [build]
 builder = "dockerfile"
-dockerfilePath = "backend/Dockerfile"
-dockerContext = "backend"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "npx tsx src/server.ts"
+startCommand = "cd backend && npx tsx src/server.ts"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
