@@ -59,7 +59,7 @@ app.get('/', (req: Request, res: Response) => {
 
 // API Routes - EMERGENCY MINIMAL MODE (Dec 7, 2025)
 // Only working endpoints enabled - 157 TypeScript errors fixed
-app.use('/api/admin', adminStatsRouter); 
+app.use('/api/admin/stats', adminStatsRouter); 
 app.use('/api/riders', ridersRouter);
 
 // 404 handler
