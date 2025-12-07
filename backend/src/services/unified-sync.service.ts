@@ -471,7 +471,7 @@ export class UnifiedSyncService {
       followees_count: official?.socialFacts?.followeesCount || null,
       level: official?.achievementLevel || null,
       zwift_profile_id: official?.id?.toString() || null,
-      zrs: official?.racingScore || null,  // Zwift Racing Score
+      // zrs: official?.racingScore || null,  // DISABLED - awaiting DB migration
 
       // SYNC TRACKING
       last_synced_zwift_racing: new Date().toISOString(),
