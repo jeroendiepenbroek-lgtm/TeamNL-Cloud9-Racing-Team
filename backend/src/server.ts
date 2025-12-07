@@ -14,7 +14,7 @@ import adminStatsRouter from './api/endpoints/admin-stats.js';
 import ridersRouter from './api/endpoints/riders.js';
 
 // Disable broken services temporarily
-// import { unifiedScheduler } from './services/unified-scheduler.service.js';
+import { unifiedScheduler } from './services/unified-scheduler.service.js';
 // import { teamAutoSync } from './services/team-auto-sync.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -119,14 +119,12 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   `);
   
   // ═══════════════════════════════════════════════════════════════
-  //  SYNC SCHEDULERS DISABLED (Dec 7, 2025)
+  //  SYNC SCHEDULER RE-ENABLED (Dec 7, 2025 - Fix Complete)
   // ═══════════════════════════════════════════════════════════════
-  // Reason: 157 TypeScript errors - services broken
-  // TODO: Fix services and re-enable
-  // unifiedScheduler.start();
-  // teamAutoSync.start();
+  unifiedScheduler.start();
+  // teamAutoSync.start(); // Still disabled - needs more fixes
   
-  console.log('⚠️  Sync schedulers DISABLED - manual sync only');
+  console.log('✅ Unified sync scheduler ENABLED - auto-sync active');
 });
 
 // Server error handling

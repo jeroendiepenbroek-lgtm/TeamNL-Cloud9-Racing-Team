@@ -439,9 +439,12 @@ export class UnifiedSyncService {
       race_wins: racing.race?.wins || 0,
       race_podiums: racing.race?.podiums || 0,
       race_count_90d: racing.race?.finishes || 0,
-      last_race_date: racing.race?.last?.date 
-        ? new Date(racing.race.last.date * 1000).toISOString() 
-        : null,
+      last_race_date: (() => {
+        const dateValue = racing.race?.last?.date;
+        return (dateValue && typeof dateValue === 'number') 
+          ? new Date(dateValue * 1000).toISOString()
+          : null;
+      })(),
       last_race_velo: racing.race?.last?.rating || null,
 
       // PHENOTYPE (ZwiftRacing) - All 4 scores + type
