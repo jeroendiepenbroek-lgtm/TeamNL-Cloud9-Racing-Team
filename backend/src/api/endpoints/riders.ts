@@ -50,6 +50,7 @@ router.get('/team', async (req: Request, res: Response) => {
       // Add aliases voor backwards compatibility
       weight: rider.weight_kg,    // Frontend expects 'weight'
       zp_ftp: rider.ftp,           // Frontend expects 'zp_ftp'
+      power_rating: rider.power_rating || rider.compound_score || null, // Fallback: use compound_score if power_rating NULL
     }));
     
     console.log(`✅ Loaded ${riders.length} team members`);
