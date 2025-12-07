@@ -538,12 +538,6 @@ export class SupabaseService {
       console.error('Error removing team member:', error);
       throw error;
     }
-  } = await this.client
-      .from('my_team_members')
-      .delete()
-      .eq('rider_id', riderId);
-
-    if (error) throw error;
   }
 
   async bulkAddMyTeamMembers(riderIds: number[]): Promise<any[]> {
