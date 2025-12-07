@@ -76,6 +76,7 @@ interface ZwiftOfficialProfile {
   countryCode?: number;
   riding?: boolean;
   achievementLevel?: number;
+  racingScore?: number;  // ZRS - Zwift Racing Score
   socialFacts?: {
     followersCount?: number;
     followeesCount?: number;
@@ -470,6 +471,7 @@ export class UnifiedSyncService {
       followees_count: official?.socialFacts?.followeesCount || null,
       level: official?.achievementLevel || null,
       zwift_profile_id: official?.id?.toString() || null,
+      zrs: official?.racingScore || null,  // Zwift Racing Score
 
       // SYNC TRACKING
       last_synced_zwift_racing: new Date().toISOString(),
