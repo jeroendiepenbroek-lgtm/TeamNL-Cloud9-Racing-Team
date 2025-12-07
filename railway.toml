@@ -1,11 +1,11 @@
-# Railway Configuration - DEFINITIVE (Dec 7, 2025)
-# WORKAROUND: Railway ignores root Dockerfile when rootDir=backend is set
+# Railway Configuration - NUCLEAR OPTION (Dec 7, 2025)
+# Use simplest possible Dockerfile - NO optimization
 
 [build]
 builder = "dockerfile"
-dockerfilePath = "backend/Dockerfile"
+dockerfilePath = "backend/Dockerfile.simple"
 
 [deploy]
-startCommand = "npx tsx src/server.ts"
+startCommand = "npm start"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
