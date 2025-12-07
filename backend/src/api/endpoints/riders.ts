@@ -64,6 +64,32 @@ router.get('/team', async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/riders/team/sync-one/:riderId - Sync single rider via unified-sync (TEMP TEST)
+router.post('/team/sync-one/:riderId', async (req: Request, res: Response) => {
+  try {
+    const riderId = parseInt(req.params.riderId);
+    console.log(`🔄 Manual sync test voor rider ${riderId}...`);
+    
+    // Import unified-sync dynamisch
+    const { syncRider } = await import('../../services/unified-sync.service.js');
+    
+    const result = await syncRider(riderId, { forceRefresh: true });
+    
+    console.log(`✅ Sync complete:`, result);
+    res.json({ 
+      success: true, 
+      message: `Rider ${riderId} gesynchroniseerd`,
+      result 
+    });
+  } catch (error) {
+    console.error('Sync error:', error);
+    res.status(500).json({ 
+      error: 'Sync gefaald', 
+      details: error instanceof Error ? error.message : String(error) 
+    });
+  }
+});
+
 // GET /api/riders/search/:zwiftId - Zoek rider op ZwiftRacing API (voor add rider)
 router.get('/search/:zwiftId', async (req: Request, res: Response) => {
   try {
