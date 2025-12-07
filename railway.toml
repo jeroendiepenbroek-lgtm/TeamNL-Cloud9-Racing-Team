@@ -1,11 +1,11 @@
 # Railway Configuration - DEFINITIVE (Dec 7, 2025)
-# ROOT context + backend Dockerfile
+# WORKAROUND: Railway ignores root Dockerfile when rootDir=backend is set
 
 [build]
 builder = "dockerfile"
-dockerfilePath = "Dockerfile"
+dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-startCommand = "cd backend && npx tsx src/server.ts"
+startCommand = "npx tsx src/server.ts"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

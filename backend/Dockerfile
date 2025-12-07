@@ -11,11 +11,10 @@ RUN apk add --no-cache curl dumb-init && \
 
 WORKDIR /app
 
-# Install dependencies (with verification)
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && \
-    npm cache clean --force && \
-    echo "✅ Packages installed"
+# Install dependencies
+COPY package*.json ./
+RUN npm install --production && \
+    npm cache clean --force
 
 # Copy source (selective to avoid .git bloat)
 COPY tsconfig.json ./
