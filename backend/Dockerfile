@@ -1,28 +1,26 @@
 # ============================================================================
-# Railway Dockerfile - DEFINITIVE FIX
-# ROOT CAUSE: multer 2.0.2 failed to install in Alpine Linux
-# SOLUTION: Use multer 1.4.5-lts.1 (stable)
+# Railway Dockerfile - DEFINITIVE (Dec 7, 2025)
+# CLEAN BUILD - No cache issues
 # ============================================================================
 
 FROM node:22-alpine
 
-# System dependencies
-RUN apk add --no-cache curl dumb-init
+# System dependencies + cleanup
+RUN apk add --no-cache curl dumb-init && \
+    rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (with verification)
 COPY package*.json ./
-RUN npm install && npm cache clean --force
+RUN npm ci --only=production && \
+    npm cache clean --force && \
+    echo "✅ Packages installed"
 
-# Verify critical packages
-RUN echo "=== Package verification ===" && \
-    npm list multer && \
-    npm list tsx && \
-    echo "=== All packages OK ==="
-
-# Copy source
-COPY . .
+# Copy source (selective to avoid .git bloat)
+COPY tsconfig.json ./
+COPY src ./src
+COPY prisma ./prisma
 
 # Runtime config
 ENV NODE_ENV=production

@@ -1,7 +1,12 @@
-# Railway Configuration
-# Use backend Dockerfile for complete build control (bypass Railpack)
+# Railway Configuration - DEFINITIVE (Dec 7, 2025)
+# Force clean rebuild - remove cache issues
 
 [build]
 builder = "dockerfile"
 dockerfilePath = "backend/Dockerfile"
 dockerContext = "backend"
+
+[deploy]
+startCommand = "npx tsx src/server.ts"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
