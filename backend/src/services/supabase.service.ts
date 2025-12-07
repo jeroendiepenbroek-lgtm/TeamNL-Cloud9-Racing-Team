@@ -529,7 +529,7 @@ export class SupabaseService {
   }
 
   async removeMyTeamMember(riderId: number): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await this.client
       .from('riders_unified')
       .update({ is_team_member: false })
       .eq('rider_id', riderId);
