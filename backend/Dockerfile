@@ -1,49 +1,47 @@
-# Railway Dockerfile - TeamNL Cloud9 Backend
-# Build backend + frontend, serve as single deployment
+# ============================================================================
+# Railway Dockerfile - TeamNL Cloud9 Backend v3.0
+# ============================================================================
+# Minimal backend: Health endpoints + frontend serving
+# Build: Backend dependencies + frontend Vite build
+# Run: tsx server.ts (development mode for fast iteration)
+# ============================================================================
 
-FROM node:22-alpine AS base
+FROM node:22-alpine
 
-# === FRONTEND BUILD ===
-FROM base AS frontend-builder
-WORKDIR /frontend
-COPY frontend/package*.json ./
-RUN npm ci --production=false
-COPY frontend/ ./
-# Build frontend (outputs to ../public/dist relative to frontend dir)
-# Since we're in /frontend, it will write to /public/dist
-# Override to write to /frontend-dist instead
-RUN npm run build -- --outDir /frontend-dist
-
-# === BACKEND RUNTIME ===
-FROM base AS final
 WORKDIR /app
 
 # Install backend dependencies
 COPY package*.json ./
-RUN npm ci --production=false
+RUN npm ci
 
-# Copy backend source code
+# Copy backend source
 COPY src ./src
 COPY tsconfig.json ./tsconfig.json
 
-# Create public directory and copy frontend build
-RUN mkdir -p public/dist
-COPY --from=frontend-builder /frontend-dist/ ./public/dist/
+# Build frontend
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
 
-# Copy Railway startup script
-COPY start.sh ./start.sh
-RUN chmod +x ./start.sh
+# Move frontend build to backend public directory
+RUN mkdir -p /app/public/dist && \
+    cp -r dist/* /app/public/dist/
 
-# Environment defaults
+# Return to backend directory
+WORKDIR /app
+
+# Environment
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=8080
 
-# Expose port (Railway overrides with $PORT)
-EXPOSE ${PORT}
+# Expose port
+EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:'+process.env.PORT+'/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8080/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start with debug script
-CMD ["./start.sh"]
+# Start server with tsx (TypeScript execution)
+CMD ["npm", "start"]
