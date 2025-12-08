@@ -94,6 +94,101 @@ app.get('/api/results/team/recent', (req: Request, res: Response) => {
   });
 });
 
+// Mock API: Team riders with power data
+app.get('/api/riders/team', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    count: 5,
+    riders: [
+      {
+        rider_id: 1,
+        rider_name: 'Jan Jansen',
+        zwift_id: 123456,
+        velo_rating: 4,
+        velo_tier: 'Ruby',
+        phenotype: 'All-Rounder',
+        power_5s: 1245,
+        power_15s: 985,
+        power_30s: 785,
+        power_1m: 625,
+        power_5m: 385,
+        power_20m: 285,
+        ftp: 275,
+        weight_kg: 72,
+        last_race: new Date(Date.now() - 86400000).toISOString()
+      },
+      {
+        rider_id: 2,
+        rider_name: 'Piet Pietersen',
+        zwift_id: 234567,
+        velo_rating: 3,
+        velo_tier: 'Emerald',
+        phenotype: 'Climber',
+        power_5s: 1050,
+        power_15s: 825,
+        power_30s: 685,
+        power_1m: 545,
+        power_5m: 340,
+        power_20m: 245,
+        ftp: 235,
+        weight_kg: 65,
+        last_race: new Date(Date.now() - 172800000).toISOString()
+      },
+      {
+        rider_id: 3,
+        rider_name: 'Marie van Dam',
+        zwift_id: 345678,
+        velo_rating: 5,
+        velo_tier: 'Diamond',
+        phenotype: 'Sprinter',
+        power_5s: 1485,
+        power_15s: 1125,
+        power_30s: 895,
+        power_1m: 705,
+        power_5m: 425,
+        power_20m: 315,
+        ftp: 305,
+        weight_kg: 68,
+        last_race: new Date(Date.now() - 43200000).toISOString()
+      },
+      {
+        rider_id: 4,
+        rider_name: 'Kees de Vries',
+        zwift_id: 456789,
+        velo_rating: 2,
+        velo_tier: 'Sapphire',
+        phenotype: 'All-Rounder',
+        power_5s: 895,
+        power_15s: 705,
+        power_30s: 585,
+        power_1m: 465,
+        power_5m: 285,
+        power_20m: 205,
+        ftp: 195,
+        weight_kg: 78,
+        last_race: new Date(Date.now() - 259200000).toISOString()
+      },
+      {
+        rider_id: 5,
+        rider_name: 'Lisa Bakker',
+        zwift_id: 567890,
+        velo_rating: 4,
+        velo_tier: 'Ruby',
+        phenotype: 'Climber',
+        power_5s: 1145,
+        power_15s: 895,
+        power_30s: 725,
+        power_1m: 585,
+        power_5m: 365,
+        power_20m: 265,
+        ftp: 255,
+        weight_kg: 62,
+        last_race: new Date(Date.now() - 129600000).toISOString()
+      }
+    ]
+  });
+});
+
 app.get('/api/admin/stats', (req: Request, res: Response) => {
   res.json({
     success: true,

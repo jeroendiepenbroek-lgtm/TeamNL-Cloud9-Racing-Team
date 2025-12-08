@@ -4,12 +4,8 @@ import { Toaster } from 'react-hot-toast'
 import RacingMatrix from './pages/RacingMatrix'
 import EventsDashboard from './pages/EventsDashboard'
 import ResultsDashboard from './pages/ResultsDashboard'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import { LoginModal } from './components/LoginModal'
 
 function Navigation() {
-  const { user, signOut } = useAuth()
-  const [showLoginModal, setShowLoginModal] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -51,27 +47,6 @@ function Navigation() {
               <Link to="/results" className="text-white hover:text-orange-400 transition font-semibold">
                 Results
               </Link>
-
-              {user ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-gray-300 text-sm">
-                    {user.user_metadata?.name || user.email}
-                  </span>
-                  <button
-                    onClick={signOut}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
-                  >
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowLoginModal(true)}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition font-semibold"
-                >
-                  Login
-                </button>
-              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -101,62 +76,38 @@ function Navigation() {
               <Link to="/results" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Results
               </Link>
-              {user ? (
-                <>
-                  <div className="text-gray-300 py-2 px-4 text-sm">
-                    {user.user_metadata?.name || user.email}
-                  </div>
-                  <button
-                    onClick={() => { signOut(); setMobileMenuOpen(false) }}
-                    className="block w-full text-left bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => { setShowLoginModal(true); setMobileMenuOpen(false) }}
-                  className="block w-full text-left bg-orange-500 hover:bg-orange-600 text-white py-2 px-4 rounded"
-                >
-                  Login
-                </button>
-              )}
             </div>
           )}
         </div>
       </nav>
-
-      {showLoginModal && <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} />}
     </>
   )
 }
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <div className="min-h-screen bg-gray-900">
-          <Navigation />
-          <Routes>
-            <Route path="/" element={<RacingMatrix />} />
-            <Route path="/events" element={<EventsDashboard />} />
-            <Route path="/results" element={<ResultsDashboard />} />
-            <Route path="*" element={
-              <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                  <h1 className="text-4xl font-bold text-white mb-4">404</h1>
-                  <p className="text-gray-400 mb-8">Page not found</p>
-                  <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg inline-block">
-                    Back to Racing Matrix
-                  </Link>
-                </div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-gray-900">
+        <Navigation />
+        <Routes>
+          <Route path="/" element={<RacingMatrix />} />
+          <Route path="/events" element={<EventsDashboard />} />
+          <Route path="/results" element={<ResultsDashboard />} />
+          <Route path="*" element={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-white mb-4">404</h1>
+                <p className="text-gray-400 mb-8">Page not found</p>
+                <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg inline-block">
+                  Back to Racing Matrix
+                </Link>
               </div>
-            } />
-          </Routes>
-          <Toaster position="top-right" />
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+            </div>
+          } />
+        </Routes>
+        <Toaster position="top-right" />
+      </div>
+    </BrowserRouter>
   )
 }
 
