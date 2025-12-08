@@ -20,14 +20,22 @@ app.get('/health', (req: Request, res: Response) => {
   const frontendDistPath = path.join(__dirname, '../../frontend/dist');
   const indexExists = fs.existsSync(path.join(frontendDistPath, 'index.html'));
   
+  let dirContents: string[] = [];
+  try {
+    dirContents = fs.readdirSync(frontendDistPath);
+  } catch (e) {
+    dirContents = ['Error reading directory: ' + e];
+  }
+  
   res.json({
     status: 'healthy',
     version: VERSION,
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
+    __dirname: __dirname,
     frontendPath: frontendDistPath,
     indexExists: indexExists,
-    __dirname: __dirname
+    dirContents: dirContents
   });
 });
 
