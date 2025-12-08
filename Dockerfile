@@ -1,35 +1,49 @@
-# ============================================================================
-# Railway Dockerfile - ROOT CONTEXT (Dec 7, 2025)
-# DEFINITIVE: Works with Railway's root context behavior
-# ============================================================================
+# Railway Dockerfile - TeamNL Cloud9 Backend
+# Build backend + frontend, serve as single deployment
 
-FROM node:22-alpine
+FROM node:22-alpine AS base
 
-# System dependencies
-RUN apk add --no-cache curl dumb-init && \
-    rm -rf /var/cache/apk/*
+# === FRONTEND BUILD ===
+FROM base AS frontend-builder
+WORKDIR /frontend
+COPY backend/frontend/package*.json ./
+RUN npm ci --production=false
+COPY backend/frontend/ ./
+# Build frontend (outputs to ../public/dist relative to frontend dir)
+# Since we're in /frontend, it will write to /public/dist
+# Override to write to /frontend-dist instead
+RUN npm run build -- --outDir /frontend-dist
 
+# === BACKEND RUNTIME ===
+FROM base AS final
 WORKDIR /app
 
-# Copy backend files
-COPY backend/package.json backend/package-lock.json ./
-RUN npm ci --omit=dev && \
-    npm cache clean --force && \
-    echo "✅ Dependencies installed"
+# Install backend dependencies
+COPY backend/package*.json ./
+RUN npm ci --production=false
 
-# Copy source
-COPY backend/tsconfig.json ./
+# Copy backend source code
 COPY backend/src ./src
+COPY backend/tsconfig.json ./tsconfig.json
 
-# Runtime config
+# Create public directory and copy frontend build
+RUN mkdir -p public/dist
+COPY --from=frontend-builder /frontend-dist/ ./public/dist/
+
+# Copy Railway startup script
+COPY start.sh ./start.sh
+RUN chmod +x ./start.sh
+
+# Environment defaults
 ENV NODE_ENV=production
 ENV PORT=3000
-EXPOSE 3000
+
+# Expose port (Railway overrides with $PORT)
+EXPOSE ${PORT}
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:${PORT}/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:'+process.env.PORT+'/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start server
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["npx", "tsx", "src/server.ts"]
+# Start with debug script
+CMD ["./start.sh"]

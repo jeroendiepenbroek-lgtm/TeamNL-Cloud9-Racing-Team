@@ -1,11 +1,13 @@
-# Railway Configuration - NUCLEAR OPTION (Dec 7, 2025)
-# Use simplest possible Dockerfile - NO optimization
-
 [build]
-builder = "dockerfile"
-dockerfilePath = "backend/Dockerfile.simple"
+builder = "nixpacks"
+buildCommand = "cd backend && npm install && cd frontend && npm install && npm run build"
 
 [deploy]
-startCommand = "npm start"
-restartPolicyType = "on_failure"
+startCommand = "cd backend && npm start"
+restartPolicyType = "on-failure"
 restartPolicyMaxRetries = 3
+
+[healthcheck]
+path = "/health"
+timeout = 60
+interval = 30

@@ -9,13 +9,26 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
-// Import ONLY WORKING endpoints (Dec 7, 2025 - Emergency fix)
-import adminStatsRouter from './api/endpoints/admin-stats.js';
+// Import endpoints
+import clubsRouter from './api/endpoints/clubs.js';
 import ridersRouter from './api/endpoints/riders.js';
+import eventsRouter from './api/endpoints/events.js';
+import resultsRouter from './api/endpoints/results.js';
+import riderHistoryRouter from './api/endpoints/rider-history.js';
+import syncLogsRouter from './api/endpoints/sync-logs.js';
+import syncConfigRouter from './api/endpoints/sync-config.js';
+import adminStatsRouter from './api/endpoints/admin-stats.js';
+import rateLimiterRouter from './api/endpoints/rate-limiter.js';
+import cleanupRouter from './api/endpoints/cleanup.js';
+import riderDeltasRouter from './api/endpoints/rider-deltas.js';
+import schedulerRouter from './api/endpoints/scheduler.js';
 
-// Disable broken services temporarily
+// Sync services
+// import { syncConfig } from './config/sync.config.js'; // Not needed for now
+// import { SyncServiceV2 } from './services/sync-v2.service.js'; // Not needed for now
+// import { SyncConfigValidator } from './services/sync-config-validator.js'; // Not needed for now
 import { unifiedScheduler } from './services/unified-scheduler.service.js';
-// import { teamAutoSync } from './services/team-auto-sync.service.js';
+// import cron from 'node-cron'; // Not needed for now
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,7 +59,7 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'ok',
     service: 'TeamNL Cloud9 Backend',
     timestamp: new Date().toISOString(),
-    version: '2.1.0-unified-sync',
+    version: '2.0.0-clean',
     port: PORT,
   });
 });
@@ -57,10 +70,19 @@ app.get('/', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/dist/index.html'));
 });
 
-// API Routes - EMERGENCY MINIMAL MODE (Dec 7, 2025)
-// Only working endpoints enabled - 157 TypeScript errors fixed
-app.use('/api/admin/stats', adminStatsRouter); 
+// API Routes - 6 Endpoints
+app.use('/api/clubs', clubsRouter);
 app.use('/api/riders', ridersRouter);
+app.use('/api/events', eventsRouter);
+app.use('/api/results', resultsRouter);
+app.use('/api/history', riderHistoryRouter);
+app.use('/api/sync-logs', syncLogsRouter);
+app.use('/api/sync', syncConfigRouter); // Sync configuratie
+app.use('/api/admin/stats', adminStatsRouter); // Admin dashboard stats
+app.use('/api/rate-limiter', rateLimiterRouter); // Rate limiter monitoring
+app.use('/api/cleanup', cleanupRouter); // Event cleanup operations
+app.use('/api/riders', riderDeltasRouter); // US2: Rider delta tracking voor Live Velo
+app.use('/api/scheduler', schedulerRouter); // US4: Smart sync scheduler management
 
 // 404 handler
 app.use((req: Request, res: Response) => {
@@ -119,12 +141,10 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   `);
   
   // ═══════════════════════════════════════════════════════════════
-  //  SYNC SCHEDULER RE-ENABLED (Dec 7, 2025 - Fix Complete)
+  //  UNIFIED SYNC SCHEDULER - Using stub service for Railway
   // ═══════════════════════════════════════════════════════════════
+  // Note: Using minimal stub scheduler until full services restored
   unifiedScheduler.start();
-  // teamAutoSync.start(); // Still disabled - needs more fixes
-  
-  console.log('✅ Unified sync scheduler ENABLED - auto-sync active');
 });
 
 // Server error handling
