@@ -1,1 +1,0 @@
-{"version":3,"file":"smart-event-sync.d.ts","sourceRoot":"","sources":["../../src/schedulers/smart-event-sync.ts"],"names":[],"mappings":"AAAA;;;;;GAKG;AAMH,qBAAa,cAAc;IACzB,OAAO,CAAC,UAAU,CAA+B;IACjD,OAAO,CAAC,aAAa,CAAkC;IAEvD,KAAK;IAsBL,IAAI;IAQJ,OAAO;YAMO,UAAU;YAsEV,gBAAgB;CAQ/B;AAED,eAAO,MAAM,cAAc,gBAAuB,CAAC"}

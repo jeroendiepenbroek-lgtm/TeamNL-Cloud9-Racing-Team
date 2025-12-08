@@ -1,49 +1,60 @@
-# Railway Dockerfile - TeamNL Cloud9 Backend
-# Build backend + frontend, serve as single deployment
+# ------------------------------------------
+# STAGE 1: Build Frontend
+# ------------------------------------------
+FROM node:22-alpine AS frontend-builder
 
-FROM node:22-alpine AS base
+WORKDIR /app/frontend
 
-# === FRONTEND BUILD ===
-FROM base AS frontend-builder
-WORKDIR /frontend
-COPY backend/frontend/package*.json ./
-RUN npm ci --production=false
-COPY backend/frontend/ ./
-# Build frontend (outputs to ../public/dist relative to frontend dir)
-# Since we're in /frontend, it will write to /public/dist
-# Override to write to /frontend-dist instead
-RUN npm run build -- --outDir /frontend-dist
+# Copy frontend package files
+COPY frontend/package*.json ./
 
-# === BACKEND RUNTIME ===
-FROM base AS final
-WORKDIR /app
+# Install frontend dependencies
+RUN npm ci --only=production
+
+# Copy frontend source
+COPY frontend/ ./
+
+# Build frontend
+RUN npm run build
+
+# ------------------------------------------
+# STAGE 2: Setup Backend
+# ------------------------------------------
+FROM node:22-alpine AS backend-builder
+
+WORKDIR /app/backend
+
+# Copy backend package files
+COPY backend/package*.json ./
 
 # Install backend dependencies
-COPY backend/package*.json ./
-RUN npm ci --production=false
+RUN npm ci --only=production
 
-# Copy backend source code
-COPY backend/src ./src
-COPY backend/tsconfig.json ./tsconfig.json
+# Copy backend source
+COPY backend/ ./
 
-# Create public directory and copy frontend build
-RUN mkdir -p public/dist
-COPY --from=frontend-builder /frontend-dist/ ./public/dist/
+# ------------------------------------------
+# STAGE 3: Production Runtime
+# ------------------------------------------
+FROM node:22-alpine
 
-# Copy Railway startup script
-COPY start.sh ./start.sh
-RUN chmod +x ./start.sh
+WORKDIR /app
 
-# Environment defaults
-ENV NODE_ENV=production
-ENV PORT=3000
+# Copy backend from builder
+COPY --from=backend-builder /app/backend ./backend
 
-# Expose port (Railway overrides with $PORT)
-EXPOSE ${PORT}
+# Copy built frontend from builder
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# Set working directory to backend
+WORKDIR /app/backend
+
+# Expose port
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:'+process.env.PORT+'/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Start with debug script
-CMD ["./start.sh"]
+# Start server
+CMD ["npm", "start"]

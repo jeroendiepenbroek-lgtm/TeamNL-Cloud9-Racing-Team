@@ -1,18 +1,11 @@
-# ============================================================================
-# Railway Deployment Configuration - TeamNL Cloud9 Racing Team
-# ============================================================================
-# Status: Clean slate - minimal backend + React frontend
-# Strategy: Use Dockerfile (backend/Dockerfile) for consistent builds
-# ============================================================================
-
 [build]
 builder = "dockerfile"
-dockerfilePath = "backend/Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "cd backend && npm start"
+startCommand = "npm start"
 
-[healthcheck]
+[[deploy.healthcheck]]
 path = "/health"
-timeout = 60
 interval = 30
+timeout = 10
