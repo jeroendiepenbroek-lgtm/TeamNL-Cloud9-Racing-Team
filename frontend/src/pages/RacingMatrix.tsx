@@ -1,96 +1,352 @@
-export default function RacingMatrix() {
+import { useQuery } from '@tanstack/react-query'
+import { Activity, Users, TrendingUp, Server, Zap, Clock, CheckCircle2, AlertCircle } from 'lucide-react'
+
+interface HealthCheck {
+  status: string
+  service: string
+  timestamp: string
+  version: string
+  port: number
+}
+
+interface Stats {
+  teamMembers: number
+  activeUsers: number
+  pendingRequests: number
+  lastSync: string | null
+  lastSyncDetails?: {
+    rider_sync?: { timestamp: string; success: boolean; records: number }
+    near_event_sync?: { timestamp: string; success: boolean; records: number }
+    far_event_sync?: { timestamp: string; success: boolean; records: number }
+  }
+  systemStatus: string
+}
+
+const API_BASE = ''; // Empty = same origin (production), of http://localhost:3000 voor dev
+
+export default function DashboardModern() {
+  // Health check query
+  const { data: health, isLoading: healthLoading } = useQuery<HealthCheck>({
+    queryKey: ['health'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/health`)
+      if (!res.ok) throw new Error('Health check failed')
+      return res.json()
+    },
+    refetchInterval: 30000, // Elke 30 sec
+    retry: 3,
+  })
+
+  // Stats query
+  const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
+    queryKey: ['dashboard-stats'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/admin/stats`)
+      if (!res.ok) throw new Error('Stats fetch failed')
+      return res.json()
+    },
+    refetchInterval: 60000, // Elke minuut
+  })
+
+  const endpoints = [
+    { name: 'Clubs', path: '/api/clubs/11818', method: 'GET', color: 'blue' },
+    { name: 'Riders', path: '/api/riders', method: 'GET', color: 'purple' },
+    { name: 'Events', path: '/api/events', method: 'GET', color: 'green' },
+    { name: 'Results', path: '/api/results', method: 'GET', color: 'orange' },
+    { name: 'Rider History', path: '/api/rider-history', method: 'GET', color: 'pink' },
+    { name: 'Sync Logs', path: '/api/sync-logs', method: 'GET', color: 'indigo' },
+  ]
+
+  const isSystemHealthy = health?.status === 'ok'
+  const statusColor = isSystemHealthy ? 'green' : 'red'
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-orange-500 to-blue-500 bg-clip-text text-transparent">
-          Racing Matrix
-        </h1>
-        <p className="text-gray-400 mb-8">vELO tiers, power intervals & phenotype analyse</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+      {/* Hero Header with Glassmorphism */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-90"></div>
+        <div className="absolute inset-0 backdrop-blur-3xl"></div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* vELO Tiers */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-6 border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <span className="text-orange-500 mr-2">🏆</span>
-              vELO Tiers
-            </h2>
-            <div className="space-y-2 text-gray-400">
-              <div className="flex justify-between">
-                <span>A Tier</span>
-                <span className="text-green-400">1800+</span>
+        <div className="relative px-4 py-6 sm:px-6 sm:py-8 lg:px-12 lg:py-12">
+          <div className="max-w-7xl mx-auto">
+            {/* Logo & Title */}
+            <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
+              <div className="p-2 sm:p-3 bg-white/20 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-xl flex-shrink-0">
+                <Activity className="w-6 h-6 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
               </div>
-              <div className="flex justify-between">
-                <span>B Tier</span>
-                <span className="text-blue-400">1400-1799</span>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-4xl font-black text-white tracking-tight truncate">
+                  TeamNL Cloud9 Racing
+                </h1>
+                <p className="text-blue-100 text-xs sm:text-sm lg:text-lg font-medium mt-0.5 sm:mt-1 truncate">
+                  Performance Dashboard · Real-time Monitoring
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span>C Tier</span>
-                <span className="text-yellow-400">1000-1399</span>
+            </div>
+
+            {/* System Status Banner */}
+            <div className="mt-4 sm:mt-6 lg:mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-white/20 shadow-2xl">
+              <div className="flex items-center gap-3 sm:gap-4">
+                {healthLoading ? (
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-400 rounded-full animate-pulse flex-shrink-0"></div>
+                ) : (
+                  <div className={`w-3 h-3 sm:w-4 sm:h-4 bg-${statusColor}-400 rounded-full animate-pulse shadow-lg shadow-${statusColor}-500/50 flex-shrink-0`}></div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-white font-bold text-sm sm:text-base lg:text-lg truncate">
+                    {healthLoading ? 'Checking...' : isSystemHealthy ? 'System Online' : 'System Offline'}
+                  </div>
+                  <div className="text-blue-100 text-xs sm:text-sm truncate">
+                    {health ? `v${health.version} · Port ${health.port} · ${health.service}` : 'Connecting...'}
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>D Tier</span>
-                <span className="text-gray-400">&lt;1000</span>
+              {health && (
+                <div className="flex items-center gap-1.5 sm:gap-2 text-white/80 text-xs sm:text-sm flex-shrink-0">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                  Last check: {new Date(health.timestamp).toLocaleTimeString('nl-NL')}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 sm:py-8 lg:px-12">
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Total Riders Card */}
+          <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4 sm:p-5 lg:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-blue-50 rounded-lg sm:rounded-xl group-hover:bg-white/20 transition-colors">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 group-hover:text-white transition-colors" />
+                </div>
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 group-hover:text-white transition-colors" />
+              </div>
+              <div className="text-gray-600 text-xs sm:text-sm font-medium mb-1 group-hover:text-white/80 transition-colors">
+                Team Members
+              </div>
+              <div className="text-2xl sm:text-3xl font-black text-gray-900 group-hover:text-white transition-colors">
+                {statsLoading ? (
+                  <div className="h-9 w-16 bg-gray-200 rounded animate-pulse"></div>
+                ) : (
+                  stats?.teamMembers ?? '-'
+                )}
+              </div>
+              <div className="mt-2 text-xs text-gray-500 group-hover:text-white/60 transition-colors">
+                Team members in database
               </div>
             </div>
           </div>
 
-          {/* Power Intervals */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-6 border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <span className="text-blue-500 mr-2">⚡</span>
-              Power Intervals
-            </h2>
-            <div className="space-y-2 text-gray-400">
-              <div className="flex justify-between">
-                <span>1 min</span>
-                <span className="text-orange-400">- W</span>
+          {/* Active Riders Card */}
+          <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4 sm:p-5 lg:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-green-50 rounded-lg sm:rounded-xl group-hover:bg-white/20 transition-colors">
+                  <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 group-hover:text-white transition-colors" />
+                </div>
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 group-hover:text-white transition-colors" />
               </div>
-              <div className="flex justify-between">
-                <span>5 min</span>
-                <span className="text-orange-400">- W</span>
+              <div className="text-gray-600 text-xs sm:text-sm font-medium mb-1 group-hover:text-white/80 transition-colors">
+                Active Users
               </div>
-              <div className="flex justify-between">
-                <span>20 min</span>
-                <span className="text-orange-400">- W</span>
+              <div className="text-2xl sm:text-3xl font-black text-gray-900 group-hover:text-white transition-colors">
+                {statsLoading ? (
+                  <div className="h-9 w-16 bg-gray-200 rounded animate-pulse"></div>
+                ) : (
+                  stats?.activeUsers ?? '-'
+                )}
               </div>
-              <div className="flex justify-between">
-                <span>FTP</span>
-                <span className="text-orange-400">- W</span>
+              <div className="mt-2 text-xs text-gray-500 group-hover:text-white/60 transition-colors">
+                {stats?.pendingRequests ? `${stats.pendingRequests} aanvragen wachtend` : 'Goedgekeurde gebruikers'}
               </div>
             </div>
           </div>
 
-          {/* Phenotype */}
-          <div className="bg-gray-800/50 backdrop-blur rounded-xl p-6 border border-gray-700">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <span className="text-purple-500 mr-2">🧬</span>
-              Phenotype
-            </h2>
-            <div className="space-y-2 text-gray-400">
-              <div className="flex justify-between">
-                <span>Type</span>
-                <span className="text-purple-400">-</span>
+          {/* System Status Card */}
+          <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4 sm:p-5 lg:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-purple-50 rounded-lg sm:rounded-xl group-hover:bg-white/20 transition-colors">
+                  <Server className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 group-hover:text-white transition-colors" />
+                </div>
+                {stats?.systemStatus === 'healthy' ? (
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 group-hover:text-white transition-colors" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600 group-hover:text-white transition-colors" />
+                )}
               </div>
-              <div className="flex justify-between">
-                <span>Sprinter</span>
-                <span className="text-gray-500">-</span>
+              <div className="text-gray-600 text-xs sm:text-sm font-medium mb-1 group-hover:text-white/80 transition-colors">
+                Systeem Status
               </div>
-              <div className="flex justify-between">
-                <span>Allrounder</span>
-                <span className="text-gray-500">-</span>
+              <div className="text-2xl sm:text-3xl font-black text-gray-900 group-hover:text-white transition-colors uppercase">
+                {statsLoading ? (
+                  <div className="h-9 w-20 bg-gray-200 rounded animate-pulse"></div>
+                ) : (
+                  stats?.systemStatus ?? 'Unknown'
+                )}
               </div>
-              <div className="flex justify-between">
-                <span>Climber</span>
-                <span className="text-gray-500">-</span>
+              <div className="mt-2 text-xs text-gray-500 group-hover:text-white/60 transition-colors">
+                All services operational
+              </div>
+            </div>
+          </div>
+
+          {/* Last Sync Card */}
+          <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-red-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="relative p-4 sm:p-5 lg:p-6">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-orange-50 rounded-lg sm:rounded-xl group-hover:bg-white/20 transition-colors">
+                  <Server className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 group-hover:text-white transition-colors" />
+                </div>
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 group-hover:text-white transition-colors" />
+              </div>
+              <div className="text-gray-600 text-sm font-medium mb-1 group-hover:text-white/80 transition-colors">
+                Last Sync
+              </div>
+              <div className="text-3xl font-black text-gray-900 group-hover:text-white transition-colors">
+                {statsLoading ? (
+                  <div className="h-9 w-16 bg-gray-200 rounded animate-pulse"></div>
+                ) : (
+                  stats?.lastSync ?? '-'
+                )}
+              </div>
+              <div className="mt-2 text-xs text-gray-500 group-hover:text-white/60 transition-colors">
+                Auto-sync active
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-8 bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4">
-          <p className="text-yellow-300 text-sm">
-            ⚠️ Dashboard template - data integratie volgt later
-          </p>
+        {/* API Endpoints Grid */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg sm:rounded-xl flex-shrink-0">
+              <Server className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+            </div>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">API Endpoints</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {endpoints.map((endpoint) => {
+              const colorMap: Record<string, { bg: string; text: string; border: string; hover: string }> = {
+                blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', hover: 'hover:border-blue-500' },
+                purple: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', hover: 'hover:border-purple-500' },
+                green: { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', hover: 'hover:border-green-500' },
+                orange: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', hover: 'hover:border-orange-500' },
+                pink: { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-200', hover: 'hover:border-pink-500' },
+                indigo: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', hover: 'hover:border-indigo-500' },
+              }
+              const colors = colorMap[endpoint.color] || colorMap.blue
+
+              return (
+                <div
+                  key={endpoint.path}
+                  className={`group relative border-2 ${colors.border} ${colors.hover} rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-5 transition-all duration-300 hover:shadow-lg cursor-pointer`}
+                >
+                  <div className="flex items-center justify-between mb-2 sm:mb-3 gap-2">
+                    <h3 className="font-bold text-gray-900 text-sm sm:text-base lg:text-lg truncate">{endpoint.name}</h3>
+                    <span className={`px-2 sm:px-3 py-0.5 sm:py-1 ${colors.bg} ${colors.text} text-xs font-bold rounded-md sm:rounded-lg flex-shrink-0`}>
+                      {endpoint.method}
+                    </span>
+                  </div>
+                  <code className="text-[10px] sm:text-xs text-gray-600 break-all block bg-gray-50 p-1.5 sm:p-2 rounded-md sm:rounded-lg font-mono">
+                    {endpoint.path}
+                  </code>
+                  <div className="mt-2 sm:mt-3 flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-gray-500">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Available</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* System Health Details */}
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8">
+          <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg sm:rounded-xl flex-shrink-0">
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+            </div>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">System Health</h2>
+          </div>
+          
+          {healthLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse"></div>
+              ))}
+            </div>
+          ) : health ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-green-200">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-600">Status</span>
+                </div>
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-700">
+                  {health.status === 'ok' ? '🟢 Online' : '🔴 Offline'}
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-blue-200">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <Server className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-600">Service</span>
+                </div>
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-700 truncate">{health.service}</div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-purple-200">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-600">Version</span>
+                </div>
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-purple-700">{health.version}</div>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-orange-200">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <Server className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-600">Port</span>
+                </div>
+                <div className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-700">{health.port}</div>
+              </div>
+
+              <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-lg sm:rounded-xl p-4 sm:p-5 border border-pink-200 sm:col-span-2">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-pink-600" />
+                  <span className="text-xs sm:text-sm font-medium text-gray-600">Last Check</span>
+                </div>
+                <div className="text-base sm:text-lg lg:text-2xl font-bold text-pink-700 break-words">
+                  {new Date(health.timestamp).toLocaleString('nl-NL', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl p-4 sm:p-6 flex items-center gap-3 sm:gap-4">
+              <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-red-900 font-bold text-base sm:text-lg">Verbinding Mislukt</div>
+                <div className="text-red-700 text-xs sm:text-sm">Kan geen verbinding maken met de backend service</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
