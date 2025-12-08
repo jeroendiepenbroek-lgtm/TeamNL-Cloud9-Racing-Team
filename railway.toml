@@ -1,3 +1,11 @@
+# ============================================================================
+# Railway Deployment Configuration - TeamNL Cloud9 Racing Team
+# ============================================================================
+# Status: Clean slate - minimal backend + React frontend
+# Build: Install dependencies + build frontend
+# Deploy: Start Express server (serves API + static frontend)
+# ============================================================================
+
 [build]
 builder = "nixpacks"
 buildCommand = "cd backend && npm install && cd frontend && npm install && npm run build"
