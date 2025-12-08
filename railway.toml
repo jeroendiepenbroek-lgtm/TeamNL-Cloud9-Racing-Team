@@ -11,8 +11,6 @@ dockerfilePath = "backend/Dockerfile"
 
 [deploy]
 startCommand = "cd backend && npm start"
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 3
 
 [healthcheck]
 path = "/health"
