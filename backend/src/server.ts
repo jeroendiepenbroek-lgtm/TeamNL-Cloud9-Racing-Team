@@ -16,21 +16,40 @@ app.use(express.json());
 
 // Health endpoint
 app.get('/health', (req: Request, res: Response) => {
+  const fs = require('fs');
+  const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+  const indexExists = fs.existsSync(path.join(frontendDistPath, 'index.html'));
+  
   res.json({
     status: 'healthy',
     version: VERSION,
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    frontendPath: frontendDistPath,
+    indexExists: indexExists,
+    __dirname: __dirname
   });
 });
 
 // Serve static frontend files
 const frontendDistPath = path.join(__dirname, '../../frontend/dist');
-app.use(express.static(frontendDistPath));
+console.log('📁 Frontend path:', frontendDistPath);
+
+app.use(express.static(frontendDistPath, { 
+  index: 'index.html',
+  extensions: ['html']
+}));
 
 // SPA fallback - alle routes naar index.html
 app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(frontendDistPath, 'index.html'));
+  const indexPath = path.join(frontendDistPath, 'index.html');
+  console.log('📄 Serving:', indexPath);
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      console.error('❌ Error serving index.html:', err);
+      res.status(404).send('Frontend not found');
+    }
+  });
 });
 
 // Start server
