@@ -2,13 +2,12 @@
 # Railway Deployment Configuration - TeamNL Cloud9 Racing Team
 # ============================================================================
 # Status: Clean slate - minimal backend + React frontend
-# Build: Install dependencies + build frontend
-# Deploy: Start Express server (serves API + static frontend)
+# Strategy: Use Dockerfile (backend/Dockerfile) for consistent builds
 # ============================================================================
 
 [build]
-builder = "nixpacks"
-buildCommand = "cd backend && npm install && cd frontend && npm install && npm run build"
+builder = "dockerfile"
+dockerfilePath = "backend/Dockerfile"
 
 [deploy]
 startCommand = "cd backend && npm start"
