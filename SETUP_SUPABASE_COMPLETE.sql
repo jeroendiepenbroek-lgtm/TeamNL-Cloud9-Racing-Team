@@ -1428,7 +1428,9 @@ SELECT
   zo.last_name,
   
   -- Racing Metrics (combined sources)
-  zr.velo,
+  zr.velo_live,
+  zr.velo_30day,
+  zr.velo_90day,
   zr.racing_score AS zwiftracing_score,
   zo.competition_racing_score AS zwift_official_racing_score,
   zo.competition_category AS zwift_official_category,
@@ -1489,7 +1491,7 @@ SELECT
   END AS data_completeness
 
 FROM api_zwift_api_profiles zo
-FULL OUTER JOIN api_zwiftracing_public_clubs_riders zr ON zo.rider_id = zr.rider_id;
+FULL OUTER JOIN api_zwiftracing_riders zr ON zo.rider_id = zr.rider_id;
 
 COMMENT ON VIEW v_rider_complete IS 
   'Hybrid view combining Zwift Official (primary) + ZwiftRacing (racing metrics if available). 
@@ -1512,7 +1514,9 @@ SELECT
   zr.name AS racing_name,
   
   -- Racing Metrics
-  zr.velo,
+  zr.velo_live,
+  zr.velo_30day,
+  zr.velo_90day,
   zr.racing_score AS zwiftracing_score,
   zo.competition_racing_score AS zwift_official_racing_score,
   zo.competition_category AS zwift_official_category,
@@ -1533,18 +1537,18 @@ SELECT
   zo.image_src AS avatar_url,
   
   -- Rankings (based on available metrics)
-  ROW_NUMBER() OVER (ORDER BY COALESCE(zr.velo, 0) DESC NULLS LAST) AS velo_rank,
+  ROW_NUMBER() OVER (ORDER BY COALESCE(zr.velo_live, 0) DESC NULLS LAST) AS velo_rank,
   ROW_NUMBER() OVER (ORDER BY COALESCE(zo.competition_racing_score, zr.racing_score, 0) DESC NULLS LAST) AS racing_score_rank,
   ROW_NUMBER() OVER (ORDER BY COALESCE(zr.power_5s_wkg, 0) DESC NULLS LAST) AS sprint_rank,
   ROW_NUMBER() OVER (ORDER BY COALESCE(zr.power_1200s_wkg, 0) DESC NULLS LAST) AS ftp_rank,
   
   -- Performance grade (use Zwift Official racing score if vELO not available)
   CASE 
-    WHEN zr.velo >= 1500 OR zo.competition_racing_score >= 900 THEN 'S'
-    WHEN zr.velo >= 1400 OR zo.competition_racing_score >= 700 THEN 'A+'
-    WHEN zr.velo >= 1300 OR zo.competition_racing_score >= 600 THEN 'A'
-    WHEN zr.velo >= 1200 OR zo.competition_racing_score >= 500 THEN 'B+'
-    WHEN zr.velo >= 1100 OR zo.competition_racing_score >= 400 THEN 'B'
+    WHEN zr.velo_live >= 1500 OR zo.competition_racing_score >= 900 THEN 'S'
+    WHEN zr.velo_live >= 1400 OR zo.competition_racing_score >= 700 THEN 'A+'
+    WHEN zr.velo_live >= 1300 OR zo.competition_racing_score >= 600 THEN 'A'
+    WHEN zr.velo_live >= 1200 OR zo.competition_racing_score >= 500 THEN 'B+'
+    WHEN zr.velo_live >= 1100 OR zo.competition_racing_score >= 400 THEN 'B'
     ELSE 'C'
   END AS performance_grade,
   
@@ -1552,8 +1556,8 @@ SELECT
   GREATEST(zr.fetched_at, zo.fetched_at) AS last_updated
   
 FROM api_zwift_api_profiles zo
-FULL OUTER JOIN api_zwiftracing_public_clubs_riders zr ON zo.rider_id = zr.rider_id
-ORDER BY COALESCE(zo.competition_racing_score, zr.racing_score, zr.velo, 0) DESC NULLS LAST;
+FULL OUTER JOIN api_zwiftracing_riders zr ON zo.rider_id = zr.rider_id
+ORDER BY COALESCE(zo.competition_racing_score, zr.racing_score, zr.velo_live, 0) DESC NULLS LAST;
 
 COMMENT ON VIEW v_team_rankings IS 
   'Team rankings for custom team management - NO club_id filtering.
@@ -1836,14 +1840,16 @@ SELECT
   zo.image_src AS avatar_url,
   
   -- Racing Scores for context
-  zr.velo,
+  zr.velo_live,
+  zr.velo_30day,
+  zr.velo_90day,
   zr.racing_score AS zwiftracing_score,
   zo.competition_racing_score AS zwift_official_racing_score
 
 FROM api_zwift_api_profiles zo
-FULL OUTER JOIN api_zwiftracing_public_clubs_riders zr ON zo.rider_id = zr.rider_id
+FULL OUTER JOIN api_zwiftracing_riders zr ON zo.rider_id = zr.rider_id
 WHERE zr.power_5s IS NOT NULL OR zr.power_1200s IS NOT NULL OR zo.ftp IS NOT NULL
-ORDER BY COALESCE(zr.velo, zo.competition_racing_score, 0) DESC NULLS LAST;
+ORDER BY COALESCE(zr.velo_live, zo.competition_racing_score, 0) DESC NULLS LAST;
 
 COMMENT ON VIEW v_power_rankings IS 
   'Power leaderboards for all durations (absolute + relative w/kg).
@@ -1879,9 +1885,9 @@ SELECT
   
   r.time_gap,
   
-  -- Rider info from clubs table
+  -- Rider info from riders table
   cr.name AS rider_name,
-  cr.velo,
+  cr.velo_live,
   
   -- Avatar from Official
   p.image_src AS rider_avatar,
@@ -1901,7 +1907,7 @@ SELECT
   r.fetched_at AS last_updated
 
 FROM api_zwiftracing_public_results r
-LEFT JOIN api_zwiftracing_public_clubs_riders cr ON r.rider_id = cr.rider_id
+LEFT JOIN api_zwiftracing_riders cr ON r.rider_id = cr.rider_id
 LEFT JOIN api_zwift_api_profiles p ON r.rider_id = p.rider_id
 LEFT JOIN api_zwiftracing_api_events_upcoming e ON r.event_id = e.event_id
 ORDER BY r.event_id, r.category, r.position;
@@ -1948,7 +1954,7 @@ SELECT
   (
     SELECT COUNT(DISTINCT f.follower_id)
     FROM api_zwift_api_profiles_followers f
-    INNER JOIN api_zwiftracing_public_clubs_riders cr 
+    INNER JOIN api_zwiftracing_riders cr 
       ON f.follower_id = cr.rider_id
     WHERE f.rider_id = p.rider_id
   ) AS team_followers,
@@ -1977,8 +1983,8 @@ SELECT
   -- Team stats (all riders with data from either source)
   (SELECT COUNT(DISTINCT rider_id) FROM v_rider_complete) AS total_riders,
   (SELECT COUNT(*) FROM api_zwift_api_profiles) AS total_zwift_profiles,
-  (SELECT COUNT(*) FROM api_zwiftracing_public_clubs_riders) AS total_racing_profiles,
-  (SELECT ROUND(AVG(velo), 0) FROM api_zwiftracing_public_clubs_riders) AS avg_velo,
+  (SELECT COUNT(*) FROM api_zwiftracing_riders) AS total_racing_profiles,
+  (SELECT ROUND(AVG(velo_live), 0) FROM api_zwiftracing_riders WHERE velo_live IS NOT NULL) AS avg_velo,
   (SELECT ROUND(AVG(competition_racing_score), 0) FROM api_zwift_api_profiles WHERE competition_racing_score IS NOT NULL) AS avg_zwift_racing_score,
   
   -- Upcoming races
@@ -1990,7 +1996,7 @@ SELECT
   (SELECT SUM(distance_meters) / 1000.0 FROM api_zwift_api_profiles_activities WHERE start_date > NOW() - INTERVAL '7 days') AS total_km_last_7_days,
   
   -- Data freshness
-  (SELECT MAX(fetched_at) FROM api_zwiftracing_public_clubs_riders) AS last_rider_sync,
+  (SELECT MAX(fetched_at) FROM api_zwiftracing_riders) AS last_rider_sync,
   (SELECT MAX(fetched_at) FROM api_zwiftracing_api_events_upcoming) AS last_event_sync;
 
 COMMENT ON VIEW v_dashboard_summary IS 
