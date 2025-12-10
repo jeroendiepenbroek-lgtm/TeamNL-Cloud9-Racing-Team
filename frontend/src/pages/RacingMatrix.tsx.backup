@@ -77,6 +77,8 @@ interface MatrixRider {
   data_completeness: 'complete' | 'racing_only' | 'profile_only' | null
 }
 
+const API_BASE = ''
+
 // vELO Tiers met moderne kleuren en rank numbers (correcte ranges - bovenkant EXCLUSIEF)
 const VELO_TIERS = [
   { rank: 1, name: 'Diamond', icon: '💎', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100', bgColor: 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20' },
@@ -119,6 +121,12 @@ const getVeloTier = (rating: number | null) => {
   return VELO_TIERS.find(tier => 
     rating >= tier.min && (!tier.max || rating < tier.max)
   )
+}
+
+// Bereken W/kg voor interval
+const calculateWkg = (watts: number | null, weight: number | null): number | null => {
+  if (!watts || !weight || weight === 0) return null
+  return watts / weight
 }
 
 // Bereken progress binnen tier range
@@ -282,7 +290,7 @@ function MultiSelectDropdown<T extends string | number>({
 
 export default function RacingDataMatrixModern() {
   const [showLegend, setShowLegend] = useState(false)
-  const [sortBy, setSortBy] = useState<keyof MatrixRider>('velo_live')
+  const [sortBy, setSortBy] = useState<keyof MatrixRider>('race_last_rating')
   const [sortDesc, setSortDesc] = useState(true)
   
   // Search
@@ -720,13 +728,13 @@ export default function RacingDataMatrixModern() {
                   <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('rider_id')}>
                     ID
                   </th>
-                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('velo_live')}>
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_last_rating')}>
                     <span className="hidden sm:inline">vELO Live</span>
-                    <span className="sm:hidden">Live</span> {sortBy === 'velo_live' && (sortDesc ? '↓' : '↑')}
+                    <span className="sm:hidden">Live</span> {sortBy === 'race_last_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
-                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('velo_30day')}>
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('race_max30_rating')}>
                     <span className="hidden sm:inline">vELO 30-day</span>
-                    <span className="sm:hidden">30d</span> {sortBy === 'velo_30day' && (sortDesc ? '↓' : '↑')}
+                    <span className="sm:hidden">30d</span> {sortBy === 'race_max30_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
                   <th rowSpan={2} className="px-2 sm:px-3 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('full_name')}>
                     Rider Name
@@ -753,22 +761,22 @@ export default function RacingDataMatrixModern() {
                   <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap" onClick={() => handleSort('racing_ftp')}>
                     FTP
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-green-700 whitespace-nowrap border-r border-slate-600">
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('watts_per_kg')}>
                     W/kg
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_count')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
                     <span className="hidden sm:inline">Finishes</span>
                     <span className="sm:hidden">Fin</span>
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight whitespace-nowrap">
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
                     <span className="hidden sm:inline">Wins</span>
                     <span className="sm:hidden">W</span>
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight whitespace-nowrap">
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
                     <span className="hidden sm:inline">Podiums</span>
                     <span className="sm:hidden">Pod</span>
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight whitespace-nowrap border-r border-slate-600">
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
                     DNF
                   </th>
                   <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_5s_wkg')}>
@@ -796,8 +804,8 @@ export default function RacingDataMatrixModern() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {sortedRiders.map((rider, index) => {
-                  const veloLiveTier = getVeloTier(rider.velo_live)
-                  const zpCategory = rider.zwiftracing_category as keyof typeof ZP_CATEGORIES | null
+                  const veloLiveTier = getVeloTier(rider.race_last_rating)
+                  const zpCategory = rider.zp_category as keyof typeof ZP_CATEGORIES | null
                   
                   return (
                     <tr 
@@ -808,7 +816,7 @@ export default function RacingDataMatrixModern() {
                     >
                       <td className="px-1 sm:px-2 py-1 whitespace-nowrap text-center">
                         <button
-                          onClick={() => handleToggleFavorite(rider.rider_id, rider.full_name)}
+                          onClick={() => handleToggleFavorite(rider.rider_id, rider.name)}
                           className="text-base sm:text-lg p-1 sm:p-2 -m-1 sm:-m-2 hover:scale-125 transition-transform touch-manipulation"
                           title={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
                           aria-label={isFavorite(rider.rider_id) ? 'Verwijder favoriet' : 'Voeg toe als favoriet'}
@@ -820,14 +828,14 @@ export default function RacingDataMatrixModern() {
                         {rider.rider_id}
                       </td>
                       <td className="px-1 sm:px-2 py-1 whitespace-nowrap">
-                        <VeloBadge rating={rider.velo_live} />
+                        <VeloBadge rating={rider.race_last_rating} />
                       </td>
                       <td className="px-1 sm:px-2 py-1 whitespace-nowrap">
-                        <VeloBadge rating={rider.velo_30day} />
+                        <VeloBadge rating={rider.race_max30_rating} />
                       </td>
                       <td className="px-2 sm:px-3 py-1 whitespace-nowrap font-semibold text-gray-900 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
-                          <span>{rider.full_name}</span>
+                          <span>{rider.name}</span>
                           {rider.rider_id === 150437 && (
                             <a 
                               href="https://www.youtube.com/@CloudRacer-9/streams" 
@@ -854,82 +862,82 @@ export default function RacingDataMatrixModern() {
                         )}
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right font-bold text-gray-900 text-sm">
-                        {rider.racing_ftp || '-'}
+                        {rider.zp_ftp || '-'}
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right font-bold text-indigo-700 text-sm">
-                        {rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(2) : '-'}
+                        {rider.zp_ftp && rider.weight ? (rider.zp_ftp / rider.weight).toFixed(2) : '-'}
                       </td>
                       <td className="px-3 py-1.5 whitespace-nowrap text-right text-gray-700 text-sm font-medium">
-                        {rider.weight_kg ? `${rider.weight_kg.toFixed(1)}kg` : '-'}
+                        {rider.weight ? `${rider.weight.toFixed(1)}kg` : '-'}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right text-gray-700 font-semibold text-sm">
-                        {rider.race_count || 0}
+                        {rider.race_finishes || 0}
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-bold text-gray-400 text-sm">
-                        -
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-bold text-green-700 text-sm">
+                        {rider.race_wins || 0}
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-semibold text-gray-400 text-sm">
-                        -
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-semibold text-blue-700 text-sm">
+                        {rider.race_podiums || 0}
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-right text-gray-400 text-sm">
-                        -
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right text-red-700 text-sm">
+                        {rider.race_dnfs || 0}
                       </td>
                       
                       {/* Power Intervals in W/kg met team-relative highlighting */}
                       <td className="px-2 py-0.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_5s_wkg, teamBests?.power_5s_wkg || null)}`}
-                          title={`${rider.power_5s || 0}W`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w5, rider.weight), teamBests?.power_w5 || null)}`}
+                          title={`${rider.power_w5 || 0}W`}
                         >
-                          {rider.power_5s_wkg?.toFixed(2) || '-'}
+                          {calculateWkg(rider.power_w5, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_15s_wkg, teamBests?.power_15s_wkg || null)}`}
-                          title={`${rider.power_15s || 0}W`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w15, rider.weight), teamBests?.power_w15 || null)}`}
+                          title={`${rider.power_w15 || 0}W`}
                         >
-                          {rider.power_15s_wkg?.toFixed(2) || '-'}
+                          {calculateWkg(rider.power_w15, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_30s_wkg, teamBests?.power_30s_wkg || null)}`}
-                          title={`${rider.power_30s || 0}W`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w30, rider.weight), teamBests?.power_w30 || null)}`}
+                          title={`${rider.power_w30 || 0}W`}
                         >
-                          {rider.power_30s_wkg?.toFixed(2) || '-'}
+                          {calculateWkg(rider.power_w30, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_60s_wkg, teamBests?.power_60s_wkg || null)}`}
-                          title={`${rider.power_60s || 0}W`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w60, rider.weight), teamBests?.power_w60 || null)}`}
+                          title={`${rider.power_w60 || 0}W`}
                         >
-                          {rider.power_60s_wkg?.toFixed(2) || '-'}
+                          {calculateWkg(rider.power_w60, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_120s_wkg, teamBests?.power_120s_wkg || null)}`}
-                          title={`${rider.power_120s || 0}W`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w120, rider.weight), teamBests?.power_w120 || null)}`}
+                          title={`${rider.power_w120 || 0}W`}
                         >
-                          {rider.power_120s_wkg?.toFixed(2) || '-'}
+                          {calculateWkg(rider.power_w120, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_300s_wkg, teamBests?.power_300s_wkg || null)}`}
-                          title={`${rider.power_300s || 0}W`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w300, rider.weight), teamBests?.power_w300 || null)}`}
+                          title={`${rider.power_w300 || 0}W`}
                         >
-                          {rider.power_300s_wkg?.toFixed(2) || '-'}
+                          {calculateWkg(rider.power_w300, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                       <td className="px-2 py-0.5 whitespace-nowrap text-right">
                         <span 
-                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(rider.power_1200s_wkg, teamBests?.power_1200s_wkg || null)}`}
-                          title={`${rider.power_1200s || 0}W`}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getTeamRelativePowerColor(calculateWkg(rider.power_w1200, rider.weight), teamBests?.power_w1200 || null)}`}
+                          title={`${rider.power_w1200 || 0}W`}
                         >
-                          {rider.power_1200s_wkg?.toFixed(2) || '-'}
+                          {calculateWkg(rider.power_w1200, rider.weight)?.toFixed(2) || '-'}
                         </span>
                       </td>
                     </tr>
