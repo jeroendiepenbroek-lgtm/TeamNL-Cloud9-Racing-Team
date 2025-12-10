@@ -4,26 +4,77 @@ import toast from 'react-hot-toast'
 import { useFavorites } from '../hooks/useFavorites'
 
 interface MatrixRider {
+  // Identity
   rider_id: number
-  name: string
-  zp_category: string | null
-  zp_ftp: number | null
-  weight: number | null
-  race_last_rating: number | null   // vELO Live (last/current rating)
-  race_max30_rating: number | null  // vELO 30-day (max rating last 30 days)
-  race_wins: number
-  race_podiums: number | null
-  race_finishes: number
-  race_dnfs: number | null
-  watts_per_kg: number | null
-  // Power intervals - correcte veldnamen uit API (in watts)
-  power_w5: number | null      // 5s in watts
-  power_w15: number | null     // 15s in watts
-  power_w30: number | null     // 30s in watts
-  power_w60: number | null     // 1min in watts
-  power_w120: number | null    // 2min in watts
-  power_w300: number | null    // 5min in watts
-  power_w1200: number | null   // 20min in watts
+  full_name: string
+  racing_name: string | null
+  first_name: string | null
+  last_name: string | null
+  
+  // vELO Scores (from ZwiftRacing)
+  velo_live: number | null        // Current rating
+  velo_30day: number | null       // 30-day max
+  velo_90day: number | null       // 90-day max (peak)
+  
+  // Racing Metrics
+  zwift_official_racing_score: number | null
+  zwift_official_category: string | null
+  phenotype: string | null        // Sprinter, Climber, etc.
+  zwiftracing_category: string | null  // A, B, C, D
+  race_count: number | null
+  
+  // Power Curve - Absolute (watts)
+  racing_ftp: number | null
+  power_5s: number | null
+  power_15s: number | null
+  power_30s: number | null
+  power_60s: number | null
+  power_120s: number | null
+  power_300s: number | null
+  power_1200s: number | null
+  
+  // Power Curve - Relative (w/kg)
+  power_5s_wkg: number | null
+  power_15s_wkg: number | null
+  power_30s_wkg: number | null
+  power_60s_wkg: number | null
+  power_120s_wkg: number | null
+  power_300s_wkg: number | null
+  power_1200s_wkg: number | null
+  
+  // Physical
+  weight_kg: number | null
+  height_cm: number | null
+  ftp_watts: number | null
+  
+  // Avatar & Visual
+  avatar_url: string | null
+  avatar_url_large: string | null
+  
+  // Social Stats
+  followers_count: number | null
+  followees_count: number | null
+  rideons_given: number | null
+  
+  // Demographics
+  age: number | null
+  is_male: boolean | null
+  country_code: string | null
+  country_alpha3: string | null
+  
+  // Achievements
+  achievement_level: number | null
+  total_distance_km: number | null
+  total_elevation_m: number | null
+  
+  // Status
+  currently_riding: boolean | null
+  current_world: number | null
+  
+  // Sync tracking
+  racing_data_updated: string | null
+  profile_data_updated: string | null
+  data_completeness: 'complete' | 'racing_only' | 'profile_only' | null
 }
 
 const API_BASE = ''
@@ -257,15 +308,22 @@ export default function RacingDataMatrixModern() {
   const { data: riders, isLoading, error } = useQuery<MatrixRider[]>({
     queryKey: ['matrixRiders'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/riders/team`)
+      // Query v_rider_complete view via Supabase REST API
+      const res = await fetch(
+        `https://tfsepzumkireferencer.supabase.co/rest/v1/v_rider_complete?select=*&order=velo_live.desc.nullslast`,
+        {
+          headers: {
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          }
+        }
+      )
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
-        console.error('API Error:', errorData)
-        throw new Error(errorData.error || 'Failed to fetch riders')
+        console.error('Supabase API Error:', errorData)
+        throw new Error(errorData.message || 'Failed to fetch riders from v_rider_complete')
       }
-      const data = await res.json()
-      // Handle zowel array als object met riders property
-      return Array.isArray(data) ? data : (data.riders || [])
+      return res.json()
     },
     refetchInterval: 60000,
     retry: 3,
@@ -276,9 +334,14 @@ export default function RacingDataMatrixModern() {
     if (!riders) return []
     
     return riders.filter(rider => {
-      // Search filter - zoek op naam
-      if (searchTerm && !rider.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false
+      // Search filter - zoek op naam (gebruik full_name of racing_name)
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase()
+        const fullName = rider.full_name?.toLowerCase() || ''
+        const racingName = rider.racing_name?.toLowerCase() || ''
+        if (!fullName.includes(searchLower) && !racingName.includes(searchLower)) {
+          return false
+        }
       }
       
       // Favorites filter - als showOnlyFavorites aan staat, alleen favorieten tonen
@@ -287,13 +350,13 @@ export default function RacingDataMatrixModern() {
       }
       
       // Category filter - if categories selected, rider must be in list
-      if (filterCategories.length > 0 && !filterCategories.includes(rider.zp_category || '')) {
+      if (filterCategories.length > 0 && !filterCategories.includes(rider.zwiftracing_category || '')) {
         return false
       }
       
       // vELO Live rank filter - if ranks selected, rider tier rank must be in list
       if (filterVeloLiveRanks.length > 0) {
-        const tier = getVeloTier(rider.race_last_rating)
+        const tier = getVeloTier(rider.velo_live)
         if (!tier || !filterVeloLiveRanks.includes(tier.rank)) {
           return false
         }
@@ -301,7 +364,7 @@ export default function RacingDataMatrixModern() {
       
       // vELO 30-day rank filter - if ranks selected, rider tier rank must be in list
       if (filterVelo30dayRanks.length > 0) {
-        const tier = getVeloTier(rider.race_max30_rating)
+        const tier = getVeloTier(rider.velo_30day)
         if (!tier || !filterVelo30dayRanks.includes(tier.rank)) {
           return false
         }
@@ -315,20 +378,14 @@ export default function RacingDataMatrixModern() {
   const teamBests = useMemo(() => {
     if (!filteredRiders || filteredRiders.length === 0) return null
     
-    // Helper functie om W/kg te berekenen
-    const getWkg = (power: number | null, weight: number | null) => {
-      if (!power || !weight || weight === 0) return 0
-      return power / weight
-    }
-    
     return {
-      power_w5: Math.max(...filteredRiders.map(r => getWkg(r.power_w5, r.weight))),
-      power_w15: Math.max(...filteredRiders.map(r => getWkg(r.power_w15, r.weight))),
-      power_w30: Math.max(...filteredRiders.map(r => getWkg(r.power_w30, r.weight))),
-      power_w60: Math.max(...filteredRiders.map(r => getWkg(r.power_w60, r.weight))),
-      power_w120: Math.max(...filteredRiders.map(r => getWkg(r.power_w120, r.weight))),
-      power_w300: Math.max(...filteredRiders.map(r => getWkg(r.power_w300, r.weight))),
-      power_w1200: Math.max(...filteredRiders.map(r => getWkg(r.power_w1200, r.weight))),
+      power_5s_wkg: Math.max(...filteredRiders.map(r => r.power_5s_wkg || 0)),
+      power_15s_wkg: Math.max(...filteredRiders.map(r => r.power_15s_wkg || 0)),
+      power_30s_wkg: Math.max(...filteredRiders.map(r => r.power_30s_wkg || 0)),
+      power_60s_wkg: Math.max(...filteredRiders.map(r => r.power_60s_wkg || 0)),
+      power_120s_wkg: Math.max(...filteredRiders.map(r => r.power_120s_wkg || 0)),
+      power_300s_wkg: Math.max(...filteredRiders.map(r => r.power_300s_wkg || 0)),
+      power_1200s_wkg: Math.max(...filteredRiders.map(r => r.power_1200s_wkg || 0)),
     }
   }, [filteredRiders])
 
@@ -338,19 +395,12 @@ export default function RacingDataMatrixModern() {
       let aVal: number
       let bVal: number
       
-      // Special case: W/kg moet berekend worden
-      if (sortBy === 'watts_per_kg') {
-        aVal = (a.zp_ftp && a.weight) ? a.zp_ftp / a.weight : 0
-        bVal = (b.zp_ftp && b.weight) ? b.zp_ftp / b.weight : 0
-      } 
-      // Power intervals: sorteer op W/kg in plaats van absolute watts
-      else if (sortBy === 'power_w5' || sortBy === 'power_w15' || sortBy === 'power_w30' || 
-               sortBy === 'power_w60' || sortBy === 'power_w120' || sortBy === 'power_w300' || 
-               sortBy === 'power_w1200') {
-        const aPower = a[sortBy as keyof MatrixRider] as number | null
-        const bPower = b[sortBy as keyof MatrixRider] as number | null
-        aVal = (aPower && a.weight) ? aPower / a.weight : 0
-        bVal = (bPower && b.weight) ? bPower / b.weight : 0
+      // Power intervals: gebruik direct de _wkg velden (zijn al berekend in database)
+      if (sortBy === 'power_5s_wkg' || sortBy === 'power_15s_wkg' || sortBy === 'power_30s_wkg' || 
+          sortBy === 'power_60s_wkg' || sortBy === 'power_120s_wkg' || sortBy === 'power_300s_wkg' || 
+          sortBy === 'power_1200s_wkg') {
+        aVal = a[sortBy as keyof MatrixRider] as number || 0
+        bVal = b[sortBy as keyof MatrixRider] as number || 0
       } 
       else {
         const aRaw = a[sortBy]
@@ -686,7 +736,7 @@ export default function RacingDataMatrixModern() {
                     <span className="hidden sm:inline">vELO 30-day</span>
                     <span className="sm:hidden">30d</span> {sortBy === 'race_max30_rating' && (sortDesc ? '↓' : '↑')}
                   </th>
-                  <th rowSpan={2} className="px-2 sm:px-3 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('name')}>
+                  <th rowSpan={2} className="px-2 sm:px-3 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('full_name')}>
                     Rider Name
                   </th>
                   <th rowSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600">
@@ -708,7 +758,7 @@ export default function RacingDataMatrixModern() {
                 </tr>
                 {/* Individual Column Headers Row */}
                 <tr>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap" onClick={() => handleSort('zp_ftp')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap" onClick={() => handleSort('racing_ftp')}>
                     FTP
                   </th>
                   <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-600 bg-green-700 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('watts_per_kg')}>
@@ -729,25 +779,25 @@ export default function RacingDataMatrixModern() {
                   <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
                     DNF
                   </th>
-                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w5')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_5s_wkg')}>
                     5s
                   </th>
-                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w15')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_15s_wkg')}>
                     15s
                   </th>
-                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w30')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_30s_wkg')}>
                     30s
                   </th>
-                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w60')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_60s_wkg')}>
                     1m
                   </th>
-                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w120')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_120s_wkg')}>
                     2m
                   </th>
-                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w300')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_300s_wkg')}>
                     5m
                   </th>
-                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_w1200')}>
+                  <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_1200s_wkg')}>
                     20m
                   </th>
                 </tr>
