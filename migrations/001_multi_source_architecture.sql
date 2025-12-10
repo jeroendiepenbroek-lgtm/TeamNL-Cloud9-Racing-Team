@@ -422,7 +422,7 @@ CREATE TABLE sync_strategy (
 INSERT INTO sync_strategy (source_name, source_type, sync_interval_hours, sync_priority, bulk_size, notes) VALUES
   ('zwift_racing', 'api', 24, 1, 1000, 'Racing data changes daily. Highest priority. Bulk API: 1000 riders/call. Rate limit: 5/min individual, 1/15min bulk.'),
   ('zwift_official', 'api', 168, 2, 1, 'Social data stable. Weekly sync sufficient. Individual API calls only. OAuth 2.0 auth (24h tokens).'),
-  ('zwift_power', 'api', NULL, 99, NULL, 'DEPRECATED - Bot protected (nginx CAPTCHA). Skip completely. Data available via zwift_racing.');
+  ('zwift_power', 'api', 999999, 99, 1, 'DEPRECATED - Bot protected (nginx CAPTCHA). Never sync (999999h = ~114 years). Data available via zwift_racing.');
 
 COMMENT ON TABLE sync_strategy IS 'Sync schedule management per API source. Controls when and how often to sync each data source.';
 
