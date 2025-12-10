@@ -1,124 +1,210 @@
-# TeamNL Cloud9 Racing Team Dashboard
+# 🏁 TeamNL Cloud9 Racing Team Dashboard
 
-**Versie**: 4.0.0-fresh-start  
-**Status**: Minimal Viable Product
+**Railway + Supabase + React** → Live Racing Matrix met vELO, Power Curves & Team Rankings
 
-## 🎯 Doel
+[![Railway](https://img.shields.io/badge/Railway-Live-success)](https://teamnl-cloud9-racing-team-production.up.railway.app/)
+[![Supabase](https://img.shields.io/badge/Supabase-Connected-brightgreen)](https://supabase.com/dashboard/project/bktbeefdmrpxhsyyalvc)
+[![Status](https://img.shields.io/badge/Status-Production_Ready-blue)]()
 
-Lightweight dashboard applicatie voor TeamNL Cloud9 racing team met 3 core dashboards:
-- **Racing Matrix**: vELO tiers, power intervals, phenotype analyse
-- **Events**: 48h lookforward, team signups, route details  
-- **Results**: Race resultaten, power curves, persoonlijke records
+---
 
-## 🏗️ Architectuur
+## ⚡ Quick Start (5 minuten)
 
-**Dual-source data model:**
-- Frontend: React + Vite + TypeScript + Tailwind
-- Backend: Supabase (PostgreSQL database + Auth)
-- Data Sources:
-  - **ZwiftRacing.app**: Racing metrics, power data, vELO
-  - **Zwift Official API**: Competition racing score, avatars, social stats
-- Deployment: Railway (Dockerfile)
-
-## 📁 Structuur
-
-```
-/
-├── frontend/          # React applicatie
-│   ├── src/
-│   │   ├── pages/    # 3 dashboard templates
-│   │   ├── contexts/ # Auth context
-│   │   └── App.tsx   # Routing
-│   └── dist/         # Build output
-├── backend/           # Express server
-│   └── src/
-│       └── server.ts # Health + static serving
-└── docs/              # Architectuur documentatie
+```bash
+./quick-setup.sh
 ```
 
-## 🚀 Quick Start
+**Dat is alles!** Het script doet:
+- ✅ Valideert SQL bestand
+- ✅ Geeft Supabase setup instructies
+- ✅ Verifieert database
+- ✅ Synct test data
+- ✅ Deploy optie naar Railway
 
-### Development
+**Live Dashboard:** https://teamnl-cloud9-racing-team-production.up.railway.app/
 
+---
+
+## 📚 Documentatie
+
+| Guide | Gebruik voor |
+|-------|-------------|
+| [**SETUP_GUIDE.md**](SETUP_GUIDE.md) | 🚀 **START HIER** - Complete setup (quick + manual) |
+| [validate-sql.sh](validate-sql.sh) | 🛡️ SQL validation (voorkomt errors) |
+| [RAILWAY_SUPABASE_SETUP.md](RAILWAY_SUPABASE_SETUP.md) | 📖 Architectuur & troubleshooting |
+| [quick-setup.sh](quick-setup.sh) | ⚡ One-command automated setup |
+
+---
+
+## 🎯 Features
+
+### Modern Racing Matrix
+- **10-tier vELO System** 💎 Diamond → 🟤 Copper (1750+ → 0)
+- **Power Curves** 5s, 15s, 30s, 60s, 120s, 300s, 1200s (absolute + W/kg)
+- **Team-Relative Highlighting** Gold/Silver/Bronze voor top performers
+- **Real-time Data** Direct van Zwift Official + ZwiftRacing.app
+- **Smart Filters** Category, vELO tier, MultiSelect
+- **Favorites System** Markeer je favoriete riders
+
+### Data Sources
+- **Zwift Official API** → Avatars, weight, racing score
+- **ZwiftRacing.app** → vELO ratings, power curves, phenotypes
+- **Combined View** → `v_rider_complete` FULL OUTER JOIN
+
+---
+
+## 🏗️ Tech Stack
+
+```
+Frontend:  React 18 + TypeScript + Vite + TailwindCSS
+Backend:   Railway (static hosting + environment vars)
+Database:  Supabase PostgreSQL
+APIs:      Zwift Official, ZwiftRacing.app
+Deploy:    Automated via Railway + GitHub
+```
+
+---
+
+## 🚀 Deployment
+
+### Current Setup
+- **Railway Project:** `1af6fad4-ab12-41a6-a6c3-97a532905f8c`
+- **Supabase Project:** `bktbeefdmrpxhsyyalvc`
+- **Branch:** `fresh-start-v4`
+- **Status:** ✅ Production Ready
+
+### Deploy Commands
+```bash
+# Validate first (ALWAYS!)
+./validate-sql.sh
+
+# Deploy to Railway
+railway up
+
+# Check logs
+railway logs --tail 50
+```
+
+---
+
+## 📊 Database Schema
+
+### v_rider_complete View
+```sql
+SELECT 
+  -- Identity
+  rider_id, full_name, racing_name,
+  
+  -- Racing Metrics
+  velo_live, velo_30day, velo_90day,
+  zwift_official_racing_score,
+  zwiftracing_category, phenotype,
+  
+  -- Power Curve (W/kg pre-calculated!)
+  power_5s_wkg, power_15s_wkg, power_30s_wkg,
+  power_60s_wkg, power_120s_wkg, power_300s_wkg,
+  power_1200s_wkg,
+  
+  -- Physical
+  weight_kg, height_cm, racing_ftp,
+  
+  -- Profile
+  avatar_url, data_completeness
+  
+FROM api_zwift_api_profiles
+FULL OUTER JOIN api_zwiftracing_riders
+  ON rider_id = rider_id;
+```
+
+---
+
+## 🔧 Development
+
+### Local Setup
 ```bash
 # Frontend
 cd frontend
 npm install
 npm run dev      # http://localhost:5173
 
-# Backend
-cd backend
-npm install
-npm run dev      # http://localhost:8080
+# Sync data
+export SUPABASE_URL="https://bktbeefdmrpxhsyyalvc.supabase.co"
+export SUPABASE_SERVICE_KEY="your-key"
+node fetch-zwiftracing-rider.js 150437
 ```
 
-### Production Build
-
-```bash
-# Build frontend
-cd frontend
-npm install
-npm run build    # Output: frontend/dist/
-
-# Start backend
-cd backend
-npm install
-npm start
-```
-
-### Railway Deployment
-
-1. Connect GitHub repository
-2. Auto-detect Dockerfile
-3. Environment variabelen:
-   - `PORT=8080` (auto)
-   - `NODE_ENV=production`
-4. Deploy!
-
-## 🔑 Discord OAuth Setup
-
-Supabase project: `bktbeefdmrpxhsyyalvc`
-
-Frontend ENV vars (.env):
-```bash
+### Environment Variables
+```env
 VITE_SUPABASE_URL=https://bktbeefdmrpxhsyyalvc.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdGJlZWZkbXJweGhzeXlhbHZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzA3Mzk0NTIsImV4cCI6MjA0NjMxNTQ1Mn0.6hHXDxq_OOMM89GrSfN1CRd0XgGMqU72gBHG9CYmUE4
+VITE_SUPABASE_ANON_KEY=eyJhbGci...
 ```
 
-## 📊 Dashboards
+---
 
-### Racing Matrix
-- vELO tiers (A/B/C/D)
-- Power intervals (1min, 5min, 20min)
-- Phenotype categorisatie (Sprinter/Allrounder/Climber)
+## 🐛 Troubleshooting
 
-### Events Dashboard  
-- 48h event lookforward
-- Team signup tracking
-- Route details & elevation
+### No data on dashboard?
+```bash
+# Check view exists
+./validate-sql.sh
 
-### Results Dashboard
-- Race resultaten met plaatsingen
-- Power curve analyse
-- Persoonlijke records tracking
+# Sync test rider
+node fetch-zwiftracing-rider.js 150437
+```
 
-## 🎨 Design
+### SQL errors?
+```bash
+# Validate BEFORE running in Supabase
+./validate-sql.sh
 
-- Mobile-first responsive design
-- Dark mode native
-- Tailwind CSS utility classes
-- Gradient accents (orange/blue theme)
+# Should show:
+# ✅ ✅ ✅  ALLE CHECKS GESLAAGD! ✅ ✅ ✅
+```
 
-## 📝 Status
+More: See [RAILWAY_SUPABASE_SETUP.md](RAILWAY_SUPABASE_SETUP.md#troubleshooting)
 
-- ✅ Frontend: 3 empty dashboard templates
-- ✅ Auth: Discord OAuth geïntegreerd
-- ✅ Backend: Minimal server (health + static)
-- ⏳ Data: API integratie volgt later
-- ⏳ Database: SQLite/Postgres indien nodig
+---
 
-## 🔗 Links
+## 📝 Data Sync
 
-- **Backup**: `.backups/frontend-clean-20251208/`
-- **Auth Config**: `.backups/discord-auth-backup.md`
-- **Architecture**: `docs/`
+### Individual Rider
+```bash
+node fetch-zwiftracing-rider.js <rider_id>
+```
+
+### Team Sync
+```bash
+./sync-team-to-supabase.sh
+```
+
+---
+
+## 🔗 Important Links
+
+- **Live Dashboard:** https://teamnl-cloud9-racing-team-production.up.railway.app/
+- **Railway Console:** https://railway.com/project/1af6fad4-ab12-41a6-a6c3-97a532905f8c
+- **Supabase Dashboard:** https://supabase.com/dashboard/project/bktbeefdmrpxhsyyalvc
+- **Supabase SQL Editor:** https://supabase.com/dashboard/project/bktbeefdmrpxhsyyalvc/sql/new
+
+---
+
+## ✅ Setup Checklist
+
+- [x] Railway project configured
+- [x] Supabase environment variables set
+- [x] Frontend migrated to v_rider_complete schema
+- [x] SQL validation script created
+- [x] Automated setup script ready
+- [ ] **Run SQL in Supabase** ← JIJ DOET DIT
+- [ ] **Sync rider data**
+- [ ] **Verify live dashboard**
+
+---
+
+## 🎉 Ready to Deploy!
+
+```bash
+./quick-setup.sh
+```
+
+**Last Updated:** December 10, 2025 | **Status:** Production Ready ✅
