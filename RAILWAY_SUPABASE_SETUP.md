@@ -34,6 +34,26 @@ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Setup Stappenplan
 
+### Stap 0: Valideer SQL Bestand ⏱️ 10 sec ⚠️ BELANGRIJK!
+
+**ALTIJD eerst draaien voordat je naar Supabase gaat!**
+
+```bash
+./validate-sql.sh
+```
+
+Dit script checkt:
+- ✅ Geen niet-bestaande kolommen (racing_score, velo)
+- ✅ Geen NULL constraint violations
+- ✅ Indices op correcte kolommen
+- ✅ View definities correct
+- ✅ Tabel structuur compleet
+
+**Alleen verder gaan als je ziet:**
+```
+✅ ✅ ✅  ALLE CHECKS GESLAAGD! ✅ ✅ ✅
+```
+
 ### Stap 1: Draai Migrations in Supabase ⏱️ 2 min
 
 1. **Open SQL Editor**:
