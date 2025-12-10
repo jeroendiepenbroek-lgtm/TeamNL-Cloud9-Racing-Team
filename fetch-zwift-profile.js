@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * Fetch Zwift Official Profile voor rider 150437
+ * Fetch Zwift Official Profile (generic voor elke rider)
  * OAuth 2.0 flow required
+ * 
+ * Usage: node fetch-zwift-profile.js <rider_id>
+ * 
+ * Environment variables:
+ * - ZWIFT_USERNAME (optional, falls back to prompt)
+ * - ZWIFT_PASSWORD (optional, falls back to prompt)
+ * - SUPABASE_SERVICE_KEY (required)
  * 
  * Zwift API endpoints:
  * - Token: https://secure.zwift.com/auth/realms/zwift/protocol/openid-connect/token
@@ -14,13 +21,20 @@ const { createClient } = require('@supabase/supabase-js');
 const readline = require('readline');
 
 // Configuration
-const SUPABASE_URL = 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-const RIDER_ID = 150437;
+const RIDER_ID = parseInt(process.argv[2]);
 
 const ZWIFT_CLIENT_ID = 'Zwift_Mobile_Link';
 const ZWIFT_CLIENT_SECRET = 'Zwift_Mobile_Link';
 const ZWIFT_API_BASE = 'https://us-or-rly101.zwift.com';
+
+if (!RIDER_ID) {
+  console.error('❌ Error: Rider ID required');
+  console.log('Usage: node fetch-zwift-profile.js <rider_id>');
+  console.log('Example: node fetch-zwift-profile.js 150437');
+  process.exit(1);
+}
 
 if (!SUPABASE_SERVICE_KEY) {
   console.error('❌ Error: SUPABASE_SERVICE_KEY niet gezet');

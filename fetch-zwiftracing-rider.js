@@ -1,11 +1,11 @@
 const axios = require('axios');
 const { createClient } = require('@supabase/supabase-js');
 
-// ZwiftRacing.app API config
-const ZWIFTRACING_API_KEY = '650c6d2fc4ef6858d74cbef1';
+// ZwiftRacing.app API config (use environment variable if available)
+const ZWIFTRACING_API_KEY = process.env.ZWIFTRACING_API_KEY || '650c6d2fc4ef6858d74cbef1';
 const ZWIFTRACING_BASE_URL = 'https://zwift-ranking.herokuapp.com';
 
-// Supabase setup (use environment variables if available)
+// Supabase setup (use environment variables)
 const supabase = createClient(
   process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co',
   process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdGJlZWZkbXJweGhzeXlhbHZjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMTk1NDYzMSwiZXhwIjoyMDc3NTMwNjMxfQ.jZeIBq_SUydFzFs6YUYJooxfu_mZ7ZBrz6oT_0QiHiU'
