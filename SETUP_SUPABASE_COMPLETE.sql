@@ -1431,7 +1431,6 @@ SELECT
   zr.velo_live,
   zr.velo_30day,
   zr.velo_90day,
-  zr.racing_score AS zwiftracing_score,
   zo.competition_racing_score AS zwift_official_racing_score,
   zo.competition_category AS zwift_official_category,
   zr.phenotype,
@@ -1517,7 +1516,6 @@ SELECT
   zr.velo_live,
   zr.velo_30day,
   zr.velo_90day,
-  zr.racing_score AS zwiftracing_score,
   zo.competition_racing_score AS zwift_official_racing_score,
   zo.competition_category AS zwift_official_category,
   
@@ -1538,7 +1536,7 @@ SELECT
   
   -- Rankings (based on available metrics)
   ROW_NUMBER() OVER (ORDER BY COALESCE(zr.velo_live, 0) DESC NULLS LAST) AS velo_rank,
-  ROW_NUMBER() OVER (ORDER BY COALESCE(zo.competition_racing_score, zr.racing_score, 0) DESC NULLS LAST) AS racing_score_rank,
+  ROW_NUMBER() OVER (ORDER BY COALESCE(zo.competition_racing_score, zr.velo_live, 0) DESC NULLS LAST) AS racing_score_rank,
   ROW_NUMBER() OVER (ORDER BY COALESCE(zr.power_5s_wkg, 0) DESC NULLS LAST) AS sprint_rank,
   ROW_NUMBER() OVER (ORDER BY COALESCE(zr.power_1200s_wkg, 0) DESC NULLS LAST) AS ftp_rank,
   
@@ -1557,7 +1555,7 @@ SELECT
   
 FROM api_zwift_api_profiles zo
 FULL OUTER JOIN api_zwiftracing_riders zr ON zo.rider_id = zr.rider_id
-ORDER BY COALESCE(zo.competition_racing_score, zr.racing_score, zr.velo_live, 0) DESC NULLS LAST;
+ORDER BY COALESCE(zo.competition_racing_score, zr.velo_live, 0) DESC NULLS LAST;
 
 COMMENT ON VIEW v_team_rankings IS 
   'Team rankings for custom team management - NO club_id filtering.
@@ -1843,7 +1841,6 @@ SELECT
   zr.velo_live,
   zr.velo_30day,
   zr.velo_90day,
-  zr.racing_score AS zwiftracing_score,
   zo.competition_racing_score AS zwift_official_racing_score
 
 FROM api_zwift_api_profiles zo
@@ -2133,10 +2130,8 @@ CREATE TABLE IF NOT EXISTS api_zwiftracing_riders (
   raw_response JSONB NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_velo 
-  ON api_zwiftracing_riders(velo DESC NULLS LAST);
-CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_racing_score 
-  ON api_zwiftracing_riders(racing_score DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_velo_live 
+  ON api_zwiftracing_riders(velo_live DESC NULLS LAST);
 CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_fetched 
   ON api_zwiftracing_riders(fetched_at DESC);
 

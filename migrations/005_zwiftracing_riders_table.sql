@@ -73,10 +73,8 @@ CREATE TABLE IF NOT EXISTS api_zwiftracing_riders (
   raw_response JSONB NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_velo 
-  ON api_zwiftracing_riders(velo DESC NULLS LAST);
-CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_racing_score 
-  ON api_zwiftracing_riders(racing_score DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_velo_live 
+  ON api_zwiftracing_riders(velo_live DESC NULLS LAST);
 CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_fetched 
   ON api_zwiftracing_riders(fetched_at DESC);
 
