@@ -12,10 +12,12 @@ Lightweight dashboard applicatie voor TeamNL Cloud9 racing team met 3 core dashb
 
 ## 🏗️ Architectuur
 
-**Ultra-minimale setup:**
+**Dual-source data model:**
 - Frontend: React + Vite + TypeScript + Tailwind
-- Backend: Express met static file serving (geen database!)
-- Auth: Discord OAuth via Supabase
+- Backend: Supabase (PostgreSQL database + Auth)
+- Data Sources:
+  - **ZwiftRacing.app**: Racing metrics, power data, vELO
+  - **Zwift Official API**: Competition racing score, avatars, social stats
 - Deployment: Railway (Dockerfile)
 
 ## 📁 Structuur

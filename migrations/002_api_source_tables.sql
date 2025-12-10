@@ -1,0 +1,759 @@
+-- ============================================================================
+-- MIGRATION 002: API Source Tables (1:1 Mapping)
+-- ============================================================================
+-- Principe: Tabelnaam = api_{source}_{endpoint_path}
+-- Doel: Exacte kopie van API responses zonder transformaties
+-- Datum: 8 december 2025
+-- ============================================================================
+
+-- ============================================================================
+-- ZWIFTRACING.APP SOURCE TABLES
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- API: GET /public/clubs/{id}
+-- Rate: 1/60min (Standard) | 10/60min (Premium)
+-- Returns: 1000 members max, 51 fields per rider
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwiftracing_public_clubs (
+  -- Meta
+  club_id INTEGER PRIMARY KEY,
+  source_api TEXT DEFAULT 'zwiftracing.app' NOT NULL,
+  endpoint TEXT DEFAULT '/public/clubs/{id}' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response
+  id INTEGER NOT NULL,
+  name TEXT,
+  description TEXT,
+  member_count INTEGER,
+  
+  -- Raw JSON backup
+  raw_response JSONB NOT NULL
+);
+
+COMMENT ON TABLE api_zwiftracing_public_clubs IS 
+  '1:1 mapping van GET /public/clubs/{id}. Club metadata zonder riders.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_clubs_fetched 
+  ON api_zwiftracing_public_clubs(fetched_at DESC);
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /public/clubs/{id} (riders array binnen response)
+-- Rate: 1/60min (Standard) | 10/60min (Premium)
+-- Returns: 51 fields per rider, max 1000 riders
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwiftracing_public_clubs_riders (
+  -- Meta
+  rider_id INTEGER PRIMARY KEY,
+  club_id INTEGER NOT NULL,
+  source_api TEXT DEFAULT 'zwiftracing.app' NOT NULL,
+  endpoint TEXT DEFAULT '/public/clubs/{id}' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response (51 fields - exact copy)
+  id INTEGER NOT NULL,
+  name TEXT,
+  velo DECIMAL(10,2),
+  racing_score DECIMAL(10,2),
+  
+  -- Power absolute (watts)
+  ftp INTEGER,
+  power_5s INTEGER,
+  power_15s INTEGER,
+  power_30s INTEGER,
+  power_60s INTEGER,
+  power_120s INTEGER,
+  power_300s INTEGER,
+  power_1200s INTEGER,
+  
+  -- Power relative (w/kg)
+  power_5s_wkg DECIMAL(5,2),
+  power_15s_wkg DECIMAL(5,2),
+  power_30s_wkg DECIMAL(5,2),
+  power_60s_wkg DECIMAL(5,2),
+  power_120s_wkg DECIMAL(5,2),
+  power_300s_wkg DECIMAL(5,2),
+  power_1200s_wkg DECIMAL(5,2),
+  
+  -- Physical
+  weight DECIMAL(5,2),
+  height INTEGER,
+  
+  -- Classification
+  phenotype TEXT,
+  category TEXT,
+  
+  -- Stats
+  race_count INTEGER,
+  
+  -- Additional fields (expand as discovered)
+  zwift_id INTEGER,
+  country TEXT,
+  age INTEGER,
+  
+  -- Raw JSON backup
+  raw_response JSONB NOT NULL,
+  
+  FOREIGN KEY (club_id) REFERENCES api_zwiftracing_public_clubs(club_id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE api_zwiftracing_public_clubs_riders IS 
+  '1:1 mapping van GET /public/clubs/{id} riders array. PRIMARY SOURCE voor team data. 51 fields per rider.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_clubs_riders_club 
+  ON api_zwiftracing_public_clubs_riders(club_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_clubs_riders_velo 
+  ON api_zwiftracing_public_clubs_riders(velo DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_clubs_riders_fetched 
+  ON api_zwiftracing_public_clubs_riders(fetched_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_clubs_riders_name 
+  ON api_zwiftracing_public_clubs_riders(name);
+
+
+-- ----------------------------------------------------------------------------
+-- API: POST /public/riders (bulk)
+-- Rate: 1/15min (Standard) | 10/15min (Premium)
+-- Returns: 51 fields per rider, max 1000 riders
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwiftracing_public_riders_bulk (
+  -- Meta
+  rider_id INTEGER PRIMARY KEY,
+  source_api TEXT DEFAULT 'zwiftracing.app' NOT NULL,
+  endpoint TEXT DEFAULT '/public/riders (bulk)' NOT NULL,
+  bulk_request_id UUID,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response (51 fields - same as clubs)
+  id INTEGER NOT NULL,
+  name TEXT,
+  velo DECIMAL(10,2),
+  racing_score DECIMAL(10,2),
+  
+  -- Power absolute
+  ftp INTEGER,
+  power_5s INTEGER,
+  power_15s INTEGER,
+  power_30s INTEGER,
+  power_60s INTEGER,
+  power_120s INTEGER,
+  power_300s INTEGER,
+  power_1200s INTEGER,
+  
+  -- Power relative
+  power_5s_wkg DECIMAL(5,2),
+  power_15s_wkg DECIMAL(5,2),
+  power_30s_wkg DECIMAL(5,2),
+  power_60s_wkg DECIMAL(5,2),
+  power_120s_wkg DECIMAL(5,2),
+  power_300s_wkg DECIMAL(5,2),
+  power_1200s_wkg DECIMAL(5,2),
+  
+  -- Physical
+  weight DECIMAL(5,2),
+  height INTEGER,
+  
+  -- Classification
+  phenotype TEXT,
+  category TEXT,
+  
+  -- Stats
+  race_count INTEGER,
+  
+  -- Additional
+  zwift_id INTEGER,
+  country TEXT,
+  age INTEGER,
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL
+);
+
+COMMENT ON TABLE api_zwiftracing_public_riders_bulk IS 
+  '1:1 mapping van POST /public/riders. BACKUP SOURCE - gebruik alleen voor riders buiten club.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_riders_bulk_fetched 
+  ON api_zwiftracing_public_riders_bulk(fetched_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_riders_bulk_request 
+  ON api_zwiftracing_public_riders_bulk(bulk_request_id);
+
+-- Track bulk requests
+CREATE TABLE IF NOT EXISTS api_zwiftracing_public_riders_bulk_requests (
+  request_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  requested_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  rider_ids INTEGER[] NOT NULL,
+  total_riders INTEGER NOT NULL,
+  successful_count INTEGER,
+  failed_count INTEGER,
+  duration_ms INTEGER,
+  error_message TEXT
+);
+
+COMMENT ON TABLE api_zwiftracing_public_riders_bulk_requests IS 
+  'Log van bulk request calls voor monitoring en debugging.';
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /public/riders/{id}
+-- Rate: 5/min (Standard) | 10/min (Premium)
+-- Returns: 51 fields (same as bulk)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwiftracing_public_riders_individual (
+  -- Meta
+  rider_id INTEGER PRIMARY KEY,
+  source_api TEXT DEFAULT 'zwiftracing.app' NOT NULL,
+  endpoint TEXT DEFAULT '/public/riders/{id}' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response (51 fields - same structure)
+  id INTEGER NOT NULL,
+  name TEXT,
+  velo DECIMAL(10,2),
+  racing_score DECIMAL(10,2),
+  
+  -- Power absolute
+  ftp INTEGER,
+  power_5s INTEGER,
+  power_15s INTEGER,
+  power_30s INTEGER,
+  power_60s INTEGER,
+  power_120s INTEGER,
+  power_300s INTEGER,
+  power_1200s INTEGER,
+  
+  -- Power relative
+  power_5s_wkg DECIMAL(5,2),
+  power_15s_wkg DECIMAL(5,2),
+  power_30s_wkg DECIMAL(5,2),
+  power_60s_wkg DECIMAL(5,2),
+  power_120s_wkg DECIMAL(5,2),
+  power_300s_wkg DECIMAL(5,2),
+  power_1200s_wkg DECIMAL(5,2),
+  
+  -- Physical
+  weight DECIMAL(5,2),
+  height INTEGER,
+  
+  -- Classification
+  phenotype TEXT,
+  category TEXT,
+  
+  -- Stats
+  race_count INTEGER,
+  
+  -- Additional
+  zwift_id INTEGER,
+  country TEXT,
+  age INTEGER,
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL
+);
+
+COMMENT ON TABLE api_zwiftracing_public_riders_individual IS 
+  '1:1 mapping van GET /public/riders/{id}. On-demand individual lookups.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_riders_individual_fetched 
+  ON api_zwiftracing_public_riders_individual(fetched_at DESC);
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /api/events/upcoming
+-- Rate: Unknown (estimate hourly)
+-- Returns: Array of events, ~10 fields per event
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwiftracing_api_events_upcoming (
+  -- Meta
+  event_id TEXT PRIMARY KEY,
+  source_api TEXT DEFAULT 'zwiftracing.app' NOT NULL,
+  endpoint TEXT DEFAULT '/api/events/upcoming' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response
+  time BIGINT NOT NULL,                    -- Unix timestamp
+  start_time TIMESTAMPTZ,                  -- Converted
+  route_id TEXT,
+  distance INTEGER,                        -- meters
+  title TEXT NOT NULL,
+  num_laps TEXT,
+  type TEXT,                               -- Race/Workout/GroupRide
+  sub_type TEXT,                           -- Scratch/Points/TT
+  staggered_start BOOLEAN,
+  categories TEXT,                         -- "A,B,C,D,E"
+  signups TEXT,                            -- "25,34,57,44,16"
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL
+);
+
+COMMENT ON TABLE api_zwiftracing_api_events_upcoming IS 
+  '1:1 mapping van GET /api/events/upcoming. Event calendar (856+ events).';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_api_events_upcoming_start 
+  ON api_zwiftracing_api_events_upcoming(start_time DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_api_events_upcoming_type 
+  ON api_zwiftracing_api_events_upcoming(type);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_api_events_upcoming_fetched 
+  ON api_zwiftracing_api_events_upcoming(fetched_at DESC);
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /api/events/{eventId}/signups
+-- Rate: Unknown (estimate on-demand)
+-- Returns: Grouped by category, 50+ fields per rider
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwiftracing_api_events_signups (
+  -- Meta
+  signup_id SERIAL PRIMARY KEY,
+  event_id TEXT NOT NULL,
+  rider_id INTEGER NOT NULL,
+  category TEXT NOT NULL,                  -- A/B/C/D/E
+  source_api TEXT DEFAULT 'zwiftracing.app' NOT NULL,
+  endpoint TEXT DEFAULT '/api/events/{id}/signups' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- Rider identity
+  name TEXT,
+  zwift_id INTEGER,
+  
+  -- Power absolute (watts)
+  w5 INTEGER,
+  w15 INTEGER,
+  w30 INTEGER,
+  w60 INTEGER,
+  w120 INTEGER,
+  w300 INTEGER,
+  w1200 INTEGER,
+  
+  -- Power relative (w/kg)
+  wkg5 DECIMAL(5,2),
+  wkg15 DECIMAL(5,2),
+  wkg30 DECIMAL(5,2),
+  wkg60 DECIMAL(5,2),
+  wkg120 DECIMAL(5,2),
+  wkg300 DECIMAL(5,2),
+  wkg1200 DECIMAL(5,2),
+  
+  -- Critical Power model
+  cp DECIMAL(10,2),
+  awc DECIMAL(10,2),
+  compound_score DECIMAL(10,2),
+  
+  -- Race stats
+  race_rating DECIMAL(10,2),
+  race_finishes INTEGER,
+  race_wins INTEGER,
+  race_podiums INTEGER,
+  race_dnfs INTEGER,
+  
+  -- Physical
+  weight INTEGER,                          -- grams
+  height INTEGER,                          -- cm
+  
+  -- Classification
+  phenotype_value TEXT,
+  phenotype_bias DECIMAL(5,2),
+  phenotype_sprinter_score DECIMAL(5,2),
+  phenotype_breakaway_score DECIMAL(5,2),
+  phenotype_climber_score DECIMAL(5,2),
+  phenotype_tt_score DECIMAL(5,2),
+  
+  -- Club
+  club_id INTEGER,
+  club_name TEXT,
+  club_bg_color TEXT,
+  club_text_color TEXT,
+  club_border_color TEXT,
+  
+  -- Handicaps
+  handicap_standard DECIMAL(5,2),
+  handicap_ttt DECIMAL(5,2),
+  handicap_climbing DECIMAL(5,2),
+  handicap_flat DECIMAL(5,2),
+  
+  -- Points & events
+  points INTEGER,
+  events_30d INTEGER,
+  events_90d INTEGER,
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL,
+  
+  UNIQUE(event_id, rider_id, category)
+);
+
+COMMENT ON TABLE api_zwiftracing_api_events_signups IS 
+  '1:1 mapping van GET /api/events/{id}/signups. PRE-RACE ANALYSIS GOLDMINE! 50+ fields per rider.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_api_events_signups_event 
+  ON api_zwiftracing_api_events_signups(event_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_api_events_signups_rider 
+  ON api_zwiftracing_api_events_signups(rider_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_api_events_signups_category 
+  ON api_zwiftracing_api_events_signups(category);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_api_events_signups_rating 
+  ON api_zwiftracing_api_events_signups(race_rating DESC NULLS LAST);
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /public/results/{eventId}
+-- Rate: 1/min (Standard & Premium)
+-- Returns: Race results (structure TBD)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwiftracing_public_results (
+  -- Meta
+  result_id SERIAL PRIMARY KEY,
+  event_id TEXT NOT NULL,
+  rider_id INTEGER NOT NULL,
+  source_api TEXT DEFAULT 'zwiftracing.app' NOT NULL,
+  endpoint TEXT DEFAULT '/public/results/{id}' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response (expand when tested)
+  position INTEGER,
+  category TEXT,
+  finish_time INTEGER,                     -- seconds
+  time_gap INTEGER,                        -- seconds behind winner
+  
+  -- Power data (if available)
+  avg_power INTEGER,
+  max_power INTEGER,
+  normalized_power INTEGER,
+  
+  -- Performance
+  avg_hr INTEGER,
+  max_hr INTEGER,
+  avg_cadence INTEGER,
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL,
+  
+  UNIQUE(event_id, rider_id)
+);
+
+COMMENT ON TABLE api_zwiftracing_public_results IS 
+  '1:1 mapping van GET /public/results/{id}. Post-race results data.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_results_event 
+  ON api_zwiftracing_public_results(event_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_results_rider 
+  ON api_zwiftracing_public_results(rider_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_public_results_position 
+  ON api_zwiftracing_public_results(position);
+
+
+-- ============================================================================
+-- ZWIFT OFFICIAL API SOURCE TABLES
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- API: GET /api/profiles/{id}
+-- Rate: ~1/sec recommended
+-- Returns: 92 fields (profile, social, achievements)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwift_api_profiles (
+  -- Meta
+  rider_id INTEGER PRIMARY KEY,
+  source_api TEXT DEFAULT 'zwift.com' NOT NULL,
+  endpoint TEXT DEFAULT '/api/profiles/{id}' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response (92 fields)
+  id INTEGER NOT NULL,
+  public_id TEXT,
+  first_name TEXT,
+  last_name TEXT,
+  
+  -- Avatar
+  image_src TEXT,
+  image_src_large TEXT,
+  
+  -- Demographics
+  male BOOLEAN,
+  birth_date DATE,
+  age INTEGER,
+  country_code INTEGER,
+  country_alpha3 TEXT,
+  
+  -- Physical (API returns grams/mm)
+  weight INTEGER,                          -- grams
+  height INTEGER,                          -- cm
+  ftp INTEGER,                             -- watts
+  
+  -- Social
+  followers_count INTEGER,
+  followees_count INTEGER,
+  rideons_given INTEGER,
+  
+  -- Achievements
+  achievement_level INTEGER,
+  total_distance BIGINT,                   -- meters
+  total_distance_climbed BIGINT,           -- meters
+  total_xp INTEGER,
+  
+  -- Privacy settings
+  privacy_profile BOOLEAN,
+  privacy_activities BOOLEAN,
+  privacy_messaging BOOLEAN,
+  privacy_display_weight BOOLEAN,
+  privacy_display_age BOOLEAN,
+  
+  -- Status
+  riding BOOLEAN,
+  world_id INTEGER,
+  
+  -- Profile details
+  player_type TEXT,
+  player_type_id INTEGER,
+  use_metric BOOLEAN,
+  
+  -- Additional fields
+  email_address TEXT,
+  email_address_verified BOOLEAN,
+  
+  -- Competition Metrics (Zwift Official Racing Score) 🏁
+  competition_racing_score INTEGER,
+  competition_category TEXT,
+  competition_category_women TEXT,
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL
+);
+
+COMMENT ON TABLE api_zwift_api_profiles IS 
+  '1:1 mapping van GET /api/profiles/{id}. Official Zwift profile met avatars, social stats, EN competitionMetrics (racing score). 95 fields.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_fetched 
+  ON api_zwift_api_profiles(fetched_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_name 
+  ON api_zwift_api_profiles(first_name, last_name);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_country 
+  ON api_zwift_api_profiles(country_code);
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /api/profiles/{id}/activities
+-- Rate: ~1/sec recommended
+-- Returns: Array of activities, 28 fields each
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwift_api_profiles_activities (
+  -- Meta
+  activity_id BIGINT PRIMARY KEY,
+  rider_id INTEGER NOT NULL,
+  source_api TEXT DEFAULT 'zwift.com' NOT NULL,
+  endpoint TEXT DEFAULT '/api/profiles/{id}/activities' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response (28 fields)
+  id BIGINT NOT NULL,
+  id_str TEXT,
+  profile_id INTEGER,
+  name TEXT,
+  description TEXT,
+  
+  -- Timing
+  start_date TIMESTAMPTZ,
+  end_date TIMESTAMPTZ,
+  moving_time_ms BIGINT,
+  elapsed_time_ms BIGINT,
+  
+  -- Distance & elevation
+  distance_meters DECIMAL(10,2),
+  total_elevation DECIMAL(10,2),
+  
+  -- Power
+  avg_watts INTEGER,
+  max_watts INTEGER,
+  normalized_power INTEGER,
+  
+  -- Heart rate
+  avg_hr INTEGER,
+  max_hr INTEGER,
+  
+  -- Cadence
+  avg_cadence INTEGER,
+  
+  -- Energy
+  calories DECIMAL(10,2),
+  
+  -- Social
+  rideon_count INTEGER,
+  comment_count INTEGER,
+  
+  -- World & route
+  world_id INTEGER,
+  route_id TEXT,
+  
+  -- Files
+  fit_file_key TEXT,
+  fit_file_bucket TEXT,
+  
+  -- Privacy
+  privacy TEXT,                            -- PUBLIC/PRIVATE/FOLLOWERS
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL,
+  
+  FOREIGN KEY (rider_id) REFERENCES api_zwift_api_profiles(rider_id) ON DELETE CASCADE
+);
+
+COMMENT ON TABLE api_zwift_api_profiles_activities IS 
+  '1:1 mapping van GET /api/profiles/{id}/activities. Activity feed met performance metrics. 28 fields per activity.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_activities_rider 
+  ON api_zwift_api_profiles_activities(rider_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_activities_start 
+  ON api_zwift_api_profiles_activities(start_date DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_activities_fetched 
+  ON api_zwift_api_profiles_activities(fetched_at DESC);
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /api/profiles/{id}/followers
+-- Rate: ~1/sec recommended
+-- Returns: Array of followers with nested profiles
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwift_api_profiles_followers (
+  -- Meta
+  id SERIAL PRIMARY KEY,
+  rider_id INTEGER NOT NULL,               -- followee (being followed)
+  follower_id INTEGER NOT NULL,            -- follower (following)
+  source_api TEXT DEFAULT 'zwift.com' NOT NULL,
+  endpoint TEXT DEFAULT '/api/profiles/{id}/followers' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response
+  status TEXT,                             -- "IS_FOLLOWING"
+  is_favorite BOOLEAN,
+  
+  -- Follower profile (nested)
+  follower_first_name TEXT,
+  follower_last_name TEXT,
+  follower_avatar TEXT,
+  follower_country_code INTEGER,
+  follower_followers_count INTEGER,
+  follower_followees_count INTEGER,
+  followees_in_common INTEGER,
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL,
+  
+  UNIQUE(rider_id, follower_id)
+);
+
+COMMENT ON TABLE api_zwift_api_profiles_followers IS 
+  '1:1 mapping van GET /api/profiles/{id}/followers. Social network - wie volgt deze rider.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_followers_rider 
+  ON api_zwift_api_profiles_followers(rider_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_followers_follower 
+  ON api_zwift_api_profiles_followers(follower_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_followers_fetched 
+  ON api_zwift_api_profiles_followers(fetched_at DESC);
+
+
+-- ----------------------------------------------------------------------------
+-- API: GET /api/profiles/{id}/followees
+-- Rate: ~1/sec recommended
+-- Returns: Array of followees with nested profiles
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS api_zwift_api_profiles_followees (
+  -- Meta
+  id SERIAL PRIMARY KEY,
+  rider_id INTEGER NOT NULL,               -- follower (following)
+  followee_id INTEGER NOT NULL,            -- followee (being followed)
+  source_api TEXT DEFAULT 'zwift.com' NOT NULL,
+  endpoint TEXT DEFAULT '/api/profiles/{id}/followees' NOT NULL,
+  fetched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  
+  -- API Response
+  status TEXT,                             -- "IS_FOLLOWING"
+  is_favorite BOOLEAN,
+  
+  -- Followee profile (nested)
+  followee_first_name TEXT,
+  followee_last_name TEXT,
+  followee_avatar TEXT,
+  followee_country_code INTEGER,
+  followee_followers_count INTEGER,
+  followee_followees_count INTEGER,
+  followees_in_common INTEGER,
+  
+  -- Raw JSON
+  raw_response JSONB NOT NULL,
+  
+  UNIQUE(rider_id, followee_id)
+);
+
+COMMENT ON TABLE api_zwift_api_profiles_followees IS 
+  '1:1 mapping van GET /api/profiles/{id}/followees. Social network - wie volgt deze rider.';
+
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_followees_rider 
+  ON api_zwift_api_profiles_followees(rider_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_followees_followee 
+  ON api_zwift_api_profiles_followees(followee_id);
+CREATE INDEX IF NOT EXISTS idx_api_zwift_api_profiles_followees_fetched 
+  ON api_zwift_api_profiles_followees(fetched_at DESC);
+
+
+-- ============================================================================
+-- SYNC MONITORING
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS api_sync_log (
+  id SERIAL PRIMARY KEY,
+  source_api TEXT NOT NULL,
+  endpoint TEXT NOT NULL,
+  sync_started_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  sync_completed_at TIMESTAMPTZ,
+  status TEXT NOT NULL,                    -- 'running', 'success', 'failed'
+  records_fetched INTEGER,
+  records_inserted INTEGER,
+  records_updated INTEGER,
+  error_message TEXT,
+  duration_ms INTEGER,
+  
+  -- Request details
+  request_params JSONB,
+  http_status_code INTEGER
+);
+
+COMMENT ON TABLE api_sync_log IS 
+  'Monitoring log voor alle API sync operaties. Track success/failure rates en performance.';
+
+CREATE INDEX IF NOT EXISTS idx_api_sync_log_started 
+  ON api_sync_log(sync_started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_sync_log_api 
+  ON api_sync_log(source_api, endpoint);
+CREATE INDEX IF NOT EXISTS idx_api_sync_log_status 
+  ON api_sync_log(status);
+
+
+-- ============================================================================
+-- GRANT PERMISSIONS (Supabase service role)
+-- ============================================================================
+
+-- Grant read access to authenticated users
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated;
+
+-- Grant full access to service role (for sync jobs)
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO service_role;
+
+-- ============================================================================
+-- MIGRATION COMPLETE
+-- ============================================================================
+
+-- Verify table count
+DO $$
+DECLARE
+  table_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO table_count
+  FROM information_schema.tables
+  WHERE table_schema = 'public'
+    AND table_name LIKE 'api_%';
+  
+  RAISE NOTICE 'Created % API source tables', table_count;
+END $$;

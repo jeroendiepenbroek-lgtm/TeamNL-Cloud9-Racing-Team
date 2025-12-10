@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.87.0",
+    "axios": "^1.13.2",
+    "better-sqlite3": "^12.5.0"
+  }
+}
