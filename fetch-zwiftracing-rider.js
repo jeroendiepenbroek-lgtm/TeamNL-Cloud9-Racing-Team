@@ -5,10 +5,10 @@ const { createClient } = require('@supabase/supabase-js');
 const ZWIFTRACING_API_KEY = '650c6d2fc4ef6858d74cbef1';
 const ZWIFTRACING_BASE_URL = 'https://zwift-ranking.herokuapp.com';
 
-// Supabase setup
+// Supabase setup (use environment variables if available)
 const supabase = createClient(
-  'https://tfsepzumkireferencer.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRmc2VwenVta2lyZWZlcmVuY2VyIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMzY1Mjg3NCwiZXhwIjoyMDQ5MjI4ODc0fQ.w_OaLXZ-VvGJV0_6n1zP9rH7YXElxyoTqDcg0p_7W7s'
+  process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co',
+  process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJrdGJlZWZkbXJweGhzeXlhbHZjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczMTk1NDYzMSwiZXhwIjoyMDc3NTMwNjMxfQ.jZeIBq_SUydFzFs6YUYJooxfu_mZ7ZBrz6oT_0QiHiU'
 );
 
 async function fetchZwiftRacingRider(riderId) {
@@ -101,18 +101,19 @@ async function fetchZwiftRacingRider(riderId) {
     console.log('🔍 Checking v_rider_complete view...');
     const { data: viewData, error: viewError } = await supabase
       .from('v_rider_complete')
-      .select('rider_id, full_name, velo, zwiftracing_score, zwift_official_racing_score, weight_kg, ftp_watts, phenotype, data_completeness')
+      .select('rider_id, full_name, racing_name, velo_live, velo_30day, velo_90day, zwift_official_racing_score, weight_kg, racing_ftp, phenotype, data_completeness')
       .eq('rider_id', riderId)
       .maybeSingle();
     
     if (viewData) {
       console.log('\n📊 COMPLETE VIEW DATA (v_rider_complete):');
-      console.log(`   Name: ${viewData.full_name}`);
-      console.log(`   🏁 vELO: ${viewData.velo || 'N/A'}`);
-      console.log(`   🏁 ZwiftRacing Score: ${viewData.zwiftracing_score || 'N/A'}`);
+      console.log(`   Name: ${viewData.full_name || viewData.racing_name}`);
+      console.log(`   🏁 vELO Live: ${viewData.velo_live || 'N/A'}`);
+      console.log(`   🏁 vELO 30d: ${viewData.velo_30day || 'N/A'}`);
+      console.log(`   🏁 vELO 90d: ${viewData.velo_90day || 'N/A'}`);
       console.log(`   🏁 Zwift Official Score: ${viewData.zwift_official_racing_score || 'N/A'}`);
       console.log(`   Weight: ${viewData.weight_kg}kg`);
-      console.log(`   FTP: ${viewData.ftp_watts}W`);
+      console.log(`   FTP: ${viewData.racing_ftp}W`);
       console.log(`   Phenotype: ${viewData.phenotype || 'N/A'}`);
       console.log(`   Data Completeness: ${viewData.data_completeness}`);
       console.log('\n✅ ALL DATA NOW SYNCED!');
