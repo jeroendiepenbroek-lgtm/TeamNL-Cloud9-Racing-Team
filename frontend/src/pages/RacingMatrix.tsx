@@ -301,12 +301,15 @@ export default function RacingDataMatrixModern() {
     queryKey: ['matrixRiders'],
     queryFn: async () => {
       // Query v_rider_complete view via Supabase REST API
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co'
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      
       const res = await fetch(
-        `https://tfsepzumkireferencer.supabase.co/rest/v1/v_rider_complete?select=*&order=velo_live.desc.nullslast`,
+        `${supabaseUrl}/rest/v1/v_rider_complete?select=*&order=velo_live.desc.nullslast`,
         {
           headers: {
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`
           }
         }
       )
