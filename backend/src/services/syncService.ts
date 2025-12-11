@@ -7,22 +7,16 @@ const ZWIFT_OFFICIAL_BASE_URL = 'https://us-or-rly101.zwift.com/api';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
 
-// Lazy initialization to avoid module loading errors
-let supabase: SupabaseClient | null = null;
+// Export a function to initialize supabase AFTER env is loaded
+let supabase: SupabaseClient;
 
-function getSupabase(): SupabaseClient {
-  if (!supabase) {
-    const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-    if (!SUPABASE_SERVICE_KEY) {
-      throw new Error('SUPABASE_SERVICE_KEY is required');
-    }
-    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+export function initializeSupabase() {
+  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+  if (!SUPABASE_SERVICE_KEY) {
+    throw new Error('SUPABASE_SERVICE_KEY is required in environment variables');
   }
-  // TypeScript needs explicit non-null assertion
-  if (!supabase) {
-    throw new Error('Failed to initialize Supabase client');
-  }
-  return supabase;
+  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  console.log('✅ Supabase client initialized in syncService');
 }
 
 interface SyncResult {

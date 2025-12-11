@@ -1,4 +1,4 @@
-// Load environment variables FIRST
+// Load environment variables FIRST - before ANY other imports
 import { config } from 'dotenv';
 config();
 
@@ -6,14 +6,19 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import adminRoutes from './routes/admin';
+import adminRoutes, { initializeSupabase as initAdminSupabase } from './routes/admin';
+import { initializeSupabase as initSyncSupabase } from './services/syncService';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Initialize Supabase clients AFTER dotenv loaded
+initAdminSupabase();
+initSyncSupabase();
+
 const app = express();
 const PORT = process.env.PORT || 8080;
-const VERSION = '4.0.1-fixed'; // Force redeploy with getSupabase fix
+const VERSION = '4.0.3-init-after-dotenv';
 
 // Middleware
 app.use(cors());
