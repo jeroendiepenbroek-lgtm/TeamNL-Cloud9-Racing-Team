@@ -754,6 +754,10 @@ export default function RacingDataMatrixModern() {
                   <th rowSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600">
                     Cat
                   </th>
+                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider bg-orange-600 border-r border-slate-600 cursor-pointer hover:bg-orange-500" onClick={() => handleSort('zwift_official_racing_score')} title="Zwift Official Racing Score">
+                    <span className="hidden sm:inline">ZRS</span>
+                    <span className="sm:hidden">⚡</span>
+                  </th>
                   <th colSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider bg-green-700 border-r border-slate-600">
                     zFTP
                   </th>
@@ -868,6 +872,22 @@ export default function RacingDataMatrixModern() {
                         {zpCategory && ZP_CATEGORIES[zpCategory] ? (
                           <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-md border ${ZP_CATEGORIES[zpCategory].color}`}>
                             {ZP_CATEGORIES[zpCategory].label}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-0.5 whitespace-nowrap text-center" title={rider.zwift_official_racing_score ? `Zwift Official Racing Score: ${rider.zwift_official_racing_score}` : 'No official score'}>
+                        {rider.zwift_official_racing_score ? (
+                          <span className={`inline-block px-2 py-1 text-xs font-bold rounded-md ${
+                            rider.zwift_official_racing_score >= 700 ? 'bg-red-100 text-red-900 border border-red-300' :
+                            rider.zwift_official_racing_score >= 600 ? 'bg-orange-100 text-orange-900 border border-orange-300' :
+                            rider.zwift_official_racing_score >= 500 ? 'bg-yellow-100 text-yellow-900 border border-yellow-300' :
+                            rider.zwift_official_racing_score >= 400 ? 'bg-green-100 text-green-900 border border-green-300' :
+                            rider.zwift_official_racing_score >= 300 ? 'bg-blue-100 text-blue-900 border border-blue-300' :
+                            'bg-gray-100 text-gray-700 border border-gray-300'
+                          }`}>
+                            {rider.zwift_official_racing_score}
                           </span>
                         ) : (
                           <span className="text-gray-400 text-xs">-</span>
