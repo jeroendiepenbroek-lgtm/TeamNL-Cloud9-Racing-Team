@@ -103,6 +103,8 @@ function App() {
                 <Route path="/" element={<RacingMatrix />} />
                 <Route path="/events" element={<EventsDashboard />} />
                 <Route path="/results" element={<ResultsDashboard />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="*" element={
                   <div className="flex items-center justify-center min-h-screen">
                     <div className="text-center">
