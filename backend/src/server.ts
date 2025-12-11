@@ -69,7 +69,7 @@ app.get('/api/admin/sync/config', adminAuth, async (req: Request, res: Response)
       }
     });
     
-    const data = await response.json();
+    const data = await response.json() as any;
     res.json(data[0] || {});
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -93,7 +93,7 @@ app.post('/api/admin/sync/config', adminAuth, express.json(), async (req: Reques
       body: JSON.stringify(req.body)
     });
     
-    const data = await response.json();
+    const data = await response.json() as any;
     res.json(data[0] || {});
   } catch (error: any) {
     res.status(500).json({ error: error.message });
@@ -165,7 +165,7 @@ app.post('/api/admin/team/members', adminAuth, express.json(), async (req: Reque
       body: JSON.stringify({ rider_id, notes, added_by: 'admin' })
     });
     
-    const data = await response.json();
+    const data = await response.json() as any;
     res.json(data[0] || data);
   } catch (error: any) {
     res.status(500).json({ error: error.message });

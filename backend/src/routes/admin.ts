@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 import { authenticateAdmin, AuthRequest } from '../middleware/auth';
+import { syncRider, syncAllRiders } from '../services/syncService';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -129,6 +130,11 @@ router.post('/team/riders', authenticateAdmin, async (req: AuthRequest, res: Res
       p_details: { rider_id, zwift_id, notes }
     });
 
+    // Trigger immediate sync for this rider (async, don't wait)
+    syncRider(rider_id).catch(err => 
+      console.error(`Failed to sync newly added rider ${rider_id}:`, err)
+    );
+
     res.json(data);
   } catch (error: any) {
     console.error('Add rider error:', error);
@@ -165,6 +171,15 @@ router.post('/team/riders/bulk', authenticateAdmin, async (req: AuthRequest, res
       p_entity_id: 'bulk',
       p_details: { count: rider_ids.length, rider_ids }
     });
+
+    // Trigger sync for all newly added riders (async, don't wait)
+    for (const rider_id of rider_ids) {
+      syncRider(rider_id).catch(err => 
+        console.error(`Failed to sync newly added rider ${rider_id}:`, err)
+      );
+      // Small delay between syncs
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
     res.json({ success: true, added: data?.length || 0 });
   } catch (error: any) {
@@ -371,51 +386,28 @@ router.get('/audit', authenticateAdmin, async (req: AuthRequest, res: Response) 
 
 async function triggerSync(logId: number, triggeredBy: string | undefined) {
   const startTime = Date.now();
-  let ridersSynced = 0;
-  let ridersFailed = 0;
   let errorMessage = '';
 
   try {
-    // Get all riders from team roster
-    const { data: roster } = await supabase
-      .from('team_roster')
-      .select('rider_id')
-      .eq('is_active', true);
-
-    if (!roster || roster.length === 0) {
-      throw new Error('No active riders in roster');
-    }
-
-    // Sync each rider (simplified - real implementation would use worker queue)
-    for (const rider of roster) {
-      try {
-        // Call sync script (would be actual sync logic)
-        console.log(`Syncing rider ${rider.rider_id}...`);
-        ridersSynced++;
-        
-        // Update last_synced in roster
-        await supabase
-          .from('team_roster')
-          .update({ last_synced: new Date().toISOString() })
-          .eq('rider_id', rider.rider_id);
-          
-      } catch (error: any) {
-        console.error(`Failed to sync rider ${rider.rider_id}:`, error.message);
-        ridersFailed++;
-      }
-    }
-
-    // Update sync log as success
+    console.log(`🔄 Starting sync triggered by ${triggeredBy}...`);
+    
+    // Use the real sync service to fetch data from APIs
+    const syncResult = await syncAllRiders();
+    
+    // Update sync log with results
     await supabase
       .from('sync_logs')
       .update({
-        status: ridersFailed === 0 ? 'success' : 'partial',
+        status: syncResult.failed === 0 ? 'success' : syncResult.synced > 0 ? 'partial' : 'failed',
         completed_at: new Date().toISOString(),
-        riders_synced: ridersSynced,
-        riders_failed: ridersFailed,
-        duration_seconds: Math.floor((Date.now() - startTime) / 1000)
+        riders_synced: syncResult.synced,
+        riders_failed: syncResult.failed,
+        duration_seconds: Math.floor((Date.now() - startTime) / 1000),
+        error_message: syncResult.failed > 0 ? `${syncResult.failed} riders failed to sync` : null
       })
       .eq('id', logId);
+    
+    console.log(`✅ Sync completed: ${syncResult.synced}/${syncResult.total} riders synced`);
 
   } catch (error: any) {
     errorMessage = error.message;
@@ -426,8 +418,8 @@ async function triggerSync(logId: number, triggeredBy: string | undefined) {
       .update({
         status: 'failed',
         completed_at: new Date().toISOString(),
-        riders_synced: ridersSynced,
-        riders_failed: ridersFailed,
+        riders_synced: 0,
+        riders_failed: 0,
         error_message: errorMessage,
         duration_seconds: Math.floor((Date.now() - startTime) / 1000)
       })
