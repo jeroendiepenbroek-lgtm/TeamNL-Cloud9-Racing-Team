@@ -6,9 +6,13 @@ import { authenticateAdmin, AuthRequest } from '../middleware/auth';
 import { syncRider, syncAllRiders } from '../services/syncService';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is required in environment variables');
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is required in environment variables');
+  }
+  return secret;
 }
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
@@ -64,7 +68,7 @@ router.post('/login', async (req: Request, res: Response) => {
     // Generate JWT
     const token = jwt.sign(
       { id: admin.id, email: admin.email },
-      JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: '24h' }
     );
 
