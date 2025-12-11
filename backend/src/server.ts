@@ -13,7 +13,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const VERSION = '4.0.0-fresh-start';
+const VERSION = '4.0.1-fixed'; // Force redeploy with getSupabase fix
 
 // Middleware
 app.use(cors());
