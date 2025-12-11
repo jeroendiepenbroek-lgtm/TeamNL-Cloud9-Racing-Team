@@ -32,8 +32,11 @@ CREATE INDEX IF NOT EXISTS idx_api_zwiftracing_riders_podiums
 -- ============================================================================
 -- UPDATE VIEW: v_rider_complete
 -- ============================================================================
+-- Drop and recreate view (cannot use REPLACE when adding columns mid-view)
 
-CREATE OR REPLACE VIEW v_rider_complete AS
+DROP VIEW IF EXISTS v_rider_complete;
+
+CREATE VIEW v_rider_complete AS
 SELECT 
   -- Identity (prefer Zwift Official for official data)
   COALESCE(zo.rider_id, zr.rider_id) AS rider_id,
