@@ -43,3 +43,4 @@ temp/
 .backup/
 
 backend/frontend/.env.local
+CREDENTIALS_AND_KEYS.md

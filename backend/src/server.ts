@@ -1,7 +1,12 @@
+// Load environment variables FIRST
+import { config } from 'dotenv';
+config();
+
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import adminRoutes from './routes/admin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +18,9 @@ const VERSION = '4.0.0-fresh-start';
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Admin API routes
+app.use('/api/admin', adminRoutes);
 
 // Health endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -30,6 +38,162 @@ app.get('/api/config/supabase', (req: Request, res: Response) => {
     url: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co',
     anonKey: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
   });
+});
+
+// ============================================================================
+// ADMIN API ENDPOINTS
+// ============================================================================
+
+// Simple admin auth middleware (TODO: replace with proper auth)
+const adminAuth = (req: Request, res: Response, next: any) => {
+  const authHeader = req.headers.authorization;
+  const adminKey = process.env.ADMIN_KEY || 'teamnl-admin-2025';
+  
+  if (authHeader === `Bearer ${adminKey}`) {
+    next();
+  } else {
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+};
+
+// Get sync configuration
+app.get('/api/admin/sync/config', adminAuth, async (req: Request, res: Response) => {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY || '';
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/sync_config?id=eq.1`, {
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`
+      }
+    });
+    
+    const data = await response.json();
+    res.json(data[0] || {});
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update sync configuration
+app.post('/api/admin/sync/config', adminAuth, express.json(), async (req: Request, res: Response) => {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY || '';
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/sync_config?id=eq.1`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(req.body)
+    });
+    
+    const data = await response.json();
+    res.json(data[0] || {});
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get sync logs
+app.get('/api/admin/sync/logs', adminAuth, async (req: Request, res: Response) => {
+  try {
+    const limit = req.query.limit || 50;
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY || '';
+    
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/sync_logs?order=started_at.desc&limit=${limit}`,
+      {
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`
+        }
+      }
+    );
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get team members
+app.get('/api/admin/team/members', adminAuth, async (req: Request, res: Response) => {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY || '';
+    
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/team_members?order=display_order.asc.nullslast`,
+      {
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`
+        }
+      }
+    );
+    
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Add team member
+app.post('/api/admin/team/members', adminAuth, express.json(), async (req: Request, res: Response) => {
+  try {
+    const { rider_id, notes } = req.body;
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY || '';
+    
+    const response = await fetch(`${supabaseUrl}/rest/v1/team_members`, {
+      method: 'POST',
+      headers: {
+        'apikey': serviceKey,
+        'Authorization': `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify({ rider_id, notes, added_by: 'admin' })
+    });
+    
+    const data = await response.json();
+    res.json(data[0] || data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Remove team member
+app.delete('/api/admin/team/members/:riderId', adminAuth, async (req: Request, res: Response) => {
+  try {
+    const { riderId } = req.params;
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+    const serviceKey = process.env.SUPABASE_SERVICE_KEY || '';
+    
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/team_members?rider_id=eq.${riderId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`
+        }
+      }
+    );
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Mock API endpoints (later te vervangen door Supabase)
