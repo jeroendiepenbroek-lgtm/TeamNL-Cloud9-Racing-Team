@@ -24,6 +24,14 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
+// Supabase config endpoint - serves runtime config to frontend
+app.get('/api/config/supabase', (req: Request, res: Response) => {
+  res.json({
+    url: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co',
+    anonKey: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
+  });
+});
+
 // Mock API endpoints (later te vervangen door Supabase)
 app.get('/api/events/upcoming', (req: Request, res: Response) => {
   res.json({

@@ -33,7 +33,10 @@ async function fetchZwiftRacingRider(riderId) {
     console.log(`   Weight: ${data.weight}kg`);
     console.log(`   Phenotype: ${data.phenotype.value}`);
     console.log(`   Category: ${data.zpCategory}`);
-    console.log(`   Race Finishes: ${data.race.finishes}\n`);
+    console.log(`   🏆 Wins: ${data.race.wins || 0}`);
+    console.log(`   🥇 Podiums: ${data.race.podiums || 0}`);
+    console.log(`   ✅ Finishes: ${data.race.finishes || 0}`);
+    console.log(`   ❌ DNFs: ${data.race.dnfs || 0}\n`);
     
     // Map to NEW api_zwiftracing_riders schema
     const riderData = {
@@ -78,6 +81,12 @@ async function fetchZwiftRacingRider(riderId) {
       race_count: data.race.finishes,
       zwift_id: data.riderId,
       age: null,
+      
+      // Race Results Statistics
+      race_wins: data.race.wins || 0,
+      race_podiums: data.race.podiums || 0,
+      race_finishes: data.race.finishes || 0,
+      race_dnfs: data.race.dnfs || 0,
       
       // Raw backup
       raw_response: data,

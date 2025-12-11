@@ -23,6 +23,15 @@ interface MatrixRider {
   zwiftracing_category: string | null  // A, B, C, D
   race_count: number | null
   
+  // Race Results Statistics
+  race_wins: number | null
+  race_podiums: number | null
+  race_finishes: number | null
+  race_dnfs: number | null
+  win_rate_pct: number | null
+  podium_rate_pct: number | null
+  dnf_rate_pct: number | null
+  
   // Power Curve - Absolute (watts)
   racing_ftp: number | null
   power_5s: number | null
@@ -300,10 +309,18 @@ export default function RacingDataMatrixModern() {
   const { data: riders, isLoading, error } = useQuery<MatrixRider[]>({
     queryKey: ['matrixRiders'],
     queryFn: async () => {
-      // Query v_rider_complete view via Supabase REST API
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co'
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+      // Get Supabase config from backend (runtime, not build-time)
+      const configRes = await fetch('/api/config/supabase')
+      if (!configRes.ok) {
+        throw new Error('Failed to fetch Supabase config from backend')
+      }
+      const { url: supabaseUrl, anonKey: supabaseKey } = await configRes.json()
       
+      if (!supabaseKey) {
+        throw new Error('Supabase API key not configured on server')
+      }
+      
+      // Query v_rider_complete view via Supabase REST API
       const res = await fetch(
         `${supabaseUrl}/rest/v1/v_rider_complete?select=*&order=velo_live.desc.nullslast`,
         {
@@ -759,19 +776,19 @@ export default function RacingDataMatrixModern() {
                   <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-green-700 whitespace-nowrap border-r border-slate-600">
                     W/kg
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_count')}>
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-slate-500 whitespace-nowrap" onClick={() => handleSort('race_finishes')}>
                     <span className="hidden sm:inline">Finishes</span>
                     <span className="sm:hidden">Fin</span>
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight whitespace-nowrap">
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-green-500 whitespace-nowrap" onClick={() => handleSort('race_wins')}>
                     <span className="hidden sm:inline">Wins</span>
                     <span className="sm:hidden">W</span>
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight whitespace-nowrap">
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-blue-500 whitespace-nowrap" onClick={() => handleSort('race_podiums')}>
                     <span className="hidden sm:inline">Podiums</span>
                     <span className="sm:hidden">Pod</span>
                   </th>
-                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight whitespace-nowrap border-r border-slate-600">
+                  <th className="px-1 sm:px-2 py-1 text-right text-[10px] sm:text-xs font-semibold uppercase tracking-tight cursor-pointer hover:bg-red-500 whitespace-nowrap border-r border-slate-600" onClick={() => handleSort('race_dnfs')}>
                     DNF
                   </th>
                   <th className="px-2 py-1 text-center text-[10px] sm:text-xs font-semibold uppercase tracking-tight bg-indigo-700 cursor-pointer hover:bg-indigo-600 whitespace-nowrap min-w-[48px]" onClick={() => handleSort('power_5s_wkg')}>
@@ -866,16 +883,16 @@ export default function RacingDataMatrixModern() {
                         {rider.weight_kg ? `${rider.weight_kg.toFixed(1)}kg` : '-'}
                       </td>
                       <td className="px-2 py-1.5 whitespace-nowrap text-right text-gray-700 font-semibold text-sm">
-                        {rider.race_count || 0}
+                        {rider.race_finishes || 0}
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-bold text-gray-400 text-sm">
-                        -
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-bold text-green-600 text-sm" title={`Win rate: ${rider.win_rate_pct || 0}%`}>
+                        {rider.race_wins || 0}
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-semibold text-gray-400 text-sm">
-                        -
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right font-semibold text-blue-600 text-sm" title={`Podium rate: ${rider.podium_rate_pct || 0}%`}>
+                        {rider.race_podiums || 0}
                       </td>
-                      <td className="px-2 py-1.5 whitespace-nowrap text-right text-gray-400 text-sm">
-                        -
+                      <td className="px-2 py-1.5 whitespace-nowrap text-right text-red-600 text-sm" title={`DNF rate: ${rider.dnf_rate_pct || 0}%`}>
+                        {rider.race_dnfs || 0}
                       </td>
                       
                       {/* Power Intervals in W/kg met team-relative highlighting */}
