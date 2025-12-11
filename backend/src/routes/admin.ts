@@ -9,14 +9,19 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-if (!SUPABASE_SERVICE_KEY) {
-  console.error('❌ SUPABASE_SERVICE_KEY not set in environment');
-  throw new Error('SUPABASE_SERVICE_KEY is required');
+// Lazy initialization to avoid module loading crash
+let supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!supabase) {
+    const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+    if (!SUPABASE_SERVICE_KEY) {
+      throw new Error('SUPABASE_SERVICE_KEY is required');
+    }
+    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  }
+  return supabase;
 }
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // ============================================================================
 // AUTHENTICATION
@@ -122,7 +127,7 @@ router.post('/team/riders', authenticateAdmin, async (req: AuthRequest, res: Res
     if (error) throw error;
 
     // Log action
-    await supabase.rpc('log_admin_action', {
+    await getSupabase().rpc('log_admin_action', {
       p_admin_email: req.admin?.email,
       p_action: 'add_rider',
       p_entity_type: 'rider',
@@ -164,7 +169,7 @@ router.post('/team/riders/bulk', authenticateAdmin, async (req: AuthRequest, res
     if (error) throw error;
 
     // Log action
-    await supabase.rpc('log_admin_action', {
+    await getSupabase().rpc('log_admin_action', {
       p_admin_email: req.admin?.email,
       p_action: 'bulk_import',
       p_entity_type: 'rider',
@@ -201,7 +206,7 @@ router.delete('/team/riders/:rider_id', authenticateAdmin, async (req: AuthReque
     if (error) throw error;
 
     // Log action
-    await supabase.rpc('log_admin_action', {
+    await getSupabase().rpc('log_admin_action', {
       p_admin_email: req.admin?.email,
       p_action: 'remove_rider',
       p_entity_type: 'rider',
@@ -279,7 +284,7 @@ router.post('/sync/config', authenticateAdmin, async (req: AuthRequest, res: Res
     }
 
     // Log the action
-    await supabase.rpc('log_admin_action', {
+    await getSupabase().rpc('log_admin_action', {
       p_admin_email: req.admin?.email,
       p_action_type: 'update_sync_config',
       p_details: JSON.stringify(updates)
