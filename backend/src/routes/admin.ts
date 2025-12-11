@@ -18,16 +18,16 @@ function getJwtSecret(): string {
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
 
 // Lazy initialization to avoid module loading crash
-let supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
-  if (!supabase) {
+let supabaseClient: ReturnType<typeof createClient> | null = null;
+function getSupabase(): ReturnType<typeof createClient> {
+  if (!supabaseClient) {
     const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
     if (!SUPABASE_SERVICE_KEY) {
       throw new Error('SUPABASE_SERVICE_KEY is required');
     }
-    supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
   }
-  return supabase;
+  return supabaseClient;
 }
 
 // ============================================================================
