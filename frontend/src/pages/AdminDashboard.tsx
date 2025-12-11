@@ -47,6 +47,7 @@ export default function AdminDashboard() {
   const [teamRoster, setTeamRoster] = useState<TeamRider[]>([])
   const [newRiderId, setNewRiderId] = useState('')
   const [bulkRiderIds, setBulkRiderIds] = useState('')
+  const [uploadingFile, setUploadingFile] = useState(false)
   
   // Sync Config
   const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(null)
@@ -202,6 +203,62 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Check file type
+    if (!file.name.endsWith('.csv') && !file.name.endsWith('.txt')) {
+      toast.error('Please upload a .csv or .txt file')
+      return
+    }
+
+    setUploadingFile(true)
+
+    try {
+      const text = await file.text()
+      
+      // Parse rider IDs from file (support comma, newline, semicolon separation)
+      const ids = text
+        .split(/[,;\n\r]+/)
+        .map(id => parseInt(id.trim()))
+        .filter(id => !isNaN(id) && id > 0)
+
+      if (ids.length === 0) {
+        toast.error('No valid rider IDs found in file')
+        setUploadingFile(false)
+        return
+      }
+
+      // Use bulk import API
+      const token = localStorage.getItem('admin_token')
+      const res = await fetch('/api/admin/team/riders/bulk', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rider_ids: ids })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`✅ ${data.added} riders added from ${file.name}`)
+        await loadTeamRoster()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to import from file')
+      }
+    } catch (error) {
+      console.error('File upload error:', error)
+      toast.error('Failed to process file')
+    } finally {
+      setUploadingFile(false)
+      // Reset file input
+      e.target.value = ''
+    }
+  }
+
   const handleRemoveRider = async (riderId: number) => {
     if (!confirm(`Remove rider ${riderId} from team?`)) return
 
@@ -227,7 +284,7 @@ export default function AdminDashboard() {
     try {
       const token = localStorage.getItem('admin_token')
       const res = await fetch('/api/admin/sync/config', {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -239,9 +296,11 @@ export default function AdminDashboard() {
         toast.success('Sync config updated')
         await loadSyncConfig()
       } else {
-        toast.error('Failed to update config')
+        const error = await res.json()
+        toast.error(error.error || 'Failed to update config')
       }
     } catch (error) {
+      console.error('Update config error:', error)
       toast.error('Failed to update config')
     }
   }
@@ -258,18 +317,20 @@ export default function AdminDashboard() {
       })
 
       if (res.ok) {
-        toast.success('Sync started!')
-        // Reload logs after 2 seconds
-        setTimeout(() => {
-          loadSyncLogs()
+        toast.success('Sync started! Check logs tab for progress.')
+        // Reload logs after 3 seconds
+        setTimeout(async () => {
+          await loadSyncLogs()
           setIsSyncing(false)
-        }, 2000)
+        }, 3000)
       } else {
         const error = await res.json()
+        console.error('Sync trigger error:', error)
         toast.error(error.error || 'Failed to start sync')
         setIsSyncing(false)
       }
     } catch (error) {
+      console.error('Sync trigger error:', error)
       toast.error('Failed to start sync')
       setIsSyncing(false)
     }
@@ -377,21 +438,56 @@ export default function AdminDashboard() {
             {/* Bulk Import */}
             <div className="bg-gray-800 rounded-lg p-6">
               <h2 className="text-xl font-bold text-white mb-4">Bulk Import Riders</h2>
-              <form onSubmit={handleBulkImport} className="space-y-4">
-                <textarea
-                  value={bulkRiderIds}
-                  onChange={(e) => setBulkRiderIds(e.target.value)}
-                  placeholder="Enter rider IDs separated by commas (e.g. 150437, 123456, 789012)"
-                  rows={4}
-                  className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+              
+              {/* File Upload Option */}
+              <div className="mb-6 p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                <h3 className="text-white font-semibold mb-2 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  Upload CSV/TXT File
+                </h3>
+                <p className="text-gray-400 text-sm mb-3">
+                  Upload a file with rider IDs (one per line or comma-separated)
+                </p>
+                <input
+                  type="file"
+                  accept=".csv,.txt"
+                  onChange={handleFileUpload}
+                  disabled={uploadingFile}
+                  className="block w-full text-sm text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-600 file:text-white
+                    hover:file:bg-blue-700
+                    file:cursor-pointer cursor-pointer
+                    disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
-                >
-                  Bulk Import
-                </button>
-              </form>
+                {uploadingFile && (
+                  <p className="text-blue-400 text-sm mt-2 animate-pulse">Processing file...</p>
+                )}
+              </div>
+
+              {/* Manual Text Input Option */}
+              <div className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                <h3 className="text-white font-semibold mb-2">Or Enter Manually</h3>
+                <form onSubmit={handleBulkImport} className="space-y-4">
+                  <textarea
+                    value={bulkRiderIds}
+                    onChange={(e) => setBulkRiderIds(e.target.value)}
+                    placeholder="Enter rider IDs separated by commas (e.g. 150437, 123456, 789012)"
+                    rows={4}
+                    className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+                  >
+                    Bulk Import
+                  </button>
+                </form>
+              </div>
             </div>
 
             {/* Team Roster */}

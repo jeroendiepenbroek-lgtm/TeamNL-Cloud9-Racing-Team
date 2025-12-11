@@ -226,29 +226,49 @@ router.get('/sync/config', authenticateAdmin, async (req: AuthRequest, res: Resp
 });
 
 // Update sync config
-router.put('/sync/config', authenticateAdmin, async (req: AuthRequest, res: Response) => {
-  const { auto_sync_enabled, sync_interval_hours } = req.body;
+router.post('/sync/config', authenticateAdmin, async (req: AuthRequest, res: Response) => {
+  const updates = req.body;
 
   try {
-    if (auto_sync_enabled !== undefined) {
-      await supabase.rpc('update_sync_config', {
-        p_key: 'auto_sync_enabled',
-        p_value: auto_sync_enabled.toString(),
-        p_updated_by: req.admin?.email
-      });
+    // Handle auto_sync_enabled
+    if (updates.auto_sync_enabled !== undefined) {
+      const { error } = await supabase
+        .from('sync_config')
+        .update({ 
+          config_value: updates.auto_sync_enabled,
+          updated_by: req.admin?.email,
+          updated_at: new Date().toISOString()
+        })
+        .eq('config_key', 'auto_sync_enabled');
+      
+      if (error) throw error;
     }
 
-    if (sync_interval_hours !== undefined) {
-      const hours = parseInt(sync_interval_hours);
+    // Handle sync_interval_hours
+    if (updates.sync_interval_hours !== undefined) {
+      const hours = parseInt(updates.sync_interval_hours);
       if (hours < 1 || hours > 24) {
         return res.status(400).json({ error: 'Interval must be between 1-24 hours' });
       }
-      await supabase.rpc('update_sync_config', {
-        p_key: 'sync_interval_hours',
-        p_value: hours.toString(),
-        p_updated_by: req.admin?.email
-      });
+      
+      const { error } = await supabase
+        .from('sync_config')
+        .update({ 
+          config_value: hours.toString(),
+          updated_by: req.admin?.email,
+          updated_at: new Date().toISOString()
+        })
+        .eq('config_key', 'sync_interval_hours');
+      
+      if (error) throw error;
     }
+
+    // Log the action
+    await supabase.rpc('log_admin_action', {
+      p_admin_email: req.admin?.email,
+      p_action_type: 'update_sync_config',
+      p_details: JSON.stringify(updates)
+    });
 
     res.json({ success: true });
   } catch (error: any) {
@@ -284,35 +304,45 @@ router.post('/sync/trigger', authenticateAdmin, async (req: AuthRequest, res: Re
       .from('sync_config')
       .select('config_value')
       .eq('config_key', 'sync_in_progress')
-      .single();
+      .maybeSingle();
 
     if (config?.config_value === 'true') {
       return res.status(409).json({ error: 'Sync already in progress' });
     }
 
     // Create sync log
-    const { data: logEntry } = await supabase
+    const { data: logEntry, error: logError } = await supabase
       .from('sync_logs')
       .insert({
         status: 'running',
-        triggered_by: req.admin?.email
+        triggered_by: req.admin?.email || 'admin',
+        started_at: new Date().toISOString()
       })
       .select()
       .single();
 
-    // Set lock
+    if (logError) {
+      console.error('Failed to create sync log:', logError);
+      return res.status(500).json({ error: 'Failed to create sync log' });
+    }
+
+    // Set lock (upsert to ensure it exists)
     await supabase
       .from('sync_config')
-      .update({ config_value: 'true' })
-      .eq('config_key', 'sync_in_progress');
+      .upsert({ 
+        config_key: 'sync_in_progress',
+        config_value: 'true',
+        updated_by: req.admin?.email || 'system',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'config_key' });
 
     // Trigger sync (async - don't wait)
-    triggerSync(logEntry?.id, req.admin?.email);
+    triggerSync(logEntry?.id, req.admin?.email || 'admin');
 
     res.json({ success: true, sync_log_id: logEntry?.id });
   } catch (error: any) {
     console.error('Trigger sync error:', error);
-    res.status(500).json({ error: 'Failed to trigger sync' });
+    res.status(500).json({ error: error.message || 'Failed to trigger sync' });
   }
 });
 
