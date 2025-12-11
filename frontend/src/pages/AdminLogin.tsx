@@ -85,9 +85,12 @@ export default function AdminLogin() {
           <div className="mt-6 text-center">
             <button
               onClick={() => navigate('/')}
-              className="text-gray-400 hover:text-white text-sm transition"
+              className="text-gray-400 hover:text-white text-sm transition flex items-center gap-2 mx-auto"
             >
-              ← Back to Dashboard
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to Dashboard
             </button>
           </div>
         </div>

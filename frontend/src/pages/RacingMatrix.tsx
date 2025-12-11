@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useFavorites } from '../hooks/useFavorites'
 
@@ -290,6 +291,7 @@ function MultiSelectDropdown<T extends string | number>({
 }
 
 export default function RacingDataMatrixModern() {
+  const navigate = useNavigate()
   const [showLegend, setShowLegend] = useState(false)
   const [sortBy, setSortBy] = useState<keyof MatrixRider>('velo_live')
   const [sortDesc, setSortDesc] = useState(true)
@@ -465,6 +467,17 @@ export default function RacingDataMatrixModern() {
                   TeamNL Cloud9 Racing · Performance Matrix
                 </p>
               </div>
+              <button
+                onClick={() => navigate('/admin/login')}
+                className="flex-shrink-0 px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
+                title="Admin Dashboard"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden sm:inline">Admin</span>
+              </button>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 lg:px-5 lg:py-3 border border-white/20 shadow-xl mt-3 sm:mt-4">
               <span className="text-white/80 text-xs sm:text-sm font-medium">Showing</span>
