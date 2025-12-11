@@ -18,6 +18,10 @@ function getSupabase(): SupabaseClient {
     }
     supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
   }
+  // TypeScript needs explicit non-null assertion
+  if (!supabase) {
+    throw new Error('Failed to initialize Supabase client');
+  }
   return supabase;
 }
 
@@ -102,8 +106,8 @@ async function syncZwiftRacingData(riderId: number): Promise<boolean> {
       fetched_at: new Date().toISOString()
     };
     
-    const { error } = await supabase
-      .from('api_zwiftracing_riders')
+    const { error } = await (supabase!
+      .from('api_zwiftracing_riders') as any)
       .upsert(riderData, { onConflict: 'rider_id' });
     
     if (error) {
@@ -190,7 +194,7 @@ async function syncZwiftOfficialProfile(riderId: number): Promise<boolean> {
       fetched_at: new Date().toISOString()
     };
     
-    const { error } = await supabase
+    const { error } = await supabase!
       .from('api_zwift_official_profiles')
       .upsert(profileData, { onConflict: 'rider_id' });
     
@@ -239,7 +243,7 @@ export async function syncRider(riderId: number): Promise<SyncResult> {
     
     if (result.success) {
       // Update team_roster last_synced timestamp
-      await supabase
+      await supabase!
         .from('team_roster')
         .update({ last_synced: new Date().toISOString() })
         .eq('rider_id', riderId);
@@ -270,7 +274,7 @@ export async function syncAllRiders(): Promise<{
   console.log('\n🔄 Starting full team sync...\n');
   
   // Get all active riders from team roster
-  const { data: roster, error } = await supabase
+  const { data: roster, error } = await supabase!
     .from('team_roster')
     .select('rider_id')
     .eq('is_active', true);

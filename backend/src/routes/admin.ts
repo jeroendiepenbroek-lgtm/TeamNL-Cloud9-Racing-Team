@@ -27,6 +27,10 @@ function getSupabase(): ReturnType<typeof createClient> {
     }
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
   }
+  // TypeScript needs explicit non-null assertion
+  if (!supabaseClient) {
+    throw new Error('Failed to initialize Supabase client');
+  }
   return supabaseClient;
 }
 
@@ -48,20 +52,20 @@ router.post('/login', async (req: Request, res: Response) => {
       .select('*')
       .eq('email', email)
       .eq('is_active', true)
-      .single();
+      .single() as { data: any; error: any };
 
     if (error || !admin) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const validPassword = await bcrypt.compare(password, admin.password_hash);
+    const validPassword = await bcrypt.compare(password, admin.password_hash as string);
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Update last login
-    await getSupabase()
-      .from('admin_users')
+    await (getSupabase()
+      .from('admin_users') as any)
       .update({ last_login: new Date().toISOString() })
       .eq('id', admin.id);
 
@@ -120,13 +124,13 @@ router.post('/team/riders', authenticateAdmin, async (req: AuthRequest, res: Res
   }
 
   try {
-    const { data, error } = await getSupabase()
-      .from('team_roster')
+    const { data, error } = await (getSupabase()
+      .from('team_roster') as any)
       .insert({
         rider_id,
         zwift_id,
         notes,
-        added_by: req.admin?.email
+        added_by: req.admin?.email || 'system'
       })
       .select()
       .single();
@@ -135,12 +139,12 @@ router.post('/team/riders', authenticateAdmin, async (req: AuthRequest, res: Res
 
     // Log action
     await getSupabase().rpc('log_admin_action', {
-      p_admin_email: req.admin?.email,
+      p_admin_email: req.admin?.email || 'system',
       p_action: 'add_rider',
       p_entity_type: 'rider',
       p_entity_id: rider_id.toString(),
-      p_details: { rider_id, zwift_id, notes }
-    });
+      p_details: JSON.stringify({ rider_id, zwift_id, notes })
+    } as any);
 
     // Trigger immediate sync for this rider (async, don't wait)
     syncRider(rider_id).catch(err => 
@@ -155,7 +159,7 @@ router.post('/team/riders', authenticateAdmin, async (req: AuthRequest, res: Res
 });
 
 // Bulk import riders (PUBLIC for development)
-router.post('/team/riders/bulk', async (req: Request, res: Response) => {
+router.post('/team/riders/bulk', async (req: AuthRequest, res: Response) => {
   const { rider_ids } = req.body;
 
   if (!Array.isArray(rider_ids) || rider_ids.length === 0) {
@@ -165,24 +169,24 @@ router.post('/team/riders/bulk', async (req: Request, res: Response) => {
   try {
     const riders = rider_ids.map(id => ({
       rider_id: id,
-      added_by: req.admin?.email
+      added_by: req.admin?.email || 'system'
     }));
 
     const { data, error } = await getSupabase()
       .from('team_roster')
-      .insert(riders)
+      .insert(riders as any)
       .select();
 
     if (error) throw error;
 
     // Log action
     await getSupabase().rpc('log_admin_action', {
-      p_admin_email: req.admin?.email,
-      p_action: 'bulk_import',
+      p_admin_email: req.admin?.email || 'system',
+      p_action: 'bulk_add_riders',
       p_entity_type: 'rider',
       p_entity_id: 'bulk',
-      p_details: { count: rider_ids.length, rider_ids }
-    });
+      p_details: JSON.stringify({ count: rider_ids.length, rider_ids })
+    } as any);
 
     // Trigger sync for all newly added riders (async, don't wait)
     for (const rider_id of rider_ids) {
@@ -201,7 +205,7 @@ router.post('/team/riders/bulk', async (req: Request, res: Response) => {
 });
 
 // Remove rider from team (PUBLIC for development)
-router.delete('/team/riders/:rider_id', async (req: Request, res: Response) => {
+router.delete('/team/riders/:rider_id', async (req: AuthRequest, res: Response) => {
   const { rider_id } = req.params;
 
   try {
@@ -214,11 +218,11 @@ router.delete('/team/riders/:rider_id', async (req: Request, res: Response) => {
 
     // Log action
     await getSupabase().rpc('log_admin_action', {
-      p_admin_email: req.admin?.email,
+      p_admin_email: req.admin?.email || 'system',
       p_action: 'remove_rider',
       p_entity_type: 'rider',
-      p_entity_id: rider_id
-    });
+      p_entity_id: rider_id.toString()
+    } as any);
 
     res.json({ success: true });
   } catch (error: any) {
@@ -236,7 +240,7 @@ router.get('/sync/config', async (req: Request, res: Response) => {
   try {
     const { data, error } = await getSupabase()
       .from('sync_config')
-      .select('*');
+      .select('*') as { data: any[] | null; error: any };
 
     if (error) throw error;
 
@@ -253,17 +257,17 @@ router.get('/sync/config', async (req: Request, res: Response) => {
 });
 
 // Update sync config (PUBLIC for development)
-router.post('/sync/config', async (req: Request, res: Response) => {
+router.post('/sync/config', async (req: AuthRequest, res: Response) => {
   const updates = req.body;
 
   try {
     // Handle auto_sync_enabled
     if (updates.auto_sync_enabled !== undefined) {
-      const { error } = await getSupabase()
-        .from('sync_config')
+      const { error } = await (getSupabase()
+        .from('sync_config') as any)
         .update({ 
           config_value: updates.auto_sync_enabled,
-          updated_by: req.admin?.email,
+          updated_by: req.admin?.email || 'system',
           updated_at: new Date().toISOString()
         })
         .eq('config_key', 'auto_sync_enabled');
@@ -278,11 +282,11 @@ router.post('/sync/config', async (req: Request, res: Response) => {
         return res.status(400).json({ error: 'Interval must be between 1-24 hours' });
       }
       
-      const { error } = await getSupabase()
-        .from('sync_config')
+      const { error } = await (getSupabase()
+        .from('sync_config') as any)
         .update({ 
           config_value: hours.toString(),
-          updated_by: req.admin?.email,
+          updated_by: req.admin?.email || 'system',
           updated_at: new Date().toISOString()
         })
         .eq('config_key', 'sync_interval_hours');
@@ -292,10 +296,12 @@ router.post('/sync/config', async (req: Request, res: Response) => {
 
     // Log the action
     await getSupabase().rpc('log_admin_action', {
-      p_admin_email: req.admin?.email,
-      p_action_type: 'update_sync_config',
+      p_admin_email: req.admin?.email || 'system',
+      p_action: 'update_sync_config',
+      p_entity_type: 'sync_config',
+      p_entity_id: 'config',
       p_details: JSON.stringify(updates)
-    });
+    } as any);
 
     res.json({ success: true });
   } catch (error: any) {
@@ -324,14 +330,14 @@ router.get('/sync/logs', async (req: Request, res: Response) => {
 });
 
 // Trigger manual sync (PUBLIC for development)
-router.post('/sync/trigger', async (req: Request, res: Response) => {
+router.post('/sync/trigger', async (req: AuthRequest, res: Response) => {
   try {
     // Check if sync already in progress
     const { data: config } = await getSupabase()
       .from('sync_config')
       .select('config_value')
       .eq('config_key', 'sync_in_progress')
-      .maybeSingle();
+      .maybeSingle() as { data: any; error: any };
 
     if (config?.config_value === 'true') {
       return res.status(409).json({ error: 'Sync already in progress' });
@@ -342,11 +348,11 @@ router.post('/sync/trigger', async (req: Request, res: Response) => {
       .from('sync_logs')
       .insert({
         status: 'running',
-        triggered_by: req.admin?.email || 'admin',
+        triggered_by: req.admin?.email || 'system',
         started_at: new Date().toISOString()
-      })
+      } as any)
       .select()
-      .single();
+      .single() as { data: any; error: any };
 
     if (logError) {
       console.error('Failed to create sync log:', logError);
@@ -354,8 +360,8 @@ router.post('/sync/trigger', async (req: Request, res: Response) => {
     }
 
     // Set lock (upsert to ensure it exists)
-    await getSupabase()
-      .from('sync_config')
+    await (getSupabase()
+      .from('sync_config') as any)
       .upsert({ 
         config_key: 'sync_in_progress',
         config_value: 'true',
@@ -407,8 +413,8 @@ async function triggerSync(logId: number, triggeredBy: string | undefined) {
     const syncResult = await syncAllRiders();
     
     // Update sync log with results
-    await getSupabase()
-      .from('sync_logs')
+    await (getSupabase()
+      .from('sync_logs') as any)
       .update({
         status: syncResult.failed === 0 ? 'success' : syncResult.synced > 0 ? 'partial' : 'failed',
         completed_at: new Date().toISOString(),
@@ -425,8 +431,8 @@ async function triggerSync(logId: number, triggeredBy: string | undefined) {
     errorMessage = error.message;
     
     // Update sync log as failed
-    await getSupabase()
-      .from('sync_logs')
+    await (getSupabase()
+      .from('sync_logs') as any)
       .update({
         status: 'failed',
         completed_at: new Date().toISOString(),
@@ -438,14 +444,14 @@ async function triggerSync(logId: number, triggeredBy: string | undefined) {
       .eq('id', logId);
   } finally {
     // Release lock
-    await getSupabase()
-      .from('sync_config')
+    await (getSupabase()
+      .from('sync_config') as any)
       .update({ config_value: 'false' })
       .eq('config_key', 'sync_in_progress');
 
     // Update last sync timestamp
-    await getSupabase()
-      .from('sync_config')
+    await (getSupabase()
+      .from('sync_config') as any)
       .update({ config_value: Math.floor(Date.now() / 1000).toString() })
       .eq('config_key', 'last_sync_timestamp');
   }
