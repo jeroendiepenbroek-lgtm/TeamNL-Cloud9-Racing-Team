@@ -19,6 +19,12 @@ const VERSION = '4.0.1-fixed'; // Force redeploy with getSupabase fix
 app.use(cors());
 app.use(express.json());
 
+// Debug: Log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 // Admin API routes
 app.use('/api/admin', adminRoutes);
 
