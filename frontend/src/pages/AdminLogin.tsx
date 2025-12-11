@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -7,6 +7,38 @@ export default function AdminLogin() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    checkExistingAuth()
+  }, [])
+
+  const checkExistingAuth = async () => {
+    const token = localStorage.getItem('admin_token')
+    if (!token) {
+      setChecking(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/admin/verify', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (res.ok) {
+        // Already logged in - redirect to admin dashboard
+        toast.success('Already logged in')
+        navigate('/admin', { replace: true })
+      } else {
+        // Token invalid - remove it
+        localStorage.removeItem('admin_token')
+        setChecking(false)
+      }
+    } catch (error) {
+      localStorage.removeItem('admin_token')
+      setChecking(false)
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,6 +65,14 @@ export default function AdminLogin() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white text-xl">Checking authentication...</div>
+      </div>
+    )
   }
 
   return (

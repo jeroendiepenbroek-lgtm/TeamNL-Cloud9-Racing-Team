@@ -61,7 +61,7 @@ export default function AdminDashboard() {
   const verifyAuth = async () => {
     const token = localStorage.getItem('admin_token')
     if (!token) {
-      navigate('/admin/login')
+      navigate('/admin/login', { replace: true })
       return
     }
 
@@ -70,7 +70,13 @@ export default function AdminDashboard() {
         headers: { 'Authorization': `Bearer ${token}` }
       })
       
-      if (!res.ok) throw new Error('Invalid token')
+      if (!res.ok) {
+        // Token is invalid - user moet opnieuw inloggen
+        toast.error('Session expired - please login again')
+        localStorage.removeItem('admin_token')
+        navigate('/admin/login', { replace: true })
+        return
+      }
       
       const data = await res.json()
       setAdmin(data.admin)
@@ -82,8 +88,10 @@ export default function AdminDashboard() {
         loadSyncLogs()
       ])
     } catch (error) {
-      localStorage.removeItem('admin_token')
-      navigate('/admin/login')
+      // Network error of andere fout - laat gebruiker ingelogd
+      console.error('Auth verification error:', error)
+      toast.error('Could not verify session')
+      setLoading(false)
     } finally {
       setLoading(false)
     }
@@ -338,7 +346,8 @@ export default function AdminDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token')
-    navigate('/admin/login')
+    toast.success('Logged out successfully')
+    navigate('/admin/login', { replace: true })
   }
 
   if (loading) {
