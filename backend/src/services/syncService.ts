@@ -1,23 +1,20 @@
 import axios from 'axios';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
 const ZWIFTRACING_API_KEY = process.env.ZWIFTRACING_API_TOKEN || '650c6d2fc4ef6858d74cbef1';
 const ZWIFTRACING_BASE_URL = 'https://zwift-ranking.herokuapp.com';
 const ZWIFT_OFFICIAL_BASE_URL = 'https://us-or-rly101.zwift.com/api';
 
+// Direct initialization - Railway provides env vars automatically
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 
-// Export a function to initialize supabase AFTER env is loaded
-let supabase: SupabaseClient;
-
-export function initializeSupabase() {
-  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-  if (!SUPABASE_SERVICE_KEY) {
-    throw new Error('SUPABASE_SERVICE_KEY is required in environment variables');
-  }
-  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  console.log('✅ Supabase client initialized in syncService');
+if (!SUPABASE_SERVICE_KEY) {
+  throw new Error('❌ SUPABASE_SERVICE_KEY missing! Check Railway environment variables.');
 }
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+console.log('✅ SyncService Supabase client created');
 
 interface SyncResult {
   riderId: number;

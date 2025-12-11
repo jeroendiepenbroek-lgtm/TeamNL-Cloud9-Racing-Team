@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { authenticateAdmin, AuthRequest } from '../middleware/auth';
 import { syncRider, syncAllRiders } from '../services/syncService';
 
@@ -15,19 +15,16 @@ function getJwtSecret(): string {
   return secret;
 }
 
+// Direct initialization - Railway provides env vars automatically
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 
-// Export a function to initialize supabase AFTER env is loaded
-let supabase: SupabaseClient;
-
-export function initializeSupabase() {
-  const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
-  if (!SUPABASE_SERVICE_KEY) {
-    throw new Error('SUPABASE_SERVICE_KEY is required in environment variables');
-  }
-  supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  console.log('✅ Supabase client initialized in admin routes');
+if (!SUPABASE_SERVICE_KEY) {
+  throw new Error('❌ SUPABASE_SERVICE_KEY missing! Check Railway environment variables.');
 }
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+console.log('✅ Admin Supabase client created');
 
 // ============================================================================
 // AUTHENTICATION

@@ -1,24 +1,18 @@
-// Load environment variables FIRST - before ANY other imports
-import { config } from 'dotenv';
-config();
+// Load environment variables FIRST (only needed locally, Railway sets them automatically)
+import './env'; // This MUST be first import to load .env before other modules
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import adminRoutes, { initializeSupabase as initAdminSupabase } from './routes/admin';
-import { initializeSupabase as initSyncSupabase } from './services/syncService';
+import adminRoutes from './routes/admin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize Supabase clients AFTER dotenv loaded
-initAdminSupabase();
-initSyncSupabase();
-
 const app = express();
 const PORT = process.env.PORT || 8080;
-const VERSION = '4.0.3-init-after-dotenv';
+const VERSION = '4.1.0-direct-simple';
 
 // Middleware
 app.use(cors());
