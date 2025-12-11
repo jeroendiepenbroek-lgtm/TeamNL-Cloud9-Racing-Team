@@ -6,7 +6,10 @@ import { authenticateAdmin, AuthRequest } from '../middleware/auth';
 import { syncRider, syncAllRiders } from '../services/syncService';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in environment variables');
+}
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
 
