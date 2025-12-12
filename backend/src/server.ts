@@ -696,16 +696,19 @@ app.post('/api/admin/sync-config', (req, res) => {
 });
 
 // ============================================
-// START SERVER
+// INITIALIZE & START SERVER
 // ============================================
 
-app.listen(PORT, async () => {
-  // Load persisted config before starting scheduler
+// Initialize auto-sync config from database before starting server
+(async () => {
   await loadAutoSyncConfig();
   
-  // Start auto-sync with loaded config
-  startAutoSync();
-  console.log(`✅ Server on ${PORT}`);
-  console.log(`📊 Racing Matrix: http://localhost:${PORT}`);
-  console.log(`🏥 Health: http://localhost:${PORT}/health`);
-});
+  app.listen(PORT, () => {
+    console.log(`✅ Server on ${PORT}`);
+    console.log(`📊 Racing Matrix: http://localhost:${PORT}`);
+    console.log(`🏥 Health: http://localhost:${PORT}/health`);
+    
+    // Start auto-sync scheduler after server is ready
+    startAutoSync();
+  });
+})();
