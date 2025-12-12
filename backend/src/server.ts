@@ -30,13 +30,70 @@ console.log('🚀 Environment loaded:', {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+// ============================================// ZWIFT LOGIN (Get Session Cookie)
 // ============================================
-// API SYNC FUNCTIONS
+
+let zwiftCookie: string = process.env.ZWIFT_COOKIE || '';
+let cookieExpiry: Date = new Date();
+
+async function getZwiftCookie(): Promise<string> {
+  // Return cached cookie if still valid (expires after 6 hours)
+  if (zwiftCookie && zwiftCookie !== 'placeholder' && cookieExpiry > new Date()) {
+    return zwiftCookie;
+  }
+
+  const username = process.env.ZWIFT_USERNAME;
+  const password = process.env.ZWIFT_PASSWORD;
+
+  if (!username || !password) {
+    console.warn('⚠️  ZWIFT_USERNAME or ZWIFT_PASSWORD not set');
+    return '';
+  }
+
+  try {
+    console.log('🔐 Logging in to Zwift to get session cookie...');
+    
+    const response = await axios.post(
+      'https://secure.zwift.com/auth/rb_bf',
+      {
+        username,
+        password,
+        client_id: 'Zwift_Mobile_Link'
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Zwift/1.0'
+        }
+      }
+    );
+
+    // Extract cookies from response
+    const cookies = response.headers['set-cookie'];
+    if (cookies && cookies.length > 0) {
+      zwiftCookie = cookies.map(c => c.split(';')[0]).join('; ');
+      cookieExpiry = new Date(Date.now() + 6 * 60 * 60 * 1000); // 6 hours
+      console.log('✅ Zwift login successful, cookie cached for 6 hours');
+      return zwiftCookie;
+    }
+
+    console.warn('⚠️  No cookies received from Zwift login');
+    return '';
+  } catch (error: any) {
+    console.error('❌ Zwift login failed:', error.message);
+    return '';
+  }
+}
+
+// ============================================// API SYNC FUNCTIONS
 // ============================================
 
 async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; error?: string }> {
   try {
     console.log(`🔄 Syncing rider ${riderId}...`);
+    
+    // Get fresh Zwift cookie (cached for 6 hours)
+    const cookie = await getZwiftCookie();
     
     // Parallel fetch from both APIs
     const [racingResult, profileResult] = await Promise.allSettled([
@@ -46,8 +103,8 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
       }),
       axios.get(`https://us-or-rly101.zwift.com/api/profiles/${riderId}`, {
         headers: {
-          'Cookie': process.env.ZWIFT_COOKIE || '',
-          'User-Agent': 'Mozilla/5.0'
+          'Cookie': cookie,
+          'User-Agent': 'Zwift/1.0'
         },
         timeout: 10000
       })
@@ -303,19 +360,27 @@ app.post('/api/admin/riders', async (req, res) => {
   }
 });
 
-// Remove rider from team
+// Remove rider from team AND all source tables (clean database)
 app.delete('/api/admin/riders/:riderId', async (req, res) => {
   try {
     const riderId = parseInt(req.params.riderId);
 
-    const { error } = await supabase
-      .from('team_roster')
-      .delete()
-      .eq('rider_id', riderId);
+    // Delete from all tables for clean database
+    const deletePromises = [
+      supabase.from('team_roster').delete().eq('rider_id', riderId),
+      supabase.from('api_zwiftracing_riders').delete().eq('rider_id', riderId),
+      supabase.from('api_zwift_api_profiles').delete().eq('rider_id', riderId)
+    ];
 
-    if (error) throw error;
+    const results = await Promise.allSettled(deletePromises);
+    
+    // Check if any deletions failed
+    const failures = results.filter(r => r.status === 'rejected');
+    if (failures.length > 0) {
+      console.warn(`⚠️  Some deletions failed for rider ${riderId}`);
+    }
 
-    console.log(`🗑️  Removed rider ${riderId} from team`);
+    console.log(`🗑️  Removed rider ${riderId} from all tables (team + sources)`);
 
     res.json({ success: true });
 
