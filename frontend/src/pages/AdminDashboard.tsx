@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 interface TeamRider {
@@ -27,6 +28,7 @@ interface SyncLog {
 }
 
 export default function AdminDashboard() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'team' | 'sync' | 'logs'>('team')
   const [teamRoster, setTeamRoster] = useState<TeamRider[]>([])
   const [newRiderId, setNewRiderId] = useState('')
