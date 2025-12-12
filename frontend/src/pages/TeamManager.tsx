@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
@@ -175,7 +175,7 @@ export default function TeamManager() {
     }
     reader.readAsText(file)
   }
-  const handleSyncAll = async () => {
+  const handleSyncAll = useCallback(async () => {
     setSyncing(true)
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-all`, {
@@ -197,7 +197,7 @@ export default function TeamManager() {
     } finally {
       setSyncing(false)
     }
-  }
+  }, [])
 
   // Auto-sync effect - must be after handleSyncAll declaration
   useEffect(() => {
@@ -281,6 +281,7 @@ export default function TeamManager() {
                     disabled={!autoSyncEnabled}
                     className="text-xs sm:text-sm border-l border-white/30 pl-2 bg-transparent focus:outline-none text-white font-medium disabled:opacity-50"
                   >
+                    <option value={1} className="text-gray-900">1m (test)</option>
                     <option value={15} className="text-gray-900">15m</option>
                     <option value={30} className="text-gray-900">30m</option>
                     <option value={60} className="text-gray-900">1u</option>

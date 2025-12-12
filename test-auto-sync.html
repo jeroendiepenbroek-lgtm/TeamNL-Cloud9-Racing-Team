@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto-Sync Test Monitor</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a1a;
+      color: #00ff00;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #00ffff;
+      border-bottom: 2px solid #00ffff;
+      padding-bottom: 10px;
+    }
+    .log-entry {
+      padding: 8px;
+      margin: 4px 0;
+      border-left: 3px solid #00ff00;
+      background: rgba(0, 255, 0, 0.1);
+    }
+    .log-entry.trigger {
+      border-left-color: #ffaa00;
+      background: rgba(255, 170, 0, 0.1);
+      color: #ffaa00;
+      font-weight: bold;
+    }
+    .log-entry.success {
+      border-left-color: #00ff00;
+      background: rgba(0, 255, 0, 0.1);
+      color: #00ff00;
+    }
+    .log-entry.error {
+      border-left-color: #ff0000;
+      background: rgba(255, 0, 0, 0.1);
+      color: #ff0000;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin: 0 8px;
+      font-weight: bold;
+    }
+    .status.enabled {
+      background: #00ff00;
+      color: #000;
+    }
+    .status.disabled {
+      background: #888;
+      color: #000;
+    }
+    .info-box {
+      background: rgba(0, 200, 255, 0.1);
+      border: 1px solid #00c8ff;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    .timestamp {
+      color: #888;
+      font-size: 0.9em;
+    }
+    #logs {
+      height: 500px;
+      overflow-y: auto;
+      border: 1px solid #00ff00;
+      padding: 10px;
+      margin-top: 20px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔄 Auto-Sync Test Monitor</h1>
+    
+    <div class="info-box">
+      <h3>📊 Instructions:</h3>
+      <ol>
+        <li>Open Team Manager in another tab</li>
+        <li>Enable "Auto-sync" checkbox</li>
+        <li>Select "1m (test)" interval</li>
+        <li>Watch this monitor for auto-sync triggers every 60 seconds</li>
+        <li>Check browser console for "🔄 Auto-sync triggered" messages</li>
+      </ol>
+    </div>
+
+    <div class="info-box">
+      <h3>Expected Behavior:</h3>
+      <ul>
+        <li>Console log: "🔄 Auto-sync enabled: every 1 minutes"</li>
+        <li>Every 60 seconds: "🔄 Auto-sync triggered"</li>
+        <li>API call to /api/admin/sync-all</li>
+        <li>Toast notification: "✅ X riders gesynchroniseerd!"</li>
+      </ul>
+    </div>
+
+    <div class="info-box">
+      <h3>⏱️ Timer Info:</h3>
+      <p>Started: <span id="startTime">-</span></p>
+      <p>Next Sync: <span id="nextSync">-</span></p>
+      <p>Time Until: <span id="countdown">-</span></p>
+    </div>
+
+    <h2>📝 Logs</h2>
+    <div id="logs"></div>
+  </div>
+
+  <script>
+    const logsDiv = document.getElementById('logs');
+    const startTimeEl = document.getElementById('startTime');
+    const nextSyncEl = document.getElementById('nextSync');
+    const countdownEl = document.getElementById('countdown');
+
+    let startTime = new Date();
+    let syncInterval = 60; // seconds
+    let nextSyncTime = new Date(startTime.getTime() + syncInterval * 1000);
+
+    startTimeEl.textContent = startTime.toLocaleTimeString();
+    nextSyncEl.textContent = nextSyncTime.toLocaleTimeString();
+
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${type}`;
+      logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+      logsDiv.insertBefore(logEntry, logsDiv.firstChild);
+    }
+
+    // Update countdown
+    setInterval(() => {
+      const now = new Date();
+      const diff = nextSyncTime - now;
+      
+      if (diff <= 0) {
+        nextSyncTime = new Date(now.getTime() + syncInterval * 1000);
+        nextSyncEl.textContent = nextSyncTime.toLocaleTimeString();
+        addLog('⏰ Expected auto-sync trigger NOW', 'trigger');
+      }
+      
+      const seconds = Math.max(0, Math.floor(diff / 1000));
+      countdownEl.textContent = `${seconds}s`;
+    }, 1000);
+
+    // Monitor API calls
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const url = args[0];
+      if (typeof url === 'string' && url.includes('/api/admin/sync-all')) {
+        addLog('🚀 API Call: POST /api/admin/sync-all', 'trigger');
+      }
+      return originalFetch.apply(this, args).then(response => {
+        if (typeof url === 'string' && url.includes('/api/admin/sync-all')) {
+          response.clone().json().then(data => {
+            if (data.success) {
+              addLog(`✅ Sync success: ${data.synced} riders synced`, 'success');
+            } else {
+              addLog(`❌ Sync failed: ${data.error}`, 'error');
+            }
+          });
+        }
+        return response;
+      });
+    };
+
+    addLog('🎬 Monitor started - waiting for auto-sync events...', 'info');
+    addLog('📍 Open Team Manager and enable auto-sync with 1m interval', 'info');
+  </script>
+</body>
+</html>
