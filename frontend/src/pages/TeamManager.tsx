@@ -29,21 +29,40 @@ export default function TeamManager() {
   // File upload
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
+  // Initial load of rider count
+  useEffect(() => {
+    fetchRiderCount()
+  }, [])
+
   useEffect(() => {
     if (view === 'manage') {
       fetchRiders()
     }
   }, [view])
 
-  const fetchRiders = async () => {
+  const fetchRiderCount = async () => {
     try {
-      const response = await fetch('/api/riders')
+      const response = await fetch('/api/team/roster')
       const data = await response.json()
       if (data.success) {
         setRiders(data.riders)
       }
     } catch (error) {
+      console.error('Error fetching rider count:', error)
+    }
+  }
+
+  const fetchRiders = async () => {
+    try {
+      const response = await fetch('/api/team/roster')
+      const data = await response.json()
+      if (data.success) {
+        setRiders(data.riders)
+        console.log(`📊 Loaded ${data.riders.length} team riders`)
+      }
+    } catch (error) {
       console.error('Error fetching riders:', error)
+      toast.error('Fout bij laden riders')
     }
   }
 
@@ -55,6 +74,7 @@ export default function TeamManager() {
 
     setLoading(true)
     try {
+      console.log(`➕ Adding rider ${singleRiderId}...`)
       const response = await fetch('/api/admin/riders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -62,21 +82,19 @@ export default function TeamManager() {
       })
       
       const data = await response.json()
+      console.log('Add response:', data)
       
       if (data.success) {
-        toast.success(`Rider ${singleRiderId} toegevoegd! ${data.results[0]?.synced ? '✓ Data gesynchroniseerd' : ''}`)
+        const result = data.results[0]
+        toast.success(`Rider ${singleRiderId} toegevoegd! ${result?.synced ? '✓ Data gesynchroniseerd' : '⚠️ Sync gefaald'}`)
         setSingleRiderId('')
-        if (view === 'manage') fetchRiders()
+        await fetchRiderCount() // Refresh count
+        if (view === 'manage') await fetchRiders()
       } else {
         toast.error(data.error || 'Toevoegen mislukt')
       }
     } catch (error) {
-      toast.error('Fout bij toevoegen rider')
-    } finally {
-      setLoading(false)
-    }
-  }
-
+      console.error('Error adding rider:', error)
   const handleAddMultiple = async () => {
     const ids = multipleRiderIds
       .split(/[\n,\s]+/)
@@ -91,6 +109,7 @@ export default function TeamManager() {
 
     setLoading(true)
     try {
+      console.log(`➕ Adding ${ids.length} riders...`)
       const response = await fetch('/api/admin/riders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,17 +117,20 @@ export default function TeamManager() {
       })
       
       const data = await response.json()
+      console.log('Bulk add response:', data)
       
       if (data.success) {
         const synced = data.results.filter((r: any) => r.synced).length
         const failed = data.results.filter((r: any) => !r.synced).length
         toast.success(`${ids.length} riders verwerkt! ✓ ${synced} gesynchroniseerd${failed > 0 ? `, ${failed} gefaald` : ''}`)
         setMultipleRiderIds('')
-        if (view === 'manage') fetchRiders()
+        await fetchRiderCount() // Refresh count
+        if (view === 'manage') await fetchRiders()
       } else {
         toast.error(data.error || 'Toevoegen mislukt')
       }
     } catch (error) {
+      console.error('Error bulk adding:', error)
       toast.error('Fout bij bulk toevoegen')
     } finally {
       setLoading(false)
@@ -139,17 +161,23 @@ export default function TeamManager() {
     if (!confirm(`Rider ${riderId} verwijderen uit team?`)) return
 
     try {
+      console.log(`🗑️  Removing rider ${riderId}...`)
       const response = await fetch(`/api/admin/riders/${riderId}`, {
         method: 'DELETE'
       })
       
-      if (response.ok) {
+      const data = await response.json()
+      console.log('Remove response:', data)
+      
+      if (data.success) {
         toast.success(`Rider ${riderId} verwijderd`)
-        fetchRiders()
+        await fetchRiderCount() // Refresh count
+        await fetchRiders()
       } else {
-        toast.error('Verwijderen mislukt')
+        toast.error(data.error || 'Verwijderen mislukt')
       }
     } catch (error) {
+      console.error('Error removing rider:', error)
       toast.error('Fout bij verwijderen')
     }
   }

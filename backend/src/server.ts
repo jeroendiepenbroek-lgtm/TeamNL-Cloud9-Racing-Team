@@ -216,6 +216,33 @@ app.get('/api/riders', async (req, res) => {
   }
 });
 
+// Get team roster (only active team members)
+app.get('/api/team/roster', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('v_rider_complete')
+      .select('*')
+      .eq('is_active', true)
+      .order('velo_live', { ascending: false, nullsFirst: false });
+
+    if (error) throw error;
+
+    console.log(`📊 Team roster: ${data?.length || 0} active riders`);
+
+    res.json({
+      success: true,
+      count: data?.length || 0,
+      riders: data || []
+    });
+  } catch (error: any) {
+    console.error('❌ Error fetching team roster:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // ============================================
 // TEAM MANAGEMENT ENDPOINTS
 // ============================================
