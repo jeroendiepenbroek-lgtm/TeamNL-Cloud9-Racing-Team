@@ -76,12 +76,20 @@ app.get('/api/riders', async (req, res) => {
 // FRONTEND SERVING
 // ============================================
 
-const frontendPath = path.join(__dirname, 'frontend');
+// In production (Railway/Docker): frontend is at ../frontend/dist
+// In development: frontend is at ../../frontend/dist
+const frontendPath = process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, '..', '..', 'frontend', 'dist')
+  : path.join(__dirname, '..', '..', 'frontend', 'dist');
+
+console.log('📂 Frontend path:', frontendPath);
+
 app.use(express.static(frontendPath));
 
 app.get('*', (req, res) => {
   if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(frontendPath, 'index.html'));
+    const indexPath = path.join(frontendPath, 'index.html');
+    res.sendFile(indexPath);
   } else {
     res.status(404).json({ error: 'API endpoint not found' });
   }
