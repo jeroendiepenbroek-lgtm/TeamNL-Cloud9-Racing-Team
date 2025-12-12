@@ -197,12 +197,28 @@ app.get('/api/config/supabase', (req, res) => {
   });
 });
 
-// Get all riders from v_rider_complete view
+// Get all riders from v_rider_complete view (ONLY ACTIVE TEAM MEMBERS)
 app.get('/api/riders', async (req, res) => {
   try {
+    // First get active rider IDs from team_roster
+    const { data: rosterData, error: rosterError } = await supabase
+      .from('team_roster')
+      .select('rider_id')
+      .eq('is_active', true);
+
+    if (rosterError) throw rosterError;
+    
+    if (!rosterData || rosterData.length === 0) {
+      return res.json({ success: true, count: 0, riders: [] });
+    }
+
+    const riderIds = rosterData.map(r => r.rider_id);
+    
+    // Then get full rider data for those IDs
     const { data, error } = await supabase
       .from('v_rider_complete')
       .select('*')
+      .in('rider_id', riderIds)
       .order('velo_live', { ascending: false, nullsFirst: false });
 
     if (error) throw error;
