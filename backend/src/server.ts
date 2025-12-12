@@ -659,7 +659,7 @@ app.get('/api/admin/sync-config', (req, res) => {
 });
 
 // POST update auto-sync config
-app.post('/api/admin/sync-config', (req, res) => {
+app.post('/api/admin/sync-config', async (req, res) => {
   try {
     const { enabled, intervalMinutes } = req.body;
     
