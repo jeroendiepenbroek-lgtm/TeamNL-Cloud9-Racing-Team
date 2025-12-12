@@ -378,56 +378,78 @@ export default function TeamManager() {
         {/* Manage View */}
         {view === 'manage' && (
           <div>
-            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-900/50">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Rider</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Land</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">vELO</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Cat</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">FTP</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Laatste Sync</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Acties</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {riders.map((rider) => (
-                    <tr key={rider.rider_id} className="hover:bg-gray-700/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          {rider.avatar_url && (
-                            <img src={rider.avatar_url} alt="" className="w-10 h-10 rounded-full" />
-                          )}
-                          <div>
-                            <div className="font-semibold">{rider.name || `Rider ${rider.rider_id}`}</div>
-                            <div className="text-sm text-gray-400">ID: {rider.rider_id}</div>
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gradient-to-r from-blue-600 to-cyan-500">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Rider</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">vELO</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Cat</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">FTP</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Races</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Wins</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Laatste Sync</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase tracking-wider">Acties</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {riders.map((rider) => (
+                      <tr key={rider.rider_id} className="hover:bg-blue-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <img 
+                              src={rider.avatar_url || rider.image_src || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff`} 
+                              alt=\"\" 
+                              className=\"w-12 h-12 rounded-full border-2 border-blue-200 object-cover\" 
+                              onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff`; }}
+                            />
+                            <div>
+                              <div className="font-bold text-gray-900">
+                                {rider.full_name || rider.racing_name || `Rider ${rider.rider_id}`}
+                              </div>
+                              <div className="text-sm text-gray-500 flex items-center gap-2">
+                                {rider.country_alpha3 && (
+                                  <span className="text-lg">{rider.country_alpha3 === 'NLD' ? '🇳🇱' : rider.country_alpha3 === 'USA' ? '🇺🇸' : rider.country_alpha3 === 'GBR' ? '🇬🇧' : '🌍'}</span>
+                                )}
+                                ID: {rider.rider_id}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-2xl">{rider.country || '🌍'}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-bold text-cyan-400">{rider.velo_live || '-'}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 bg-blue-600/20 rounded-lg font-semibold">{rider.category || '-'}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-mono">{rider.ftp || '-'}W</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-400">
-                        {rider.last_synced ? new Date(rider.last_synced).toLocaleString('nl-NL') : 'Nooit'}
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => handleRemoveRider(rider.rider_id)}
-                          className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
-                        >
-                          Verwijder
-                        </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-bold text-lg text-cyan-600\">
+                            {rider.velo_live ? Math.round(rider.velo_live) : '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-3 py-1 rounded-full font-bold text-sm ${\n                            rider.zwiftracing_category === 'A' ? 'bg-red-100 text-red-700' :\n                            rider.zwiftracing_category === 'B' ? 'bg-orange-100 text-orange-700' :\n                            rider.zwiftracing_category === 'C' ? 'bg-green-100 text-green-700' :\n                            rider.zwiftracing_category === 'D' ? 'bg-blue-100 text-blue-700' :\n                            'bg-gray-100 text-gray-500'\n                          }`}>
+                            {rider.zwiftracing_category || '-'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="font-mono font-semibold text-gray-900">
+                            {rider.racing_ftp || rider.ftp_watts || '-'}<span className="text-gray-500 text-sm\">W</span>
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-gray-700 font-medium\">{rider.race_finishes || 0}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-gray-700 font-medium\">{rider.race_wins || 0}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-gray-500\">
+                            {rider.team_last_synced ? new Date(rider.team_last_synced).toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Nooit'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleRemoveRider(rider.rider_id)}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-semibold text-sm shadow-md hover:shadow-lg"
+                          >
+                            Verwijder
+                          </button>
                       </td>
                     </tr>
                   ))}
