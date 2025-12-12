@@ -53,21 +53,6 @@ export default function TeamManager() {
     }
   }, [view])
 
-  // Auto-sync effect
-  useEffect(() => {
-    if (!autoSyncEnabled || autoSyncInterval <= 0) return
-    
-    console.log(`🔄 Auto-sync enabled: every ${autoSyncInterval} minutes`)
-    
-    const intervalMs = autoSyncInterval * 60 * 1000
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-sync triggered')
-      handleSyncAll()
-    }, intervalMs)
-    
-    return () => clearInterval(interval)
-  }, [autoSyncEnabled, autoSyncInterval])
-
   const fetchRiderCount = async () => {
     try {
       const response = await fetch('/api/team/roster')
@@ -213,6 +198,22 @@ export default function TeamManager() {
       setSyncing(false)
     }
   }
+
+  // Auto-sync effect - must be after handleSyncAll declaration
+  useEffect(() => {
+    if (!autoSyncEnabled || autoSyncInterval <= 0) return
+    
+    console.log(`🔄 Auto-sync enabled: every ${autoSyncInterval} minutes`)
+    
+    const intervalMs = autoSyncInterval * 60 * 1000
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-sync triggered')
+      handleSyncAll()
+    }, intervalMs)
+    
+    return () => clearInterval(interval)
+  }, [autoSyncEnabled, autoSyncInterval, handleSyncAll])
+
   const handleRemoveRider = async (riderId: number) => {
     if (!confirm(`Rider ${riderId} verwijderen uit team?`)) return
 
