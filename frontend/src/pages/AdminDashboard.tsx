@@ -232,7 +232,19 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8">TeamNL Admin Dashboard</h1>
+        {/* Header with back button */}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold">TeamNL Admin Dashboard</h1>
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+          </button>
+        </div>
 
         {/* Tabs */}
         <div className="flex gap-4 mb-8 border-b border-gray-700">
