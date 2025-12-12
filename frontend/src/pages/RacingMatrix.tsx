@@ -308,7 +308,7 @@ export default function RacingDataMatrixModern() {
   const [filterVeloLiveRanks, setFilterVeloLiveRanks] = useState<number[]>([])
   const [filterVelo30dayRanks, setFilterVelo30dayRanks] = useState<number[]>([])
 
-  const { data: riders, isLoading, error } = useQuery<MatrixRider[]>({
+  const { data: riders, isLoading, error, refetch } = useQuery<MatrixRider[]>({
     queryKey: ['matrixRiders'],
     queryFn: async () => {
       // Get Supabase config from backend (runtime, not build-time)
@@ -339,7 +339,7 @@ export default function RacingDataMatrixModern() {
       }
       return res.json()
     },
-    refetchInterval: 60000,
+    refetchInterval: 30000, // 30 seconds for faster team updates
     retry: 3,
   })
 
@@ -468,6 +468,16 @@ export default function RacingDataMatrixModern() {
                 </p>
               </div>
               <div className="flex-shrink-0 flex gap-2">
+                <button
+                  onClick={() => { refetch(); toast.success('Dashboard ververst!'); }}
+                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-green-400/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
+                  title="Ververs Dashboard"
+                >
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  <span className="hidden sm:inline">Ververs</span>
+                </button>
                 <button
                   onClick={() => navigate('/team-manager')}
                   className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"

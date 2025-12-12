@@ -45,6 +45,10 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
         timeout: 10000
       }),
       axios.get(`https://us-or-rly101.zwift.com/api/profiles/${riderId}`, {
+        headers: {
+          'Cookie': process.env.ZWIFT_COOKIE || '',
+          'User-Agent': 'Mozilla/5.0'
+        },
         timeout: 10000
       })
     ]);
