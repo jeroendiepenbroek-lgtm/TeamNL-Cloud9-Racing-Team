@@ -311,33 +311,11 @@ export default function RacingDataMatrixModern() {
   const { data: riders, isLoading, error, refetch } = useQuery<MatrixRider[]>({
     queryKey: ['matrixRiders'],
     queryFn: async () => {
-      // Get Supabase config from backend (runtime, not build-time)
-      const configRes = await fetch('/api/config/supabase')
-      if (!configRes.ok) {
-        throw new Error('Failed to fetch Supabase config from backend')
-      }
-      const { url: supabaseUrl, anonKey: supabaseKey } = await configRes.json()
-      
-      if (!supabaseKey) {
-        throw new Error('Supabase API key not configured on server')
-      }
-      
-      // Query v_rider_complete view via Supabase REST API (only team members)
-      const res = await fetch(
-        `${supabaseUrl}/rest/v1/v_rider_complete?select=*&is_team_member=eq.true&order=velo_live.desc.nullslast`,
-        {
-          headers: {
-            'apikey': supabaseKey,
-            'Authorization': `Bearer ${supabaseKey}`
-          }
-        }
-      )
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        console.error('Supabase API Error:', errorData)
-        throw new Error(errorData.message || 'Failed to fetch riders from v_rider_complete')
-      }
-      return res.json()
+      // Use backend API endpoint - same source as Team Manager for consistency
+      const response = await fetch('/api/riders')
+      if (!response.ok) throw new Error('Failed to fetch riders')
+      const data = await response.json()
+      return data.riders || []
     },
     refetchInterval: 30000, // 30 seconds for faster team updates
     retry: 3,

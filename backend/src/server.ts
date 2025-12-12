@@ -53,34 +53,37 @@ async function getZwiftCookie(): Promise<string> {
   try {
     console.log('🔐 Logging in to Zwift to get session cookie...');
     
-    const response = await axios.post(
-      'https://secure.zwift.com/auth/rb_bf',
-      {
+    // Step 1: Get access token
+    const authResponse = await axios.post(
+      'https://secure.zwift.com/auth/realms/zwift/protocol/openid-connect/token',
+      new URLSearchParams({
         username,
         password,
-        client_id: 'Zwift_Mobile_Link'
-      },
+        client_id: 'Zwift_Mobile_Link',
+        grant_type: 'password'
+      }),
       {
         headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Zwift/1.0'
+          'Content-Type': 'application/x-www-form-urlencoded'
         }
       }
     );
 
-    // Extract cookies from response
-    const cookies = response.headers['set-cookie'];
-    if (cookies && cookies.length > 0) {
-      zwiftCookie = cookies.map(c => c.split(';')[0]).join('; ');
-      cookieExpiry = new Date(Date.now() + 6 * 60 * 60 * 1000); // 6 hours
-      console.log('✅ Zwift login successful, cookie cached for 6 hours');
-      return zwiftCookie;
+    const accessToken = authResponse.data.access_token;
+    
+    if (!accessToken) {
+      console.warn('⚠️  No access token received from Zwift');
+      return '';
     }
 
-    console.warn('⚠️  No cookies received from Zwift login');
-    return '';
+    // Use access token as Bearer auth instead of cookie
+    zwiftCookie = `Bearer ${accessToken}`;
+    cookieExpiry = new Date(Date.now() + 6 * 60 * 60 * 1000); // 6 hours
+    console.log('✅ Zwift login successful, token cached for 6 hours');
+    return zwiftCookie;
+
   } catch (error: any) {
-    console.error('❌ Zwift login failed:', error.message);
+    console.error('❌ Zwift login failed:', error.response?.data || error.message);
     return '';
   }
 }
@@ -93,7 +96,7 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
     console.log(`🔄 Syncing rider ${riderId}...`);
     
     // Get fresh Zwift cookie (cached for 6 hours)
-    const cookie = await getZwiftCookie();
+    const authToken = await getZwiftCookie();
     
     // Parallel fetch from both APIs
     const [racingResult, profileResult] = await Promise.allSettled([
@@ -103,7 +106,7 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
       }),
       axios.get(`https://us-or-rly101.zwift.com/api/profiles/${riderId}`, {
         headers: {
-          'Cookie': cookie,
+          'Authorization': authToken,
           'User-Agent': 'Zwift/1.0'
         },
         timeout: 10000
