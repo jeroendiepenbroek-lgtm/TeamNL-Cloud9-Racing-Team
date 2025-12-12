@@ -118,8 +118,6 @@ function App() {
     </BrowserRouter>
   )
 }
-    </BrowserRouter>
-  )
-}
 
 export default App
+

@@ -95,6 +95,12 @@ export default function TeamManager() {
       }
     } catch (error) {
       console.error('Error adding rider:', error)
+      toast.error('Fout bij toevoegen')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleAddMultiple = async () => {
     const ids = multipleRiderIds
       .split(/[\n,\s]+/)
@@ -412,3 +418,4 @@ export default function TeamManager() {
     </div>
   )
 }
+
