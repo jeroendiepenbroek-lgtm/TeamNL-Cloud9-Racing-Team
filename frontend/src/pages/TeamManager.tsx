@@ -29,14 +29,12 @@ export default function TeamManager() {
   const [riders, setRiders] = useState<Rider[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
-    const saved = localStorage.getItem('autoSyncEnabled')
-    return saved !== null ? saved === 'true' : true
-  })
-  const [autoSyncInterval, setAutoSyncInterval] = useState(() => {
-    const saved = localStorage.getItem('autoSyncInterval')
-    return saved !== null ? parseInt(saved) : 60
-  }) // minutes
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true)
+  const [autoSyncInterval, setAutoSyncInterval] = useState(60) // minutes
+  const [syncConfig, setSyncConfig] = useState<{
+    lastRun: string | null
+    nextRun: string | null
+  }>({ lastRun: null, nextRun: null })
   const [view, setView] = useState<'add' | 'manage'>('add')
   
   // Add single rider
@@ -48,16 +46,10 @@ export default function TeamManager() {
   // File upload
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
-  // Save settings to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('autoSyncEnabled', String(autoSyncEnabled))
-    localStorage.setItem('autoSyncInterval', String(autoSyncInterval))
-    console.log('💾 Auto-sync settings saved:', { autoSyncEnabled, autoSyncInterval })
-  }, [autoSyncEnabled, autoSyncInterval])
-
-  // Initial load of rider count
+  // Initial load of rider count + sync config
   useEffect(() => {
     fetchRiderCount()
+    fetchSyncConfig()
   }, [])
 
   useEffect(() => {
@@ -89,6 +81,19 @@ export default function TeamManager() {
     } catch (error) {
       console.error('Error fetching riders:', error)
       toast.error('Fout bij laden riders')
+    }
+  }
+
+  // Fetch server-side sync config
+  const fetchSyncConfig = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-config`)
+      const data = await response.json()
+      setAutoSyncEnabled(data.enabled)
+      setAutoSyncInterval(data.intervalMinutes)
+      setSyncConfig({ lastRun: data.lastRun, nextRun: data.nextRun })
+    } catch (error) {
+      console.error('Failed to fetch sync config:', error)
     }
   }
 
@@ -201,6 +206,7 @@ export default function TeamManager() {
       if (result.success) {
         toast.success(`✅ ${result.synced} riders gesynchroniseerd!`)
         await fetchRiders() // Refresh data
+        await fetchSyncConfig() // Update sync times
       } else {
         toast.error('Sync mislukt: ' + result.error)
       }
@@ -212,22 +218,40 @@ export default function TeamManager() {
     }
   }, [])
 
-  // Auto-sync effect - must be after handleSyncAll declaration
-  useEffect(() => {
-    if (!autoSyncEnabled || autoSyncInterval <= 0) return
-    
-    console.log(`🔄 Client-side auto-sync: every ${autoSyncInterval} minutes (only when tab is open)`)
-    console.log(`ℹ️  Server-side sync runs every hour regardless of browser state`)
-    console.log(`⚠️  Note: Server-side sync runs independently every hour regardless of browser`)
-    
-    const intervalMs = autoSyncInterval * 60 * 1000
-    const interval = setInterval(() => {
-      console.log('🔄 Client-side auto-sync triggered')
-      handleSyncAll()
-    }, intervalMs)
-    
-    return () => clearInterval(interval)
-  }, [autoSyncEnabled, autoSyncInterval, handleSyncAll])
+  // Update server-side sync config
+  const updateSyncConfig = async (enabled: boolean, intervalMinutes: number) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-config`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled, intervalMinutes })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        setSyncConfig({ lastRun: result.config.lastRun, nextRun: result.config.nextRun })
+        toast.success(`⚙️ Auto-sync ${enabled ? 'ingeschakeld' : 'uitgeschakeld'}${enabled ? ` (${intervalMinutes} min)` : ''}`)
+      } else {
+        toast.error('Config update mislukt')
+      }
+    } catch (error: any) {
+      console.error('Config update error:', error)
+      toast.error('Config fout: ' + error.message)
+    }
+  }
+
+  // Handle auto-sync toggle
+  const handleAutoSyncToggle = (enabled: boolean) => {
+    setAutoSyncEnabled(enabled)
+    updateSyncConfig(enabled, autoSyncInterval)
+  }
+
+  // Handle interval change
+  const handleIntervalChange = (intervalMinutes: number) => {
+    setAutoSyncInterval(intervalMinutes)
+    updateSyncConfig(autoSyncEnabled, intervalMinutes)
+  }
 
   const handleRemoveRider = async (riderId: number) => {
     if (!confirm(`Rider ${riderId} verwijderen uit team?`)) return
@@ -278,31 +302,38 @@ export default function TeamManager() {
                   </p>
                 </div>
               </div>
-              {/* Sync Controls + Back Button */}
+              {/* Server-Side Sync Controls + Back Button */}
               <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/30">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={autoSyncEnabled}
-                      onChange={(e) => setAutoSyncEnabled(e.target.checked)}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                    <span className="text-xs sm:text-sm font-medium text-white">Auto</span>
-                  </label>
-                  <select
-                    value={autoSyncInterval}
-                    onChange={(e) => setAutoSyncInterval(Number(e.target.value))}
-                    disabled={!autoSyncEnabled}
-                    className="text-xs sm:text-sm border-l border-white/30 pl-2 bg-transparent focus:outline-none text-white font-medium disabled:opacity-50"
-                  >
-                    <option value={1} className="text-gray-900">1m (test)</option>
-                    <option value={15} className="text-gray-900">15m</option>
-                    <option value={30} className="text-gray-900">30m</option>
-                    <option value={60} className="text-gray-900">1u</option>
-                    <option value={120} className="text-gray-900">2u</option>
-                    <option value={240} className="text-gray-900">4u</option>
-                  </select>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/30">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={autoSyncEnabled}
+                        onChange={(e) => handleAutoSyncToggle(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                      <span className="text-xs sm:text-sm font-medium text-white">Server Auto-Sync</span>
+                    </label>
+                    <select
+                      value={autoSyncInterval}
+                      onChange={(e) => handleIntervalChange(Number(e.target.value))}
+                      disabled={!autoSyncEnabled}
+                      className="text-xs sm:text-sm border-l border-white/30 pl-2 bg-transparent focus:outline-none text-white font-medium disabled:opacity-50"
+                    >
+                      <option value={5} className="text-gray-900">5m (test)</option>
+                      <option value={15} className="text-gray-900">15m</option>
+                      <option value={30} className="text-gray-900">30m</option>
+                      <option value={60} className="text-gray-900">1u</option>
+                      <option value={120} className="text-gray-900">2u</option>
+                      <option value={240} className="text-gray-900">4u</option>
+                    </select>
+                  </div>
+                  {syncConfig.nextRun && (
+                    <div className="text-xs text-white/70 px-2">
+                      Volgende sync: {new Date(syncConfig.nextRun).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  )}
                 </div>
                 <button
                   onClick={handleSyncAll}

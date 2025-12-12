@@ -112,7 +112,7 @@ export default function AdminDashboard() {
   }
 
   const handleBulkImport = async () => {
-    const ids = bulkRiderIds.split(/[,\\n]+/).map(id => parseInt(id.trim())).filter(id => !isNaN(id))
+    const ids = bulkRiderIds.split(/[,\n]+/).map(id => parseInt(id.trim())).filter(id => !isNaN(id))
     if (ids.length === 0) {
       toast.error('Enter valid rider IDs')
       return
