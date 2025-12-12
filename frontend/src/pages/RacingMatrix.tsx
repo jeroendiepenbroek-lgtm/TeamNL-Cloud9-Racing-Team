@@ -823,7 +823,7 @@ export default function RacingDataMatrixModern() {
               <tbody className="divide-y divide-gray-100">
                 {sortedRiders.map((rider, index) => {
                   const veloLiveTier = getVeloTier(rider.velo_live)
-                  const zpCategory = rider.zwiftracing_category as keyof typeof ZP_CATEGORIES | null
+                  const zpCategory = rider.zwift_official_category as keyof typeof ZP_CATEGORIES | null
                   
                   return (
                     <tr 
@@ -842,8 +842,16 @@ export default function RacingDataMatrixModern() {
                           {isFavorite(rider.rider_id) ? '⭐' : '☆'}
                         </button>
                       </td>
-                      <td className="px-1 sm:px-2 py-1 whitespace-nowrap text-gray-700 font-mono text-[10px] sm:text-xs">
-                        {rider.rider_id}
+                      <td className="px-1 sm:px-2 py-1 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <img 
+                            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=32`}
+                            alt=""
+                            className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-gray-300 object-cover"
+                            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=32`; }}
+                          />
+                          <span className="text-gray-700 font-mono text-[10px] sm:text-xs">{rider.rider_id}</span>
+                        </div>
                       </td>
                       <td className="px-1 sm:px-2 py-1 whitespace-nowrap">
                         <VeloBadge rating={rider.velo_live} />
@@ -879,7 +887,7 @@ export default function RacingDataMatrixModern() {
                           <span className="text-gray-400 text-xs">-</span>
                         )}
                       </td>
-                      <td className="px-2 py-0.5 whitespace-nowrap text-center" title={rider.zwift_official_racing_score ? `Zwift Official Racing Score: ${rider.zwift_official_racing_score}` : 'No official score'}>
+                      <td className="px-2 py-0.5 whitespace-nowrap text-center" title={rider.zwift_official_racing_score ? `Zwift Official Racing Score: ${Math.round(rider.zwift_official_racing_score)}` : 'No official score'}>
                         {rider.zwift_official_racing_score ? (
                           <span className={`inline-block px-2 py-1 text-xs font-bold rounded-md ${
                             rider.zwift_official_racing_score >= 700 ? 'bg-red-100 text-red-900 border border-red-300' :
@@ -889,7 +897,7 @@ export default function RacingDataMatrixModern() {
                             rider.zwift_official_racing_score >= 300 ? 'bg-blue-100 text-blue-900 border border-blue-300' :
                             'bg-gray-100 text-gray-700 border border-gray-300'
                           }`}>
-                            {rider.zwift_official_racing_score}
+                            {Math.round(rider.zwift_official_racing_score)}
                           </span>
                         ) : (
                           <span className="text-gray-400 text-xs">-</span>
