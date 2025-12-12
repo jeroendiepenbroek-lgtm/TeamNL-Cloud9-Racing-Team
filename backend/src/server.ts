@@ -65,7 +65,7 @@ app.post('/api/admin/team/riders', async (req, res) => {
     const { rider_id } = req.body;
     if (!rider_id) return res.status(400).json({ error: 'rider_id required' });
 
-    // Check if rider already exists
+    // Check if rider already exists in roster
     const { data: existing } = await supabase
       .from('team_roster')
       .select('rider_id')
@@ -78,15 +78,15 @@ app.post('/api/admin/team/riders', async (req, res) => {
       return res.json({ success: true, rider_id, already_existed: true });
     }
 
-    // Add to roster
+    // FIRST: Sync rider data from APIs (creates entries in api tables)
+    await syncRiderData(rider_id);
+
+    // THEN: Add to roster (foreign key will now work)
     const { error: insertError } = await supabase
       .from('team_roster')
       .insert({ rider_id, is_active: true });
     
     if (insertError) throw insertError;
-
-    // Sync rider data from APIs
-    await syncRiderData(rider_id);
 
     res.json({ success: true, rider_id, already_existed: false });
   } catch (error: any) {
@@ -107,7 +107,7 @@ app.post('/api/admin/team/riders/bulk', async (req, res) => {
 
     for (const rider_id of rider_ids) {
       try {
-        // Check if exists
+        // Check if exists in roster
         const { data: existing } = await supabase
           .from('team_roster')
           .select('rider_id')
@@ -120,7 +120,10 @@ app.post('/api/admin/team/riders/bulk', async (req, res) => {
           continue;
         }
 
-        // Add to roster
+        // FIRST: Sync data from APIs
+        await syncRiderData(rider_id);
+
+        // THEN: Add to roster
         const { error: insertError } = await supabase
           .from('team_roster')
           .insert({ rider_id, is_active: true });
@@ -131,8 +134,6 @@ app.post('/api/admin/team/riders/bulk', async (req, res) => {
           continue;
         }
 
-        // Sync data
-        await syncRiderData(rider_id);
         results.added++;
       } catch (error: any) {
         results.failed++;
