@@ -369,6 +369,75 @@ app.post('/api/admin/riders', async (req, res) => {
   }
 });
 
+// MANUAL SYNC ALL - Sync all active team members
+app.post('/api/admin/sync-all', async (req, res) => {
+  try {
+    console.log('🔄 Manual sync all triggered');
+    
+    // Get all active team members
+    const { data: riders, error } = await supabase
+      .from('v_rider_complete')
+      .select('rider_id')
+      .eq('is_team_member', true);
+    
+    if (error) throw error;
+    
+    if (!riders || riders.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No riders to sync',
+        total: 0,
+        synced: 0
+      });
+    }
+    
+    const riderIds = riders.map(r => r.rider_id);
+    console.log(`📊 Syncing ${riderIds.length} riders: ${riderIds.join(', ')}`);
+    
+    let synced = 0;
+    let failed = 0;
+    const results = [];
+    
+    for (const riderId of riderIds) {
+      try {
+        const result = await syncRiderFromAPIs(riderId);
+        if (result.synced) {
+          synced++;
+          results.push({ rider_id: riderId, synced: true });
+        } else {
+          failed++;
+          results.push({ rider_id: riderId, synced: false, error: 'Sync failed' });
+        }
+      } catch (error: any) {
+        failed++;
+        results.push({ rider_id: riderId, synced: false, error: error.message });
+      }
+      
+      // Small delay between syncs
+      if (riderIds.indexOf(riderId) < riderIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    console.log(`✅ Manual sync complete: ${synced} synced, ${failed} failed`);
+    
+    res.json({
+      success: true,
+      total: riderIds.length,
+      synced,
+      failed,
+      results
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Manual sync all failed:', error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Remove rider from team AND all source tables (clean database)
 app.delete('/api/admin/riders/:riderId', async (req, res) => {
   try {
