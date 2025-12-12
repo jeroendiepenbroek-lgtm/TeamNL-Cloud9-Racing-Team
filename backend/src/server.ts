@@ -26,6 +26,14 @@ app.get('/health', (req, res) => {
   res.json({ status: 'healthy', version: '5.0.0-minimal' });
 });
 
+// Supabase config for frontend
+app.get('/api/config/supabase', (req, res) => {
+  res.json({
+    url: process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co',
+    anonKey: process.env.SUPABASE_ANON_KEY || ''
+  });
+});
+
 // Riders data - READ ONLY
 app.get('/api/riders', async (req, res) => {
   const { data } = await supabase.from('v_rider_complete').select('*');
