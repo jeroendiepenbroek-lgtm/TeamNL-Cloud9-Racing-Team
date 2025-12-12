@@ -373,12 +373,12 @@ export default function TeamManager() {
             )}
           </div>
         </div>
-      )}
+        )}
 
         {/* Manage View */}
         {view === 'manage' && (
           <div>
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 overflow-hidden">
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl border border-gray-700 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-900/50">
@@ -443,7 +443,8 @@ export default function TeamManager() {
             )}
           </div>
         </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
