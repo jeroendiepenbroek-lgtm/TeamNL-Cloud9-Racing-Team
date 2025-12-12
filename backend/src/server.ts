@@ -65,6 +65,19 @@ app.post('/api/admin/team/riders', async (req, res) => {
     const { rider_id } = req.body;
     if (!rider_id) return res.status(400).json({ error: 'rider_id required' });
 
+    // Check if rider already exists
+    const { data: existing } = await supabase
+      .from('team_roster')
+      .select('rider_id')
+      .eq('rider_id', rider_id)
+      .single();
+
+    if (existing) {
+      // Already exists - just re-sync
+      await syncRiderData(rider_id);
+      return res.json({ success: true, rider_id, already_existed: true });
+    }
+
     // Add to roster
     const { error: insertError } = await supabase
       .from('team_roster')
@@ -75,7 +88,7 @@ app.post('/api/admin/team/riders', async (req, res) => {
     // Sync rider data from APIs
     await syncRiderData(rider_id);
 
-    res.json({ success: true, rider_id });
+    res.json({ success: true, rider_id, already_existed: false });
   } catch (error: any) {
     console.error('Error adding rider:', error.message);
     res.status(500).json({ error: error.message });
@@ -90,10 +103,23 @@ app.post('/api/admin/team/riders/bulk', async (req, res) => {
       return res.status(400).json({ error: 'rider_ids array required' });
     }
 
-    const results = { added: 0, failed: 0, errors: [] as any[] };
+    const results = { added: 0, skipped: 0, failed: 0, errors: [] as any[] };
 
     for (const rider_id of rider_ids) {
       try {
+        // Check if exists
+        const { data: existing } = await supabase
+          .from('team_roster')
+          .select('rider_id')
+          .eq('rider_id', rider_id)
+          .single();
+
+        if (existing) {
+          results.skipped++;
+          await syncRiderData(rider_id); // Re-sync existing
+          continue;
+        }
+
         // Add to roster
         const { error: insertError } = await supabase
           .from('team_roster')

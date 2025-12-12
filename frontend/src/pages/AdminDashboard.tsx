@@ -89,13 +89,23 @@ export default function AdminDashboard() {
         body: JSON.stringify({ rider_id: riderId })
       })
       
-      if (!res.ok) throw new Error('Failed to add')
-      toast.success('Rider added! Syncing...')
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to add')
+      }
+      
+      const result = await res.json()
+      if (result.already_existed) {
+        toast.success(`Rider ${riderId} already in team - re-synced!`)
+      } else {
+        toast.success(`Rider ${riderId} added! Syncing...`)
+      }
+      
       setNewRiderId('')
       await loadTeamRoster()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Add rider error:', error)
-      toast.error('Failed to add rider')
+      toast.error(error.message || 'Failed to add rider')
     }
   }
 
@@ -114,7 +124,20 @@ export default function AdminDashboard() {
       })
       
       if (!res.ok) throw new Error('Failed')
-      toast.success(`Added ${ids.length} riders!`)
+      
+      const result = await res.json()
+      const msg = []
+      if (result.added > 0) msg.push(`Added ${result.added}`)
+      if (result.skipped > 0) msg.push(`Skipped ${result.skipped} existing`)
+      if (result.failed > 0) msg.push(`Failed ${result.failed}`)
+      
+      if (result.failed > 0) {
+        toast.error(msg.join(', '))
+        console.error('Bulk errors:', result.errors)
+      } else {
+        toast.success(msg.join(', ') + ' riders!')
+      }
+      
       setBulkRiderIds('')
       await loadTeamRoster()
     } catch (error) {
