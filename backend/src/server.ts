@@ -177,7 +177,7 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
       const data = profileResult.value.data;
       const profileData = {
         rider_id: riderId,
-        zwift_id: data.id || riderId,
+        id: data.id || riderId,
         first_name: data.firstName || null,
         last_name: data.lastName || null,
         male: data.male,
