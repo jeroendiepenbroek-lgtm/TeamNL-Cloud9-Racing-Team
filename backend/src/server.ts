@@ -581,7 +581,10 @@ const startAutoSync = () => {
   
   // Initial sync after 5 minutes (or immediately if configured < 5 minutes)
   const initialDelay = Math.min(5 * 60 * 1000, intervalMs);
+  
+  // Calculate nextRun time
   autoSyncConfig.nextRun = new Date(Date.now() + initialDelay);
+  console.log(`📅 Next sync scheduled at: ${autoSyncConfig.nextRun.toISOString()}`);
   
   autoSyncInitialTimeoutId = setTimeout(() => {
     console.log('🚀 Running initial auto-sync...');
@@ -614,15 +617,17 @@ app.post('/api/admin/sync-config', (req, res) => {
       autoSyncConfig.intervalMinutes = intervalMinutes;
     }
     
-    console.log('⚙️  Auto-sync config updated:', autoSyncConfig);
+    console.log('⚙️  Auto-sync config updated:', { enabled: autoSyncConfig.enabled, intervalMinutes: autoSyncConfig.intervalMinutes });
     
     // Restart scheduler with new config
     startAutoSync();
     
+    // Respond met de actuele config inclusief nieuwe nextRun
     res.json({
       success: true,
       config: {
-        ...autoSyncConfig,
+        enabled: autoSyncConfig.enabled,
+        intervalMinutes: autoSyncConfig.intervalMinutes,
         lastRun: autoSyncConfig.lastRun?.toISOString() || null,
         nextRun: autoSyncConfig.nextRun?.toISOString() || null
       }

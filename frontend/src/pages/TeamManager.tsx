@@ -49,6 +49,7 @@ export default function TeamManager() {
   // Initial load of rider count + sync config
   useEffect(() => {
     fetchRiderCount()
+    // Fetch initial config
     fetchSyncConfig()
   }, [])
 
@@ -222,7 +223,11 @@ export default function TeamManager() {
   // Update server-side sync config
   const updateSyncConfig = async (enabled: boolean, intervalMinutes: number) => {
     try {
-      console.log(`⚙️ Updating sync config: enabled=${enabled}, interval=${intervalMinutes}`)
+      console.log(`⚙️ Sending to server: enabled=${enabled}, interval=${intervalMinutes}`)
+      
+      // Update lokale state DIRECT voor responsive UI
+      setAutoSyncEnabled(enabled)
+      setAutoSyncInterval(intervalMinutes)
       
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-config`, {
         method: 'POST',
@@ -233,17 +238,19 @@ export default function TeamManager() {
       const result = await response.json()
       
       if (result.success) {
-        // Update state met de response van server
-        setAutoSyncEnabled(result.config.enabled)
-        setAutoSyncInterval(result.config.intervalMinutes)
+        // Update alleen de sync times van server
         setSyncConfig({ lastRun: result.config.lastRun, nextRun: result.config.nextRun })
-        console.log(`✅ Config updated:`, result.config)
+        console.log(`✅ Server confirmed:`, result.config)
         toast.success(`⚙️ Auto-sync ${enabled ? 'ingeschakeld' : 'uitgeschakeld'}${enabled ? ` (${intervalMinutes} min)` : ''}`)
       } else {
+        // Rollback bij fout
+        await fetchSyncConfig()
         toast.error('Config update mislukt')
       }
     } catch (error: any) {
       console.error('Config update error:', error)
+      // Rollback bij fout
+      await fetchSyncConfig()
       toast.error('Config fout: ' + error.message)
     }
   }
