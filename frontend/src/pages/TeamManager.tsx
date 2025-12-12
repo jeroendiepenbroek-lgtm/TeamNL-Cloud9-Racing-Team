@@ -5,13 +5,23 @@ import toast from 'react-hot-toast'
 interface Rider {
   rider_id: number
   name: string
+  full_name: string | null
+  racing_name: string | null
   country: string
+  country_alpha3: string | null
   velo_live: number | null
   category: string | null
+  zwiftracing_category: string | null
   ftp: number | null
+  ftp_watts: number | null
+  racing_ftp: number | null
   weight: number | null
   avatar_url: string | null
+  image_src: string | null
   last_synced: string | null
+  team_last_synced: string | null
+  race_finishes: number | null
+  race_wins: number | null
 }
 
 export default function TeamManager() {
@@ -400,8 +410,8 @@ export default function TeamManager() {
                           <div className="flex items-center gap-3">
                             <img 
                               src={rider.avatar_url || rider.image_src || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff`} 
-                              alt=\"\" 
-                              className=\"w-12 h-12 rounded-full border-2 border-blue-200 object-cover\" 
+                              alt="" 
+                              className="w-12 h-12 rounded-full border-2 border-blue-200 object-cover" 
                               onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff`; }}
                             />
                             <div>
@@ -418,28 +428,34 @@ export default function TeamManager() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="font-bold text-lg text-cyan-600\">
+                          <span className="font-bold text-lg text-cyan-600">
                             {rider.velo_live ? Math.round(rider.velo_live) : '-'}
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`px-3 py-1 rounded-full font-bold text-sm ${\n                            rider.zwiftracing_category === 'A' ? 'bg-red-100 text-red-700' :\n                            rider.zwiftracing_category === 'B' ? 'bg-orange-100 text-orange-700' :\n                            rider.zwiftracing_category === 'C' ? 'bg-green-100 text-green-700' :\n                            rider.zwiftracing_category === 'D' ? 'bg-blue-100 text-blue-700' :\n                            'bg-gray-100 text-gray-500'\n                          }`}>
+                          <span className={`px-3 py-1 rounded-full font-bold text-sm ${
+                            rider.zwiftracing_category === 'A' ? 'bg-red-100 text-red-700' :
+                            rider.zwiftracing_category === 'B' ? 'bg-orange-100 text-orange-700' :
+                            rider.zwiftracing_category === 'C' ? 'bg-green-100 text-green-700' :
+                            rider.zwiftracing_category === 'D' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-500'
+                          }`}>
                             {rider.zwiftracing_category || '-'}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="font-mono font-semibold text-gray-900">
-                            {rider.racing_ftp || rider.ftp_watts || '-'}<span className="text-gray-500 text-sm\">W</span>
+                            {rider.racing_ftp || rider.ftp_watts || '-'}<span className="text-gray-500 text-sm">W</span>
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-gray-700 font-medium\">{rider.race_finishes || 0}</span>
+                          <span className="text-gray-700 font-medium">{rider.race_finishes || 0}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-gray-700 font-medium\">{rider.race_wins || 0}</span>
+                          <span className="text-gray-700 font-medium">{rider.race_wins || 0}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className="text-xs text-gray-500\">
+                          <span className="text-xs text-gray-500">
                             {rider.team_last_synced ? new Date(rider.team_last_synced).toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Nooit'}
                           </span>
                         </td>
@@ -450,12 +466,12 @@ export default function TeamManager() {
                           >
                             Verwijder
                           </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             
             {riders.length === 0 && (
               <div className="text-center py-12 text-gray-400">
