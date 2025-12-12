@@ -1,5 +1,5 @@
 // MINIMAL SERVER WITH TEAM MANAGEMENT
-import './env';
+// Railway environment variables worden automatisch geladen - GEEN dotenv nodig!
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -16,11 +16,20 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
+// Direct environment variables gebruiken - Railway injecteert ze al
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+const ZWIFTRACING_API_TOKEN = process.env.ZWIFTRACING_API_TOKEN || '650c6d2fc4ef6858d74cbef1';
+
+console.log('🚀 Environment check:', {
+  hasSupabaseUrl: !!SUPABASE_URL,
+  hasSupabaseKey: !!SUPABASE_SERVICE_KEY,
+  hasZwiftToken: !!ZWIFTRACING_API_TOKEN,
+  nodeEnv: process.env.NODE_ENV
+});
+
 // Supabase
-const supabase = createClient(
-  process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co',
-  process.env.SUPABASE_SERVICE_KEY || ''
-);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // Health
 app.get('/health', (req, res) => {
@@ -247,14 +256,14 @@ async function syncRiderData(riderId: number) {
   const results = { racing: false, profile: false };
   
   try {
-    const ZWIFTRACING_API_KEY = process.env.ZWIFTRACING_API_TOKEN || '650c6d2fc4ef6858d74cbef1';
+    // Gebruik de globale token variabele (al geladen bovenaan)
     
     // Parallel fetch: beide APIs tegelijk aanroepen
     const [racingResult, profileResult] = await Promise.allSettled([
       // ZwiftRacing API
       axios.get(
         `https://zwift-ranking.herokuapp.com/public/riders/${riderId}`,
-        { headers: { 'Authorization': ZWIFTRACING_API_KEY }, timeout: 10000 }
+        { headers: { 'Authorization': ZWIFTRACING_API_TOKEN }, timeout: 10000 }
       ),
       // Zwift Official API
       axios.get(
