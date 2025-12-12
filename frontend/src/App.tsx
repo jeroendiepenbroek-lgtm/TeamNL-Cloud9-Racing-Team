@@ -6,6 +6,7 @@ import EventsDashboard from './pages/EventsDashboard'
 import ResultsDashboard from './pages/ResultsDashboard'
 import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
+import TeamManager from './pages/TeamManager'
 
 function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -43,6 +44,9 @@ function Navigation() {
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Dashboard
               </Link>
+              <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
+                Team Manager
+              </Link>
               <Link to="/events" className="text-white hover:text-orange-400 transition font-semibold">
                 Events
               </Link>
@@ -71,6 +75,9 @@ function Navigation() {
             <div className="md:hidden py-4 space-y-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Dashboard
+              </Link>
+              <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                Team Manager
               </Link>
               <Link to="/events" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Events
@@ -103,6 +110,7 @@ function App() {
                 <Route path="/" element={<RacingMatrix />} />
                 <Route path="/events" element={<EventsDashboard />} />
                 <Route path="/results" element={<ResultsDashboard />} />
+                <Route path="/team-manager" element={<TeamManager />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="*" element={
