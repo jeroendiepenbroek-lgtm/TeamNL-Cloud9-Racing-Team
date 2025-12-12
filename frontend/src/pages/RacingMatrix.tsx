@@ -469,7 +469,7 @@ export default function RacingDataMatrixModern() {
               </div>
               <div className="flex-shrink-0 flex gap-2">
                 <button
-                  onClick={() => navigate('/admin')}
+                  onClick={() => navigate('/team-manager')}
                   className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
                   title="Team Management"
                 >

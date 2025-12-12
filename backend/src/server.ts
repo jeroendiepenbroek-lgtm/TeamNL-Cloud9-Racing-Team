@@ -56,6 +56,7 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
     if (racingResult.status === 'fulfilled') {
       const data = racingResult.value.data;
       const riderData = {
+        id: riderId,
         rider_id: riderId,
         name: data.name,
         country: data.country,
@@ -219,10 +220,24 @@ app.get('/api/riders', async (req, res) => {
 // Get team roster (only active team members)
 app.get('/api/team/roster', async (req, res) => {
   try {
+    // Get active rider IDs from team_roster, then join with v_rider_complete
+    const { data: rosterData, error: rosterError } = await supabase
+      .from('team_roster')
+      .select('rider_id')
+      .eq('is_active', true);
+
+    if (rosterError) throw rosterError;
+    
+    if (!rosterData || rosterData.length === 0) {
+      return res.json({ success: true, count: 0, riders: [] });
+    }
+
+    const riderIds = rosterData.map(r => r.rider_id);
+    
     const { data, error } = await supabase
       .from('v_rider_complete')
       .select('*')
-      .eq('is_active', true)
+      .in('rider_id', riderIds)
       .order('velo_live', { ascending: false, nullsFirst: false });
 
     if (error) throw error;

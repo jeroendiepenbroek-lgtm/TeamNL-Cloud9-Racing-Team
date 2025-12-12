@@ -42,9 +42,6 @@ function Navigation() {
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Dashboard
               </Link>
-              <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
-                Team Manager
-              </Link>
               <Link to="/events" className="text-white hover:text-orange-400 transition font-semibold">
                 Events
               </Link>
@@ -73,9 +70,6 @@ function Navigation() {
             <div className="md:hidden py-4 space-y-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Dashboard
-              </Link>
-              <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                Team Manager
               </Link>
               <Link to="/events" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Events
