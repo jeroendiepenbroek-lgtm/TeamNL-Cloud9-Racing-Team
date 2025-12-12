@@ -4,8 +4,6 @@ import { Toaster } from 'react-hot-toast'
 import RacingMatrix from './pages/RacingMatrix'
 import EventsDashboard from './pages/EventsDashboard'
 import ResultsDashboard from './pages/ResultsDashboard'
-import AdminLogin from './pages/AdminLogin'
-import AdminDashboard from './pages/AdminDashboard'
 import TeamManager from './pages/TeamManager'
 
 function Navigation() {
@@ -97,39 +95,29 @@ function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-900">
+        <Navigation />
         <Routes>
-          {/* Admin Routes (no navigation) */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          
-          {/* Public Routes (with navigation) */}
+          <Route path="/" element={<RacingMatrix />} />
+          <Route path="/events" element={<EventsDashboard />} />
+          <Route path="/results" element={<ResultsDashboard />} />
+          <Route path="/team-manager" element={<TeamManager />} />
           <Route path="*" element={
-            <>
-              <Navigation />
-              <Routes>
-                <Route path="/" element={<RacingMatrix />} />
-                <Route path="/events" element={<EventsDashboard />} />
-                <Route path="/results" element={<ResultsDashboard />} />
-                <Route path="/team-manager" element={<TeamManager />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="*" element={
-                  <div className="flex items-center justify-center min-h-screen">
-                    <div className="text-center">
-                      <h1 className="text-4xl font-bold text-white mb-4">404</h1>
-                      <p className="text-gray-400 mb-8">Page not found</p>
-                      <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg inline-block">
-                        Back to Team Dashboard
-                      </Link>
-                    </div>
-                  </div>
-                } />
-              </Routes>
-            </>
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center">
+                <h1 className="text-4xl font-bold text-white mb-4">404</h1>
+                <p className="text-gray-400 mb-8">Page not found</p>
+                <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg inline-block">
+                  Back to Team Dashboard
+                </Link>
+              </div>
+            </div>
           } />
         </Routes>
         <Toaster position="top-right" />
       </div>
+    </BrowserRouter>
+  )
+}
     </BrowserRouter>
   )
 }
