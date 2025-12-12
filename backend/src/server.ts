@@ -201,8 +201,8 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
         total_distance_climbed: data.totalDistanceClimbed || null,
         riding: data.riding || false,
         world_id: data.worldId || null,
-        privacy_profile: data.privacy?.approvalRequired || false,
-        privacy_activities: data.privacy?.defaultActivityPrivacy || null,
+        privacy_profile: data.privacy?.approvalRequired === true,
+        privacy_activities: data.privacy?.defaultActivityPrivacy === 'PRIVATE',
         raw_response: data,
         fetched_at: new Date().toISOString()
       };
