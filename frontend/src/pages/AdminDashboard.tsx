@@ -123,6 +123,35 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    try {
+      const text = await file.text()
+      
+      // Parse CSV or TXT: extract all numbers (rider IDs)
+      const ids = text
+        .split(/[\n,;\t\s]+/)
+        .map(id => parseInt(id.trim()))
+        .filter(id => !isNaN(id) && id > 0)
+
+      if (ids.length === 0) {
+        toast.error('No valid rider IDs found in file')
+        return
+      }
+
+      setBulkRiderIds(ids.join('\n'))
+      toast.success(`Loaded ${ids.length} rider IDs from ${file.name}`)
+    } catch (error) {
+      console.error('File upload error:', error)
+      toast.error('Failed to read file')
+    }
+
+    // Reset input
+    event.target.value = ''
+  }
+
   const handleDeleteRider = async (riderId: number) => {
     if (!confirm(`Remove rider ${riderId}?`)) return
 
@@ -223,17 +252,48 @@ export default function AdminDashboard() {
 
             <div className="bg-gray-800 p-6 rounded-lg">
               <h2 className="text-2xl font-bold mb-4">Bulk Import</h2>
-              <textarea
-                value={bulkRiderIds}
-                onChange={e => setBulkRiderIds(e.target.value)}
-                placeholder="Enter rider IDs (comma or newline separated)"
-                className="w-full bg-gray-700 px-4 py-2 rounded h-32"
-              />
+              
+              {/* File Upload */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  📁 Upload CSV or TXT file
+                </label>
+                <input
+                  type="file"
+                  accept=".csv,.txt"
+                  onChange={handleFileUpload}
+                  className="block w-full text-sm text-gray-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-600 file:text-white
+                    hover:file:bg-blue-700
+                    cursor-pointer"
+                />
+                <p className="mt-2 text-xs text-gray-400">
+                  Supported formats: CSV, TXT with rider IDs (comma, newline, or space separated)
+                </p>
+              </div>
+
+              {/* Manual Input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  ✏️ Or paste rider IDs manually
+                </label>
+                <textarea
+                  value={bulkRiderIds}
+                  onChange={e => setBulkRiderIds(e.target.value)}
+                  placeholder="Enter rider IDs (comma or newline separated)&#10;Example:&#10;150437&#10;123456&#10;789012"
+                  className="w-full bg-gray-700 px-4 py-2 rounded h-32 font-mono text-sm"
+                />
+              </div>
+
               <button
                 onClick={handleBulkImport}
-                className="mt-4 bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-medium"
+                disabled={!bulkRiderIds.trim()}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed px-6 py-2 rounded font-medium"
               >
-                Import All
+                Import {bulkRiderIds.trim() ? `(${bulkRiderIds.split(/[,\n]+/).filter(id => id.trim()).length} riders)` : 'All'}
               </button>
             </div>
 
