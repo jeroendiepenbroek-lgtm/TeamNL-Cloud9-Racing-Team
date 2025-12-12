@@ -495,8 +495,11 @@ app.get('*', (req, res) => {
 });
 
 // ============================================
-// SERVER-SIDE AUTO-SYNC SCHEDULER (DYNAMISCH CONFIGUREERBAAR)
+// SERVER-SIDE AUTO-SYNC SCHEDULER (DYNAMISCH CONFIGUREERBAAR + PERSISTENT)
 // ============================================
+
+const CONFIG_TABLE = 'app_config';
+const CONFIG_KEY = 'auto_sync_settings';
 
 let autoSyncConfig = {
   enabled: true,
@@ -507,6 +510,57 @@ let autoSyncConfig = {
 
 let autoSyncIntervalId: NodeJS.Timeout | null = null;
 let autoSyncInitialTimeoutId: NodeJS.Timeout | null = null;
+
+// Load config from database
+const loadAutoSyncConfig = async () => {
+  try {
+    const { data, error } = await supabase
+      .from(CONFIG_TABLE)
+      .select('value')
+      .eq('key', CONFIG_KEY)
+      .single();
+    
+    if (error) {
+      if (error.code !== 'PGRST116') { // Not found error
+        console.error('⚠️  Failed to load auto-sync config:', error.message);
+      }
+      return;
+    }
+    
+    if (data?.value) {
+      const saved = data.value as { enabled: boolean; intervalMinutes: number };
+      autoSyncConfig.enabled = saved.enabled;
+      autoSyncConfig.intervalMinutes = saved.intervalMinutes;
+      console.log('💾 Loaded auto-sync config from database:', saved);
+    }
+  } catch (error: any) {
+    console.error('⚠️  Error loading auto-sync config:', error.message);
+  }
+};
+
+// Save config to database
+const saveAutoSyncConfig = async () => {
+  try {
+    const { error } = await supabase
+      .from(CONFIG_TABLE)
+      .upsert({
+        key: CONFIG_KEY,
+        value: {
+          enabled: autoSyncConfig.enabled,
+          intervalMinutes: autoSyncConfig.intervalMinutes
+        },
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+    
+    if (error) {
+      console.error('❌ Failed to save auto-sync config:', error.message);
+    } else {
+      console.log('💾 Saved auto-sync config to database');
+    }
+  } catch (error: any) {
+    console.error('❌ Error saving auto-sync config:', error.message);
+  }
+};
 
 // Run sync function
 const runAutoSync = async () => {
@@ -619,6 +673,9 @@ app.post('/api/admin/sync-config', (req, res) => {
     
     console.log('⚙️  Auto-sync config updated:', { enabled: autoSyncConfig.enabled, intervalMinutes: autoSyncConfig.intervalMinutes });
     
+    // Save to database voor persistence
+    await saveAutoSyncConfig();
+    
     // Restart scheduler with new config
     startAutoSync();
     
@@ -638,14 +695,16 @@ app.post('/api/admin/sync-config', (req, res) => {
   }
 });
 
-// Start auto-sync on server boot
-startAutoSync();
-
 // ============================================
 // START SERVER
 // ============================================
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  // Load persisted config before starting scheduler
+  await loadAutoSyncConfig();
+  
+  // Start auto-sync with loaded config
+  startAutoSync();
   console.log(`✅ Server on ${PORT}`);
   console.log(`📊 Racing Matrix: http://localhost:${PORT}`);
   console.log(`🏥 Health: http://localhost:${PORT}/health`);
