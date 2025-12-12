@@ -113,38 +113,38 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
       const data = profileResult.value.data;
       const profileData = {
         rider_id: riderId,
-        zwift_id: riderId,
+        zwift_id: data.id || riderId,
         first_name: data.firstName || null,
         last_name: data.lastName || null,
-        email_address: data.emailAddress || null,
-        address: data.address || null,
-        date_of_birth: data.dob || null,
-        age: data.age || null,
-        gender: data.male === true ? 'M' : data.male === false ? 'F' : null,
-        is_male: data.male,
+        male: data.male,
+        image_src: data.imageSrc || null,
+        image_src_large: data.imageSrcLarge || null,
         country_code: data.countryCode || null,
         country_alpha3: data.countryAlpha3 || null,
-        avatar_url: data.imageSrc || null,
-        avatar_url_large: data.imageSrcLarge || null,
-        weight_kg: data.weight ? data.weight / 1000 : null,
-        height_cm: data.height || null,
-        ftp_watts: data.ftp || null,
-        racing_score: data.playerTypeId || null,
-        racing_category: null,
-        followers_count: data.followerStatusOfLoggedInPlayer?.followeeCount || null,
-        followees_count: data.followerStatusOfLoggedInPlayer?.followerCount || null,
+        age: data.age || null,
+        weight: data.weight || null, // in grams
+        height: data.height || null, // in cm
+        ftp: data.ftp || null,
+        player_type_id: data.playerTypeId || null,
+        player_type: data.playerType || null,
+        competition_category: null,
+        competition_racing_score: null,
+        followers_count: data.followerStatusOfLoggedInPlayer?.followerCount || null,
+        followees_count: data.followerStatusOfLoggedInPlayer?.followeeCount || null,
         rideons_given: data.totalGiveRideons || null,
         achievement_level: data.achievementLevel || null,
-        total_distance_km: data.totalDistanceInMeters ? data.totalDistanceInMeters / 1000 : null,
-        total_elevation_m: data.totalExperiencePoints || null,
-        currently_riding: data.riding === true,
-        current_world: data.worldId || null,
+        total_distance: data.totalDistanceInMeters || null,
+        total_distance_climbed: data.totalDistanceClimbed || null,
+        riding: data.riding || false,
+        world_id: data.worldId || null,
+        privacy_profile: data.privacy?.approvalRequired || false,
+        privacy_activities: data.privacy?.defaultActivityPrivacy || null,
         raw_response: data,
         fetched_at: new Date().toISOString()
       };
 
       const { error } = await supabase
-        .from('api_zwift_official_profiles')
+        .from('api_zwift_api_profiles')
         .upsert(profileData, { onConflict: 'rider_id' });
 
       if (!error) {
@@ -200,25 +200,11 @@ app.get('/api/config/supabase', (req, res) => {
 // Get all riders from v_rider_complete view (ONLY ACTIVE TEAM MEMBERS)
 app.get('/api/riders', async (req, res) => {
   try {
-    // First get active rider IDs from team_roster
-    const { data: rosterData, error: rosterError } = await supabase
-      .from('team_roster')
-      .select('rider_id')
-      .eq('is_active', true);
-
-    if (rosterError) throw rosterError;
-    
-    if (!rosterData || rosterData.length === 0) {
-      return res.json({ success: true, count: 0, riders: [] });
-    }
-
-    const riderIds = rosterData.map(r => r.rider_id);
-    
-    // Then get full rider data for those IDs
+    // v_rider_complete has is_team_member field from team_roster join
     const { data, error } = await supabase
       .from('v_rider_complete')
       .select('*')
-      .in('rider_id', riderIds)
+      .eq('is_team_member', true)
       .order('velo_live', { ascending: false, nullsFirst: false });
 
     if (error) throw error;
@@ -240,27 +226,11 @@ app.get('/api/riders', async (req, res) => {
 // Get team roster (only active team members)
 app.get('/api/team/roster', async (req, res) => {
   try {
-    // Get active rider IDs from team_roster, then join with v_rider_complete
-    const { data: rosterData, error: rosterError } = await supabase
-      .from('team_roster')
-      .select('rider_id')
-      .eq('is_active', true);
-
-    if (rosterError) throw rosterError;
-    
-    if (!rosterData || rosterData.length === 0) {
-      return res.json({ success: true, count: 0, riders: [] });
-    }
-
-    const riderIds = rosterData.map(r => r.rider_id);
-    
+    // v_rider_complete already has team status via LEFT JOIN with team_roster
     const { data, error } = await supabase
       .from('v_rider_complete')
       .select('*')
-      .in('rider_id', riderIds)
-      .order('velo_live', { ascending: false, nullsFirst: false });
-
-    if (error) throw error;
+      .eq('is_team_member', true)
 
     console.log(`📊 Team roster: ${data?.length || 0} active riders`);
 
