@@ -1,0 +1,18 @@
+[phases.setup]
+nixPkgs = ["nodejs-22_x"]
+
+[phases.install]
+cmds = [
+  "cd frontend && npm ci",
+  "cd backend && npm ci"
+]
+
+[phases.build]
+cmds = [
+  "cd frontend && npm run build",
+  "mkdir -p backend/dist/frontend",
+  "cp -r frontend/dist/* backend/dist/frontend/"
+]
+
+[start]
+cmd = "cd backend && npm start"
