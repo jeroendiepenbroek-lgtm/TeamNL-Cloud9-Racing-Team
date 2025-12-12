@@ -114,7 +114,7 @@ export default function AdminDashboard() {
       })
       
       if (!res.ok) throw new Error('Failed')
-      toast.success(\`Added \${ids.length} riders!\`)
+      toast.success(`Added ${ids.length} riders!`)
       setBulkRiderIds('')
       await loadTeamRoster()
     } catch (error) {
@@ -124,10 +124,10 @@ export default function AdminDashboard() {
   }
 
   const handleDeleteRider = async (riderId: number) => {
-    if (!confirm(\`Remove rider \${riderId}?\`)) return
+    if (!confirm(`Remove rider ${riderId}?`)) return
 
     try {
-      const res = await fetch(\`/api/admin/team/riders/\${riderId}\`, {
+      const res = await fetch(`/api/admin/team/riders/${riderId}`, {
         method: 'DELETE'
       })
       
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
       })
       
       if (!res.ok) throw new Error('Failed')
-      toast.success(\`Auto-sync \${newValue === 'true' ? 'enabled' : 'disabled'}\`)
+      toast.success(`Auto-sync ${newValue === 'true' ? 'enabled' : 'disabled'}`)
       await loadSyncConfig()
     } catch (error) {
       console.error('Toggle error:', error)
@@ -188,11 +188,11 @@ export default function AdminDashboard() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={\`px-6 py-3 font-medium \${
+              className={`px-6 py-3 font-medium ${
                 activeTab === tab
                   ? 'border-b-2 border-blue-500 text-blue-500'
                   : 'text-gray-400 hover:text-white'
-              }\`}
+              }`}
             >
               {tab === 'team' ? 'Team Management' : tab === 'sync' ? 'Sync Config' : 'Sync Logs'}
             </button>
@@ -270,11 +270,11 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-bold mb-4">Auto-Sync Settings</h2>
               <button
                 onClick={handleToggleAutoSync}
-                className={\`px-6 py-3 rounded font-medium \${
+                className={`px-6 py-3 rounded font-medium ${
                   syncConfig.auto_sync_enabled === 'true'
                     ? 'bg-green-600 hover:bg-green-700'
                     : 'bg-gray-600 hover:bg-gray-700'
-                }\`}
+                }`}
               >
                 {syncConfig.auto_sync_enabled === 'true' ? '✅ Enabled' : '❌ Disabled'}
               </button>
@@ -302,11 +302,11 @@ export default function AdminDashboard() {
                 <div key={log.id} className="bg-gray-700 p-4 rounded">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className={\`font-bold \${
+                      <span className={`font-bold ${
                         log.status === 'success' ? 'text-green-400' :
                         log.status === 'running' ? 'text-blue-400' :
                         log.status === 'partial' ? 'text-yellow-400' : 'text-red-400'
-                      }\`}>
+                      }`}>
                         {log.status.toUpperCase()}
                       </span>
                       <span className="ml-4 text-sm text-gray-400">
