@@ -29,8 +29,14 @@ export default function TeamManager() {
   const [riders, setRiders] = useState<Rider[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true)
-  const [autoSyncInterval, setAutoSyncInterval] = useState(60) // minutes
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(() => {
+    const saved = localStorage.getItem('autoSyncEnabled')
+    return saved !== null ? saved === 'true' : true
+  })
+  const [autoSyncInterval, setAutoSyncInterval] = useState(() => {
+    const saved = localStorage.getItem('autoSyncInterval')
+    return saved !== null ? parseInt(saved) : 60
+  }) // minutes
   const [view, setView] = useState<'add' | 'manage'>('add')
   
   // Add single rider
@@ -41,6 +47,13 @@ export default function TeamManager() {
   
   // File upload
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+
+  // Save settings to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('autoSyncEnabled', String(autoSyncEnabled))
+    localStorage.setItem('autoSyncInterval', String(autoSyncInterval))
+    console.log('💾 Auto-sync settings saved:', { autoSyncEnabled, autoSyncInterval })
+  }, [autoSyncEnabled, autoSyncInterval])
 
   // Initial load of rider count
   useEffect(() => {
@@ -203,11 +216,13 @@ export default function TeamManager() {
   useEffect(() => {
     if (!autoSyncEnabled || autoSyncInterval <= 0) return
     
-    console.log(`🔄 Auto-sync enabled: every ${autoSyncInterval} minutes`)
+    console.log(`🔄 Client-side auto-sync: every ${autoSyncInterval} minutes (only when tab is open)`)
+    console.log(`ℹ️  Server-side sync runs every hour regardless of browser state`)
+    console.log(`⚠️  Note: Server-side sync runs independently every hour regardless of browser`)
     
     const intervalMs = autoSyncInterval * 60 * 1000
     const interval = setInterval(() => {
-      console.log('🔄 Auto-sync triggered')
+      console.log('🔄 Client-side auto-sync triggered')
       handleSyncAll()
     }, intervalMs)
     
