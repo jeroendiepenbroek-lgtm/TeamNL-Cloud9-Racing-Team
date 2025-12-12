@@ -206,7 +206,8 @@ export default function TeamManager() {
       if (result.success) {
         toast.success(`✅ ${result.synced} riders gesynchroniseerd!`)
         await fetchRiders() // Refresh data
-        await fetchSyncConfig() // Update sync times
+        // Update only lastRun time, keep interval settings unchanged
+        setSyncConfig(prev => ({ ...prev, lastRun: new Date().toISOString() }))
       } else {
         toast.error('Sync mislukt: ' + result.error)
       }
@@ -221,6 +222,8 @@ export default function TeamManager() {
   // Update server-side sync config
   const updateSyncConfig = async (enabled: boolean, intervalMinutes: number) => {
     try {
+      console.log(`⚙️ Updating sync config: enabled=${enabled}, interval=${intervalMinutes}`)
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-config`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -230,7 +233,11 @@ export default function TeamManager() {
       const result = await response.json()
       
       if (result.success) {
+        // Update state met de response van server
+        setAutoSyncEnabled(result.config.enabled)
+        setAutoSyncInterval(result.config.intervalMinutes)
         setSyncConfig({ lastRun: result.config.lastRun, nextRun: result.config.nextRun })
+        console.log(`✅ Config updated:`, result.config)
         toast.success(`⚙️ Auto-sync ${enabled ? 'ingeschakeld' : 'uitgeschakeld'}${enabled ? ` (${intervalMinutes} min)` : ''}`)
       } else {
         toast.error('Config update mislukt')
@@ -242,15 +249,13 @@ export default function TeamManager() {
   }
 
   // Handle auto-sync toggle
-  const handleAutoSyncToggle = (enabled: boolean) => {
-    setAutoSyncEnabled(enabled)
-    updateSyncConfig(enabled, autoSyncInterval)
+  const handleAutoSyncToggle = async (enabled: boolean) => {
+    await updateSyncConfig(enabled, autoSyncInterval)
   }
 
   // Handle interval change
-  const handleIntervalChange = (intervalMinutes: number) => {
-    setAutoSyncInterval(intervalMinutes)
-    updateSyncConfig(autoSyncEnabled, intervalMinutes)
+  const handleIntervalChange = async (intervalMinutes: number) => {
+    await updateSyncConfig(autoSyncEnabled, intervalMinutes)
   }
 
   const handleRemoveRider = async (riderId: number) => {
