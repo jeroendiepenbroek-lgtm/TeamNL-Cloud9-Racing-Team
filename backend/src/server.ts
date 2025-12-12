@@ -118,6 +118,7 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
 
     // Process ZwiftRacing data
     if (racingResult.status === 'fulfilled') {
+      console.log(`  ℹ️  ZwiftRacing API responded for ${riderId}`);
       const data = racingResult.value.data;
       const riderData = {
         id: riderId,
@@ -166,10 +167,13 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
       } else {
         console.error(`❌ ZwiftRacing sync failed for ${riderId}:`, error.message);
       }
+    } else {
+      console.warn(`⚠️  ZwiftRacing API failed for ${riderId}:`, racingResult.reason);
     }
 
     // Process Zwift Official data
     if (profileResult.status === 'fulfilled') {
+      console.log(`  ℹ️  Zwift Official API responded for ${riderId}`);
       const data = profileResult.value.data;
       const profileData = {
         rider_id: riderId,
@@ -213,6 +217,8 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
       } else {
         console.error(`❌ Zwift Official sync failed for ${riderId}:`, error.message);
       }
+    } else {
+      console.warn(`⚠️  Zwift Official API failed for ${riderId}:`, profileResult.reason?.message || profileResult.reason);
     }
 
     // Update team_roster last_synced
