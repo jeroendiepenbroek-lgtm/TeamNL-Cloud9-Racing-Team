@@ -322,9 +322,9 @@ export default function RacingDataMatrixModern() {
         throw new Error('Supabase API key not configured on server')
       }
       
-      // Query v_rider_complete view via Supabase REST API
+      // Query v_rider_complete view via Supabase REST API (only team members)
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/v_rider_complete?select=*&order=velo_live.desc.nullslast`,
+        `${supabaseUrl}/rest/v1/v_rider_complete?select=*&is_team_member=eq.true&order=velo_live.desc.nullslast`,
         {
           headers: {
             'apikey': supabaseKey,
