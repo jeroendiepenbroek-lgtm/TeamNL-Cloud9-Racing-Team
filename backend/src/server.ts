@@ -244,100 +244,126 @@ app.post('/api/admin/sync/trigger', async (req, res) => {
 // ============= SYNC HELPER =============
 
 async function syncRiderData(riderId: number) {
+  const results = { racing: false, profile: false };
+  
   try {
     const ZWIFTRACING_API_KEY = process.env.ZWIFTRACING_API_TOKEN || '650c6d2fc4ef6858d74cbef1';
     
-    // Fetch ZwiftRacing data
-    const racingRes = await axios.get(
-      `https://zwift-ranking.herokuapp.com/public/riders/${riderId}`,
-      { headers: { 'Authorization': ZWIFTRACING_API_KEY }, timeout: 10000 }
-    );
-    
-    const data = racingRes.data;
-    
-    // Insert racing data
-    await supabase.from('api_zwiftracing_riders').upsert({
-      rider_id: riderId,
-      id: riderId,
-      name: data.name,
-      country: data.country,
-      velo_live: data.race?.current?.rating || null,
-      velo_30day: data.race?.max30?.rating || null,
-      velo_90day: data.race?.max90?.rating || null,
-      category: data.zpCategory,
-      ftp: data.zpFTP,
-      power_5s: data.power?.w5 || null,
-      power_15s: data.power?.w15 || null,
-      power_30s: data.power?.w30 || null,
-      power_60s: data.power?.w60 || null,
-      power_120s: data.power?.w120 || null,
-      power_300s: data.power?.w300 || null,
-      power_1200s: data.power?.w1200 || null,
-      power_5s_wkg: data.power?.wkg5 || null,
-      power_15s_wkg: data.power?.wkg15 || null,
-      power_30s_wkg: data.power?.wkg30 || null,
-      power_60s_wkg: data.power?.wkg60 || null,
-      power_120s_wkg: data.power?.wkg120 || null,
-      power_300s_wkg: data.power?.wkg300 || null,
-      power_1200s_wkg: data.power?.wkg1200 || null,
-      weight: data.weight,
-      height: data.height,
-      phenotype: data.phenotype?.value || null,
-      race_count: data.race?.finishes || 0,
-      zwift_id: riderId,
-      race_wins: data.race?.wins || 0,
-      race_podiums: data.race?.podiums || 0,
-      race_finishes: data.race?.finishes || 0,
-      race_dnfs: data.race?.dnfs || 0,
-      raw_response: data,
-      fetched_at: new Date().toISOString()
-    }, { onConflict: 'rider_id' });
+    // Parallel fetch: beide APIs tegelijk aanroepen
+    const [racingResult, profileResult] = await Promise.allSettled([
+      // ZwiftRacing API
+      axios.get(
+        `https://zwift-ranking.herokuapp.com/public/riders/${riderId}`,
+        { headers: { 'Authorization': ZWIFTRACING_API_KEY }, timeout: 10000 }
+      ),
+      // Zwift Official API
+      axios.get(
+        `https://us-or-rly101.zwift.com/api/profiles/${riderId}`,
+        { timeout: 10000 }
+      )
+    ]);
 
-    // Fetch Zwift Official profile
-    const profileRes = await axios.get(
-      `https://us-or-rly101.zwift.com/api/profiles/${riderId}`,
-      { timeout: 10000 }
-    );
-    
-    const profile = profileRes.data;
-    
-    // Insert profile data
-    await supabase.from('api_zwift_official_profiles').upsert({
-      rider_id: riderId,
-      zwift_id: riderId,
-      first_name: profile.firstName || null,
-      last_name: profile.lastName || null,
-      age: profile.age || null,
-      gender: profile.male === true ? 'M' : profile.male === false ? 'F' : null,
-      is_male: profile.male,
-      country_code: profile.countryCode || null,
-      country_alpha3: profile.countryAlpha3 || null,
-      avatar_url: profile.imageSrc || null,
-      avatar_url_large: profile.imageSrcLarge || null,
-      weight_kg: profile.weight ? profile.weight / 1000 : null,
-      height_cm: profile.height || null,
-      ftp_watts: profile.ftp || null,
-      racing_score: profile.playerTypeId || null,
-      followers_count: profile.followerStatusOfLoggedInPlayer?.followeeCount || null,
-      followees_count: profile.followerStatusOfLoggedInPlayer?.followerCount || null,
-      rideons_given: profile.totalGiveRideons || null,
-      achievement_level: profile.achievementLevel || null,
-      total_distance_km: profile.totalDistanceInMeters ? profile.totalDistanceInMeters / 1000 : null,
-      total_elevation_m: profile.totalExperiencePoints || null,
-      currently_riding: profile.riding === true,
-      current_world: profile.worldId || null,
-      raw_response: profile,
-      fetched_at: new Date().toISOString()
-    }, { onConflict: 'rider_id' });
+    // Process ZwiftRacing data (indien succesvol)
+    if (racingResult.status === 'fulfilled') {
+      try {
+        const data = racingResult.value.data;
+        await supabase.from('api_zwiftracing_riders').upsert({
+          rider_id: riderId,
+          id: riderId,
+          name: data.name,
+          country: data.country,
+          velo_live: data.race?.current?.rating || null,
+          velo_30day: data.race?.max30?.rating || null,
+          velo_90day: data.race?.max90?.rating || null,
+          category: data.zpCategory,
+          ftp: data.zpFTP,
+          power_5s: data.power?.w5 || null,
+          power_15s: data.power?.w15 || null,
+          power_30s: data.power?.w30 || null,
+          power_60s: data.power?.w60 || null,
+          power_120s: data.power?.w120 || null,
+          power_300s: data.power?.w300 || null,
+          power_1200s: data.power?.w1200 || null,
+          power_5s_wkg: data.power?.wkg5 || null,
+          power_15s_wkg: data.power?.wkg15 || null,
+          power_30s_wkg: data.power?.wkg30 || null,
+          power_60s_wkg: data.power?.wkg60 || null,
+          power_120s_wkg: data.power?.wkg120 || null,
+          power_300s_wkg: data.power?.wkg300 || null,
+          power_1200s_wkg: data.power?.wkg1200 || null,
+          weight: data.weight,
+          height: data.height,
+          phenotype: data.phenotype?.value || null,
+          race_count: data.race?.finishes || 0,
+          zwift_id: riderId,
+          race_wins: data.race?.wins || 0,
+          race_podiums: data.race?.podiums || 0,
+          race_finishes: data.race?.finishes || 0,
+          race_dnfs: data.race?.dnfs || 0,
+          raw_response: data,
+          fetched_at: new Date().toISOString()
+        }, { onConflict: 'rider_id' });
+        results.racing = true;
+        console.log(`✅ ZwiftRacing data synced for ${riderId}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to save ZwiftRacing data for ${riderId}:`, error.message);
+      }
+    } else {
+      console.error(`❌ ZwiftRacing API failed for ${riderId}:`, racingResult.reason?.message);
+    }
 
-    // Update last_synced
-    await supabase.from('team_roster')
-      .update({ last_synced: new Date().toISOString() })
-      .eq('rider_id', riderId);
+    // Process Zwift Official data (indien succesvol)
+    if (profileResult.status === 'fulfilled') {
+      try {
+        const profile = profileResult.value.data;
+        await supabase.from('api_zwift_official_profiles').upsert({
+          rider_id: riderId,
+          zwift_id: riderId,
+          first_name: profile.firstName || null,
+          last_name: profile.lastName || null,
+          age: profile.age || null,
+          gender: profile.male === true ? 'M' : profile.male === false ? 'F' : null,
+          is_male: profile.male,
+          country_code: profile.countryCode || null,
+          country_alpha3: profile.countryAlpha3 || null,
+          avatar_url: profile.imageSrc || null,
+          avatar_url_large: profile.imageSrcLarge || null,
+          weight_kg: profile.weight ? profile.weight / 1000 : null,
+          height_cm: profile.height || null,
+          ftp_watts: profile.ftp || null,
+          racing_score: profile.playerTypeId || null,
+          followers_count: profile.followerStatusOfLoggedInPlayer?.followeeCount || null,
+          followees_count: profile.followerStatusOfLoggedInPlayer?.followerCount || null,
+          rideons_given: profile.totalGiveRideons || null,
+          achievement_level: profile.achievementLevel || null,
+          total_distance_km: profile.totalDistanceInMeters ? profile.totalDistanceInMeters / 1000 : null,
+          total_elevation_m: profile.totalExperiencePoints || null,
+          currently_riding: profile.riding === true,
+          current_world: profile.worldId || null,
+          raw_response: profile,
+          fetched_at: new Date().toISOString()
+        }, { onConflict: 'rider_id' });
+        results.profile = true;
+        console.log(`✅ Zwift Official data synced for ${riderId}`);
+      } catch (error: any) {
+        console.error(`❌ Failed to save Zwift Official data for ${riderId}:`, error.message);
+      }
+    } else {
+      console.error(`❌ Zwift Official API failed for ${riderId}:`, profileResult.reason?.message);
+    }
 
-    console.log(`✅ Synced rider ${riderId}`);
+    // Update last_synced als minimaal 1 bron succesvol was
+    if (results.racing || results.profile) {
+      await supabase.from('team_roster')
+        .update({ last_synced: new Date().toISOString() })
+        .eq('rider_id', riderId);
+      console.log(`✅ Rider ${riderId} synced (Racing: ${results.racing}, Profile: ${results.profile})`);
+    } else {
+      console.error(`❌ Complete sync failed for ${riderId} - both APIs failed`);
+    }
+
   } catch (error: any) {
-    console.error(`❌ Sync failed for rider ${riderId}:`, error.message);
+    console.error(`❌ Unexpected sync error for ${riderId}:`, error.message);
   }
 }
 
