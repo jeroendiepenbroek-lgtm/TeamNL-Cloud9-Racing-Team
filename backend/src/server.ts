@@ -518,6 +518,17 @@ const loadSyncConfig = async (syncType: string): Promise<SyncConfig | null> => {
       .single();
     
     if (error) {
+      // Fallback: Return default config if table doesn't exist yet
+      if (error.code === '42P01' || error.message.includes('does not exist') || error.message.includes('schema cache')) {
+        console.warn(`⚠️  sync_config table not found, using defaults. Run migration: migrations/create_sync_system_tables.sql`);
+        return {
+          sync_type: syncType,
+          enabled: true,
+          interval_minutes: 60,
+          last_run_at: null,
+          next_run_at: null
+        };
+      }
       console.error(`⚠️  Failed to load ${syncType} config:`, error.message);
       return null;
     }
@@ -540,6 +551,11 @@ const saveSyncConfig = async (config: Partial<SyncConfig> & { sync_type: string 
       }, { onConflict: 'sync_type' });
     
     if (error) {
+      // Silently fail if table doesn't exist yet
+      if (error.code === '42P01' || error.message.includes('does not exist') || error.message.includes('schema cache')) {
+        console.warn(`⚠️  sync_config table not found, config not persisted`);
+        return true; // Return true to not break the flow
+      }
       console.error(`❌ Failed to save ${config.sync_type} config:`, error.message);
       return false;
     }
@@ -562,6 +578,10 @@ const createSyncLog = async (log: SyncLog): Promise<number | null> => {
       .single();
     
     if (error) {
+      // Silently fail if table doesn't exist yet
+      if (error.code === '42P01' || error.message.includes('does not exist') || error.message.includes('schema cache')) {
+        return null; // No logging, but don't break
+      }
       console.error('❌ Failed to create sync log:', error.message);
       return null;
     }
@@ -574,7 +594,9 @@ const createSyncLog = async (log: SyncLog): Promise<number | null> => {
 };
 
 // Update sync log
-const updateSyncLog = async (logId: number, updates: Partial<SyncLog> & { completed_at?: string; duration_ms?: number }): Promise<boolean> => {
+const updateSyncLog = async (logId: number | null, updates: Partial<SyncLog> & { completed_at?: string; duration_ms?: number }): Promise<boolean> => {
+  if (!logId) return true; // No log ID, skip silently
+  
   try {
     const { error } = await supabase
       .from('sync_logs')
@@ -582,6 +604,10 @@ const updateSyncLog = async (logId: number, updates: Partial<SyncLog> & { comple
       .eq('id', logId);
     
     if (error) {
+      // Silently fail if table doesn't exist yet
+      if (error.code === '42P01' || error.message.includes('does not exist') || error.message.includes('schema cache')) {
+        return true;
+      }
       console.error('❌ Failed to update sync log:', error.message);
       return false;
     }
