@@ -794,7 +794,13 @@ app.get('/api/admin/sync-config/:syncType?', async (req, res) => {
       return res.status(404).json({ error: 'Config not found' });
     }
     
-    res.json(config);
+    // Format response for frontend compatibility
+    res.json({
+      enabled: config.enabled,
+      intervalMinutes: config.interval_minutes,
+      lastRun: config.last_run_at,
+      nextRun: config.next_run_at
+    });
   } catch (error: any) {
     console.error('❌ Failed to get sync config:', error);
     res.status(500).json({ error: error.message });
@@ -836,7 +842,12 @@ app.post('/api/admin/sync-config', async (req, res) => {
     
     res.json({
       success: true,
-      config
+      config: {
+        enabled: config?.enabled ?? true,
+        intervalMinutes: config?.interval_minutes ?? 60,
+        lastRun: config?.last_run_at ?? null,
+        nextRun: config?.next_run_at ?? null
+      }
     });
   } catch (error: any) {
     console.error('❌ Failed to update sync config:', error);

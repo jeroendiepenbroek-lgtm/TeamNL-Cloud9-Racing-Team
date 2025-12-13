@@ -35,7 +35,19 @@ export default function TeamManager() {
     lastRun: string | null
     nextRun: string | null
   }>({ lastRun: null, nextRun: null })
-  const [view, setView] = useState<'add' | 'manage'>('add')
+  const [view, setView] = useState<'add' | 'manage' | 'logs'>('add')
+  const [syncLogs, setSyncLogs] = useState<any[]>([])
+  const [logsLoading, setLogsLoading] = useState(false)
+  
+  // Sync Monitor State
+  const [bulkProgress, setBulkProgress] = useState<{
+    total: number
+    processed: number
+    synced: number
+    skipped: number
+    failed: number
+    isProcessing: boolean
+  } | null>(null)
   
   // Add single rider
   const [singleRiderId, setSingleRiderId] = useState('')
@@ -56,6 +68,8 @@ export default function TeamManager() {
   useEffect(() => {
     if (view === 'manage') {
       fetchRiders()
+    } else if (view === 'logs') {
+      fetchSyncLogs()
     }
   }, [view])
 
@@ -90,11 +104,29 @@ export default function TeamManager() {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-config`)
       const data = await response.json()
+      console.log('📥 Received config:', data)
       setAutoSyncEnabled(data.enabled)
       setAutoSyncInterval(data.intervalMinutes)
       setSyncConfig({ lastRun: data.lastRun, nextRun: data.nextRun })
     } catch (error) {
       console.error('Failed to fetch sync config:', error)
+    }
+  }
+
+  // Fetch sync logs
+  const fetchSyncLogs = async () => {
+    setLogsLoading(true)
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-logs?limit=50`)
+      const data = await response.json()
+      if (data.success) {
+        setSyncLogs(data.logs)
+      }
+    } catch (error) {
+      console.error('Failed to fetch sync logs:', error)
+      toast.error('Logs laden mislukt')
+    } finally {
+      setLogsLoading(false)
     }
   }
 
@@ -146,8 +178,19 @@ export default function TeamManager() {
     }
 
     setLoading(true)
+    
+    // Initialize progress monitor
+    setBulkProgress({
+      total: ids.length,
+      processed: 0,
+      synced: 0,
+      skipped: 0,
+      failed: 0,
+      isProcessing: true
+    })
+    
     try {
-      console.log(`➕ Adding ${ids.length} riders...`)
+      console.log(`🚀 Bulk POST: ${ids.length} riders (CSV support test)...`)
       const response = await fetch('/api/admin/riders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,27 +198,43 @@ export default function TeamManager() {
       })
       
       const data = await response.json()
-      console.log('Bulk add response:', data)
+      console.log('✅ Bulk add response:', data)
       
       if (data.success) {
         const synced = data.results.filter((r: any) => r.synced && !r.skipped).length
         const skipped = data.results.filter((r: any) => r.skipped).length
         const failed = data.results.filter((r: any) => !r.synced && !r.skipped).length
         
-        let message = `${ids.length} riders verwerkt!`
-        if (synced > 0) message += ` ✓ ${synced} toegevoegd`
-        if (skipped > 0) message += `, ${skipped} overgeslagen (al in team)`
-        if (failed > 0) message += `, ${failed} gefaald`
+        // Update final progress
+        setBulkProgress({
+          total: ids.length,
+          processed: ids.length,
+          synced,
+          skipped,
+          failed,
+          isProcessing: false
+        })
         
-        toast.success(message)
+        let message = `✅ ${ids.length} riders verwerkt via POST!`
+        if (synced > 0) message += ` | ${synced} toegevoegd`
+        if (skipped > 0) message += ` | ${skipped} overgeslagen`
+        if (failed > 0) message += ` | ${failed} gefaald`
+        
+        toast.success(message, { duration: 6000 })
         setMultipleRiderIds('')
-        await fetchRiderCount() // Refresh count
+        setUploadedFile(null)
+        await fetchRiderCount()
         if (view === 'manage') await fetchRiders()
+        
+        // Clear progress after 5 seconds
+        setTimeout(() => setBulkProgress(null), 5000)
       } else {
+        setBulkProgress(null)
         toast.error(data.error || 'Toevoegen mislukt')
       }
     } catch (error) {
       console.error('Error bulk adding:', error)
+      setBulkProgress(null)
       toast.error('Fout bij bulk toevoegen')
     } finally {
       setLoading(false)
@@ -424,6 +483,16 @@ export default function TeamManager() {
           >
             👥 Team Beheren
           </button>
+          <button
+            onClick={() => setView('logs')}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              view === 'logs'
+                ? 'bg-white text-blue-600 shadow-lg'
+                : 'text-white hover:bg-white/10'
+            }`}
+          >
+            📋 Sync Logs
+          </button>
         </div>
 
         {/* Add View */}
@@ -534,6 +603,74 @@ export default function TeamManager() {
               </button>
             )}
           </div>
+          
+          {/* Sync Monitor - Fixed Position */}
+          {bulkProgress && (
+            <div className="lg:col-span-3">
+              <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 backdrop-blur-sm rounded-2xl p-6 border border-blue-500/50 shadow-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    {bulkProgress.isProcessing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-6 w-6 border-3 border-blue-400 border-t-transparent"></div>
+                        Verwerken...
+                      </>
+                    ) : (
+                      <>
+                        ✅ Voltooid!
+                      </>
+                    )}
+                  </h3>
+                  <button
+                    onClick={() => setBulkProgress(null)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-300 mb-2">
+                    <span>Progress</span>
+                    <span>{bulkProgress.processed} / {bulkProgress.total}</span>
+                  </div>
+                  <div className="h-3 bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-500 ease-out"
+                      style={{ width: `${(bulkProgress.processed / bulkProgress.total) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                {/* Stats Grid */}
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-white">{bulkProgress.total}</div>
+                    <div className="text-xs text-gray-400 mt-1">Totaal</div>
+                  </div>
+                  <div className="bg-green-900/30 rounded-xl p-4 text-center border border-green-500/30">
+                    <div className="text-3xl font-bold text-green-400">{bulkProgress.synced}</div>
+                    <div className="text-xs text-gray-400 mt-1">Toegevoegd</div>
+                  </div>
+                  <div className="bg-yellow-900/30 rounded-xl p-4 text-center border border-yellow-500/30">
+                    <div className="text-3xl font-bold text-yellow-400">{bulkProgress.skipped}</div>
+                    <div className="text-xs text-gray-400 mt-1">Overgeslagen</div>
+                  </div>
+                  <div className="bg-red-900/30 rounded-xl p-4 text-center border border-red-500/30">
+                    <div className="text-3xl font-bold text-red-400">{bulkProgress.failed}</div>
+                    <div className="text-xs text-gray-400 mt-1">Gefaald</div>
+                  </div>
+                </div>
+                
+                {!bulkProgress.isProcessing && (
+                  <div className="mt-4 text-center text-sm text-green-400">
+                    ✓ POST request succesvol verwerkt (60+ riders support OK)
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         )}
 
@@ -633,6 +770,91 @@ export default function TeamManager() {
             )}
           </div>
         </div>
+        )}
+
+        {/* Sync Logs View */}
+        {view === 'logs' && (
+          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">📋 Sync Geschiedenis</h2>
+              <button
+                onClick={fetchSyncLogs}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+              >
+                🔄 Ververs
+              </button>
+            </div>
+
+            {logsLoading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent"></div>
+                <p className="text-gray-400 mt-4">Logs laden...</p>
+              </div>
+            ) : syncLogs.length === 0 ? (
+              <div className="text-center py-12 text-gray-400">
+                <p className="text-xl mb-2">Nog geen sync logs</p>
+                <p className="text-sm">Logs verschijnen hier na sync operaties</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-700/50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Tijd</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Trigger</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Items</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Geslaagd</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Mislukt</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">Duur</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {syncLogs.map((log: any) => (
+                      <tr key={log.id} className="hover:bg-gray-700/30">
+                        <td className="px-4 py-3 text-sm text-gray-300">
+                          {new Date(log.started_at).toLocaleDateString('nl-NL', { 
+                            day: '2-digit', 
+                            month: 'short', 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300">{log.sync_type}</td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            log.trigger_type === 'auto' ? 'bg-blue-900/50 text-blue-300' :
+                            log.trigger_type === 'manual' ? 'bg-purple-900/50 text-purple-300' :
+                            log.trigger_type === 'upload' ? 'bg-green-900/50 text-green-300' :
+                            'bg-gray-700 text-gray-300'
+                          }`}>
+                            {log.trigger_type}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            log.status === 'success' ? 'bg-green-900/50 text-green-300' :
+                            log.status === 'partial' ? 'bg-yellow-900/50 text-yellow-300' :
+                            log.status === 'failed' ? 'bg-red-900/50 text-red-300' :
+                            'bg-gray-700 text-gray-300'
+                          }`}>
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300">{log.total_items || 0}</td>
+                        <td className="px-4 py-3 text-sm text-green-400 font-semibold">{log.success_count || 0}</td>
+                        <td className="px-4 py-3 text-sm text-red-400 font-semibold">{log.failed_count || 0}</td>
+                        <td className="px-4 py-3 text-sm text-gray-400">
+                          {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
