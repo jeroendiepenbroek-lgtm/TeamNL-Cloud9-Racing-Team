@@ -91,13 +91,73 @@ async function getZwiftCookie(): Promise<string> {
 // ============================================// API SYNC FUNCTIONS
 // ============================================
 
-async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; error?: string }> {
+// Helper: Wacht tussen API calls om rate limiting te voorkomen
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// BULK FETCH: Haal meerdere riders op via ZwiftRacing POST endpoint (max 1000)
+async function bulkFetchZwiftRacingRiders(riderIds: number[]): Promise<Map<number, any>> {
+  const resultMap = new Map<number, any>();
+  
+  if (riderIds.length === 0) return resultMap;
+  
+  try {
+    console.log(`📦 Bulk fetching ${riderIds.length} riders from ZwiftRacing API...`);
+    
+    const response = await axios.post(
+      'https://zwift-ranking.herokuapp.com/public/riders',
+      riderIds,
+      {
+        headers: { 
+          'Authorization': ZWIFTRACING_API_TOKEN,
+          'Content-Type': 'application/json'
+        },
+        timeout: 30000 // 30 seconden voor bulk request
+      }
+    );
+    
+    if (Array.isArray(response.data)) {
+      // Response array zit in dezelfde volgorde als input array
+      // Response bevat GEEN rider ID, dus we mappen op index
+      for (let i = 0; i < response.data.length; i++) {
+        const riderData = response.data[i];
+        const riderId = riderIds[i]; // Map by index!
+        
+        if (riderData && riderId) {
+          resultMap.set(riderId, riderData);
+        }
+      }
+      console.log(`✅ Bulk fetch success: ${resultMap.size} riders received`);
+    } else {
+      console.warn('⚠️  Unexpected response format from bulk API');
+    }
+    
+  } catch (error: any) {
+    if (error.response?.status === 429) {
+      console.error('🚫 RATE LIMITED - ZwiftRacing bulk API (429 Too Many Requests)');
+      const retryAfter = error.response?.data?.retryAfter;
+      if (retryAfter) {
+        console.error(`   Retry after: ${retryAfter} seconds`);
+      }
+    } else {
+      console.error('❌ Bulk fetch failed:', error.response?.data || error.message);
+    }
+  }
+  
+  return resultMap;
+}
+
+async function syncRiderFromAPIs(riderId: number, skipDelay = false): Promise<{ synced: boolean; error?: string }> {
   try {
     console.log(`🔄 Syncing rider ${riderId}...`);
     
     // Get fresh Zwift cookie (cached for 6 hours)
     const authToken = await getZwiftCookie();
     
+    // Wacht 1 seconde tussen riders (rate limiting)
+    if (!skipDelay) {
+      await delay(1000);
+    }
+
     // Parallel fetch from both APIs
     const [racingResult, profileResult] = await Promise.allSettled([
       axios.get(`https://zwift-ranking.herokuapp.com/public/riders/${riderId}`, {
@@ -168,7 +228,12 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
         console.error(`❌ ZwiftRacing sync failed for ${riderId}:`, error.message);
       }
     } else {
-      console.warn(`⚠️  ZwiftRacing API failed for ${riderId}:`, racingResult.reason);
+      const error = racingResult.reason as any;
+      if (error.response?.status === 429) {
+        console.warn(`🚫 RATE LIMITED - ZwiftRacing API for ${riderId} (429 Too Many Requests)`);
+      } else {
+        console.warn(`⚠️  ZwiftRacing API failed for ${riderId}:`, error.message || error);
+      }
     }
 
     // Process Zwift Official data
@@ -365,26 +430,187 @@ app.post('/api/admin/riders', async (req, res) => {
     let successCount = 0;
     let failCount = 0;
 
-    // Sync alleen nieuwe riders
+    // STAP 1: Bulk fetch van ZwiftRacing API (1 call voor alle riders)
+    const bulkRacingData = await bulkFetchZwiftRacingRiders(newRiderIds);
+    
+    // STAP 2: Haal Zwift Official data op + sync naar database
+    // Get fresh Zwift cookie (cached for 6 hours)
+    const authToken = await getZwiftCookie();
+    
     for (let i = 0; i < newRiderIds.length; i++) {
       const riderId = newRiderIds[i];
-      console.log(`   [${i+1}/${newRiderIds.length}] Syncing rider ${riderId}...`);
+      console.log(`   [${i+1}/${newRiderIds.length}] Processing rider ${riderId}...`);
       
-      const result = await syncRiderFromAPIs(riderId);
-      results.push({
-        rider_id: riderId,
-        ...result
-      });
-      
-      if (result.synced) {
-        successCount++;
+      let racingSynced = false;
+      let profileSynced = false;
+      let errorMsg = '';
+
+      // Process ZwiftRacing data (uit bulk fetch)
+      const racingData = bulkRacingData.get(riderId);
+      if (racingData) {
+        try {
+          const riderData = {
+            id: riderId,
+            rider_id: riderId,
+            name: racingData.name,
+            country: racingData.country,
+            velo_live: racingData.race?.current?.rating || null,
+            velo_30day: racingData.race?.max30?.rating || null,
+            velo_90day: racingData.race?.max90?.rating || null,
+            category: racingData.zpCategory,
+            ftp: racingData.zpFTP,
+            power_5s: racingData.power?.w5 || null,
+            power_15s: racingData.power?.w15 || null,
+            power_30s: racingData.power?.w30 || null,
+            power_60s: racingData.power?.w60 || null,
+            power_120s: racingData.power?.w120 || null,
+            power_300s: racingData.power?.w300 || null,
+            power_1200s: racingData.power?.w1200 || null,
+            power_5s_wkg: racingData.power?.wkg5 || null,
+            power_15s_wkg: racingData.power?.wkg15 || null,
+            power_30s_wkg: racingData.power?.wkg30 || null,
+            power_60s_wkg: racingData.power?.wkg60 || null,
+            power_120s_wkg: racingData.power?.wkg120 || null,
+            power_300s_wkg: racingData.power?.wkg300 || null,
+            power_1200s_wkg: racingData.power?.wkg1200 || null,
+            weight: racingData.weight,
+            height: racingData.height,
+            phenotype: racingData.phenotype?.value || null,
+            race_count: racingData.race?.finishes || 0,
+            zwift_id: riderId,
+            race_wins: racingData.race?.wins || 0,
+            race_podiums: racingData.race?.podiums || 0,
+            race_finishes: racingData.race?.finishes || 0,
+            race_dnfs: racingData.race?.dnfs || 0,
+            raw_response: racingData,
+            fetched_at: new Date().toISOString()
+          };
+
+          const { error } = await supabase
+            .from('api_zwiftracing_riders')
+            .upsert(riderData, { onConflict: 'rider_id' });
+
+          if (!error) {
+            racingSynced = true;
+            console.log(`      ✅ ZwiftRacing data synced`);
+          } else {
+            console.error(`      ❌ ZwiftRacing DB write failed:`, error.message);
+            errorMsg += `Racing DB: ${error.message}. `;
+          }
+        } catch (err: any) {
+          console.error(`      ❌ ZwiftRacing processing failed:`, err.message);
+          errorMsg += `Racing: ${err.message}. `;
+        }
       } else {
-        failCount++;
+        console.warn(`      ⚠️  No ZwiftRacing data in bulk response`);
+        errorMsg += 'No Racing data. ';
       }
 
-      // Small delay to avoid rate limiting
-      if (newRiderIds.length > 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // Fetch Zwift Official data (individueel, geen bulk endpoint beschikbaar)
+      try {
+        const profileResponse = await axios.get(
+          `https://us-or-rly101.zwift.com/api/profiles/${riderId}`,
+          {
+            headers: {
+              'Authorization': authToken,
+              'User-Agent': 'Zwift/1.0'
+            },
+            timeout: 10000
+          }
+        );
+
+        const data = profileResponse.data;
+        const profileData = {
+          rider_id: riderId,
+          id: data.id || riderId,
+          first_name: data.firstName || null,
+          last_name: data.lastName || null,
+          male: data.male,
+          image_src: data.imageSrc || null,
+          image_src_large: data.imageSrcLarge || null,
+          country_code: data.countryCode || null,
+          country_alpha3: data.countryAlpha3 || null,
+          age: data.age || null,
+          weight: data.weight || null,
+          height: data.height || null,
+          ftp: data.ftp || null,
+          player_type_id: data.playerTypeId || null,
+          player_type: data.playerType || null,
+          competition_category: data.competitionMetrics?.category || null,
+          competition_racing_score: data.competitionMetrics?.racingScore || null,
+          followers_count: data.followerStatusOfLoggedInPlayer?.followerCount || null,
+          followees_count: data.followerStatusOfLoggedInPlayer?.followeeCount || null,
+          rideons_given: data.totalGiveRideons || null,
+          achievement_level: data.achievementLevel || null,
+          total_distance: data.totalDistanceInMeters || null,
+          total_distance_climbed: data.totalDistanceClimbed || null,
+          riding: data.riding || false,
+          world_id: data.worldId || null,
+          privacy_profile: data.privacy?.approvalRequired === true,
+          privacy_activities: data.privacy?.defaultActivityPrivacy === 'PRIVATE',
+          raw_response: data,
+          fetched_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+          .from('api_zwift_api_profiles')
+          .upsert(profileData, { onConflict: 'rider_id' });
+
+        if (!error) {
+          profileSynced = true;
+          console.log(`      ✅ Zwift Official data synced`);
+        } else {
+          console.error(`      ❌ Zwift Official DB write failed:`, error.message);
+          errorMsg += `Profile DB: ${error.message}. `;
+        }
+      } catch (err: any) {
+        console.warn(`      ⚠️  Zwift Official API failed:`, err.message);
+        errorMsg += `Profile: ${err.message}. `;
+      }
+
+      // Update team_roster als minstens 1 API succesvol was
+      if (racingSynced || profileSynced) {
+        const { error: rosterError } = await supabase
+          .from('team_roster')
+          .upsert({
+            rider_id: riderId,
+            is_active: true,
+            last_synced: new Date().toISOString()
+          }, { onConflict: 'rider_id' });
+        
+        if (!rosterError) {
+          successCount++;
+          results.push({
+            rider_id: riderId,
+            synced: true,
+            sources: {
+              racing: racingSynced,
+              profile: profileSynced
+            }
+          });
+          console.log(`      ✅ Added to team_roster`);
+        } else {
+          failCount++;
+          results.push({
+            rider_id: riderId,
+            synced: false,
+            error: `Roster update failed: ${rosterError.message}`
+          });
+          console.error(`      ❌ team_roster update failed:`, rosterError.message);
+        }
+      } else {
+        failCount++;
+        results.push({
+          rider_id: riderId,
+          synced: false,
+          error: errorMsg || 'Both APIs failed'
+        });
+        console.error(`      ❌ Sync failed: ${errorMsg || 'Both APIs failed'}`);
+      }
+
+      // Kleine delay tussen Official API calls (250ms is genoeg)
+      if (i < newRiderIds.length - 1) {
+        await delay(250);
       }
     }
     
@@ -412,6 +638,7 @@ app.post('/api/admin/riders', async (req, res) => {
       const failedIds = results.filter(r => !r.synced && !r.skipped).map(r => r.rider_id);
       console.log(`   Failed IDs: ${failedIds.join(', ')}`);
     }
+    console.log(`   ⏱️  Processing time: ~${Math.ceil(newRiderIds.length * 0.25)} seconds (250ms delay per rider + 1 bulk Racing API call)`);
     console.log('');
 
     res.json({
@@ -718,8 +945,8 @@ const executeSyncJob = async (syncType: string, triggerType: 'auto' | 'manual' |
         errors.push(`Rider ${riderId}: ${error.message}`);
       }
       
-      // Small delay between riders
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Delay tussen riders (2 seconden i.p.v. 500ms om rate limiting te voorkomen)
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
     
     const duration = Date.now() - startTime;
