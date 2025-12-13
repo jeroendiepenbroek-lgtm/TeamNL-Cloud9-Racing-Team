@@ -374,11 +374,12 @@ app.post('/api/admin/riders', async (req, res) => {
       });
     }
 
-    const synced = results.filter(r => r.synced).length;
+    // Correcte telling: synced = alleen nieuwe riders die succesvol zijn toegevoegd
+    const synced = results.filter(r => r.synced && !r.skipped).length;
     const failed = results.filter(r => !r.synced && !r.skipped).length;
     const skipped = results.filter(r => r.skipped).length;
 
-    console.log(`✅ Bulk add completed: ${synced} synced (${skipped} skipped), ${failed} failed`);
+    console.log(`✅ Bulk add completed: ${synced} new riders added, ${skipped} skipped (already in team), ${failed} failed`);
 
     res.json({
       success: true,
