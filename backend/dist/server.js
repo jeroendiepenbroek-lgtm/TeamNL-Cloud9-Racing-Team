@@ -806,15 +806,149 @@ const executeSyncJob = async (syncType, triggerType, metadata) => {
         let synced = 0;
         let failed = 0;
         const errors = [];
-        for (const riderId of riderIds) {
+        // GEBRUIK BULK API VOOR ZWIFTRACING DATA
+        console.log(`📦 Bulk fetching ZwiftRacing data for ${riderIds.length} riders...`);
+        const bulkRacingData = await bulkFetchZwiftRacingRiders(riderIds);
+        // Get fresh Zwift cookie (cached for 6 hours)
+        const authToken = await getZwiftCookie();
+        // Verwerk elke rider met data uit bulk fetch
+        for (let i = 0; i < riderIds.length; i++) {
+            const riderId = riderIds[i];
+            console.log(`   [${i + 1}/${riderIds.length}] Processing rider ${riderId}...`);
+            let racingSynced = false;
+            let profileSynced = false;
             try {
-                const result = await syncRiderFromAPIs(riderId);
-                if (result.synced) {
-                    synced++;
+                // Process ZwiftRacing data (uit bulk fetch)
+                const racingData = bulkRacingData.get(riderId);
+                if (racingData) {
+                    try {
+                        const riderData = {
+                            id: riderId,
+                            rider_id: riderId,
+                            name: racingData.name,
+                            country: racingData.country,
+                            velo_live: racingData.race?.current?.rating || null,
+                            velo_30day: racingData.race?.max30?.rating || null,
+                            velo_90day: racingData.race?.max90?.rating || null,
+                            category: racingData.zpCategory,
+                            ftp: racingData.zpFTP,
+                            power_5s: racingData.power?.w5 || null,
+                            power_15s: racingData.power?.w15 || null,
+                            power_30s: racingData.power?.w30 || null,
+                            power_60s: racingData.power?.w60 || null,
+                            power_120s: racingData.power?.w120 || null,
+                            power_300s: racingData.power?.w300 || null,
+                            power_1200s: racingData.power?.w1200 || null,
+                            power_5s_wkg: racingData.power?.wkg5 || null,
+                            power_15s_wkg: racingData.power?.wkg15 || null,
+                            power_30s_wkg: racingData.power?.wkg30 || null,
+                            power_60s_wkg: racingData.power?.wkg60 || null,
+                            power_120s_wkg: racingData.power?.wkg120 || null,
+                            power_300s_wkg: racingData.power?.wkg300 || null,
+                            power_1200s_wkg: racingData.power?.wkg1200 || null,
+                            weight: racingData.weight,
+                            height: racingData.height,
+                            phenotype: racingData.phenotype?.value || null,
+                            race_count: racingData.race?.finishes || 0,
+                            zwift_id: riderId,
+                            race_wins: racingData.race?.wins || 0,
+                            race_podiums: racingData.race?.podiums || 0,
+                            race_finishes: racingData.race?.finishes || 0,
+                            race_dnfs: racingData.race?.dnfs || 0,
+                            raw_response: racingData,
+                            fetched_at: new Date().toISOString()
+                        };
+                        const { error } = await supabase
+                            .from('api_zwiftracing_riders')
+                            .upsert(riderData, { onConflict: 'rider_id' });
+                        if (!error) {
+                            racingSynced = true;
+                        }
+                        else {
+                            console.error(`      ❌ ZwiftRacing DB write failed:`, error.message);
+                        }
+                    }
+                    catch (err) {
+                        console.error(`      ❌ ZwiftRacing processing failed:`, err.message);
+                    }
+                }
+                // Fetch Zwift Official data (individueel)
+                try {
+                    const profileResponse = await axios.get(`https://us-or-rly101.zwift.com/api/profiles/${riderId}`, {
+                        headers: {
+                            'Authorization': authToken,
+                            'User-Agent': 'Zwift/1.0'
+                        },
+                        timeout: 10000
+                    });
+                    const data = profileResponse.data;
+                    const profileData = {
+                        rider_id: riderId,
+                        id: data.id || riderId,
+                        first_name: data.firstName || null,
+                        last_name: data.lastName || null,
+                        male: data.male,
+                        image_src: data.imageSrc || null,
+                        image_src_large: data.imageSrcLarge || null,
+                        country_code: data.countryCode || null,
+                        country_alpha3: data.countryAlpha3 || null,
+                        age: data.age || null,
+                        weight: data.weight || null,
+                        height: data.height || null,
+                        ftp: data.ftp || null,
+                        player_type_id: data.playerTypeId || null,
+                        player_type: data.playerType || null,
+                        competition_category: data.competitionMetrics?.category || null,
+                        competition_racing_score: data.competitionMetrics?.racingScore || null,
+                        followers_count: data.followerStatusOfLoggedInPlayer?.followerCount || null,
+                        followees_count: data.followerStatusOfLoggedInPlayer?.followeeCount || null,
+                        rideons_given: data.totalGiveRideons || null,
+                        achievement_level: data.achievementLevel || null,
+                        total_distance: data.totalDistanceInMeters || null,
+                        total_distance_climbed: data.totalDistanceClimbed || null,
+                        riding: data.riding || false,
+                        world_id: data.worldId || null,
+                        privacy_profile: data.privacy?.approvalRequired === true,
+                        privacy_activities: data.privacy?.defaultActivityPrivacy === 'PRIVATE',
+                        raw_response: data,
+                        fetched_at: new Date().toISOString()
+                    };
+                    const { error } = await supabase
+                        .from('api_zwift_api_profiles')
+                        .upsert(profileData, { onConflict: 'rider_id' });
+                    if (!error) {
+                        profileSynced = true;
+                    }
+                    else {
+                        console.error(`      ❌ Zwift Official DB write failed:`, error.message);
+                    }
+                }
+                catch (err) {
+                    console.warn(`      ⚠️  Zwift Official API failed:`, err.message);
+                }
+                // Update team_roster als minstens 1 API succesvol was
+                if (racingSynced || profileSynced) {
+                    const { error: rosterError } = await supabase
+                        .from('team_roster')
+                        .upsert({
+                        rider_id: riderId,
+                        is_active: true,
+                        last_synced: new Date().toISOString()
+                    }, { onConflict: 'rider_id' });
+                    if (!rosterError) {
+                        synced++;
+                        console.log(`      ✅ Synced (Racing: ${racingSynced}, Profile: ${profileSynced})`);
+                    }
+                    else {
+                        failed++;
+                        errors.push(`Rider ${riderId}: Roster update failed`);
+                        console.error(`      ❌ team_roster update failed:`, rosterError.message);
+                    }
                 }
                 else {
                     failed++;
-                    errors.push(`Rider ${riderId}: ${result.error || 'Unknown error'}`);
+                    errors.push(`Rider ${riderId}: Both APIs failed`);
+                    console.error(`      ❌ Sync failed: Both APIs failed`);
                 }
             }
             catch (error) {
@@ -822,8 +956,10 @@ const executeSyncJob = async (syncType, triggerType, metadata) => {
                 failed++;
                 errors.push(`Rider ${riderId}: ${error.message}`);
             }
-            // Delay tussen riders (2 seconden i.p.v. 500ms om rate limiting te voorkomen)
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Kleine delay tussen Official API calls (250ms)
+            if (i < riderIds.length - 1) {
+                await delay(250);
+            }
         }
         const duration = Date.now() - startTime;
         const status = failed === 0 ? 'success' : (synced > 0 ? 'partial' : 'failed');
