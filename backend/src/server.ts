@@ -374,59 +374,17 @@ app.post('/api/admin/sync-all', async (req, res) => {
   try {
     console.log('🔄 Manual sync all triggered');
     
-    // Get all active team members
-    const { data: riders, error } = await supabase
-      .from('v_rider_complete')
-      .select('rider_id')
-      .eq('is_team_member', true);
-    
-    if (error) throw error;
-    
-    if (!riders || riders.length === 0) {
-      return res.json({
-        success: true,
-        message: 'No riders to sync',
-        total: 0,
-        synced: 0
-      });
-    }
-    
-    const riderIds = riders.map(r => r.rider_id);
-    console.log(`📊 Syncing ${riderIds.length} riders: ${riderIds.join(', ')}`);
-    
-    let synced = 0;
-    let failed = 0;
-    const results = [];
-    
-    for (const riderId of riderIds) {
-      try {
-        const result = await syncRiderFromAPIs(riderId);
-        if (result.synced) {
-          synced++;
-          results.push({ rider_id: riderId, synced: true });
-        } else {
-          failed++;
-          results.push({ rider_id: riderId, synced: false, error: 'Sync failed' });
-        }
-      } catch (error: any) {
-        failed++;
-        results.push({ rider_id: riderId, synced: false, error: error.message });
-      }
-      
-      // Small delay between syncs
-      if (riderIds.indexOf(riderId) < riderIds.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-    }
-    
-    console.log(`✅ Manual sync complete: ${synced} synced, ${failed} failed`);
+    // Execute sync with full logging
+    const result = await executeSyncJob(SYNC_TYPE_TEAM_RIDERS, 'manual', { 
+      triggered_by: 'admin_dashboard' 
+    });
     
     res.json({
-      success: true,
-      total: riderIds.length,
-      synced,
-      failed,
-      results
+      success: result.success,
+      synced: result.synced,
+      failed: result.failed,
+      logId: result.logId,
+      error: result.error
     });
     
   } catch (error: any) {
@@ -495,99 +453,166 @@ app.get('*', (req, res) => {
 });
 
 // ============================================
-// SERVER-SIDE AUTO-SYNC SCHEDULER (DYNAMISCH CONFIGUREERBAAR + PERSISTENT)
+// MODERN SYNC SCHEDULER WITH LOGGING & PERSISTENCE
 // ============================================
 
-const CONFIG_TABLE = 'app_config';
-const CONFIG_KEY = 'auto_sync_settings';
+interface SyncConfig {
+  sync_type: string;
+  enabled: boolean;
+  interval_minutes: number;
+  last_run_at: string | null;
+  next_run_at: string | null;
+}
 
-let autoSyncConfig = {
-  enabled: true,
-  intervalMinutes: parseInt(process.env.AUTO_SYNC_INTERVAL_MINUTES || '60'),
-  lastRun: null as Date | null,
-  nextRun: null as Date | null
-};
+interface SyncLog {
+  sync_type: string;
+  trigger_type: 'auto' | 'manual' | 'upload' | 'api';
+  status: 'running' | 'success' | 'partial' | 'failed';
+  started_at: string;
+  total_items?: number;
+  success_count?: number;
+  failed_count?: number;
+  error_message?: string;
+  metadata?: any;
+}
 
-let autoSyncIntervalId: NodeJS.Timeout | null = null;
-let autoSyncInitialTimeoutId: NodeJS.Timeout | null = null;
+const SYNC_TYPE_TEAM_RIDERS = 'team_riders';
+let schedulerIntervals: Map<string, NodeJS.Timeout> = new Map();
 
-// Load config from database
-const loadAutoSyncConfig = async () => {
+// Load sync config from database
+const loadSyncConfig = async (syncType: string): Promise<SyncConfig | null> => {
   try {
     const { data, error } = await supabase
-      .from(CONFIG_TABLE)
-      .select('value')
-      .eq('key', CONFIG_KEY)
+      .from('sync_config')
+      .select('*')
+      .eq('sync_type', syncType)
       .single();
     
     if (error) {
-      if (error.code !== 'PGRST116') { // Not found error
-        console.error('⚠️  Failed to load auto-sync config:', error.message);
-      }
-      return;
+      console.error(`⚠️  Failed to load ${syncType} config:`, error.message);
+      return null;
     }
     
-    if (data?.value) {
-      const saved = data.value as { enabled: boolean; intervalMinutes: number };
-      autoSyncConfig.enabled = saved.enabled;
-      autoSyncConfig.intervalMinutes = saved.intervalMinutes;
-      console.log('💾 Loaded auto-sync config from database:', saved);
-    }
+    return data;
   } catch (error: any) {
-    console.error('⚠️  Error loading auto-sync config:', error.message);
+    console.error(`⚠️  Error loading ${syncType} config:`, error.message);
+    return null;
   }
 };
 
-// Save config to database
-const saveAutoSyncConfig = async () => {
+// Save/update sync config
+const saveSyncConfig = async (config: Partial<SyncConfig> & { sync_type: string }): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from(CONFIG_TABLE)
+      .from('sync_config')
       .upsert({
-        key: CONFIG_KEY,
-        value: {
-          enabled: autoSyncConfig.enabled,
-          intervalMinutes: autoSyncConfig.intervalMinutes
-        },
+        ...config,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'key' });
+      }, { onConflict: 'sync_type' });
     
     if (error) {
-      console.error('❌ Failed to save auto-sync config:', error.message);
-    } else {
-      console.log('💾 Saved auto-sync config to database');
+      console.error(`❌ Failed to save ${config.sync_type} config:`, error.message);
+      return false;
     }
+    
+    console.log(`💾 Saved ${config.sync_type} config`);
+    return true;
   } catch (error: any) {
-    console.error('❌ Error saving auto-sync config:', error.message);
+    console.error(`❌ Error saving ${config.sync_type} config:`, error.message);
+    return false;
   }
 };
 
-// Run sync function
-const runAutoSync = async () => {
+// Create sync log entry
+const createSyncLog = async (log: SyncLog): Promise<number | null> => {
   try {
-    autoSyncConfig.lastRun = new Date();
-    console.log('\n⏰ Server-side auto-sync triggered at', autoSyncConfig.lastRun.toISOString());
+    const { data, error } = await supabase
+      .from('sync_logs')
+      .insert([log])
+      .select('id')
+      .single();
     
+    if (error) {
+      console.error('❌ Failed to create sync log:', error.message);
+      return null;
+    }
+    
+    return data.id;
+  } catch (error: any) {
+    console.error('❌ Error creating sync log:', error.message);
+    return null;
+  }
+};
+
+// Update sync log
+const updateSyncLog = async (logId: number, updates: Partial<SyncLog> & { completed_at?: string; duration_ms?: number }): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('sync_logs')
+      .update(updates)
+      .eq('id', logId);
+    
+    if (error) {
+      console.error('❌ Failed to update sync log:', error.message);
+      return false;
+    }
+    
+    return true;
+  } catch (error: any) {
+    console.error('❌ Error updating sync log:', error.message);
+    return false;
+  }
+};
+
+// Execute sync with full logging
+const executeSyncJob = async (syncType: string, triggerType: 'auto' | 'manual' | 'upload' | 'api', metadata?: any) => {
+  const startTime = Date.now();
+  
+  // Create log entry
+  const logId = await createSyncLog({
+    sync_type: syncType,
+    trigger_type: triggerType,
+    status: 'running',
+    started_at: new Date().toISOString(),
+    metadata
+  });
+  
+  console.log(`\n🚀 [${syncType}] Sync started (${triggerType}) - Log ID: ${logId}`);
+  
+  try {
+    // Fetch team riders
     const { data: riders, error } = await supabase
       .from('v_rider_complete')
       .select('rider_id')
       .eq('is_team_member', true);
     
     if (error) {
-      console.error('❌ Auto-sync failed to fetch riders:', error.message);
-      return;
+      throw new Error(`Failed to fetch riders: ${error.message}`);
     }
     
     if (!riders || riders.length === 0) {
       console.log('ℹ️  No riders to sync');
-      return;
+      
+      if (logId) {
+        await updateSyncLog(logId, {
+          status: 'success',
+          completed_at: new Date().toISOString(),
+          duration_ms: Date.now() - startTime,
+          total_items: 0,
+          success_count: 0,
+          failed_count: 0
+        });
+      }
+      
+      return { success: true, synced: 0, failed: 0 };
     }
     
     const riderIds = riders.map(r => r.rider_id);
-    console.log(`📊 Auto-syncing ${riderIds.length} riders: ${riderIds.join(', ')}`);
+    console.log(`📊 Syncing ${riderIds.length} riders: ${riderIds.join(', ')}`);
     
     let synced = 0;
     let failed = 0;
+    const errors: string[] = [];
     
     for (const riderId of riderIds) {
       try {
@@ -596,101 +621,196 @@ const runAutoSync = async () => {
           synced++;
         } else {
           failed++;
+          errors.push(`Rider ${riderId}: ${result.error || 'Unknown error'}`);
         }
       } catch (error: any) {
-        console.error(`❌ Auto-sync failed for rider ${riderId}:`, error.message);
+        console.error(`❌ Sync failed for rider ${riderId}:`, error.message);
         failed++;
+        errors.push(`Rider ${riderId}: ${error.message}`);
       }
       
       // Small delay between riders
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     
-    console.log(`✅ Auto-sync complete: ${synced} synced, ${failed} failed\n`);
+    const duration = Date.now() - startTime;
+    const status = failed === 0 ? 'success' : (synced > 0 ? 'partial' : 'failed');
     
-    // Calculate next run
-    if (autoSyncConfig.enabled && autoSyncConfig.intervalMinutes > 0) {
-      autoSyncConfig.nextRun = new Date(Date.now() + autoSyncConfig.intervalMinutes * 60 * 1000);
+    console.log(`✅ [${syncType}] Sync ${status}: ${synced} synced, ${failed} failed (${duration}ms)\n`);
+    
+    // Update log entry
+    if (logId) {
+      await updateSyncLog(logId, {
+        status,
+        completed_at: new Date().toISOString(),
+        duration_ms: duration,
+        total_items: riderIds.length,
+        success_count: synced,
+        failed_count: failed,
+        error_message: errors.length > 0 ? errors.join('; ') : undefined
+      });
     }
     
+    // Update config last_run
+    await saveSyncConfig({
+      sync_type: syncType,
+      last_run_at: new Date().toISOString()
+    });
+    
+    return { success: status !== 'failed', synced, failed, logId };
+    
   } catch (error: any) {
-    console.error('❌ Auto-sync error:', error.message);
+    const duration = Date.now() - startTime;
+    console.error(`❌ [${syncType}] Sync error:`, error.message);
+    
+    if (logId) {
+      await updateSyncLog(logId, {
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        duration_ms: duration,
+        error_message: error.message
+      });
+    }
+    
+    return { success: false, synced: 0, failed: 0, error: error.message, logId };
   }
 };
 
-// Start/restart auto-sync scheduler
-const startAutoSync = () => {
-  // Clear existing timers
-  if (autoSyncIntervalId) clearInterval(autoSyncIntervalId);
-  if (autoSyncInitialTimeoutId) clearTimeout(autoSyncInitialTimeoutId);
+// Start/restart scheduler for a sync type
+const startScheduler = async (syncType: string) => {
+  // Clear existing timer
+  const existingTimer = schedulerIntervals.get(syncType);
+  if (existingTimer) {
+    clearInterval(existingTimer);
+    schedulerIntervals.delete(syncType);
+  }
   
-  if (!autoSyncConfig.enabled || autoSyncConfig.intervalMinutes <= 0) {
-    console.log('⚠️  Server-side auto-sync disabled');
-    autoSyncConfig.nextRun = null;
+  // Load config
+  const config = await loadSyncConfig(syncType);
+  if (!config || !config.enabled || config.interval_minutes <= 0) {
+    console.log(`⚠️  Scheduler disabled for ${syncType}`);
     return;
   }
   
-  const intervalMs = autoSyncConfig.intervalMinutes * 60 * 1000;
-  console.log(`🔄 Server-side auto-sync enabled: every ${autoSyncConfig.intervalMinutes} minutes`);
+  const intervalMs = config.interval_minutes * 60 * 1000;
+  console.log(`🔄 Scheduler started for ${syncType}: every ${config.interval_minutes} minutes`);
   
-  // Initial sync after 5 minutes (or immediately if configured < 5 minutes)
-  const initialDelay = Math.min(5 * 60 * 1000, intervalMs);
+  // Calculate and save next run
+  const nextRun = new Date(Date.now() + intervalMs);
+  await saveSyncConfig({
+    sync_type: syncType,
+    next_run_at: nextRun.toISOString()
+  });
   
-  // Calculate nextRun time
-  autoSyncConfig.nextRun = new Date(Date.now() + initialDelay);
-  console.log(`📅 Next sync scheduled at: ${autoSyncConfig.nextRun.toISOString()}`);
-  
-  autoSyncInitialTimeoutId = setTimeout(() => {
-    console.log('🚀 Running initial auto-sync...');
-    runAutoSync();
-  }, initialDelay);
+  console.log(`📅 Next ${syncType} sync: ${nextRun.toLocaleString('nl-NL')}`);
   
   // Schedule recurring sync
-  autoSyncIntervalId = setInterval(runAutoSync, intervalMs);
+  const interval = setInterval(async () => {
+    await executeSyncJob(syncType, 'auto');
+    
+    // Update next run after execution
+    const nextRun = new Date(Date.now() + intervalMs);
+    await saveSyncConfig({
+      sync_type: syncType,
+      next_run_at: nextRun.toISOString()
+    });
+  }, intervalMs);
+  
+  schedulerIntervals.set(syncType, interval);
 };
 
-// GET current auto-sync config
-app.get('/api/admin/sync-config', (req, res) => {
-  res.json({
-    ...autoSyncConfig,
-    lastRun: autoSyncConfig.lastRun?.toISOString() || null,
-    nextRun: autoSyncConfig.nextRun?.toISOString() || null
-  });
+// Stop scheduler for a sync type
+const stopScheduler = (syncType: string) => {
+  const timer = schedulerIntervals.get(syncType);
+  if (timer) {
+    clearInterval(timer);
+    schedulerIntervals.delete(syncType);
+    console.log(`⏹️  Scheduler stopped for ${syncType}`);
+  }
+};
+
+// GET sync config for a sync type
+app.get('/api/admin/sync-config/:syncType?', async (req, res) => {
+  try {
+    const syncType = req.params.syncType || SYNC_TYPE_TEAM_RIDERS;
+    const config = await loadSyncConfig(syncType);
+    
+    if (!config) {
+      return res.status(404).json({ error: 'Config not found' });
+    }
+    
+    res.json(config);
+  } catch (error: any) {
+    console.error('❌ Failed to get sync config:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
-// POST update auto-sync config
+// POST update sync config
 app.post('/api/admin/sync-config', async (req, res) => {
   try {
-    const { enabled, intervalMinutes } = req.body;
+    const { syncType = SYNC_TYPE_TEAM_RIDERS, enabled, intervalMinutes } = req.body;
+    
+    const updates: Partial<SyncConfig> & { sync_type: string } = { sync_type: syncType };
     
     if (typeof enabled === 'boolean') {
-      autoSyncConfig.enabled = enabled;
+      updates.enabled = enabled;
     }
     
     if (typeof intervalMinutes === 'number' && intervalMinutes >= 0) {
-      autoSyncConfig.intervalMinutes = intervalMinutes;
+      updates.interval_minutes = intervalMinutes;
     }
     
-    console.log('⚙️  Auto-sync config updated:', { enabled: autoSyncConfig.enabled, intervalMinutes: autoSyncConfig.intervalMinutes });
+    console.log('⚙️  Sync config update:', updates);
     
-    // Save to database voor persistence
-    await saveAutoSyncConfig();
+    // Save to database
+    const saved = await saveSyncConfig(updates);
+    if (!saved) {
+      throw new Error('Failed to save config');
+    }
     
-    // Restart scheduler with new config
-    startAutoSync();
+    // Restart scheduler
+    if (updates.enabled === false) {
+      stopScheduler(syncType);
+    } else {
+      await startScheduler(syncType);
+    }
     
-    // Respond met de actuele config inclusief nieuwe nextRun
+    // Get updated config
+    const config = await loadSyncConfig(syncType);
+    
     res.json({
       success: true,
-      config: {
-        enabled: autoSyncConfig.enabled,
-        intervalMinutes: autoSyncConfig.intervalMinutes,
-        lastRun: autoSyncConfig.lastRun?.toISOString() || null,
-        nextRun: autoSyncConfig.nextRun?.toISOString() || null
-      }
+      config
     });
   } catch (error: any) {
     console.error('❌ Failed to update sync config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET sync logs with filters
+app.get('/api/admin/sync-logs', async (req, res) => {
+  try {
+    const { syncType, triggerType, status, limit = 50 } = req.query;
+    
+    let query = supabase
+      .from('sync_logs')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(parseInt(limit as string));
+    
+    if (syncType) query = query.eq('sync_type', syncType);
+    if (triggerType) query = query.eq('trigger_type', triggerType);
+    if (status) query = query.eq('status', status);
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    res.json({ success: true, logs: data });
+  } catch (error: any) {
+    console.error('❌ Failed to get sync logs:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -699,16 +819,16 @@ app.post('/api/admin/sync-config', async (req, res) => {
 // INITIALIZE & START SERVER
 // ============================================
 
-// Initialize auto-sync config from database before starting server
+// Initialize and start server with schedulers
 (async () => {
-  await loadAutoSyncConfig();
-  
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
     console.log(`✅ Server on ${PORT}`);
     console.log(`📊 Racing Matrix: http://localhost:${PORT}`);
     console.log(`🏥 Health: http://localhost:${PORT}/health`);
     
-    // Start auto-sync scheduler after server is ready
-    startAutoSync();
+    // Start all configured schedulers
+    console.log('\n🚀 Initializing sync schedulers...');
+    await startScheduler(SYNC_TYPE_TEAM_RIDERS);
+    console.log('✅ All schedulers started\n');
   });
 })();
