@@ -221,9 +221,10 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
       console.warn(`⚠️  Zwift Official API failed for ${riderId}:`, profileResult.reason?.message || profileResult.reason);
     }
 
-    // Update team_roster last_synced
+    // Update team_roster - ALTIJD als minstens 1 API succesvol was
     if (racingSynced || profileSynced) {
-      await supabase
+      // KRITISCH: Eerst team_roster updaten
+      const { error: rosterError } = await supabase
         .from('team_roster')
         .upsert({
           rider_id: riderId,
@@ -231,10 +232,21 @@ async function syncRiderFromAPIs(riderId: number): Promise<{ synced: boolean; er
           last_synced: new Date().toISOString()
         }, { onConflict: 'rider_id' });
       
-      console.log(`✅ Rider ${riderId} synced (Racing: ${racingSynced}, Profile: ${profileSynced})`);
+      if (rosterError) {
+        console.error(`❌ Failed to update team_roster for ${riderId}:`, rosterError.message);
+        // Probeer alsnog toe te voegen aan api_zwiftracing_riders als dat nodig is
+        if (rosterError.code === '23503' && racingSynced) {
+          // Foreign key constraint violated - rider niet in api_zwiftracing_riders
+          console.warn(`⚠️  Rider ${riderId} not in api_zwiftracing_riders, skipping team_roster`);
+        }
+      } else {
+        console.log(`✅ Rider ${riderId} synced (Racing: ${racingSynced}, Profile: ${profileSynced})`);
+      }
+      
       return { synced: true };
     }
 
+    console.warn(`⚠️  Both APIs failed for rider ${riderId}`);
     return { synced: false, error: 'Both APIs failed' };
   } catch (error: any) {
     console.error(`❌ Sync error for rider ${riderId}:`, error.message);
@@ -330,7 +342,8 @@ app.post('/api/admin/riders', async (req, res) => {
       });
     }
 
-    console.log(`📥 Bulk add: ${rider_ids.length} riders requested`);
+    console.log(`\n📥 BULK ADD REQUEST: ${rider_ids.length} riders`);
+    console.log(`   Riders: ${rider_ids.slice(0, 10).join(', ')}${rider_ids.length > 10 ? '...' : ''}`);
 
     // US2: Check welke riders al bestaan in team_roster
     const { data: existingRiders } = await supabase
@@ -343,20 +356,31 @@ app.post('/api/admin/riders', async (req, res) => {
     const skippedIds = rider_ids.filter(id => existingIds.has(id));
     
     if (skippedIds.length > 0) {
-      console.log(`⏭️  Skipping ${skippedIds.length} existing riders: ${skippedIds.join(', ')}`);
+      console.log(`⏭️  Skipping ${skippedIds.length} existing riders: ${skippedIds.slice(0, 10).join(', ')}${skippedIds.length > 10 ? '...' : ''}`);
     }
     
-    console.log(`➕ Adding ${newRiderIds.length} new riders...`);
+    console.log(`➕ Adding ${newRiderIds.length} new riders...\n`);
 
     const results = [];
+    let successCount = 0;
+    let failCount = 0;
 
     // Sync alleen nieuwe riders
-    for (const riderId of newRiderIds) {
+    for (let i = 0; i < newRiderIds.length; i++) {
+      const riderId = newRiderIds[i];
+      console.log(`   [${i+1}/${newRiderIds.length}] Syncing rider ${riderId}...`);
+      
       const result = await syncRiderFromAPIs(riderId);
       results.push({
         rider_id: riderId,
         ...result
       });
+      
+      if (result.synced) {
+        successCount++;
+      } else {
+        failCount++;
+      }
 
       // Small delay to avoid rate limiting
       if (newRiderIds.length > 1) {
@@ -379,7 +403,16 @@ app.post('/api/admin/riders', async (req, res) => {
     const failed = results.filter(r => !r.synced && !r.skipped).length;
     const skipped = results.filter(r => r.skipped).length;
 
-    console.log(`✅ Bulk add completed: ${synced} new riders added, ${skipped} skipped (already in team), ${failed} failed`);
+    console.log(`\n✅ BULK ADD COMPLETED:`);
+    console.log(`   Total requested: ${rider_ids.length}`);
+    console.log(`   ✓ New riders added: ${synced}`);
+    console.log(`   ⏭ Skipped (existing): ${skipped}`);
+    console.log(`   ✗ Failed: ${failed}`);
+    if (failed > 0) {
+      const failedIds = results.filter(r => !r.synced && !r.skipped).map(r => r.rider_id);
+      console.log(`   Failed IDs: ${failedIds.join(', ')}`);
+    }
+    console.log('');
 
     res.json({
       success: true,
