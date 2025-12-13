@@ -158,9 +158,16 @@ export default function TeamManager() {
       console.log('Bulk add response:', data)
       
       if (data.success) {
-        const synced = data.results.filter((r: any) => r.synced).length
-        const failed = data.results.filter((r: any) => !r.synced).length
-        toast.success(`${ids.length} riders verwerkt! ✓ ${synced} gesynchroniseerd${failed > 0 ? `, ${failed} gefaald` : ''}`)
+        const synced = data.results.filter((r: any) => r.synced && !r.skipped).length
+        const skipped = data.results.filter((r: any) => r.skipped).length
+        const failed = data.results.filter((r: any) => !r.synced && !r.skipped).length
+        
+        let message = `${ids.length} riders verwerkt!`
+        if (synced > 0) message += ` ✓ ${synced} toegevoegd`
+        if (skipped > 0) message += `, ${skipped} overgeslagen (al in team)`
+        if (failed > 0) message += `, ${failed} gefaald`
+        
+        toast.success(message)
         setMultipleRiderIds('')
         await fetchRiderCount() // Refresh count
         if (view === 'manage') await fetchRiders()

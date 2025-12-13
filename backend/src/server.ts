@@ -330,11 +330,28 @@ app.post('/api/admin/riders', async (req, res) => {
       });
     }
 
-    console.log(`📥 Adding ${rider_ids.length} riders...`);
+    console.log(`📥 Bulk add: ${rider_ids.length} riders requested`);
+
+    // US2: Check welke riders al bestaan in team_roster
+    const { data: existingRiders } = await supabase
+      .from('team_roster')
+      .select('rider_id')
+      .in('rider_id', rider_ids);
+    
+    const existingIds = new Set(existingRiders?.map(r => r.rider_id) || []);
+    const newRiderIds = rider_ids.filter(id => !existingIds.has(id));
+    const skippedIds = rider_ids.filter(id => existingIds.has(id));
+    
+    if (skippedIds.length > 0) {
+      console.log(`⏭️  Skipping ${skippedIds.length} existing riders: ${skippedIds.join(', ')}`);
+    }
+    
+    console.log(`➕ Adding ${newRiderIds.length} new riders...`);
 
     const results = [];
 
-    for (const riderId of rider_ids) {
+    // Sync alleen nieuwe riders
+    for (const riderId of newRiderIds) {
       const result = await syncRiderFromAPIs(riderId);
       results.push({
         rider_id: riderId,
@@ -342,21 +359,33 @@ app.post('/api/admin/riders', async (req, res) => {
       });
 
       // Small delay to avoid rate limiting
-      if (rider_ids.length > 1) {
+      if (newRiderIds.length > 1) {
         await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
+    
+    // Add skipped riders to results
+    for (const riderId of skippedIds) {
+      results.push({
+        rider_id: riderId,
+        synced: true,
+        skipped: true,
+        reason: 'Already in team roster'
+      });
+    }
 
     const synced = results.filter(r => r.synced).length;
-    const failed = results.filter(r => !r.synced).length;
+    const failed = results.filter(r => !r.synced && !r.skipped).length;
+    const skipped = results.filter(r => r.skipped).length;
 
-    console.log(`✅ Bulk add completed: ${synced} synced, ${failed} failed`);
+    console.log(`✅ Bulk add completed: ${synced} synced (${skipped} skipped), ${failed} failed`);
 
     res.json({
       success: true,
       total: rider_ids.length,
       synced,
       failed,
+      skipped,
       results
     });
 
