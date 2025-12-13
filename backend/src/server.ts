@@ -21,7 +21,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.s
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const ZWIFTRACING_API_TOKEN = process.env.ZWIFTRACING_API_TOKEN || '650c6d2fc4ef6858d74cbef1';
 
-console.log('🚀 Environment loaded:', {
+console.log('🚀 Environment loaded (v4.1 - Bulk API):', {
   hasSupabaseUrl: !!SUPABASE_URL,
   hasSupabaseKey: !!SUPABASE_SERVICE_KEY,
   hasZwiftToken: !!ZWIFTRACING_API_TOKEN,
