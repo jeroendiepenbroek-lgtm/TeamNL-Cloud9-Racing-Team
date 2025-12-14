@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import SyncManager from '../components/SyncManager'
@@ -29,13 +29,6 @@ export default function TeamManager() {
   const navigate = useNavigate()
   const [riders, setRiders] = useState<Rider[]>([])
   const [loading, setLoading] = useState(false)
-  const [syncing, setSyncing] = useState(false)
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true)
-  const [autoSyncInterval, setAutoSyncInterval] = useState(60) // minutes
-  const [syncConfig, setSyncConfig] = useState<{
-    lastRun: string | null
-    nextRun: string | null
-  }>({ lastRun: null, nextRun: null })
   const [view, setView] = useState<'add' | 'manage' | 'sync' | 'logs'>('add')
   const [syncLogs, setSyncLogs] = useState<any[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
@@ -59,11 +52,9 @@ export default function TeamManager() {
   // File upload
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
-  // Initial load of rider count + sync config
+  // Initial load of rider count
   useEffect(() => {
     fetchRiderCount()
-    // Fetch initial config
-    fetchSyncConfig()
   }, [])
 
   useEffect(() => {
@@ -98,20 +89,6 @@ export default function TeamManager() {
     } catch (error) {
       console.error('Error fetching riders:', error)
       toast.error('Fout bij laden riders')
-    }
-  }
-
-  // Fetch server-side sync config
-  const fetchSyncConfig = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-config`)
-      const data = await response.json()
-      console.log('📥 Received config:', data)
-      setAutoSyncEnabled(data.enabled)
-      setAutoSyncInterval(data.intervalMinutes)
-      setSyncConfig({ lastRun: data.lastRun, nextRun: data.nextRun })
-    } catch (error) {
-      console.error('Failed to fetch sync config:', error)
     }
   }
 
@@ -262,77 +239,6 @@ export default function TeamManager() {
     }
     reader.readAsText(file)
   }
-  const handleSyncAll = useCallback(async () => {
-    setSyncing(true)
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-all`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        toast.success(`✅ ${result.synced} riders gesynchroniseerd!`)
-        await fetchRiders() // Refresh data
-        // Update only lastRun time, keep interval settings unchanged
-        setSyncConfig(prev => ({ ...prev, lastRun: new Date().toISOString() }))
-      } else {
-        toast.error('Sync mislukt: ' + result.error)
-      }
-    } catch (error: any) {
-      console.error('Sync error:', error)
-      toast.error('Sync fout: ' + error.message)
-    } finally {
-      setSyncing(false)
-    }
-  }, [])
-
-  // Update server-side sync config
-  const updateSyncConfig = async (enabled: boolean, intervalMinutes: number) => {
-    try {
-      console.log(`⚙️ Sending to server: enabled=${enabled}, interval=${intervalMinutes}`)
-      
-      // Update lokale state DIRECT voor responsive UI
-      setAutoSyncEnabled(enabled)
-      setAutoSyncInterval(intervalMinutes)
-      
-      const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/admin/sync-config`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled, intervalMinutes })
-      })
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        // Update alleen de sync times van server
-        setSyncConfig({ lastRun: result.config.lastRun, nextRun: result.config.nextRun })
-        console.log(`✅ Server confirmed:`, result.config)
-        toast.success(`⚙️ Auto-sync ${enabled ? 'ingeschakeld' : 'uitgeschakeld'}${enabled ? ` (${intervalMinutes} min)` : ''}`)
-      } else {
-        // Rollback bij fout
-        await fetchSyncConfig()
-        toast.error('Config update mislukt')
-      }
-    } catch (error: any) {
-      console.error('Config update error:', error)
-      // Rollback bij fout
-      await fetchSyncConfig()
-      toast.error('Config fout: ' + error.message)
-    }
-  }
-
-  // Handle auto-sync toggle
-  const handleAutoSyncToggle = async (enabled: boolean) => {
-    await updateSyncConfig(enabled, autoSyncInterval)
-  }
-
-  // Handle interval change
-  const handleIntervalChange = async (intervalMinutes: number) => {
-    await updateSyncConfig(autoSyncEnabled, intervalMinutes)
-  }
-
   const handleRemoveRider = async (riderId: number) => {
     if (!confirm(`Rider ${riderId} verwijderen uit team?`)) return
 
@@ -382,61 +288,8 @@ export default function TeamManager() {
                   </p>
                 </div>
               </div>
-              {/* Server-Side Sync Controls + Back Button */}
-              <div className="flex-shrink-0 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/30">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={autoSyncEnabled}
-                        onChange={(e) => handleAutoSyncToggle(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span className="text-xs sm:text-sm font-medium text-white">Server Auto-Sync</span>
-                    </label>
-                    <select
-                      value={autoSyncInterval}
-                      onChange={(e) => handleIntervalChange(Number(e.target.value))}
-                      disabled={!autoSyncEnabled}
-                      className="text-xs sm:text-sm border-l border-white/30 pl-2 bg-transparent focus:outline-none text-white font-medium disabled:opacity-50"
-                    >
-                      <option value={5} className="text-gray-900">5m (test)</option>
-                      <option value={15} className="text-gray-900">15m</option>
-                      <option value={30} className="text-gray-900">30m</option>
-                      <option value={60} className="text-gray-900">1u</option>
-                      <option value={120} className="text-gray-900">2u</option>
-                      <option value={240} className="text-gray-900">4u</option>
-                    </select>
-                  </div>
-                  {syncConfig.nextRun && (
-                    <div className="text-xs text-white/70 px-2">
-                      Volgende sync: {new Date(syncConfig.nextRun).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={handleSyncAll}
-                  disabled={syncing}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 disabled:from-gray-400 disabled:to-gray-500 rounded-lg sm:rounded-xl text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
-                >
-                  {syncing ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span className="hidden sm:inline">Syncing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      <span className="hidden sm:inline">Sync</span>
-                    </>
-                  )}
-                </button>
+              {/* Back Button */}
+              <div className="flex-shrink-0">
                 <button
                   onClick={() => navigate('/')}
                   className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
