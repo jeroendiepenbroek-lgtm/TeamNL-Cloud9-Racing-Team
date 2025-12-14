@@ -5,7 +5,6 @@ import RacingMatrix from './pages/RacingMatrix'
 import EventsDashboard from './pages/EventsDashboard'
 import ResultsDashboard from './pages/ResultsDashboard'
 import TeamManager from './pages/TeamManager'
-import AutoSyncDashboard from './pages/AutoSyncDashboard'
 
 function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -43,8 +42,8 @@ function Navigation() {
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Dashboard
               </Link>
-              <Link to="/auto-sync" className="text-white hover:text-orange-400 transition font-semibold">
-                Auto-Sync
+              <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
+                Team Manager
               </Link>
             </div>
 
@@ -69,8 +68,8 @@ function Navigation() {
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Dashboard
               </Link>
-              <Link to="/auto-sync" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                Auto-Sync
+              <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                Team Manager
               </Link>
             </div>
           )}
@@ -90,7 +89,6 @@ function App() {
           <Route path="/events" element={<EventsDashboard />} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/team-manager" element={<TeamManager />} />
-          <Route path="/auto-sync" element={<AutoSyncDashboard />} />
           <Route path="*" element={
             <div className="flex items-center justify-center min-h-screen">
               <div className="text-center">

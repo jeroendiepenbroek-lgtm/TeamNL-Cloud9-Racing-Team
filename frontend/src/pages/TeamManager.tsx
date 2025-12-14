@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import SyncManager from '../components/SyncManager'
 
 interface Rider {
   rider_id: number
@@ -35,7 +36,7 @@ export default function TeamManager() {
     lastRun: string | null
     nextRun: string | null
   }>({ lastRun: null, nextRun: null })
-  const [view, setView] = useState<'add' | 'manage' | 'logs'>('add')
+  const [view, setView] = useState<'add' | 'manage' | 'sync' | 'logs'>('add')
   const [syncLogs, setSyncLogs] = useState<any[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
   
@@ -71,6 +72,7 @@ export default function TeamManager() {
     } else if (view === 'logs') {
       fetchSyncLogs()
     }
+    // sync view handled by SyncManager component
   }, [view])
 
   const fetchRiderCount = async () => {
@@ -773,6 +775,12 @@ export default function TeamManager() {
         )}
 
         {/* Sync Logs View */}
+        {view === 'sync' && (
+          <div className="space-y-6">
+            <SyncManager />
+          </div>
+        )}
+
         {view === 'logs' && (
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
             <div className="flex items-center justify-between mb-6">
