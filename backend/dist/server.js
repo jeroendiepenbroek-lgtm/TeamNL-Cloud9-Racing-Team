@@ -647,6 +647,8 @@ app.get('/api/team/roster', async (req, res) => {
 // ============================================
 // Add riders (single, multiple, or bulk)
 app.post('/api/admin/riders', async (req, res) => {
+    const startTime = Date.now();
+    let logId = null;
     try {
         const { rider_ids } = req.body;
         if (!rider_ids || !Array.isArray(rider_ids) || rider_ids.length === 0) {
@@ -657,6 +659,18 @@ app.post('/api/admin/riders', async (req, res) => {
         }
         console.log(`\n📥 BULK ADD REQUEST: ${rider_ids.length} riders`);
         console.log(`   Riders: ${rider_ids.slice(0, 10).join(', ')}${rider_ids.length > 10 ? '...' : ''}`);
+        // Create log entry for upload sync
+        logId = await createSyncLog({
+            sync_type: 'team_riders',
+            trigger_type: 'upload',
+            status: 'running',
+            started_at: new Date().toISOString(),
+            total_items: rider_ids.length,
+            metadata: {
+                rider_ids: rider_ids,
+                triggered_by: 'team_manager_upload'
+            }
+        });
         // US2: Check welke riders al bestaan in team_roster
         const { data: existingRiders } = await supabase
             .from('team_roster')
@@ -859,6 +873,8 @@ app.post('/api/admin/riders', async (req, res) => {
         const synced = results.filter(r => r.synced && !r.skipped).length;
         const failed = results.filter(r => !r.synced && !r.skipped).length;
         const skipped = results.filter(r => r.skipped).length;
+        const duration = Date.now() - startTime;
+        const status = failed === 0 ? 'success' : (synced > 0 ? 'partial' : 'failed');
         console.log(`\n✅ BULK ADD COMPLETED:`);
         console.log(`   Total requested: ${rider_ids.length}`);
         console.log(`   ✓ New riders added: ${synced}`);
@@ -868,22 +884,50 @@ app.post('/api/admin/riders', async (req, res) => {
             const failedIds = results.filter(r => !r.synced && !r.skipped).map(r => r.rider_id);
             console.log(`   Failed IDs: ${failedIds.join(', ')}`);
         }
-        console.log(`   ⏱️  Processing time: ~${Math.ceil(newRiderIds.length * 0.25)} seconds (250ms delay per rider + 1 bulk Racing API call)`);
+        console.log(`   ⏱️  Processing time: ${duration}ms`);
         console.log('');
+        // Update log entry
+        if (logId) {
+            await updateSyncLog(logId, {
+                status,
+                completed_at: new Date().toISOString(),
+                duration_ms: duration,
+                total_items: rider_ids.length,
+                success_count: synced,
+                failed_count: failed,
+                metadata: {
+                    skipped_count: skipped,
+                    new_riders: newRiderIds,
+                    skipped_riders: skippedIds,
+                    triggered_by: 'team_manager_upload'
+                }
+            });
+        }
         res.json({
             success: true,
             total: rider_ids.length,
             synced,
             failed,
             skipped,
-            results
+            results,
+            logId
         });
     }
     catch (error) {
         console.error('❌ Error adding riders:', error.message);
+        // Update log entry with error
+        if (logId) {
+            await updateSyncLog(logId, {
+                status: 'failed',
+                completed_at: new Date().toISOString(),
+                duration_ms: Date.now() - startTime,
+                error_message: error.message
+            });
+        }
         res.status(500).json({
             success: false,
-            error: error.message
+            error: error.message,
+            logId
         });
     }
 });
@@ -993,12 +1037,45 @@ const loadSyncConfig = async (syncType) => {
 // Save/update sync config
 const saveSyncConfig = async (config) => {
     try {
-        const { error } = await supabase
+        // First check if record exists
+        const { data: existing } = await supabase
             .from('sync_config')
-            .upsert({
-            ...config,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'sync_type' });
+            .select('*')
+            .eq('sync_type', config.sync_type)
+            .single();
+        const updateData = { updated_at: new Date().toISOString() };
+        // Only include fields that are explicitly provided
+        if (config.enabled !== undefined)
+            updateData.enabled = config.enabled;
+        if (config.interval_minutes !== undefined)
+            updateData.interval_minutes = config.interval_minutes;
+        if (config.last_run_at !== undefined)
+            updateData.last_run_at = config.last_run_at;
+        if (config.next_run_at !== undefined)
+            updateData.next_run_at = config.next_run_at;
+        let error;
+        if (existing) {
+            // Update existing record
+            const result = await supabase
+                .from('sync_config')
+                .update(updateData)
+                .eq('sync_type', config.sync_type);
+            error = result.error;
+        }
+        else {
+            // Insert new record with defaults
+            const result = await supabase
+                .from('sync_config')
+                .insert({
+                sync_type: config.sync_type,
+                enabled: config.enabled ?? true,
+                interval_minutes: config.interval_minutes ?? 60,
+                last_run_at: config.last_run_at ?? null,
+                next_run_at: config.next_run_at ?? null,
+                updated_at: new Date().toISOString()
+            });
+            error = result.error;
+        }
         if (error) {
             // Silently fail if table doesn't exist yet
             if (error.code === '42P01' || error.message.includes('does not exist') || error.message.includes('schema cache')) {
@@ -1008,7 +1085,8 @@ const saveSyncConfig = async (config) => {
             console.error(`❌ Failed to save ${config.sync_type} config:`, error.message);
             return false;
         }
-        console.log(`💾 Saved ${config.sync_type} config`);
+        const changedFields = Object.keys(updateData).filter(k => k !== 'updated_at').join(', ');
+        console.log(`💾 Saved ${config.sync_type} config: ${changedFields || 'timestamp'}`);
         return true;
     }
     catch (error) {

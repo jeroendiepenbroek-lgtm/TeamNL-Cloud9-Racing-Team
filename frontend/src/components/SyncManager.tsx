@@ -151,7 +151,8 @@ export default function SyncManager() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setConfig(data.config);
+          // Reload config from server to ensure consistency
+          await loadConfig();
           toast.success(newEnabled ? '🟢 Auto-sync ingeschakeld' : '🔴 Auto-sync uitgeschakeld');
         }
       }
@@ -180,7 +181,8 @@ export default function SyncManager() {
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setConfig(data.config);
+          // Reload config from server to ensure consistency
+          await loadConfig();
           setIsConfigOpen(false);
           toast.success(`⏱️ Interval ingesteld op ${editInterval} minuten`);
         }
