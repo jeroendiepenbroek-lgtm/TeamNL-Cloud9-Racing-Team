@@ -473,7 +473,7 @@ export default function TeamManager() {
                 : 'text-white hover:bg-white/10'
             }`}
           >
-            ➕ Riders Toevoegen
+            ➕ Toevoegen
           </button>
           <button
             onClick={() => setView('manage')}
@@ -483,7 +483,17 @@ export default function TeamManager() {
                 : 'text-white hover:bg-white/10'
             }`}
           >
-            👥 Team Beheren
+            👥 Beheren
+          </button>
+          <button
+            onClick={() => setView('sync')}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+              view === 'sync'
+                ? 'bg-white text-blue-600 shadow-lg'
+                : 'text-white hover:bg-white/10'
+            }`}
+          >
+            🔄 Auto-Sync
           </button>
           <button
             onClick={() => setView('logs')}
@@ -493,7 +503,7 @@ export default function TeamManager() {
                 : 'text-white hover:bg-white/10'
             }`}
           >
-            📋 Sync Logs
+            📋 Logs
           </button>
         </div>
 
