@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import AutoSyncConfig from '../components/AutoSyncConfig'
 
 interface TeamRider {
   id: number
@@ -10,11 +11,6 @@ interface TeamRider {
   notes: string | null
   is_active: boolean
   last_synced: string | null
-}
-
-interface SyncConfig {
-  auto_sync_enabled: string
-  sync_interval_hours: string
 }
 
 interface SyncLog {
@@ -33,13 +29,10 @@ export default function AdminDashboard() {
   const [teamRoster, setTeamRoster] = useState<TeamRider[]>([])
   const [newRiderId, setNewRiderId] = useState('')
   const [bulkRiderIds, setBulkRiderIds] = useState('')
-  const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(null)
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([])
-  const [isSyncing, setIsSyncing] = useState(false)
 
   useEffect(() => {
     loadTeamRoster()
-    loadSyncConfig()
     loadSyncLogs()
   }, [])
 
@@ -52,17 +45,6 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Load roster error:', error)
       toast.error('Failed to load team roster')
-    }
-  }
-
-  const loadSyncConfig = async () => {
-    try {
-      const res = await fetch('/api/admin/sync/config')
-      if (!res.ok) throw new Error('Failed to load')
-      const data = await res.json()
-      setSyncConfig(data)
-    } catch (error) {
-      console.error('Load config error:', error)
     }
   }
 
@@ -194,42 +176,7 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleToggleAutoSync = async () => {
-    const newValue = syncConfig?.auto_sync_enabled === 'true' ? 'false' : 'true'
-    
-    try {
-      const res = await fetch('/api/admin/sync/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ auto_sync_enabled: newValue })
-      })
-      
-      if (!res.ok) throw new Error('Failed')
-      toast.success(`Auto-sync ${newValue === 'true' ? 'enabled' : 'disabled'}`)
-      await loadSyncConfig()
-    } catch (error) {
-      console.error('Toggle error:', error)
-      toast.error('Failed to toggle')
-    }
-  }
-
-  const handleManualSync = async () => {
-    setIsSyncing(true)
-    try {
-      const res = await fetch('/api/admin/sync/trigger', {
-        method: 'POST'
-      })
-      
-      if (!res.ok) throw new Error('Failed')
-      toast.success('Sync started! Check logs tab.')
-      setTimeout(() => loadSyncLogs(), 3000)
-    } catch (error) {
-      console.error('Manual sync error:', error)
-      toast.error('Failed to start sync')
-    } finally {
-      setIsSyncing(false)
-    }
-  }
+  // Note: Sync functionality now handled by SyncManager component on Auto-Sync page
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-8">
@@ -361,32 +308,9 @@ export default function AdminDashboard() {
         )}
 
         {/* Sync Config Tab */}
-        {activeTab === 'sync' && syncConfig && (
+        {activeTab === 'sync' && (
           <div className="space-y-6">
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h2 className="text-2xl font-bold mb-4">Auto-Sync Settings</h2>
-              <button
-                onClick={handleToggleAutoSync}
-                className={`px-6 py-3 rounded font-medium ${
-                  syncConfig.auto_sync_enabled === 'true'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-gray-600 hover:bg-gray-700'
-                }`}
-              >
-                {syncConfig.auto_sync_enabled === 'true' ? '✅ Enabled' : '❌ Disabled'}
-              </button>
-            </div>
-
-            <div className="bg-gray-800 p-6 rounded-lg">
-              <h2 className="text-2xl font-bold mb-4">Manual Sync</h2>
-              <button
-                onClick={handleManualSync}
-                disabled={isSyncing}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 px-6 py-3 rounded font-medium"
-              >
-                {isSyncing ? 'Syncing...' : '🔄 Trigger Manual Sync'}
-              </button>
-            </div>
+            <AutoSyncConfig />
           </div>
         )}
 
