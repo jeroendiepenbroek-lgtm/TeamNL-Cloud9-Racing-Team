@@ -94,11 +94,24 @@ async function getZwiftCookie(): Promise<string> {
 // Helper: Wacht tussen API calls om rate limiting te voorkomen
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Rate limiting state
+let lastBulkFetchTime = 0;
+let bulkRateLimitUntil = 0;
+
 // BULK FETCH: Haal meerdere riders op via ZwiftRacing POST endpoint (max 1000)
 async function bulkFetchZwiftRacingRiders(riderIds: number[]): Promise<Map<number, any>> {
   const resultMap = new Map<number, any>();
   
   if (riderIds.length === 0) return resultMap;
+  
+  // Check if we're still rate limited
+  const now = Date.now();
+  if (bulkRateLimitUntil > now) {
+    const waitSeconds = Math.ceil((bulkRateLimitUntil - now) / 1000);
+    console.warn(`⏳ Still rate limited, wait ${waitSeconds}s before retry`);
+    console.warn(`   💡 TIP: Gebruik GET endpoint voor enkele riders, of wacht tot ${new Date(bulkRateLimitUntil).toLocaleTimeString('nl-NL')}`);
+    return resultMap; // Return empty - caller kan individuele fallback gebruiken
+  }
   
   try {
     console.log(`📦 Bulk fetching ${riderIds.length} riders from ZwiftRacing API...`);
@@ -127,17 +140,19 @@ async function bulkFetchZwiftRacingRiders(riderIds: number[]): Promise<Map<numbe
         }
       }
       console.log(`✅ Bulk fetch success: ${resultMap.size} riders received`);
+      lastBulkFetchTime = now;
+      bulkRateLimitUntil = 0; // Clear rate limit on success
     } else {
       console.warn('⚠️  Unexpected response format from bulk API');
     }
     
   } catch (error: any) {
     if (error.response?.status === 429) {
+      const retryAfter = parseInt(error.response.headers['retry-after'] || '300');
+      bulkRateLimitUntil = now + (retryAfter * 1000);
       console.error('🚫 RATE LIMITED - ZwiftRacing bulk API (429 Too Many Requests)');
-      const retryAfter = error.response?.data?.retryAfter;
-      if (retryAfter) {
-        console.error(`   Retry after: ${retryAfter} seconds`);
-      }
+      console.error(`   Retry after: ${retryAfter} seconds`);
+      console.error(`   💡 Alternative: Gebruik GET /api/admin/riders voor enkele riders (geen bulk limit)`);
     } else {
       console.error('❌ Bulk fetch failed:', error.response?.data || error.message);
     }
@@ -992,38 +1007,48 @@ app.post('/api/admin/riders', async (req, res) => {
         errorMsg += `Profile: ${err.message}. `;
       }
 
-      // Update team_roster als minstens 1 API succesvol was
+      // Update team_roster als minstens 1 API succesvol was EN data in source tables staat
       if (racingSynced || profileSynced) {
-        const { error: rosterError } = await supabase
-          .from('team_roster')
-          .upsert({
-            rider_id: riderId,
-            is_active: true,
-            last_synced: new Date().toISOString()
-          }, { onConflict: 'rider_id' });
+        // Verify rider exists in source tables (om FK constraint error te voorkomen)
+        const sourceExists = racingSynced || profileSynced;
         
-        if (!rosterError) {
-          successCount++;
-          results.push({
-            rider_id: riderId,
-            synced: true,
-            sources: {
-              racing: racingSynced,
-              profile: profileSynced
+        if (sourceExists) {
+          const { error: rosterError } = await supabase
+            .from('team_roster')
+            .upsert({
+              rider_id: riderId,
+              is_active: true,
+              last_synced: new Date().toISOString()
+            }, { onConflict: 'rider_id' });
+          
+          if (!rosterError) {
+            successCount++;
+            results.push({
+              rider_id: riderId,
+              synced: true,
+              sources: {
+                racing: racingSynced,
+                profile: profileSynced
+              }
+            });
+            console.log(`      ✅ Added to team_roster`);
+          } else {
+            // FK constraint error - data niet in source tables
+            if (rosterError.message.includes('foreign key constraint')) {
+              errorCode = errorCode || 'FK_CONSTRAINT_FAILED';
+              errorDetails.push('FK Error: Rider data not properly saved to source tables');
             }
-          });
-          console.log(`      ✅ Added to team_roster`);
-        } else {
-          failCount++;
-          const finalErrorCode = 'ROSTER_UPDATE_FAILED';
-          results.push({
-            rider_id: riderId,
-            synced: false,
-            error: `Roster update failed: ${rosterError.message}`,
-            error_code: finalErrorCode,
-            error_details: [`team_roster: ${rosterError.message}`]
-          });
-          console.error(`      ❌ team_roster update failed:`, rosterError.message);
+            failCount++;
+            const finalErrorCode = errorCode || 'ROSTER_UPDATE_FAILED';
+            results.push({
+              rider_id: riderId,
+              synced: false,
+              error: `Roster update failed: ${rosterError.message}`,
+              error_code: finalErrorCode,
+              error_details: errorDetails.length > 0 ? errorDetails : [`team_roster: ${rosterError.message}`]
+            });
+            console.error(`      ❌ team_roster update failed:`, rosterError.message);
+          }
         }
       } else {
         failCount++;

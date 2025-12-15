@@ -38,6 +38,7 @@ export default function TeamManager() {
   const [view, setView] = useState<'add' | 'manage' | 'sync' | 'logs'>('add')
   const [syncLogs, setSyncLogs] = useState<any[]>([])
   const [logsLoading, setLogsLoading] = useState(false)
+  const [expandedLogId, setExpandedLogId] = useState<number | null>(null)
   
   // Sync Monitor State
   const [bulkProgress, setBulkProgress] = useState<{
@@ -615,6 +616,33 @@ export default function TeamManager() {
         {/* Manage View */}
         {view === 'manage' && (
           <div>
+            {/* CSV Export Buttons */}
+            <div className="bg-white rounded-xl shadow-lg p-4 mb-4 flex flex-wrap gap-3">
+              <a
+                href={`${import.meta.env.VITE_API_URL || ''}/api/riders/export/csv?format=ids_only`}
+                download
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                📥 Export IDs (.txt)
+              </a>
+              <a
+                href={`${import.meta.env.VITE_API_URL || ''}/api/riders/export/csv?format=full`}
+                download
+                className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                📊 Export Full CSV
+              </a>
+              <div className="ml-auto text-sm text-gray-600 flex items-center">
+                <span className="font-semibold">{riders.length} riders</span>
+              </div>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -756,43 +784,96 @@ export default function TeamManager() {
                   </thead>
                   <tbody className="divide-y divide-gray-700">
                     {syncLogs.map((log: any) => (
-                      <tr key={log.id} className="hover:bg-gray-700/30">
-                        <td className="px-4 py-3 text-sm text-gray-300">
-                          {new Date(log.started_at).toLocaleDateString('nl-NL', { 
-                            day: '2-digit', 
-                            month: 'short', 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
-                          })}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-300">{log.sync_type}</td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            log.trigger_type === 'auto' ? 'bg-blue-900/50 text-blue-300' :
-                            log.trigger_type === 'manual' ? 'bg-purple-900/50 text-purple-300' :
-                            log.trigger_type === 'upload' ? 'bg-green-900/50 text-green-300' :
-                            'bg-gray-700 text-gray-300'
-                          }`}>
-                            {log.trigger_type}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            log.status === 'success' ? 'bg-green-900/50 text-green-300' :
-                            log.status === 'partial' ? 'bg-yellow-900/50 text-yellow-300' :
-                            log.status === 'failed' ? 'bg-red-900/50 text-red-300' :
-                            'bg-gray-700 text-gray-300'
-                          }`}>
-                            {log.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-300">{log.total_items || 0}</td>
-                        <td className="px-4 py-3 text-sm text-green-400 font-semibold">{log.success_count || 0}</td>
-                        <td className="px-4 py-3 text-sm text-red-400 font-semibold">{log.failed_count || 0}</td>
-                        <td className="px-4 py-3 text-sm text-gray-400">
-                          {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : '-'}
-                        </td>
-                      </tr>
+                      <>
+                        <tr 
+                          key={log.id} 
+                          className="hover:bg-gray-700/30 cursor-pointer"
+                          onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                        >
+                          <td className="px-4 py-3 text-sm text-gray-300">
+                            {new Date(log.started_at).toLocaleDateString('nl-NL', { 
+                              day: '2-digit', 
+                              month: 'short', 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-300">{log.sync_type}</td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              log.trigger_type === 'auto' ? 'bg-blue-900/50 text-blue-300' :
+                              log.trigger_type === 'manual' ? 'bg-purple-900/50 text-purple-300' :
+                              log.trigger_type === 'upload' ? 'bg-green-900/50 text-green-300' :
+                              log.trigger_type === 'api' ? 'bg-orange-900/50 text-orange-300' :
+                              'bg-gray-700 text-gray-300'
+                            }`}>
+                              {log.trigger_type}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              log.status === 'success' ? 'bg-green-900/50 text-green-300' :
+                              log.status === 'partial' ? 'bg-yellow-900/50 text-yellow-300' :
+                              log.status === 'failed' ? 'bg-red-900/50 text-red-300' :
+                              'bg-gray-700 text-gray-300'
+                            }`}>
+                              {log.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-300">{log.total_items || 0}</td>
+                          <td className="px-4 py-3 text-sm text-green-400 font-semibold">{log.success_count || 0}</td>
+                          <td className="px-4 py-3 text-sm text-red-400 font-semibold">
+                            {log.failed_count || 0}
+                            {log.failed_count > 0 && expandedLogId !== log.id && (
+                              <span className="ml-2 text-xs text-gray-500">▼</span>
+                            )}
+                            {log.failed_count > 0 && expandedLogId === log.id && (
+                              <span className="ml-2 text-xs text-gray-500">▲</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-400">
+                            {log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : '-'}
+                          </td>
+                        </tr>
+                        
+                        {/* 🔍 US2: Expandable error details */}
+                        {expandedLogId === log.id && log.metadata?.failed_riders_errors && log.metadata.failed_riders_errors.length > 0 && (
+                          <tr key={`${log.id}-details`} className="bg-red-900/20">
+                            <td colSpan={8} className="px-4 py-4">
+                              <div className="space-y-2">
+                                <div className="text-sm font-semibold text-red-300 mb-3 flex items-center gap-2">
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                  </svg>
+                                  Failure Details ({log.metadata.failed_riders_errors.length} riders)
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
+                                  {log.metadata.failed_riders_errors.map((err: any, idx: number) => (
+                                    <div key={idx} className="bg-gray-800/50 rounded-lg p-3 border border-red-800/50">
+                                      <div className="flex items-start justify-between mb-2">
+                                        <span className="font-mono text-sm text-gray-300">Rider: {err.rider_id}</span>
+                                        <span className="px-2 py-1 bg-red-800/50 text-red-200 rounded text-xs font-mono">
+                                          {err.error_code}
+                                        </span>
+                                      </div>
+                                      {err.error_details && err.error_details.length > 0 && (
+                                        <ul className="text-xs text-gray-400 space-y-1 ml-4">
+                                          {err.error_details.map((detail: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2">
+                                              <span className="text-red-400">→</span>
+                                              <span>{detail}</span>
+                                            </li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     ))}
                   </tbody>
                 </table>
