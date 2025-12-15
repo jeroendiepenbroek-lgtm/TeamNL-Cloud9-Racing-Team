@@ -620,7 +620,7 @@ export default function TeamBuilder() {
   )
 }
 
-// Draggable Rider Card Component
+// Draggable Rider Card Component - Modern Racing Matrix Style
 function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rider.rider_id
@@ -631,6 +631,10 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
     transition,
     opacity: isDragging ? 0.5 : 1
   }
+
+  const velo30day = rider.velo_30day || rider.velo_live
+  const veloTier = getVeloTier(velo30day)
+  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800 border-gray-300'
   
   return (
     <div
@@ -638,46 +642,59 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-gray-700/50 hover:bg-gray-700 p-3 rounded-lg cursor-move border border-gray-600 hover:border-blue-500 transition-all"
+      className={`group relative bg-gradient-to-br from-gray-800 to-gray-900 hover:from-gray-750 hover:to-gray-850 p-4 rounded-xl cursor-move border-2 border-gray-700 hover:border-blue-500 transition-all shadow-lg hover:shadow-2xl ${isDragging ? 'scale-105' : ''}`}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {rider.avatar_url && (
-            <img 
-              src={rider.avatar_url} 
-              alt={rider.name}
-              className="w-10 h-10 rounded-full"
-            />
-          )}
-          <div>
-            <div className="font-semibold text-sm">
+      {/* Tier Background Gradient */}
+      {veloTier && (
+        <div className={`absolute inset-0 bg-gradient-to-r ${veloTier.color} opacity-5 rounded-xl pointer-events-none`} />
+      )}
+      
+      <div className="relative flex items-center justify-between gap-3">
+        {/* Left: Avatar + Info */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <img 
+            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`}
+            alt={rider.name}
+            className="w-12 h-12 rounded-full border-2 border-gray-600 shadow-md flex-shrink-0"
+            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`; }}
+          />
+          
+          <div className="flex-1 min-w-0">
+            {/* Name */}
+            <div className="font-bold text-white text-sm truncate mb-1">
               {rider.name || rider.full_name}
             </div>
-            <div className="text-xs flex items-center gap-2">
-              <span className="text-gray-400">{rider.country_alpha3}</span>
-              <span className="text-gray-600">•</span>
-              <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded border ${CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800'}`}>
+            
+            {/* Stats Row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Country Flag */}
+              <span className="text-gray-400 text-xs font-mono">{rider.country_alpha3}</span>
+              
+              {/* Category Badge */}
+              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded border ${categoryColor} shadow-sm`}>
                 {rider.category}
               </span>
-              <span className="text-gray-600">•</span>
-              {(() => {
-                const velo = rider.velo_30day || rider.velo_live
-                const tier = getVeloTier(velo)
-                return (
-                  <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${tier?.bgColor || 'bg-gray-100'} ${tier?.textColor || 'text-gray-800'}`}>
-                    {tier?.icon} {Math.floor(velo)}
-                  </span>
-                )
-              })()}
+              
+              {/* vELO 30-day Badge */}
+              <div className="flex items-center gap-1">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[9px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
+                  {veloTier?.rank || '?'}
+                </div>
+                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${veloTier?.bgColor || 'bg-gray-700'} ${veloTier?.textColor || 'text-white'} border border-gray-600`}>
+                  {veloTier?.icon} {Math.floor(velo30day)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
+        
+        {/* Right: Add Button */}
         <button
           onClick={(e) => {
             e.stopPropagation()
             onAdd()
           }}
-          className="px-3 py-1 bg-blue-500 hover:bg-blue-600 rounded text-xs font-semibold"
+          className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
         >
           + Add
         </button>
@@ -686,55 +703,87 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
   )
 }
 
-// Lineup Rider Card Component
+// Lineup Rider Card Component - Modern Design
 function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: () => void }) {
+  const velo30day = rider.velo_30day || rider.velo_live
+  const veloTier = getVeloTier(velo30day)
+  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800 border-gray-300'
+  
   return (
-    <div className={`p-3 rounded-lg border-2 ${
-      rider.is_valid
-        ? 'bg-green-500/10 border-green-500/30'
-        : 'bg-red-500/10 border-red-500/30'
+    <div className={`relative bg-gradient-to-br p-4 rounded-xl border-2 transition-all shadow-lg ${
+      rider.is_valid 
+        ? 'from-gray-800 to-gray-900 border-green-500/50 shadow-green-500/10'
+        : 'from-red-900/20 to-gray-900 border-red-500 shadow-red-500/20'
     }`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-bold text-gray-400">
-            #{rider.lineup_position}
-          </div>
-          {rider.avatar_url && (
-            <img 
-              src={rider.avatar_url} 
-              alt={rider.name}
-              className="w-10 h-10 rounded-full"
-            />
-          )}
-          <div>
-            <div className="font-semibold">
+      {/* Position Badge */}
+      <div className="absolute -top-2 -left-2 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-lg border-2 border-gray-900">
+        {rider.lineup_position}
+      </div>
+      
+      {/* Tier Background Gradient */}
+      {veloTier && rider.is_valid && (
+        <div className={`absolute inset-0 bg-gradient-to-r ${veloTier.color} opacity-5 rounded-xl pointer-events-none`} />
+      )}
+      
+      <div className="relative flex items-center justify-between gap-3">
+        {/* Left: Avatar + Info */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <img 
+            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`}
+            alt={rider.name}
+            className="w-12 h-12 rounded-full border-2 border-gray-600 shadow-md flex-shrink-0"
+            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`; }}
+          />
+          
+          <div className="flex-1 min-w-0">
+            {/* Name */}
+            <div className="font-bold text-white text-sm truncate mb-1">
               {rider.name || rider.full_name}
             </div>
-            <div className="text-xs flex items-center gap-2">
-              <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded border ${CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800'}`}>
+            
+            {/* Stats Row */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Category Badge */}
+              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded border ${categoryColor} shadow-sm`}>
                 {rider.category}
               </span>
-              <span className="text-gray-600">•</span>
-              {(() => {
-                const velo = rider.velo_30day || rider.velo_live
-                const tier = getVeloTier(velo)
-                return (
-                  <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${tier?.bgColor || 'bg-gray-100'} ${tier?.textColor || 'text-gray-800'}`}>
-                    {tier?.icon} {Math.floor(velo)}
-                  </span>
-                )
-              })()}
+              
+              {/* vELO 30-day Badge */}
+              <div className="flex items-center gap-1">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[9px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
+                  {veloTier?.rank || '?'}
+                </div>
+                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${veloTier?.bgColor || 'bg-gray-700'} ${veloTier?.textColor || 'text-white'} border border-gray-600`}>
+                  {veloTier?.icon} {Math.floor(velo30day)}
+                </span>
+              </div>
+              
+              {/* Validation Status */}
+              {rider.is_valid ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-300 rounded text-[10px] font-bold border border-green-500/30">
+                  <span>✓</span> Valid
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-500/20 text-red-300 rounded text-[10px] font-bold border border-red-500/30">
+                  <span>✗</span> Invalid
+                </span>
+              )}
             </div>
+            
+            {/* Validation Warning */}
             {!rider.is_valid && rider.validation_warning && (
-              <div className="text-xs text-red-400 mt-1">
-                ⚠️ {rider.validation_warning}
+              <div className="text-xs text-red-400 mt-2 flex items-start gap-1">
+                <span className="flex-shrink-0">⚠️</span>
+                <span>{rider.validation_warning}</span>
               </div>
             )}
           </div>
         </div>
+        
+        {/* Right: Remove Button */}
         <button
           onClick={onRemove}
-          className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500 rounded text-xs font-semibold text-red-400"
+          className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
         >
           Remove
         </button>
