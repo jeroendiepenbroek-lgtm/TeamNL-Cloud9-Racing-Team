@@ -734,17 +734,36 @@ app.post('/api/admin/riders', async (req, res) => {
   let logId: number | null = null;
   
   try {
-    const { rider_ids } = req.body;
+    // 🎯 SMART INPUT DETECTION: Support multiple formats
+    let riderIds: number[] = [];
+    
+    // Format 1: Direct array in body [12345, 67890, ...] (Bulk upload)
+    if (Array.isArray(req.body)) {
+      riderIds = req.body.map((id: any) => typeof id === 'number' ? id : parseInt(id)).filter((id: number) => !isNaN(id));
+    }
+    // Format 2: { rider_ids: [...] } (Legacy bulk format)
+    else if (req.body.rider_ids && Array.isArray(req.body.rider_ids)) {
+      riderIds = req.body.rider_ids.map((id: any) => typeof id === 'number' ? id : parseInt(id)).filter((id: number) => !isNaN(id));
+    }
+    // Format 3: { rider_id: 12345 } (Single rider)
+    else if (req.body.rider_id) {
+      const id = typeof req.body.rider_id === 'number' ? req.body.rider_id : parseInt(req.body.rider_id);
+      if (!isNaN(id)) riderIds = [id];
+    }
 
-    if (!rider_ids || !Array.isArray(rider_ids) || rider_ids.length === 0) {
+    // Validation
+    if (riderIds.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'rider_ids array required'
+        error: 'Invalid input. Expected: single rider_id, array of rider_ids, or direct array'
       });
     }
 
-    console.log(`\n📥 BULK ADD REQUEST: ${rider_ids.length} riders`);
-    console.log(`   Riders: ${rider_ids.slice(0, 10).join(', ')}${rider_ids.length > 10 ? '...' : ''}`);
+    const isSingle = riderIds.length === 1;
+    const operationType = isSingle ? 'SINGLE' : (riderIds.length <= 10 ? 'MULTIPLE' : 'BULK');
+    
+    console.log(`\n📥 ${operationType} ADD REQUEST: ${riderIds.length} rider${riderIds.length > 1 ? 's' : ''}`);
+    console.log(`   Riders: ${riderIds.slice(0, 10).join(', ')}${riderIds.length > 10 ? '...' : ''}`);
 
     // Create log entry for upload sync
     logId = await createSyncLog({
@@ -752,22 +771,23 @@ app.post('/api/admin/riders', async (req, res) => {
       trigger_type: 'upload',
       status: 'running',
       started_at: new Date().toISOString(),
-      total_items: rider_ids.length,
+      total_items: riderIds.length,
       metadata: {
-        rider_ids: rider_ids,
-        triggered_by: 'team_manager_upload'
+        rider_ids: riderIds,
+        operation_type: operationType,
+        triggered_by: 'api_upload'
       }
     });
 
-    // US2: Check welke riders al bestaan in team_roster
+    // Check welke riders al bestaan in team_roster
     const { data: existingRiders } = await supabase
       .from('team_roster')
       .select('rider_id')
-      .in('rider_id', rider_ids);
+      .in('rider_id', riderIds);
     
     const existingIds = new Set(existingRiders?.map(r => r.rider_id) || []);
-    const newRiderIds = rider_ids.filter(id => !existingIds.has(id));
-    const skippedIds = rider_ids.filter(id => existingIds.has(id));
+    const newRiderIds = riderIds.filter(id => !existingIds.has(id));
+    const skippedIds = riderIds.filter(id => existingIds.has(id));
     
     if (skippedIds.length > 0) {
       console.log(`⏭️  Skipping ${skippedIds.length} existing riders: ${skippedIds.slice(0, 10).join(', ')}${skippedIds.length > 10 ? '...' : ''}`);
@@ -981,8 +1001,8 @@ app.post('/api/admin/riders', async (req, res) => {
     const duration = Date.now() - startTime;
     const status = failed === 0 ? 'success' : (synced > 0 ? 'partial' : 'failed');
     
-    console.log(`\n✅ BULK ADD COMPLETED:`);
-    console.log(`   Total requested: ${rider_ids.length}`);
+    console.log(`\n✅ ${operationType} ADD COMPLETED:`);
+    console.log(`   Total requested: ${riderIds.length}`);
     console.log(`   ✓ New riders added: ${synced}`);
     console.log(`   ⏭ Skipped (existing): ${skipped}`);
     console.log(`   ✗ Failed: ${failed}`);
@@ -999,21 +1019,23 @@ app.post('/api/admin/riders', async (req, res) => {
         status,
         completed_at: new Date().toISOString(),
         duration_ms: duration,
-        total_items: rider_ids.length,
+        total_items: riderIds.length,
         success_count: synced,
         failed_count: failed,
         metadata: {
+          operation_type: operationType,
           skipped_count: skipped,
           new_riders: newRiderIds,
           skipped_riders: skippedIds,
-          triggered_by: 'team_manager_upload'
+          triggered_by: 'api_upload'
         }
       });
     }
 
     res.json({
       success: true,
-      total: rider_ids.length,
+      operation: operationType,
+      total: riderIds.length,
       synced,
       failed,
       skipped,
@@ -1204,34 +1226,158 @@ app.get('/api/admin/sync-logs', async (req, res) => {
 });
 
 // Remove rider from team AND all source tables (clean database)
-app.delete('/api/admin/riders/:riderId', async (req, res) => {
+// DELETE riders - Single or Bulk
+app.delete('/api/admin/riders/:riderId?', async (req, res) => {
+  const startTime = Date.now();
+  let logId: number | null = null;
+  
   try {
-    const riderId = parseInt(req.params.riderId);
-
-    // Delete from all tables for clean database
-    const deletePromises = [
-      supabase.from('team_roster').delete().eq('rider_id', riderId),
-      supabase.from('api_zwiftracing_riders').delete().eq('rider_id', riderId),
-      supabase.from('api_zwift_api_profiles').delete().eq('rider_id', riderId)
-    ];
-
-    const results = await Promise.allSettled(deletePromises);
+    // 🎯 SMART INPUT DETECTION: Support multiple formats
+    let riderIds: number[] = [];
     
-    // Check if any deletions failed
-    const failures = results.filter(r => r.status === 'rejected');
-    if (failures.length > 0) {
-      console.warn(`⚠️  Some deletions failed for rider ${riderId}`);
+    // Format 1: URL param /api/admin/riders/12345 (Single)
+    if (req.params.riderId) {
+      const id = parseInt(req.params.riderId);
+      if (!isNaN(id)) riderIds = [id];
+    }
+    // Format 2: Body { rider_ids: [...] } (Bulk delete)
+    else if (req.body?.rider_ids && Array.isArray(req.body.rider_ids)) {
+      riderIds = req.body.rider_ids.map((id: any) => typeof id === 'number' ? id : parseInt(id)).filter((id: number) => !isNaN(id));
+    }
+    // Format 3: Direct array in body (Bulk delete alternative)
+    else if (Array.isArray(req.body)) {
+      riderIds = req.body.map((id: any) => typeof id === 'number' ? id : parseInt(id)).filter((id: number) => !isNaN(id));
     }
 
-    console.log(`🗑️  Removed rider ${riderId} from all tables (team + sources)`);
+    // Validation
+    if (riderIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid input. Expected: riderId in URL or rider_ids array in body'
+      });
+    }
 
-    res.json({ success: true });
+    const isSingle = riderIds.length === 1;
+    const operationType = isSingle ? 'SINGLE' : (riderIds.length <= 10 ? 'MULTIPLE' : 'BULK');
+    
+    console.log(`\n🗑️  ${operationType} DELETE REQUEST: ${riderIds.length} rider${riderIds.length > 1 ? 's' : ''}`);
+    console.log(`   Riders: ${riderIds.slice(0, 10).join(', ')}${riderIds.length > 10 ? '...' : ''}`);
+
+    // Create log entry
+    logId = await createSyncLog({
+      sync_type: 'team_riders',
+      trigger_type: 'api',
+      status: 'running',
+      started_at: new Date().toISOString(),
+      total_items: riderIds.length,
+      metadata: {
+        operation: 'delete',
+        operation_type: operationType,
+        rider_ids: riderIds,
+        triggered_by: 'api_delete'
+      }
+    });
+
+    const results = [];
+    let successCount = 0;
+    let failCount = 0;
+
+    // Delete each rider from all tables
+    for (const riderId of riderIds) {
+      try {
+        const deletePromises = [
+          supabase.from('team_roster').delete().eq('rider_id', riderId),
+          supabase.from('api_zwiftracing_riders').delete().eq('rider_id', riderId),
+          supabase.from('api_zwift_api_profiles').delete().eq('rider_id', riderId)
+        ];
+
+        const deleteResults = await Promise.allSettled(deletePromises);
+        
+        // Check if any deletions failed
+        const failures = deleteResults.filter(r => r.status === 'rejected');
+        
+        if (failures.length === 0) {
+          successCount++;
+          results.push({
+            rider_id: riderId,
+            deleted: true
+          });
+          console.log(`   ✅ Rider ${riderId} removed from all tables`);
+        } else {
+          failCount++;
+          results.push({
+            rider_id: riderId,
+            deleted: false,
+            error: 'Partial deletion failure'
+          });
+          console.warn(`   ⚠️  Rider ${riderId} - some deletions failed`);
+        }
+      } catch (err: any) {
+        failCount++;
+        results.push({
+          rider_id: riderId,
+          deleted: false,
+          error: err.message
+        });
+        console.error(`   ❌ Rider ${riderId} delete failed:`, err.message);
+      }
+    }
+
+    const duration = Date.now() - startTime;
+    const status = failCount === 0 ? 'success' : (successCount > 0 ? 'partial' : 'failed');
+    
+    console.log(`\n✅ ${operationType} DELETE COMPLETED:`);
+    console.log(`   Total requested: ${riderIds.length}`);
+    console.log(`   ✓ Successfully deleted: ${successCount}`);
+    console.log(`   ✗ Failed: ${failCount}`);
+    console.log(`   ⏱️  Processing time: ${duration}ms`);
+    console.log('');
+
+    // Update log entry
+    if (logId) {
+      await updateSyncLog(logId, {
+        status,
+        completed_at: new Date().toISOString(),
+        duration_ms: duration,
+        total_items: riderIds.length,
+        success_count: successCount,
+        failed_count: failCount,
+        metadata: {
+          operation: 'delete',
+          operation_type: operationType,
+          rider_ids: riderIds,
+          triggered_by: 'api_delete'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      operation: operationType,
+      total: riderIds.length,
+      deleted: successCount,
+      failed: failCount,
+      results,
+      logId
+    });
 
   } catch (error: any) {
-    console.error('❌ Error removing rider:', error.message);
+    console.error('❌ Error deleting riders:', error.message);
+    
+    // Update log entry with error
+    if (logId) {
+      await updateSyncLog(logId, {
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        duration_ms: Date.now() - startTime,
+        error_message: error.message
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
+      logId
     });
   }
 });
