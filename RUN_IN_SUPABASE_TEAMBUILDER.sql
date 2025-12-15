@@ -62,9 +62,9 @@ SELECT
   ct.max_riders,
   tl.rider_id,
   tl.lineup_position,
-  rc.name,
+  rc.racing_name AS name,
   rc.full_name,
-  rc.category,
+  COALESCE(rc.zwiftracing_category, rc.zwift_official_category) AS category,
   rc.velo_live AS current_velo_rank,
   rc.country_alpha3,
   rc.avatar_url,
@@ -154,10 +154,10 @@ BEGIN
     RETURN QUERY
     SELECT 
       tl.rider_id,
-      (rc.category = ANY(v_allowed_cats)) AS is_valid,
+      (COALESCE(rc.zwiftracing_category, rc.zwift_official_category) = ANY(v_allowed_cats)) AS is_valid,
       CASE 
-        WHEN rc.category = ANY(v_allowed_cats) THEN 'Valid'
-        ELSE 'Category ' || rc.category || ' not allowed'
+        WHEN COALESCE(rc.zwiftracing_category, rc.zwift_official_category) = ANY(v_allowed_cats) THEN 'Valid'
+        ELSE 'Category ' || COALESCE(rc.zwiftracing_category, rc.zwift_official_category) || ' not allowed'
       END AS validation_message
     FROM public.team_lineups tl
     JOIN public.v_rider_complete rc ON tl.rider_id = rc.rider_id
