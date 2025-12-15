@@ -61,6 +61,10 @@ export default function TeamManager() {
   
   // Search filter for Manage view
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Multi-select for bulk actions
+  const [selectedRiders, setSelectedRiders] = useState<number[]>([])
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
 
   // Initial load of rider count
   useEffect(() => {
@@ -272,6 +276,68 @@ export default function TeamManager() {
       console.error('Error removing rider:', error)
       toast.error('Fout bij verwijderen')
     }
+  }
+
+  // Bulk delete selected riders
+  const handleBulkDelete = async () => {
+    if (selectedRiders.length === 0) {
+      toast.error('Selecteer eerst riders om te verwijderen')
+      return
+    }
+
+    if (!confirm(`${selectedRiders.length} riders verwijderen uit team?`)) return
+
+    try {
+      console.log(`🗑️  Bulk removing ${selectedRiders.length} riders...`)
+      const response = await fetch('/api/admin/riders', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rider_ids: selectedRiders })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        toast.success(`${selectedRiders.length} riders verwijderd`)
+        setSelectedRiders([])
+        setIsSelectionMode(false)
+        await fetchRiderCount()
+        await fetchRiders()
+      } else {
+        toast.error(data.error || 'Bulk verwijderen mislukt')
+      }
+    } catch (error) {
+      console.error('Error bulk removing:', error)
+      toast.error('Fout bij bulk verwijderen')
+    }
+  }
+
+  // Toggle rider selection
+  const toggleRiderSelection = (riderId: number) => {
+    setSelectedRiders(prev => 
+      prev.includes(riderId) 
+        ? prev.filter(id => id !== riderId)
+        : [...prev, riderId]
+    )
+  }
+
+  // Select all filtered riders
+  const selectAllFiltered = () => {
+    const filteredRiderIds = riders
+      .filter(rider => {
+        if (!searchTerm) return true
+        const search = searchTerm.toLowerCase()
+        return (
+          rider.rider_id.toString().includes(search) ||
+          (rider.name && rider.name.toLowerCase().includes(search)) ||
+          (rider.full_name && rider.full_name.toLowerCase().includes(search)) ||
+          (rider.racing_name && rider.racing_name.toLowerCase().includes(search)) ||
+          (rider.country_alpha3 && rider.country_alpha3.toLowerCase().includes(search))
+        )
+      })
+      .map(r => r.rider_id)
+    
+    setSelectedRiders(filteredRiderIds)
   }
 
   // 🔒 US3: Entry code handler
@@ -619,6 +685,54 @@ export default function TeamManager() {
         {/* Manage View */}
         {view === 'manage' && (
           <div>
+            {/* Multi-Select Toolbar */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl shadow-lg p-4 mb-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => {
+                    setIsSelectionMode(!isSelectionMode)
+                    setSelectedRiders([])
+                  }}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                    isSelectionMode 
+                      ? 'bg-white text-purple-600 shadow-lg' 
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  {isSelectionMode ? '✓ Selectie Actief' : '☐ Selectie Modus'}
+                </button>
+                
+                {isSelectionMode && (
+                  <>
+                    <button
+                      onClick={selectAllFiltered}
+                      className="px-4 py-2 bg-white/20 text-white rounded-lg font-semibold hover:bg-white/30 transition-all"
+                    >
+                      Selecteer Alle{searchTerm ? ' Gefilterde' : ''}
+                    </button>
+                    <button
+                      onClick={() => setSelectedRiders([])}
+                      className="px-4 py-2 bg-white/20 text-white rounded-lg font-semibold hover:bg-white/30 transition-all"
+                      disabled={selectedRiders.length === 0}
+                    >
+                      Deselecteer Alles
+                    </button>
+                    <div className="flex-1"></div>
+                    <div className="text-white font-bold">
+                      {selectedRiders.length} geselecteerd
+                    </div>
+                    <button
+                      onClick={handleBulkDelete}
+                      disabled={selectedRiders.length === 0}
+                      className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                    >
+                      🗑️ Verwijder ({selectedRiders.length})
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* CSV Export Buttons */}
             <div className="bg-white rounded-xl shadow-lg p-4 mb-4 flex flex-wrap gap-3">
               <a
@@ -693,6 +807,9 @@ export default function TeamManager() {
                 <table className="w-full">
                   <thead className="bg-gradient-to-r from-blue-600 to-cyan-500">
                     <tr>
+                      {isSelectionMode && (
+                        <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase tracking-wider w-12">☐</th>
+                      )}
                       <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Rider</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">vELO</th>
                       <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase tracking-wider">Cat</th>
@@ -717,7 +834,17 @@ export default function TeamManager() {
                         );
                       })
                       .map((rider) => (
-                      <tr key={rider.rider_id} className="hover:bg-blue-50 transition-colors">
+                      <tr key={rider.rider_id} className={`hover:bg-blue-50 transition-colors ${selectedRiders.includes(rider.rider_id) ? 'bg-purple-50' : ''}`}>
+                        {isSelectionMode && (
+                          <td className="px-4 py-3 text-center">
+                            <input
+                              type="checkbox"
+                              checked={selectedRiders.includes(rider.rider_id)}
+                              onChange={() => toggleRiderSelection(rider.rider_id)}
+                              className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <img 

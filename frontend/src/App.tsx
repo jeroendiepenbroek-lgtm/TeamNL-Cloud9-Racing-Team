@@ -5,6 +5,7 @@ import RacingMatrix from './pages/RacingMatrix'
 import EventsDashboard from './pages/EventsDashboard'
 import ResultsDashboard from './pages/ResultsDashboard'
 import TeamManager from './pages/TeamManager'
+import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -12,14 +13,15 @@ function Navigation() {
 
   return (
     <>
-      <nav className="bg-gradient-to-r from-gray-900 to-blue-900 shadow-lg">
+      <nav className="bg-gradient-to-r from-red-900 via-green-900 to-red-900 shadow-lg border-b-4 border-yellow-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            {/* Logo + Brand */}
+            {/* Logo + Brand with Christmas Trees */}
             <button 
               onClick={() => navigate('/')}
               className="flex items-center space-x-4 hover:opacity-90 transition"
             >
+              <span className="text-4xl">🎄</span>
               <div className="relative">
                 <div className="absolute inset-0 bg-orange-500 rounded-full blur-sm opacity-75"></div>
                 <div className="relative bg-white rounded-full p-1 ring-4 ring-orange-500">
@@ -32,10 +34,28 @@ function Navigation() {
               </div>
               
               <div className="text-left">
-                <div className="text-white font-black text-2xl">TeamNL</div>
+                <div className="text-white font-black text-2xl flex items-center gap-2">
+                  TeamNL
+                  <span className="text-red-500">🎅</span>
+                </div>
                 <div className="text-orange-400 font-bold text-lg">Cloud9 Racing</div>
               </div>
+              <span className="text-4xl">🎄</span>
             </button>
+
+            {/* YouTube Streams Badge - Next to logo */}
+            <a 
+              href="https://www.youtube.com/@CloudRacer-9/streams" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all hover:scale-105 shadow-lg hover:shadow-xl border-2 border-white/20"
+              title="Race livestreams op YouTube - CloudRacer-9"
+            >
+              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+              <span className="text-sm font-bold text-white tracking-wide">🔴 LIVE STREAMS</span>
+            </a>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
@@ -82,7 +102,8 @@ function Navigation() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-gray-900">
+        <ChristmasSnow />
         <Navigation />
         <Routes>
           <Route path="/" element={<RacingMatrix />} />

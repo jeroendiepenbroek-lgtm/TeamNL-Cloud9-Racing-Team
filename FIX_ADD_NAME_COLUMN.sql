@@ -26,8 +26,12 @@ SELECT
   zr.velo_90day,
   zo.competition_racing_score AS zwift_official_racing_score,
   
-  -- Use ZwiftRacing category as fallback when Zwift.com is NULL
-  COALESCE(zo.competition_category, zr.category) AS zwift_official_category,
+  -- ✨ US5: Use ZwiftRacing category as fallback, AND upgrade A to A+ when appropriate
+  CASE 
+    WHEN zo.competition_category = 'A' AND zr.category = 'A+' THEN 'A+'
+    WHEN zr.category = 'A+' THEN 'A+'
+    ELSE COALESCE(zo.competition_category, zr.category)
+  END AS zwift_official_category,
   
   zr.phenotype,
   zr.category AS zwiftracing_category,
