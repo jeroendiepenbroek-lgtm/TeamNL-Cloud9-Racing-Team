@@ -1070,6 +1070,139 @@ app.post('/api/admin/sync-all', async (req, res) => {
   }
 });
 
+// GET sync config for frontend
+app.get('/api/admin/sync-config/:syncType?', async (req, res) => {
+  try {
+    const syncType = req.params.syncType || SYNC_TYPE_TEAM_RIDERS;
+    const config = await loadSyncConfig(syncType);
+    
+    if (!config) {
+      return res.status(404).json({ error: 'Config not found' });
+    }
+    
+    res.json({
+      enabled: config.enabled,
+      intervalMinutes: config.interval_minutes,
+      lastRun: config.last_run_at,
+      nextRun: config.next_run_at
+    });
+  } catch (error: any) {
+    console.error('❌ Failed to get sync config:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST update sync config
+app.post('/api/admin/sync-config', async (req, res) => {
+  try {
+    const { syncType = SYNC_TYPE_TEAM_RIDERS, enabled, intervalMinutes } = req.body;
+    
+    const updates: Partial<SyncConfig> & { sync_type: string } = { sync_type: syncType };
+    
+    if (typeof enabled === 'boolean') {
+      updates.enabled = enabled;
+    }
+    
+    if (typeof intervalMinutes === 'number' && intervalMinutes >= 0) {
+      updates.interval_minutes = intervalMinutes;
+    }
+    
+    console.log('⚙️  Sync config update:', updates);
+    
+    // Save to database
+    const saved = await saveSyncConfig(updates);
+    if (!saved) {
+      throw new Error('Failed to save config');
+    }
+    
+    // Restart scheduler
+    if (updates.enabled === false) {
+      stopScheduler(syncType);
+    } else {
+      await startScheduler(syncType);
+    }
+    
+    // Get updated config
+    const config = await loadSyncConfig(syncType);
+    
+    res.json({
+      success: true,
+      config: {
+        enabled: config?.enabled ?? true,
+        intervalMinutes: config?.interval_minutes ?? 60,
+        lastRun: config?.last_run_at ?? null,
+        nextRun: config?.next_run_at ?? null
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Failed to update sync config:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET sync status for real-time monitoring
+app.get('/api/admin/sync-status', async (req, res) => {
+  try {
+    const syncType = req.query.syncType as string || SYNC_TYPE_TEAM_RIDERS;
+    
+    // Check if sync is currently running (simplified check - could be enhanced)
+    const isRunning = false; // TODO: implement proper running state tracking
+    
+    // Get last sync from logs
+    const { data: lastLog } = await supabase
+      .from('sync_logs')
+      .select('*')
+      .eq('sync_type', syncType)
+      .eq('status', 'success')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .single();
+    
+    const status: any = { isRunning };
+    
+    if (lastLog && lastLog.completed_at) {
+      status.lastSync = {
+        timestamp: lastLog.completed_at,
+        duration: lastLog.duration_ms || 0,
+        synced: lastLog.success_count || 0,
+        failed: lastLog.failed_count || 0,
+        skipped: (lastLog.total_items || 0) - (lastLog.success_count || 0) - (lastLog.failed_count || 0)
+      };
+    }
+    
+    res.json(status);
+  } catch (error: any) {
+    console.error('❌ Failed to get sync status:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GET sync logs with filters
+app.get('/api/admin/sync-logs', async (req, res) => {
+  try {
+    const { syncType, triggerType, status, limit = 50 } = req.query;
+    
+    let query = supabase
+      .from('sync_logs')
+      .select('*')
+      .order('started_at', { ascending: false })
+      .limit(parseInt(limit as string));
+    
+    if (syncType) query = query.eq('sync_type', syncType);
+    if (triggerType) query = query.eq('trigger_type', triggerType);
+    if (status) query = query.eq('status', status);
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    res.json({ success: true, logs: data });
+  } catch (error: any) {
+    console.error('❌ Failed to get sync logs:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Remove rider from team AND all source tables (clean database)
 app.delete('/api/admin/riders/:riderId', async (req, res) => {
   try {
@@ -1454,103 +1587,6 @@ const stopScheduler = (syncType: string) => {
     console.log(`⏹️  Scheduler stopped for ${syncType}`);
   }
 };
-
-// GET sync config for a sync type
-app.get('/api/admin/sync-config/:syncType?', async (req, res) => {
-  try {
-    const syncType = req.params.syncType || SYNC_TYPE_TEAM_RIDERS;
-    const config = await loadSyncConfig(syncType);
-    
-    if (!config) {
-      return res.status(404).json({ error: 'Config not found' });
-    }
-    
-    // Format response for frontend compatibility
-    res.json({
-      enabled: config.enabled,
-      intervalMinutes: config.interval_minutes,
-      lastRun: config.last_run_at,
-      nextRun: config.next_run_at
-    });
-  } catch (error: any) {
-    console.error('❌ Failed to get sync config:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// POST update sync config
-app.post('/api/admin/sync-config', async (req, res) => {
-  try {
-    const { syncType = SYNC_TYPE_TEAM_RIDERS, enabled, intervalMinutes } = req.body;
-    
-    const updates: Partial<SyncConfig> & { sync_type: string } = { sync_type: syncType };
-    
-    if (typeof enabled === 'boolean') {
-      updates.enabled = enabled;
-    }
-    
-    if (typeof intervalMinutes === 'number' && intervalMinutes >= 0) {
-      updates.interval_minutes = intervalMinutes;
-    }
-    
-    console.log('⚙️  Sync config update:', updates);
-    
-    // Save to database
-    const saved = await saveSyncConfig(updates);
-    if (!saved) {
-      throw new Error('Failed to save config');
-    }
-    
-    // Restart scheduler
-    if (updates.enabled === false) {
-      stopScheduler(syncType);
-    } else {
-      await startScheduler(syncType);
-    }
-    
-    // Get updated config
-    const config = await loadSyncConfig(syncType);
-    
-    res.json({
-      success: true,
-      config: {
-        enabled: config?.enabled ?? true,
-        intervalMinutes: config?.interval_minutes ?? 60,
-        lastRun: config?.last_run_at ?? null,
-        nextRun: config?.next_run_at ?? null
-      }
-    });
-  } catch (error: any) {
-    console.error('❌ Failed to update sync config:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// GET sync logs with filters
-app.get('/api/admin/sync-logs', async (req, res) => {
-  try {
-    const { syncType, triggerType, status, limit = 50 } = req.query;
-    
-    let query = supabase
-      .from('sync_logs')
-      .select('*')
-      .order('started_at', { ascending: false })
-      .limit(parseInt(limit as string));
-    
-    if (syncType) query = query.eq('sync_type', syncType);
-    if (triggerType) query = query.eq('trigger_type', triggerType);
-    if (status) query = query.eq('status', status);
-    
-    const { data, error } = await query;
-    
-    if (error) throw error;
-    
-    res.json({ success: true, logs: data });
-  } catch (error: any) {
-    console.error('❌ Failed to get sync logs:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
 
 // ============================================
 // INITIALIZE & START SERVER
