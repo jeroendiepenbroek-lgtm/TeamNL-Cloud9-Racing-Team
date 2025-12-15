@@ -1340,6 +1340,254 @@ app.delete('/api/admin/riders/:riderId?', async (req, res) => {
     }
 });
 // ============================================
+// TEAM BUILDER API
+// ============================================
+// Get all teams with summary
+app.get('/api/teams', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('v_team_summary')
+            .select('*')
+            .order('team_name');
+        if (error)
+            throw error;
+        res.json({
+            success: true,
+            teams: data || []
+        });
+    }
+    catch (error) {
+        console.error('❌ Get teams failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Get team with full lineup
+app.get('/api/teams/:teamId', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        // Get team info
+        const { data: team, error: teamError } = await supabase
+            .from('v_team_summary')
+            .select('*')
+            .eq('team_id', teamId)
+            .single();
+        if (teamError)
+            throw teamError;
+        // Get lineup
+        const { data: lineup, error: lineupError } = await supabase
+            .from('v_team_lineups_full')
+            .select('*')
+            .eq('team_id', teamId)
+            .order('lineup_position');
+        if (lineupError)
+            throw lineupError;
+        res.json({
+            success: true,
+            team,
+            lineup: lineup || []
+        });
+    }
+    catch (error) {
+        console.error('❌ Get team failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Create new team
+app.post('/api/teams', async (req, res) => {
+    try {
+        const { team_name, competition_type, competition_name, velo_min_rank, velo_max_rank, velo_max_spread, allowed_categories, allow_category_up, min_riders, max_riders } = req.body;
+        // Validate required fields
+        if (!team_name || !competition_type) {
+            return res.status(400).json({
+                success: false,
+                error: 'team_name and competition_type are required'
+            });
+        }
+        // Insert team
+        const { data, error } = await supabase
+            .from('competition_teams')
+            .insert({
+            team_name,
+            competition_type,
+            competition_name,
+            velo_min_rank,
+            velo_max_rank,
+            velo_max_spread: velo_max_spread || 3,
+            allowed_categories,
+            allow_category_up: allow_category_up !== false,
+            min_riders: min_riders || 1,
+            max_riders: max_riders || 10
+        })
+            .select()
+            .single();
+        if (error)
+            throw error;
+        console.log(`✅ Team created: ${team_name} (${competition_type})`);
+        res.json({
+            success: true,
+            team: data
+        });
+    }
+    catch (error) {
+        console.error('❌ Create team failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Update team
+app.put('/api/teams/:teamId', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        const updates = req.body;
+        const { data, error } = await supabase
+            .from('competition_teams')
+            .update(updates)
+            .eq('id', teamId)
+            .select()
+            .single();
+        if (error)
+            throw error;
+        console.log(`✅ Team updated: ${data.team_name}`);
+        res.json({
+            success: true,
+            team: data
+        });
+    }
+    catch (error) {
+        console.error('❌ Update team failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Delete team
+app.delete('/api/teams/:teamId', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        const { error } = await supabase
+            .from('competition_teams')
+            .delete()
+            .eq('id', teamId);
+        if (error)
+            throw error;
+        console.log(`✅ Team deleted: ${teamId}`);
+        res.json({ success: true });
+    }
+    catch (error) {
+        console.error('❌ Delete team failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Add rider to team
+app.post('/api/teams/:teamId/riders', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        const { rider_id, lineup_position } = req.body;
+        if (!rider_id) {
+            return res.status(400).json({
+                success: false,
+                error: 'rider_id is required'
+            });
+        }
+        // Get rider current stats
+        const { data: rider, error: riderError } = await supabase
+            .from('v_rider_complete')
+            .select('category, velo_live')
+            .eq('rider_id', rider_id)
+            .single();
+        if (riderError)
+            throw riderError;
+        // Add to lineup
+        const { data, error } = await supabase
+            .from('team_lineups')
+            .insert({
+            team_id: teamId,
+            rider_id,
+            lineup_position,
+            rider_category: rider?.category,
+            rider_velo_rank: rider?.velo_live
+        })
+            .select()
+            .single();
+        if (error)
+            throw error;
+        // Validate lineup
+        const { data: validation } = await supabase
+            .rpc('validate_team_lineup', { p_team_id: teamId });
+        console.log(`✅ Rider ${rider_id} added to team ${teamId}`);
+        res.json({
+            success: true,
+            lineup: data,
+            validation
+        });
+    }
+    catch (error) {
+        console.error('❌ Add rider to team failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Remove rider from team
+app.delete('/api/teams/:teamId/riders/:riderId', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        const riderId = parseInt(req.params.riderId);
+        const { error } = await supabase
+            .from('team_lineups')
+            .delete()
+            .eq('team_id', teamId)
+            .eq('rider_id', riderId);
+        if (error)
+            throw error;
+        console.log(`✅ Rider ${riderId} removed from team ${teamId}`);
+        res.json({ success: true });
+    }
+    catch (error) {
+        console.error('❌ Remove rider from team failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Update lineup positions (bulk reorder)
+app.put('/api/teams/:teamId/lineup', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        const { lineup } = req.body; // Array of { rider_id, lineup_position }
+        if (!Array.isArray(lineup)) {
+            return res.status(400).json({
+                success: false,
+                error: 'lineup must be an array'
+            });
+        }
+        // Update positions for all riders
+        const updates = lineup.map(item => supabase
+            .from('team_lineups')
+            .update({ lineup_position: item.lineup_position })
+            .eq('team_id', teamId)
+            .eq('rider_id', item.rider_id));
+        await Promise.all(updates);
+        console.log(`✅ Lineup reordered for team ${teamId}`);
+        res.json({ success: true });
+    }
+    catch (error) {
+        console.error('❌ Reorder lineup failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Validate team lineup
+app.get('/api/teams/:teamId/validate', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        const { data, error } = await supabase
+            .rpc('validate_team_lineup', { p_team_id: teamId });
+        if (error)
+            throw error;
+        res.json({
+            success: true,
+            validation: data || []
+        });
+    }
+    catch (error) {
+        console.error('❌ Validate lineup failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// ============================================
 // FRONTEND SERVING
 // ============================================
 // In production (Railway/Docker): frontend is at ../frontend/dist
@@ -1628,254 +1876,6 @@ const stopScheduler = (syncType) => {
         console.log(`⏹️  Scheduler stopped for ${syncType}`);
     }
 };
-// ============================================
-// TEAM BUILDER API
-// ============================================
-// Get all teams with summary
-app.get('/api/teams', async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('v_team_summary')
-            .select('*')
-            .order('team_name');
-        if (error)
-            throw error;
-        res.json({
-            success: true,
-            teams: data || []
-        });
-    }
-    catch (error) {
-        console.error('❌ Get teams failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Get team with full lineup
-app.get('/api/teams/:teamId', async (req, res) => {
-    try {
-        const teamId = parseInt(req.params.teamId);
-        // Get team info
-        const { data: team, error: teamError } = await supabase
-            .from('v_team_summary')
-            .select('*')
-            .eq('team_id', teamId)
-            .single();
-        if (teamError)
-            throw teamError;
-        // Get lineup
-        const { data: lineup, error: lineupError } = await supabase
-            .from('v_team_lineups_full')
-            .select('*')
-            .eq('team_id', teamId)
-            .order('lineup_position');
-        if (lineupError)
-            throw lineupError;
-        res.json({
-            success: true,
-            team,
-            lineup: lineup || []
-        });
-    }
-    catch (error) {
-        console.error('❌ Get team failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Create new team
-app.post('/api/teams', async (req, res) => {
-    try {
-        const { team_name, competition_type, competition_name, velo_min_rank, velo_max_rank, velo_max_spread, allowed_categories, allow_category_up, min_riders, max_riders } = req.body;
-        // Validate required fields
-        if (!team_name || !competition_type) {
-            return res.status(400).json({
-                success: false,
-                error: 'team_name and competition_type are required'
-            });
-        }
-        // Insert team
-        const { data, error } = await supabase
-            .from('competition_teams')
-            .insert({
-            team_name,
-            competition_type,
-            competition_name,
-            velo_min_rank,
-            velo_max_rank,
-            velo_max_spread: velo_max_spread || 3,
-            allowed_categories,
-            allow_category_up: allow_category_up !== false,
-            min_riders: min_riders || 1,
-            max_riders: max_riders || 10
-        })
-            .select()
-            .single();
-        if (error)
-            throw error;
-        console.log(`✅ Team created: ${team_name} (${competition_type})`);
-        res.json({
-            success: true,
-            team: data
-        });
-    }
-    catch (error) {
-        console.error('❌ Create team failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Update team
-app.put('/api/teams/:teamId', async (req, res) => {
-    try {
-        const teamId = parseInt(req.params.teamId);
-        const updates = req.body;
-        const { data, error } = await supabase
-            .from('competition_teams')
-            .update(updates)
-            .eq('id', teamId)
-            .select()
-            .single();
-        if (error)
-            throw error;
-        console.log(`✅ Team updated: ${data.team_name}`);
-        res.json({
-            success: true,
-            team: data
-        });
-    }
-    catch (error) {
-        console.error('❌ Update team failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Delete team
-app.delete('/api/teams/:teamId', async (req, res) => {
-    try {
-        const teamId = parseInt(req.params.teamId);
-        const { error } = await supabase
-            .from('competition_teams')
-            .delete()
-            .eq('id', teamId);
-        if (error)
-            throw error;
-        console.log(`✅ Team deleted: ${teamId}`);
-        res.json({ success: true });
-    }
-    catch (error) {
-        console.error('❌ Delete team failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Add rider to team
-app.post('/api/teams/:teamId/riders', async (req, res) => {
-    try {
-        const teamId = parseInt(req.params.teamId);
-        const { rider_id, lineup_position } = req.body;
-        if (!rider_id) {
-            return res.status(400).json({
-                success: false,
-                error: 'rider_id is required'
-            });
-        }
-        // Get rider current stats
-        const { data: rider, error: riderError } = await supabase
-            .from('v_rider_complete')
-            .select('category, velo_live')
-            .eq('rider_id', rider_id)
-            .single();
-        if (riderError)
-            throw riderError;
-        // Add to lineup
-        const { data, error } = await supabase
-            .from('team_lineups')
-            .insert({
-            team_id: teamId,
-            rider_id,
-            lineup_position,
-            rider_category: rider?.category,
-            rider_velo_rank: rider?.velo_live
-        })
-            .select()
-            .single();
-        if (error)
-            throw error;
-        // Validate lineup
-        const { data: validation } = await supabase
-            .rpc('validate_team_lineup', { p_team_id: teamId });
-        console.log(`✅ Rider ${rider_id} added to team ${teamId}`);
-        res.json({
-            success: true,
-            lineup: data,
-            validation
-        });
-    }
-    catch (error) {
-        console.error('❌ Add rider to team failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Remove rider from team
-app.delete('/api/teams/:teamId/riders/:riderId', async (req, res) => {
-    try {
-        const teamId = parseInt(req.params.teamId);
-        const riderId = parseInt(req.params.riderId);
-        const { error } = await supabase
-            .from('team_lineups')
-            .delete()
-            .eq('team_id', teamId)
-            .eq('rider_id', riderId);
-        if (error)
-            throw error;
-        console.log(`✅ Rider ${riderId} removed from team ${teamId}`);
-        res.json({ success: true });
-    }
-    catch (error) {
-        console.error('❌ Remove rider from team failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Update lineup positions (bulk reorder)
-app.put('/api/teams/:teamId/lineup', async (req, res) => {
-    try {
-        const teamId = parseInt(req.params.teamId);
-        const { lineup } = req.body; // Array of { rider_id, lineup_position }
-        if (!Array.isArray(lineup)) {
-            return res.status(400).json({
-                success: false,
-                error: 'lineup must be an array'
-            });
-        }
-        // Update positions for all riders
-        const updates = lineup.map(item => supabase
-            .from('team_lineups')
-            .update({ lineup_position: item.lineup_position })
-            .eq('team_id', teamId)
-            .eq('rider_id', item.rider_id));
-        await Promise.all(updates);
-        console.log(`✅ Lineup reordered for team ${teamId}`);
-        res.json({ success: true });
-    }
-    catch (error) {
-        console.error('❌ Reorder lineup failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// Validate team lineup
-app.get('/api/teams/:teamId/validate', async (req, res) => {
-    try {
-        const teamId = parseInt(req.params.teamId);
-        const { data, error } = await supabase
-            .rpc('validate_team_lineup', { p_team_id: teamId });
-        if (error)
-            throw error;
-        res.json({
-            success: true,
-            validation: data || []
-        });
-    }
-    catch (error) {
-        console.error('❌ Validate lineup failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 // ============================================
 // INITIALIZE & START SERVER
 // ============================================
