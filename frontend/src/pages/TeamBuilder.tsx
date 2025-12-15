@@ -6,12 +6,43 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter } 
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
+// Category colors (matching RacingMatrix)
+const CATEGORY_COLORS = {
+  'A+': 'bg-red-100 text-red-900 border-red-300',
+  'A': 'bg-red-50 text-red-800 border-red-200',
+  'B': 'bg-green-50 text-green-800 border-green-200',
+  'C': 'bg-blue-50 text-blue-800 border-blue-200',
+  'D': 'bg-yellow-50 text-yellow-800 border-yellow-200',
+}
+
+// vELO Tiers (matching RacingMatrix)
+const VELO_TIERS = [
+  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, max: null, color: 'from-cyan-300 to-blue-600', textColor: 'text-cyan-900', bgColor: 'bg-gradient-to-r from-cyan-300/20 to-blue-600/20' },
+  { rank: 2, name: 'Platinum', icon: '⚪', min: 1900, max: 2200, color: 'from-gray-200 to-gray-500', textColor: 'text-gray-900', bgColor: 'bg-gradient-to-r from-gray-200/20 to-gray-500/20' },
+  { rank: 3, name: 'Gold', icon: '🟡', min: 1650, max: 1900, color: 'from-yellow-300 to-yellow-600', textColor: 'text-yellow-900', bgColor: 'bg-gradient-to-r from-yellow-300/20 to-yellow-600/20' },
+  { rank: 4, name: 'Silver', icon: '⚪', min: 1400, max: 1650, color: 'from-gray-300 to-gray-600', textColor: 'text-gray-900', bgColor: 'bg-gradient-to-r from-gray-300/20 to-gray-600/20' },
+  { rank: 5, name: 'Bronze I', icon: '🟠', min: 1250, max: 1400, color: 'from-orange-300 to-orange-500', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-300/20 to-orange-500/20' },
+  { rank: 6, name: 'Bronze II', icon: '🟠', min: 1100, max: 1250, color: 'from-orange-400 to-orange-600', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-400/20 to-orange-600/20' },
+  { rank: 7, name: 'Bronze III', icon: '🟠', min: 950, max: 1100, color: 'from-orange-500 to-orange-700', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-500/20 to-orange-700/20' },
+  { rank: 8, name: 'Bronze IV', icon: '🟠', min: 850, max: 950, color: 'from-orange-300 to-orange-600', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-300/20 to-orange-600/20' },
+  { rank: 9, name: 'Bronze', icon: '🟠', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-400/20 to-orange-700/20' },
+  { rank: 10, name: 'Copper', icon: '🟤', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-orange-100', bgColor: 'bg-gradient-to-r from-orange-600/20 to-red-800/20' },
+]
+
+const getVeloTier = (rating: number | null) => {
+  if (!rating) return null
+  return VELO_TIERS.find(tier => 
+    rating >= tier.min && (!tier.max || rating < tier.max)
+  )
+}
+
 interface Rider {
   rider_id: number
   name: string
   full_name: string
   category: string
   velo_live: number
+  velo_30day: number | null
   country_alpha3: string
   avatar_url: string
 }
@@ -35,9 +66,17 @@ interface Team {
   team_status: 'incomplete' | 'ready' | 'warning' | 'overfilled'
 }
 
-interface LineupRider extends Rider {
+interface LineupRider {
+  rider_id: number
   lineup_id: number
   lineup_position: number
+  name: string
+  full_name: string
+  country_alpha3: string
+  avatar_url?: string
+  category: string
+  velo_live: number
+  velo_30day: number | null
   is_valid: boolean
   validation_warning?: string
 }
@@ -614,12 +653,22 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
             <div className="font-semibold text-sm">
               {rider.name || rider.full_name}
             </div>
-            <div className="text-xs text-gray-400 flex items-center gap-2">
-              <span>{rider.country_alpha3}</span>
-              <span>•</span>
-              <span>Cat: {rider.category}</span>
-              <span>•</span>
-              <span>vELO: {rider.velo_live}</span>
+            <div className="text-xs flex items-center gap-2">
+              <span className="text-gray-400">{rider.country_alpha3}</span>
+              <span className="text-gray-600">•</span>
+              <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded border ${CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800'}`}>
+                {rider.category}
+              </span>
+              <span className="text-gray-600">•</span>
+              {(() => {
+                const velo = rider.velo_30day || rider.velo_live
+                const tier = getVeloTier(velo)
+                return (
+                  <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${tier?.bgColor || 'bg-gray-100'} ${tier?.textColor || 'text-gray-800'}`}>
+                    {tier?.icon} {Math.floor(velo)}
+                  </span>
+                )
+              })()}
             </div>
           </div>
         </div>
@@ -661,8 +710,20 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
             <div className="font-semibold">
               {rider.name || rider.full_name}
             </div>
-            <div className="text-xs text-gray-400">
-              Cat: {rider.category} • vELO: {rider.velo_live}
+            <div className="text-xs flex items-center gap-2">
+              <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded border ${CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800'}`}>
+                {rider.category}
+              </span>
+              <span className="text-gray-600">•</span>
+              {(() => {
+                const velo = rider.velo_30day || rider.velo_live
+                const tier = getVeloTier(velo)
+                return (
+                  <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${tier?.bgColor || 'bg-gray-100'} ${tier?.textColor || 'text-gray-800'}`}>
+                    {tier?.icon} {Math.floor(velo)}
+                  </span>
+                )
+              })()}
             </div>
             {!rider.is_valid && rider.validation_warning && (
               <div className="text-xs text-red-400 mt-1">

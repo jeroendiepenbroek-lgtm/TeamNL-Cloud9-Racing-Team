@@ -307,6 +307,38 @@ export default function RacingDataMatrixModern() {
   const [filterCategories, setFilterCategories] = useState<string[]>([])
   const [filterVeloLiveRanks, setFilterVeloLiveRanks] = useState<number[]>([])
   const [filterVelo30dayRanks, setFilterVelo30dayRanks] = useState<number[]>([])
+  const [filterTeamIds, setFilterTeamIds] = useState<number[]>([])
+
+  // Fetch teams from Team Builder
+  const { data: teams } = useQuery<any[]>({
+    queryKey: ['teams'],
+    queryFn: async () => {
+      const response = await fetch('/api/teams')
+      if (!response.ok) return []
+      const data = await response.json()
+      return data.teams || []
+    },
+    staleTime: 60000, // Cache for 1 minute
+  })
+
+  // Fetch team lineups for filtered teams
+  const { data: teamLineups } = useQuery<any[]>({
+    queryKey: ['teamLineups', filterTeamIds],
+    queryFn: async () => {
+      if (filterTeamIds.length === 0) return []
+      const allRiderIds = new Set<number>()
+      for (const teamId of filterTeamIds) {
+        const response = await fetch(`/api/teams/${teamId}`)
+        if (response.ok) {
+          const data = await response.json()
+          data.lineup?.forEach((l: any) => allRiderIds.add(l.rider_id))
+        }
+      }
+      return Array.from(allRiderIds)
+    },
+    enabled: filterTeamIds.length > 0,
+    staleTime: 60000,
+  })
 
   const { data: riders, isLoading, error, refetch } = useQuery<MatrixRider[]>({
     queryKey: ['matrixRiders'],
@@ -341,6 +373,13 @@ export default function RacingDataMatrixModern() {
         return false
       }
       
+      // Team filter - alleen rijders in geselecteerde teams
+      if (filterTeamIds.length > 0 && teamLineups) {
+        if (!teamLineups.includes(rider.rider_id)) {
+          return false
+        }
+      }
+      
       // Category filter - if categories selected, rider must be in list
       if (filterCategories.length > 0 && !filterCategories.includes(rider.zwiftracing_category || '')) {
         return false
@@ -364,7 +403,7 @@ export default function RacingDataMatrixModern() {
       
       return true
     })
-  }, [riders, searchTerm, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, showOnlyFavorites, favorites])
+  }, [riders, searchTerm, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, filterTeamIds, teamLineups, showOnlyFavorites, favorites])
 
   // Bereken team bests voor elk interval in W/kg (voor highlighting) - dynamisch gebaseerd op gefilterde riders
   const teamBests = useMemo(() => {
@@ -513,6 +552,20 @@ export default function RacingDataMatrixModern() {
         </div>
         
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          {/* Team Filter - Dropdown met team namen */}
+          {teams && teams.length > 0 && (
+            <MultiSelectDropdown
+              label="🏆 Teams"
+              options={teams.map(team => ({
+                value: team.team_id,
+                label: team.team_name,
+                icon: team.competition_type === 'velo' ? '⚡' : '🏆'
+              }))}
+              selectedValues={filterTeamIds}
+              onChange={setFilterTeamIds}
+            />
+          )}
+          
           {/* ZP Category Filter - Dropdown met badge icons */}
           <MultiSelectDropdown
             label="ZP-category"
@@ -571,17 +624,18 @@ export default function RacingDataMatrixModern() {
           {/* Clear Filters Button - compact on mobile */}
           <button
             onClick={() => {
-              const totalFilters = filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length
+              const totalFilters = filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length + filterTeamIds.length
               setFilterCategories([])
               setFilterVeloLiveRanks([])
               setFilterVelo30dayRanks([])
+              setFilterTeamIds([])
               if (totalFilters > 0) {
                 toast.success(`${totalFilters} filter${totalFilters > 1 ? 's' : ''} verwijderd`, { icon: '🗑️' })
               }
             }}
-            disabled={filterCategories.length === 0 && filterVeloLiveRanks.length === 0 && filterVelo30dayRanks.length === 0}
+            disabled={filterCategories.length === 0 && filterVeloLiveRanks.length === 0 && filterVelo30dayRanks.length === 0 && filterTeamIds.length === 0}
             className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
-              filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0
+              filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0 || filterTeamIds.length > 0
                 ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
@@ -589,9 +643,9 @@ export default function RacingDataMatrixModern() {
           >
             <span className="text-sm sm:text-base">🗑️</span>
             <span className="hidden sm:inline">Clear</span>
-            {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
+            {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0 || filterTeamIds.length > 0) && (
               <span className="ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-white/30 rounded text-[10px] sm:text-xs font-bold">
-                {filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length}
+                {filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length + filterTeamIds.length}
               </span>
             )}
           </button>
