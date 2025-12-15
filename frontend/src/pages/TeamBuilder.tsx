@@ -661,26 +661,23 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
           
           <div className="flex-1 min-w-0">
             {/* Name */}
-            <div className="font-bold text-white text-sm truncate mb-1">
+            <div className="font-bold text-white text-base truncate mb-2">
               {rider.name || rider.full_name}
             </div>
             
             {/* Stats Row */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Country Flag */}
-              <span className="text-gray-400 text-xs font-mono">{rider.country_alpha3}</span>
-              
-              {/* Category Badge */}
-              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded border ${categoryColor} shadow-sm`}>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Category Badge - LARGER */}
+              <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
                 {rider.category}
               </span>
               
-              {/* vELO 30-day Badge */}
-              <div className="flex items-center gap-1">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[9px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
+              {/* vELO 30-day Badge - LARGER & MORE READABLE */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/80 rounded-md border border-gray-600 shadow-md">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
                   {veloTier?.rank || '?'}
                 </div>
-                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${veloTier?.bgColor || 'bg-gray-700'} ${veloTier?.textColor || 'text-white'} border border-gray-600`}>
+                <span className="text-sm font-bold text-white">
                   {veloTier?.icon} {Math.floor(velo30day)}
                 </span>
               </div>
@@ -737,34 +734,34 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
           
           <div className="flex-1 min-w-0">
             {/* Name */}
-            <div className="font-bold text-white text-sm truncate mb-1">
+            <div className="font-bold text-white text-base truncate mb-2">
               {rider.name || rider.full_name}
             </div>
             
             {/* Stats Row */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Category Badge */}
-              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded border ${categoryColor} shadow-sm`}>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Category Badge - LARGER */}
+              <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
                 {rider.category}
               </span>
               
-              {/* vELO 30-day Badge */}
-              <div className="flex items-center gap-1">
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[9px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
+              {/* vELO 30-day Badge - LARGER & MORE READABLE */}
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/80 rounded-md border border-gray-600 shadow-md">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
                   {veloTier?.rank || '?'}
                 </div>
-                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${veloTier?.bgColor || 'bg-gray-700'} ${veloTier?.textColor || 'text-white'} border border-gray-600`}>
+                <span className="text-sm font-bold text-white">
                   {veloTier?.icon} {Math.floor(velo30day)}
                 </span>
               </div>
               
               {/* Validation Status */}
               {rider.is_valid ? (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/20 text-green-300 rounded text-[10px] font-bold border border-green-500/30">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-500/20 text-green-300 rounded-md text-xs font-bold border border-green-500/30">
                   <span>✓</span> Valid
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-500/20 text-red-300 rounded text-[10px] font-bold border border-red-500/30">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-500/20 text-red-300 rounded-md text-xs font-bold border border-red-500/30">
                   <span>✗</span> Invalid
                 </span>
               )}
