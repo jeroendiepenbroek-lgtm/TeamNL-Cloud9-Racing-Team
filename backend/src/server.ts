@@ -699,6 +699,47 @@ app.get('/api/riders', async (req, res) => {
   }
 });
 
+// 📥 US1: CSV Export for Rider IDs
+app.get('/api/riders/export/csv', async (req, res) => {
+  try {
+    const format = req.query.format as string || 'ids_only';
+    
+    const { data, error } = await supabase
+      .from('v_rider_complete')
+      .select('rider_id, full_name, velo_live, zwift_official_category, ftp_watts')
+      .eq('is_team_member', true)
+      .order('velo_live', { ascending: false, nullsFirst: false });
+
+    if (error) throw error;
+
+    let csvContent = '';
+    
+    if (format === 'ids_only') {
+      // Simple list: one rider_id per line
+      csvContent = data?.map(r => r.rider_id).join('\n') || '';
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', 'attachment; filename="team_rider_ids.txt"');
+    } else if (format === 'full') {
+      // Full CSV with headers
+      csvContent = 'rider_id,name,velo,category,ftp\n';
+      csvContent += data?.map(r => 
+        `${r.rider_id},"${r.full_name}",${r.velo_live || ''},${r.zwift_official_category || ''},${r.ftp_watts || ''}`
+      ).join('\n') || '';
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="team_riders_full.csv"');
+    }
+    
+    console.log(`📥 CSV Export: ${data?.length || 0} riders (format: ${format})`);
+    res.send(csvContent);
+  } catch (error: any) {
+    console.error('❌ CSV export failed:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // Get team roster (only active team members)
 app.get('/api/team/roster', async (req, res) => {
   try {
@@ -814,6 +855,10 @@ app.post('/api/admin/riders', async (req, res) => {
       let profileSynced = false;
       let errorMsg = '';
 
+      // 🔍 US2: Track fail codes voor gestructureerde error reporting
+      let errorCode: string | null = null;
+      let errorDetails: string[] = [];
+
       // Process ZwiftRacing data (uit bulk fetch)
       const racingData = bulkRacingData.get(riderId);
       if (racingData) {
@@ -863,14 +908,20 @@ app.post('/api/admin/riders', async (req, res) => {
             racingSynced = true;
             console.log(`      ✅ ZwiftRacing data synced`);
           } else {
+            errorCode = 'RACING_DB_WRITE_FAILED';
+            errorDetails.push(`ZwiftRacing DB: ${error.message}`);
             console.error(`      ❌ ZwiftRacing DB write failed:`, error.message);
             errorMsg += `Racing DB: ${error.message}. `;
           }
         } catch (err: any) {
+          errorCode = 'RACING_PROCESSING_FAILED';
+          errorDetails.push(`ZwiftRacing Processing: ${err.message}`);
           console.error(`      ❌ ZwiftRacing processing failed:`, err.message);
           errorMsg += `Racing: ${err.message}. `;
         }
       } else {
+        errorCode = 'RACING_NOT_FOUND';
+        errorDetails.push('Rider not found in ZwiftRacing bulk response');
         console.warn(`      ⚠️  No ZwiftRacing data in bulk response`);
         errorMsg += 'No Racing data. ';
       }
@@ -929,10 +980,14 @@ app.post('/api/admin/riders', async (req, res) => {
           profileSynced = true;
           console.log(`      ✅ Zwift Official data synced`);
         } else {
+          if (!errorCode) errorCode = 'PROFILE_DB_WRITE_FAILED';
+          errorDetails.push(`Zwift Official DB: ${error.message}`);
           console.error(`      ❌ Zwift Official DB write failed:`, error.message);
           errorMsg += `Profile DB: ${error.message}. `;
         }
       } catch (err: any) {
+        if (!errorCode) errorCode = 'PROFILE_API_FAILED';
+        errorDetails.push(`Zwift Official API: ${err.message}`);
         console.warn(`      ⚠️  Zwift Official API failed:`, err.message);
         errorMsg += `Profile: ${err.message}. `;
       }
@@ -960,19 +1015,25 @@ app.post('/api/admin/riders', async (req, res) => {
           console.log(`      ✅ Added to team_roster`);
         } else {
           failCount++;
+          const finalErrorCode = 'ROSTER_UPDATE_FAILED';
           results.push({
             rider_id: riderId,
             synced: false,
-            error: `Roster update failed: ${rosterError.message}`
+            error: `Roster update failed: ${rosterError.message}`,
+            error_code: finalErrorCode,
+            error_details: [`team_roster: ${rosterError.message}`]
           });
           console.error(`      ❌ team_roster update failed:`, rosterError.message);
         }
       } else {
         failCount++;
+        const finalErrorCode = errorCode || 'BOTH_APIS_FAILED';
         results.push({
           rider_id: riderId,
           synced: false,
-          error: errorMsg || 'Both APIs failed'
+          error: errorMsg || 'Both APIs failed',
+          error_code: finalErrorCode,
+          error_details: errorDetails.length > 0 ? errorDetails : ['No data from ZwiftRacing or Zwift Official']
         });
         console.error(`      ❌ Sync failed: ${errorMsg || 'Both APIs failed'}`);
       }
@@ -1013,8 +1074,9 @@ app.post('/api/admin/riders', async (req, res) => {
     console.log(`   ⏱️  Processing time: ${duration}ms`);
     console.log('');
 
-    // Update log entry
+    // Update log entry with error codes for failed riders
     if (logId) {
+      const failedRiders = results.filter(r => !r.synced && !r.skipped);
       await updateSyncLog(logId, {
         status,
         completed_at: new Date().toISOString(),
@@ -1027,7 +1089,13 @@ app.post('/api/admin/riders', async (req, res) => {
           skipped_count: skipped,
           new_riders: newRiderIds,
           skipped_riders: skippedIds,
-          triggered_by: 'api_upload'
+          triggered_by: 'api_upload',
+          // 🔍 US2: Include error codes in metadata
+          failed_riders_errors: failedRiders.map(r => ({
+            rider_id: r.rider_id,
+            error_code: r.error_code,
+            error_details: r.error_details
+          }))
         }
       });
     }

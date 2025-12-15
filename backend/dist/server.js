@@ -619,6 +619,42 @@ app.get('/api/riders', async (req, res) => {
         });
     }
 });
+// 📥 US1: CSV Export for Rider IDs
+app.get('/api/riders/export/csv', async (req, res) => {
+    try {
+        const format = req.query.format || 'ids_only';
+        const { data, error } = await supabase
+            .from('v_rider_complete')
+            .select('rider_id, full_name, velo_live, zwift_official_category, ftp_watts')
+            .eq('is_team_member', true)
+            .order('velo_live', { ascending: false, nullsFirst: false });
+        if (error)
+            throw error;
+        let csvContent = '';
+        if (format === 'ids_only') {
+            // Simple list: one rider_id per line
+            csvContent = data?.map(r => r.rider_id).join('\n') || '';
+            res.setHeader('Content-Type', 'text/plain');
+            res.setHeader('Content-Disposition', 'attachment; filename="team_rider_ids.txt"');
+        }
+        else if (format === 'full') {
+            // Full CSV with headers
+            csvContent = 'rider_id,name,velo,category,ftp\n';
+            csvContent += data?.map(r => `${r.rider_id},"${r.full_name}",${r.velo_live || ''},${r.zwift_official_category || ''},${r.ftp_watts || ''}`).join('\n') || '';
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename="team_riders_full.csv"');
+        }
+        console.log(`📥 CSV Export: ${data?.length || 0} riders (format: ${format})`);
+        res.send(csvContent);
+    }
+    catch (error) {
+        console.error('❌ CSV export failed:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 // Get team roster (only active team members)
 app.get('/api/team/roster', async (req, res) => {
     try {
@@ -650,35 +686,54 @@ app.post('/api/admin/riders', async (req, res) => {
     const startTime = Date.now();
     let logId = null;
     try {
-        const { rider_ids } = req.body;
-        if (!rider_ids || !Array.isArray(rider_ids) || rider_ids.length === 0) {
+        // 🎯 SMART INPUT DETECTION: Support multiple formats
+        let riderIds = [];
+        // Format 1: Direct array in body [12345, 67890, ...] (Bulk upload)
+        if (Array.isArray(req.body)) {
+            riderIds = req.body.map((id) => typeof id === 'number' ? id : parseInt(id)).filter((id) => !isNaN(id));
+        }
+        // Format 2: { rider_ids: [...] } (Legacy bulk format)
+        else if (req.body.rider_ids && Array.isArray(req.body.rider_ids)) {
+            riderIds = req.body.rider_ids.map((id) => typeof id === 'number' ? id : parseInt(id)).filter((id) => !isNaN(id));
+        }
+        // Format 3: { rider_id: 12345 } (Single rider)
+        else if (req.body.rider_id) {
+            const id = typeof req.body.rider_id === 'number' ? req.body.rider_id : parseInt(req.body.rider_id);
+            if (!isNaN(id))
+                riderIds = [id];
+        }
+        // Validation
+        if (riderIds.length === 0) {
             return res.status(400).json({
                 success: false,
-                error: 'rider_ids array required'
+                error: 'Invalid input. Expected: single rider_id, array of rider_ids, or direct array'
             });
         }
-        console.log(`\n📥 BULK ADD REQUEST: ${rider_ids.length} riders`);
-        console.log(`   Riders: ${rider_ids.slice(0, 10).join(', ')}${rider_ids.length > 10 ? '...' : ''}`);
+        const isSingle = riderIds.length === 1;
+        const operationType = isSingle ? 'SINGLE' : (riderIds.length <= 10 ? 'MULTIPLE' : 'BULK');
+        console.log(`\n📥 ${operationType} ADD REQUEST: ${riderIds.length} rider${riderIds.length > 1 ? 's' : ''}`);
+        console.log(`   Riders: ${riderIds.slice(0, 10).join(', ')}${riderIds.length > 10 ? '...' : ''}`);
         // Create log entry for upload sync
         logId = await createSyncLog({
             sync_type: 'team_riders',
             trigger_type: 'upload',
             status: 'running',
             started_at: new Date().toISOString(),
-            total_items: rider_ids.length,
+            total_items: riderIds.length,
             metadata: {
-                rider_ids: rider_ids,
-                triggered_by: 'team_manager_upload'
+                rider_ids: riderIds,
+                operation_type: operationType,
+                triggered_by: 'api_upload'
             }
         });
-        // US2: Check welke riders al bestaan in team_roster
+        // Check welke riders al bestaan in team_roster
         const { data: existingRiders } = await supabase
             .from('team_roster')
             .select('rider_id')
-            .in('rider_id', rider_ids);
+            .in('rider_id', riderIds);
         const existingIds = new Set(existingRiders?.map(r => r.rider_id) || []);
-        const newRiderIds = rider_ids.filter(id => !existingIds.has(id));
-        const skippedIds = rider_ids.filter(id => existingIds.has(id));
+        const newRiderIds = riderIds.filter(id => !existingIds.has(id));
+        const skippedIds = riderIds.filter(id => existingIds.has(id));
         if (skippedIds.length > 0) {
             console.log(`⏭️  Skipping ${skippedIds.length} existing riders: ${skippedIds.slice(0, 10).join(', ')}${skippedIds.length > 10 ? '...' : ''}`);
         }
@@ -697,6 +752,9 @@ app.post('/api/admin/riders', async (req, res) => {
             let racingSynced = false;
             let profileSynced = false;
             let errorMsg = '';
+            // 🔍 US2: Track fail codes voor gestructureerde error reporting
+            let errorCode = null;
+            let errorDetails = [];
             // Process ZwiftRacing data (uit bulk fetch)
             const racingData = bulkRacingData.get(riderId);
             if (racingData) {
@@ -745,16 +803,22 @@ app.post('/api/admin/riders', async (req, res) => {
                         console.log(`      ✅ ZwiftRacing data synced`);
                     }
                     else {
+                        errorCode = 'RACING_DB_WRITE_FAILED';
+                        errorDetails.push(`ZwiftRacing DB: ${error.message}`);
                         console.error(`      ❌ ZwiftRacing DB write failed:`, error.message);
                         errorMsg += `Racing DB: ${error.message}. `;
                     }
                 }
                 catch (err) {
+                    errorCode = 'RACING_PROCESSING_FAILED';
+                    errorDetails.push(`ZwiftRacing Processing: ${err.message}`);
                     console.error(`      ❌ ZwiftRacing processing failed:`, err.message);
                     errorMsg += `Racing: ${err.message}. `;
                 }
             }
             else {
+                errorCode = 'RACING_NOT_FOUND';
+                errorDetails.push('Rider not found in ZwiftRacing bulk response');
                 console.warn(`      ⚠️  No ZwiftRacing data in bulk response`);
                 errorMsg += 'No Racing data. ';
             }
@@ -807,11 +871,17 @@ app.post('/api/admin/riders', async (req, res) => {
                     console.log(`      ✅ Zwift Official data synced`);
                 }
                 else {
+                    if (!errorCode)
+                        errorCode = 'PROFILE_DB_WRITE_FAILED';
+                    errorDetails.push(`Zwift Official DB: ${error.message}`);
                     console.error(`      ❌ Zwift Official DB write failed:`, error.message);
                     errorMsg += `Profile DB: ${error.message}. `;
                 }
             }
             catch (err) {
+                if (!errorCode)
+                    errorCode = 'PROFILE_API_FAILED';
+                errorDetails.push(`Zwift Official API: ${err.message}`);
                 console.warn(`      ⚠️  Zwift Official API failed:`, err.message);
                 errorMsg += `Profile: ${err.message}. `;
             }
@@ -838,20 +908,26 @@ app.post('/api/admin/riders', async (req, res) => {
                 }
                 else {
                     failCount++;
+                    const finalErrorCode = 'ROSTER_UPDATE_FAILED';
                     results.push({
                         rider_id: riderId,
                         synced: false,
-                        error: `Roster update failed: ${rosterError.message}`
+                        error: `Roster update failed: ${rosterError.message}`,
+                        error_code: finalErrorCode,
+                        error_details: [`team_roster: ${rosterError.message}`]
                     });
                     console.error(`      ❌ team_roster update failed:`, rosterError.message);
                 }
             }
             else {
                 failCount++;
+                const finalErrorCode = errorCode || 'BOTH_APIS_FAILED';
                 results.push({
                     rider_id: riderId,
                     synced: false,
-                    error: errorMsg || 'Both APIs failed'
+                    error: errorMsg || 'Both APIs failed',
+                    error_code: finalErrorCode,
+                    error_details: errorDetails.length > 0 ? errorDetails : ['No data from ZwiftRacing or Zwift Official']
                 });
                 console.error(`      ❌ Sync failed: ${errorMsg || 'Both APIs failed'}`);
             }
@@ -875,8 +951,8 @@ app.post('/api/admin/riders', async (req, res) => {
         const skipped = results.filter(r => r.skipped).length;
         const duration = Date.now() - startTime;
         const status = failed === 0 ? 'success' : (synced > 0 ? 'partial' : 'failed');
-        console.log(`\n✅ BULK ADD COMPLETED:`);
-        console.log(`   Total requested: ${rider_ids.length}`);
+        console.log(`\n✅ ${operationType} ADD COMPLETED:`);
+        console.log(`   Total requested: ${riderIds.length}`);
         console.log(`   ✓ New riders added: ${synced}`);
         console.log(`   ⏭ Skipped (existing): ${skipped}`);
         console.log(`   ✗ Failed: ${failed}`);
@@ -886,26 +962,35 @@ app.post('/api/admin/riders', async (req, res) => {
         }
         console.log(`   ⏱️  Processing time: ${duration}ms`);
         console.log('');
-        // Update log entry
+        // Update log entry with error codes for failed riders
         if (logId) {
+            const failedRiders = results.filter(r => !r.synced && !r.skipped);
             await updateSyncLog(logId, {
                 status,
                 completed_at: new Date().toISOString(),
                 duration_ms: duration,
-                total_items: rider_ids.length,
+                total_items: riderIds.length,
                 success_count: synced,
                 failed_count: failed,
                 metadata: {
+                    operation_type: operationType,
                     skipped_count: skipped,
                     new_riders: newRiderIds,
                     skipped_riders: skippedIds,
-                    triggered_by: 'team_manager_upload'
+                    triggered_by: 'api_upload',
+                    // 🔍 US2: Include error codes in metadata
+                    failed_riders_errors: failedRiders.map(r => ({
+                        rider_id: r.rider_id,
+                        error_code: r.error_code,
+                        error_details: r.error_details
+                    }))
                 }
             });
         }
         res.json({
             success: true,
-            total: rider_ids.length,
+            operation: operationType,
+            total: riderIds.length,
             synced,
             failed,
             skipped,
@@ -956,30 +1041,263 @@ app.post('/api/admin/sync-all', async (req, res) => {
         });
     }
 });
-// Remove rider from team AND all source tables (clean database)
-app.delete('/api/admin/riders/:riderId', async (req, res) => {
+// GET sync config for frontend
+app.get('/api/admin/sync-config/:syncType?', async (req, res) => {
     try {
-        const riderId = parseInt(req.params.riderId);
-        // Delete from all tables for clean database
-        const deletePromises = [
-            supabase.from('team_roster').delete().eq('rider_id', riderId),
-            supabase.from('api_zwiftracing_riders').delete().eq('rider_id', riderId),
-            supabase.from('api_zwift_api_profiles').delete().eq('rider_id', riderId)
-        ];
-        const results = await Promise.allSettled(deletePromises);
-        // Check if any deletions failed
-        const failures = results.filter(r => r.status === 'rejected');
-        if (failures.length > 0) {
-            console.warn(`⚠️  Some deletions failed for rider ${riderId}`);
+        const syncType = req.params.syncType || SYNC_TYPE_TEAM_RIDERS;
+        const config = await loadSyncConfig(syncType);
+        if (!config) {
+            return res.status(404).json({ error: 'Config not found' });
         }
-        console.log(`🗑️  Removed rider ${riderId} from all tables (team + sources)`);
-        res.json({ success: true });
+        res.json({
+            enabled: config.enabled,
+            intervalMinutes: config.interval_minutes,
+            lastRun: config.last_run_at,
+            nextRun: config.next_run_at
+        });
     }
     catch (error) {
-        console.error('❌ Error removing rider:', error.message);
+        console.error('❌ Failed to get sync config:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+// POST update sync config
+app.post('/api/admin/sync-config', async (req, res) => {
+    try {
+        const { syncType = SYNC_TYPE_TEAM_RIDERS, enabled, intervalMinutes } = req.body;
+        const updates = { sync_type: syncType };
+        if (typeof enabled === 'boolean') {
+            updates.enabled = enabled;
+        }
+        if (typeof intervalMinutes === 'number' && intervalMinutes >= 0) {
+            updates.interval_minutes = intervalMinutes;
+        }
+        console.log('⚙️  Sync config update:', updates);
+        // Save to database
+        const saved = await saveSyncConfig(updates);
+        if (!saved) {
+            throw new Error('Failed to save config');
+        }
+        // Restart scheduler
+        if (updates.enabled === false) {
+            stopScheduler(syncType);
+        }
+        else {
+            await startScheduler(syncType);
+        }
+        // Get updated config
+        const config = await loadSyncConfig(syncType);
+        res.json({
+            success: true,
+            config: {
+                enabled: config?.enabled ?? true,
+                intervalMinutes: config?.interval_minutes ?? 60,
+                lastRun: config?.last_run_at ?? null,
+                nextRun: config?.next_run_at ?? null
+            }
+        });
+    }
+    catch (error) {
+        console.error('❌ Failed to update sync config:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// GET sync status for real-time monitoring
+app.get('/api/admin/sync-status', async (req, res) => {
+    try {
+        const syncType = req.query.syncType || SYNC_TYPE_TEAM_RIDERS;
+        // Check if sync is currently running (simplified check - could be enhanced)
+        const isRunning = false; // TODO: implement proper running state tracking
+        // Get last sync from logs
+        const { data: lastLog } = await supabase
+            .from('sync_logs')
+            .select('*')
+            .eq('sync_type', syncType)
+            .eq('status', 'success')
+            .order('completed_at', { ascending: false })
+            .limit(1)
+            .single();
+        const status = { isRunning };
+        if (lastLog && lastLog.completed_at) {
+            status.lastSync = {
+                timestamp: lastLog.completed_at,
+                duration: lastLog.duration_ms || 0,
+                synced: lastLog.success_count || 0,
+                failed: lastLog.failed_count || 0,
+                skipped: (lastLog.total_items || 0) - (lastLog.success_count || 0) - (lastLog.failed_count || 0)
+            };
+        }
+        res.json(status);
+    }
+    catch (error) {
+        console.error('❌ Failed to get sync status:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+// GET sync logs with filters
+app.get('/api/admin/sync-logs', async (req, res) => {
+    try {
+        const { syncType, triggerType, status, limit = 50 } = req.query;
+        let query = supabase
+            .from('sync_logs')
+            .select('*')
+            .order('started_at', { ascending: false })
+            .limit(parseInt(limit));
+        if (syncType)
+            query = query.eq('sync_type', syncType);
+        if (triggerType)
+            query = query.eq('trigger_type', triggerType);
+        if (status)
+            query = query.eq('status', status);
+        const { data, error } = await query;
+        if (error)
+            throw error;
+        res.json({ success: true, logs: data });
+    }
+    catch (error) {
+        console.error('❌ Failed to get sync logs:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Remove rider from team AND all source tables (clean database)
+// DELETE riders - Single or Bulk
+app.delete('/api/admin/riders/:riderId?', async (req, res) => {
+    const startTime = Date.now();
+    let logId = null;
+    try {
+        // 🎯 SMART INPUT DETECTION: Support multiple formats
+        let riderIds = [];
+        // Format 1: URL param /api/admin/riders/12345 (Single)
+        if (req.params.riderId) {
+            const id = parseInt(req.params.riderId);
+            if (!isNaN(id))
+                riderIds = [id];
+        }
+        // Format 2: Body { rider_ids: [...] } (Bulk delete)
+        else if (req.body?.rider_ids && Array.isArray(req.body.rider_ids)) {
+            riderIds = req.body.rider_ids.map((id) => typeof id === 'number' ? id : parseInt(id)).filter((id) => !isNaN(id));
+        }
+        // Format 3: Direct array in body (Bulk delete alternative)
+        else if (Array.isArray(req.body)) {
+            riderIds = req.body.map((id) => typeof id === 'number' ? id : parseInt(id)).filter((id) => !isNaN(id));
+        }
+        // Validation
+        if (riderIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid input. Expected: riderId in URL or rider_ids array in body'
+            });
+        }
+        const isSingle = riderIds.length === 1;
+        const operationType = isSingle ? 'SINGLE' : (riderIds.length <= 10 ? 'MULTIPLE' : 'BULK');
+        console.log(`\n🗑️  ${operationType} DELETE REQUEST: ${riderIds.length} rider${riderIds.length > 1 ? 's' : ''}`);
+        console.log(`   Riders: ${riderIds.slice(0, 10).join(', ')}${riderIds.length > 10 ? '...' : ''}`);
+        // Create log entry
+        logId = await createSyncLog({
+            sync_type: 'team_riders',
+            trigger_type: 'api',
+            status: 'running',
+            started_at: new Date().toISOString(),
+            total_items: riderIds.length,
+            metadata: {
+                operation: 'delete',
+                operation_type: operationType,
+                rider_ids: riderIds,
+                triggered_by: 'api_delete'
+            }
+        });
+        const results = [];
+        let successCount = 0;
+        let failCount = 0;
+        // Delete each rider from all tables
+        for (const riderId of riderIds) {
+            try {
+                const deletePromises = [
+                    supabase.from('team_roster').delete().eq('rider_id', riderId),
+                    supabase.from('api_zwiftracing_riders').delete().eq('rider_id', riderId),
+                    supabase.from('api_zwift_api_profiles').delete().eq('rider_id', riderId)
+                ];
+                const deleteResults = await Promise.allSettled(deletePromises);
+                // Check if any deletions failed
+                const failures = deleteResults.filter(r => r.status === 'rejected');
+                if (failures.length === 0) {
+                    successCount++;
+                    results.push({
+                        rider_id: riderId,
+                        deleted: true
+                    });
+                    console.log(`   ✅ Rider ${riderId} removed from all tables`);
+                }
+                else {
+                    failCount++;
+                    results.push({
+                        rider_id: riderId,
+                        deleted: false,
+                        error: 'Partial deletion failure'
+                    });
+                    console.warn(`   ⚠️  Rider ${riderId} - some deletions failed`);
+                }
+            }
+            catch (err) {
+                failCount++;
+                results.push({
+                    rider_id: riderId,
+                    deleted: false,
+                    error: err.message
+                });
+                console.error(`   ❌ Rider ${riderId} delete failed:`, err.message);
+            }
+        }
+        const duration = Date.now() - startTime;
+        const status = failCount === 0 ? 'success' : (successCount > 0 ? 'partial' : 'failed');
+        console.log(`\n✅ ${operationType} DELETE COMPLETED:`);
+        console.log(`   Total requested: ${riderIds.length}`);
+        console.log(`   ✓ Successfully deleted: ${successCount}`);
+        console.log(`   ✗ Failed: ${failCount}`);
+        console.log(`   ⏱️  Processing time: ${duration}ms`);
+        console.log('');
+        // Update log entry
+        if (logId) {
+            await updateSyncLog(logId, {
+                status,
+                completed_at: new Date().toISOString(),
+                duration_ms: duration,
+                total_items: riderIds.length,
+                success_count: successCount,
+                failed_count: failCount,
+                metadata: {
+                    operation: 'delete',
+                    operation_type: operationType,
+                    rider_ids: riderIds,
+                    triggered_by: 'api_delete'
+                }
+            });
+        }
+        res.json({
+            success: true,
+            operation: operationType,
+            total: riderIds.length,
+            deleted: successCount,
+            failed: failCount,
+            results,
+            logId
+        });
+    }
+    catch (error) {
+        console.error('❌ Error deleting riders:', error.message);
+        // Update log entry with error
+        if (logId) {
+            await updateSyncLog(logId, {
+                status: 'failed',
+                completed_at: new Date().toISOString(),
+                duration_ms: Date.now() - startTime,
+                error_message: error.message
+            });
+        }
         res.status(500).json({
             success: false,
-            error: error.message
+            error: error.message,
+            logId
         });
     }
 });
@@ -1272,93 +1590,6 @@ const stopScheduler = (syncType) => {
         console.log(`⏹️  Scheduler stopped for ${syncType}`);
     }
 };
-// GET sync config for a sync type
-app.get('/api/admin/sync-config/:syncType?', async (req, res) => {
-    try {
-        const syncType = req.params.syncType || SYNC_TYPE_TEAM_RIDERS;
-        const config = await loadSyncConfig(syncType);
-        if (!config) {
-            return res.status(404).json({ error: 'Config not found' });
-        }
-        // Format response for frontend compatibility
-        res.json({
-            enabled: config.enabled,
-            intervalMinutes: config.interval_minutes,
-            lastRun: config.last_run_at,
-            nextRun: config.next_run_at
-        });
-    }
-    catch (error) {
-        console.error('❌ Failed to get sync config:', error);
-        res.status(500).json({ error: error.message });
-    }
-});
-// POST update sync config
-app.post('/api/admin/sync-config', async (req, res) => {
-    try {
-        const { syncType = SYNC_TYPE_TEAM_RIDERS, enabled, intervalMinutes } = req.body;
-        const updates = { sync_type: syncType };
-        if (typeof enabled === 'boolean') {
-            updates.enabled = enabled;
-        }
-        if (typeof intervalMinutes === 'number' && intervalMinutes >= 0) {
-            updates.interval_minutes = intervalMinutes;
-        }
-        console.log('⚙️  Sync config update:', updates);
-        // Save to database
-        const saved = await saveSyncConfig(updates);
-        if (!saved) {
-            throw new Error('Failed to save config');
-        }
-        // Restart scheduler
-        if (updates.enabled === false) {
-            stopScheduler(syncType);
-        }
-        else {
-            await startScheduler(syncType);
-        }
-        // Get updated config
-        const config = await loadSyncConfig(syncType);
-        res.json({
-            success: true,
-            config: {
-                enabled: config?.enabled ?? true,
-                intervalMinutes: config?.interval_minutes ?? 60,
-                lastRun: config?.last_run_at ?? null,
-                nextRun: config?.next_run_at ?? null
-            }
-        });
-    }
-    catch (error) {
-        console.error('❌ Failed to update sync config:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// GET sync logs with filters
-app.get('/api/admin/sync-logs', async (req, res) => {
-    try {
-        const { syncType, triggerType, status, limit = 50 } = req.query;
-        let query = supabase
-            .from('sync_logs')
-            .select('*')
-            .order('started_at', { ascending: false })
-            .limit(parseInt(limit));
-        if (syncType)
-            query = query.eq('sync_type', syncType);
-        if (triggerType)
-            query = query.eq('trigger_type', triggerType);
-        if (status)
-            query = query.eq('status', status);
-        const { data, error } = await query;
-        if (error)
-            throw error;
-        res.json({ success: true, logs: data });
-    }
-    catch (error) {
-        console.error('❌ Failed to get sync logs:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
 // ============================================
 // INITIALIZE & START SERVER
 // ============================================
