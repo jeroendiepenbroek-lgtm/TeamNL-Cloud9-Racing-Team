@@ -58,6 +58,9 @@ export default function TeamManager() {
   
   // File upload
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  
+  // Search filter for Manage view
+  const [searchTerm, setSearchTerm] = useState('')
 
   // Initial load of rider count
   useEffect(() => {
@@ -643,6 +646,48 @@ export default function TeamManager() {
               </div>
             </div>
 
+            {/* Search Filter */}
+            <div className="bg-white rounded-xl shadow-lg p-4 mb-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="🔍 Zoek op naam, rider ID, of land..."
+                  className="w-full px-4 py-3 pl-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-lg"
+                />
+                <svg
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              {searchTerm && (
+                <div className="mt-2 text-sm text-gray-600">
+                  {riders.filter(rider => 
+                    rider.rider_id.toString().includes(searchTerm.toLowerCase()) ||
+                    (rider.name && rider.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (rider.full_name && rider.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (rider.racing_name && rider.racing_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (rider.country_alpha3 && rider.country_alpha3.toLowerCase().includes(searchTerm.toLowerCase()))
+                  ).length} resultaten gevonden
+                </div>
+              )}
+            </div>
+
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -659,7 +704,19 @@ export default function TeamManager() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
-                    {riders.map((rider) => (
+                    {riders
+                      .filter(rider => {
+                        if (!searchTerm) return true;
+                        const search = searchTerm.toLowerCase();
+                        return (
+                          rider.rider_id.toString().includes(search) ||
+                          (rider.name && rider.name.toLowerCase().includes(search)) ||
+                          (rider.full_name && rider.full_name.toLowerCase().includes(search)) ||
+                          (rider.racing_name && rider.racing_name.toLowerCase().includes(search)) ||
+                          (rider.country_alpha3 && rider.country_alpha3.toLowerCase().includes(search))
+                        );
+                      })
+                      .map((rider) => (
                       <tr key={rider.rider_id} className="hover:bg-blue-50 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
@@ -671,7 +728,7 @@ export default function TeamManager() {
                             />
                             <div>
                               <div className="font-bold text-gray-900">
-                                {rider.full_name || rider.racing_name || `Rider ${rider.rider_id}`}
+                                {rider.full_name || rider.name || rider.racing_name || `Rider ${rider.rider_id}`}
                               </div>
                               <div className="text-sm text-gray-500 flex items-center gap-2">
                                 {rider.country_alpha3 && (
