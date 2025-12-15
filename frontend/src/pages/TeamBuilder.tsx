@@ -352,23 +352,48 @@ export default function TeamBuilder() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 py-6 px-4 sm:px-6 shadow-2xl">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3">
-                  🏆 Team Builder
-                </h1>
-                <p className="text-blue-100 mt-2">Create competition teams with vELO or category validation</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        {/* Modern Hero Header with Glassmorphism (Racing Matrix Style) */}
+        <div className="relative overflow-hidden mb-4 sm:mb-6">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-95"></div>
+          <div className="relative px-3 py-4 sm:px-6 sm:py-6 lg:py-10">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 lg:p-4 bg-white/20 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-2xl flex-shrink-0">
+                  <svg className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
+                    <span className="truncate">TEAM BUILDER</span>
+                  </h1>
+                  <p className="text-blue-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
+                    TeamNL Cloud9 Racing · Competition Teams
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl"
+                >
+                  ← Dashboard
+                </button>
               </div>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
-              >
-                ← Dashboard
-              </button>
+              
+              {/* vELO Legend */}
+              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-3 sm:p-4 border border-white/20 shadow-lg">
+                <h3 className="text-white text-xs sm:text-sm font-bold mb-2 sm:mb-3">vELO Tiers</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+                  {VELO_TIERS.map((tier) => (
+                    <div key={tier.rank} className="flex items-center gap-2">
+                      <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-md`}>
+                        {tier.rank}
+                      </div>
+                      <span className="text-white text-xs sm:text-sm font-medium">{tier.icon} {tier.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -667,18 +692,20 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
             
             {/* Stats Row */}
             <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Category Badge - LARGER */}
-              <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
+              {/* Category Badge - RACING MATRIX STYLE */}
+              <span className={`inline-block px-3 py-1 text-sm font-bold rounded-md border-2 ${categoryColor} shadow-lg`}>
                 {rider.category}
               </span>
               
-              {/* vELO 30-day Badge - LARGER & MORE READABLE */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/80 rounded-md border border-gray-600 shadow-md">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
+              {/* vELO Rank + 30-day Value */}
+              <div className="flex items-center gap-2">
+                {/* Rank Circle */}
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md`}>
                   {veloTier?.rank || '?'}
                 </div>
-                <span className="text-sm font-bold text-white">
-                  {veloTier?.icon} {Math.floor(velo30day)}
+                {/* 30-day Value */}
+                <span className="text-white text-base font-bold">
+                  {Math.floor(velo30day)}
                 </span>
               </div>
             </div>
@@ -740,18 +767,18 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
             
             {/* Stats Row */}
             <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Category Badge - LARGER */}
-              <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
+              {/* Category Badge - Prominent */}
+              <span className={`inline-flex items-center px-3 py-1 text-sm font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
                 {rider.category}
               </span>
               
-              {/* vELO 30-day Badge - LARGER & MORE READABLE */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-800/80 rounded-md border border-gray-600 shadow-md">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
+              {/* vELO Rank Badge + 30-day Value */}
+              <div className="flex items-center gap-2">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md`}>
                   {veloTier?.rank || '?'}
                 </div>
-                <span className="text-sm font-bold text-white">
-                  {veloTier?.icon} {Math.floor(velo30day)}
+                <span className="text-white text-base font-bold">
+                  {Math.floor(velo30day)}
                 </span>
               </div>
               
