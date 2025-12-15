@@ -48,6 +48,8 @@ export default function TeamBuilder() {
   
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeRider, setActiveRider] = useState<Rider | null>(null)
   
@@ -158,6 +160,47 @@ export default function TeamBuilder() {
     }
   })
   
+  // Update team mutation
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ teamId, updates }: { teamId: number, updates: any }) => {
+      const res = await fetch(`/api/teams/${teamId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      if (!res.ok) throw new Error('Failed to update team')
+      return res.json()
+    },
+    onSuccess: (data) => {
+      toast.success(`Team "${data.team.team_name}" updated!`)
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      setShowEditModal(false)
+      setSelectedTeam(data.team)
+    },
+    onError: (error: any) => {
+      toast.error(error.message)
+    }
+  })
+  
+  // Delete team mutation
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const res = await fetch(`/api/teams/${teamId}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) throw new Error('Failed to delete team')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Team deleted')
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      setSelectedTeam(null)
+    },
+    onError: (error: any) => {
+      toast.error(error.message)
+    }
+  })
+  
   const teams: Team[] = teamsData?.teams || []
   const allRiders: Rider[] = ridersData?.riders || []
   const lineup: LineupRider[] = lineupData?.lineup || []
@@ -202,6 +245,20 @@ export default function TeamBuilder() {
   
   const handleCreateTeam = () => {
     createTeamMutation.mutate(newTeam)
+  }
+  
+  const handleEditTeam = (updates: any) => {
+    if (!editingTeam) return
+    updateTeamMutation.mutate({
+      teamId: editingTeam.team_id,
+      updates
+    })
+  }
+  
+  const handleDeleteTeam = (teamId: number) => {
+    if (confirm('Weet je zeker dat je dit team wilt verwijderen? Alle lineup data wordt ook verwijderd.')) {
+      deleteTeamMutation.mutate(teamId)
+    }
   }
   
   const handleAddRider = (riderId: number) => {
@@ -301,18 +358,21 @@ export default function TeamBuilder() {
                     </div>
                   ) : (
                     teams.map(team => (
-                      <button
+                      <div
                         key={team.team_id}
-                        onClick={() => setSelectedTeam(team)}
-                        className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                        className={`p-4 rounded-lg border-2 transition-all ${
                           selectedTeam?.team_id === team.team_id
                             ? 'bg-blue-500/20 border-blue-500'
                             : 'bg-gray-700/30 border-gray-600 hover:border-gray-500'
                         }`}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg">{team.team_name}</h3>
+                        <div 
+                          onClick={() => setSelectedTeam(team)}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-bold text-lg">{team.team_name}</h3>
                             <p className="text-sm text-gray-400">{team.competition_name}</p>
                             <div className="flex items-center gap-2 mt-2">
                               <span className={`text-xs px-2 py-1 rounded-full ${
@@ -353,7 +413,29 @@ export default function TeamBuilder() {
                             </div>
                           </div>
                         )}
-                      </button>
+                        </div>
+                        <div className="flex gap-2 mt-3 pt-3 border-t border-gray-600">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTeam(team);
+                              setShowEditModal(true);
+                            }}
+                            className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                          >
+                            ✏️ Bewerk
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteTeam(team.team_id);
+                            }}
+                            className="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                          >
+                            🗑️ Verwijder
+                          </button>
+                        </div>
+                      </div>
                     ))
                   )}
                 </div>
@@ -458,6 +540,19 @@ export default function TeamBuilder() {
             </div>
           </div>
         </div>
+        
+        {/* Edit Team Modal */}
+        {showEditModal && editingTeam && (
+          <EditTeamModal
+            team={editingTeam}
+            onClose={() => {
+              setShowEditModal(false)
+              setEditingTeam(null)
+            }}
+            onSave={handleEditTeam}
+            isLoading={updateTeamMutation.isPending}
+          />
+        )}
         
         {/* Create Team Modal */}
         {showCreateModal && (
@@ -587,6 +682,189 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
   )
 }
 
+// Edit Team Modal Component
+function EditTeamModal({ 
+  team, 
+  onClose, 
+  onSave,
+  isLoading 
+}: {
+  team: Team
+  onClose: () => void
+  onSave: (updates: any) => void
+  isLoading: boolean
+}) {
+  const [editedTeam, setEditedTeam] = useState({
+    team_name: team.team_name,
+    competition_name: team.competition_name,
+    competition_type: team.competition_type,
+    velo_min_rank: team.velo_min_rank || 1,
+    velo_max_rank: team.velo_max_rank || 10,
+    allowed_categories: team.allowed_categories || [],
+    min_riders: team.min_riders || 1,
+    max_riders: team.max_riders || 10
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-xl border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-4">✏️ Bewerk Team</h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Team Naam</label>
+              <input
+                type="text"
+                value={editedTeam.team_name}
+                onChange={(e) => setEditedTeam({...editedTeam, team_name: e.target.value})}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="Team naam..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Competitie Type</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditedTeam({...editedTeam, competition_type: 'velo'})}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    editedTeam.competition_type === 'velo'
+                      ? 'border-purple-500 bg-purple-500/20'
+                      : 'border-gray-600 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="font-bold">⚡ vELO</div>
+                  <div className="text-xs text-gray-400">bijvoorbeeld: Club Ladder</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditedTeam({...editedTeam, competition_type: 'category'})}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    editedTeam.competition_type === 'category'
+                      ? 'border-blue-500 bg-blue-500/20'
+                      : 'border-gray-600 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="font-bold">🏆 Category</div>
+                  <div className="text-xs text-gray-400">bijvoorbeeld: WTRL ZRL</div>
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Competitie Naam</label>
+              <input
+                type="text"
+                value={editedTeam.competition_name}
+                onChange={(e) => setEditedTeam({...editedTeam, competition_name: e.target.value})}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="bijv. WTRL ZRL Division 1"
+              />
+            </div>
+            
+            {editedTeam.competition_type === 'velo' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Min vELO Rank</label>
+                  <input
+                    type="number"
+                    value={editedTeam.velo_min_rank}
+                    onChange={(e) => setEditedTeam({...editedTeam, velo_min_rank: parseInt(e.target.value)})}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Max vELO Rank</label>
+                  <input
+                    type="number"
+                    value={editedTeam.velo_max_rank}
+                    onChange={(e) => setEditedTeam({...editedTeam, velo_max_rank: parseInt(e.target.value)})}
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                    min="1"
+                  />
+                </div>
+              </div>
+            )}
+            
+            {editedTeam.competition_type === 'category' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Toegestane Categorieën</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {['A+', 'A', 'B', 'C', 'D'].map(cat => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => {
+                        const current = editedTeam.allowed_categories || [];
+                        setEditedTeam({
+                          ...editedTeam,
+                          allowed_categories: current.includes(cat)
+                            ? current.filter(c => c !== cat)
+                            : [...current, cat]
+                        });
+                      }}
+                      className={`px-3 py-2 rounded-lg font-bold transition-all ${
+                        (editedTeam.allowed_categories || []).includes(cat)
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-700 border border-gray-600 hover:border-gray-500'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Min Rijders</label>
+                <input
+                  type="number"
+                  value={editedTeam.min_riders}
+                  onChange={(e) => setEditedTeam({...editedTeam, min_riders: parseInt(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Max Rijders</label>
+                <input
+                  type="number"
+                  value={editedTeam.max_riders}
+                  onChange={(e) => setEditedTeam({...editedTeam, max_riders: parseInt(e.target.value)})}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                  min="1"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              disabled={isLoading}
+            >
+              Annuleer
+            </button>
+            <button
+              onClick={() => onSave(editedTeam)}
+              className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-lg font-semibold shadow-lg transition-colors disabled:opacity-50"
+              disabled={isLoading || !editedTeam.team_name.trim() || !editedTeam.competition_name.trim()}
+            >
+              {isLoading ? 'Opslaan...' : '💾 Wijzigingen Opslaan'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Create Team Modal Component
 function CreateTeamModal({ 
   newTeam, 
@@ -633,7 +911,7 @@ function CreateTeamModal({
               >
                 <div className="text-2xl mb-2">🏆</div>
                 <div className="font-bold">Category</div>
-                <div className="text-xs text-gray-400">WTRL ZRL</div>
+                <div className="text-xs text-gray-400">bijvoorbeeld: WTRL ZRL</div>
               </button>
               <button
                 onClick={() => setNewTeam({ ...newTeam, competition_type: 'velo' })}
@@ -645,7 +923,7 @@ function CreateTeamModal({
               >
                 <div className="text-2xl mb-2">⚡</div>
                 <div className="font-bold">vELO</div>
-                <div className="text-xs text-gray-400">Club Ladder</div>
+                <div className="text-xs text-gray-400">bijvoorbeeld: Club Ladder</div>
               </button>
             </div>
           </div>
