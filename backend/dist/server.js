@@ -900,9 +900,15 @@ app.post('/api/admin/riders', async (req, res) => {
             }
             // Update team_roster als minstens 1 API succesvol was EN data in source tables staat
             if (racingSynced || profileSynced) {
-                // Verify rider exists in source tables (om FK constraint error te voorkomen)
-                const sourceExists = racingSynced || profileSynced;
-                if (sourceExists) {
+                // ⏳ Wait 500ms voor database sync (views kunnen vertraagd zijn)
+                await new Promise(resolve => setTimeout(resolve, 500));
+                // Verify rider exists in v_rider_complete view
+                const { data: viewCheck, error: viewError } = await supabase
+                    .from('v_rider_complete')
+                    .select('rider_id')
+                    .eq('rider_id', riderId)
+                    .single();
+                if (viewCheck && !viewError) {
                     const { error: rosterError } = await supabase
                         .from('team_roster')
                         .upsert({
@@ -923,22 +929,32 @@ app.post('/api/admin/riders', async (req, res) => {
                         console.log(`      ✅ Added to team_roster`);
                     }
                     else {
-                        // FK constraint error - data niet in source tables
-                        if (rosterError.message.includes('foreign key constraint')) {
-                            errorCode = errorCode || 'FK_CONSTRAINT_FAILED';
-                            errorDetails.push('FK Error: Rider data not properly saved to source tables');
-                        }
                         failCount++;
-                        const finalErrorCode = errorCode || 'ROSTER_UPDATE_FAILED';
+                        errorCode = errorCode || 'ROSTER_UPDATE_FAILED';
+                        errorDetails.push(`team_roster: ${rosterError.message}`);
                         results.push({
                             rider_id: riderId,
                             synced: false,
                             error: `Roster update failed: ${rosterError.message}`,
-                            error_code: finalErrorCode,
-                            error_details: errorDetails.length > 0 ? errorDetails : [`team_roster: ${rosterError.message}`]
+                            error_code: errorCode,
+                            error_details: errorDetails
                         });
                         console.error(`      ❌ team_roster update failed:`, rosterError.message);
                     }
+                }
+                else {
+                    // Rider data saved maar niet zichtbaar in view (FK zou moeten werken)
+                    failCount++;
+                    errorCode = errorCode || 'VIEW_NOT_READY';
+                    errorDetails.push('Rider data saved but not visible in v_rider_complete view');
+                    results.push({
+                        rider_id: riderId,
+                        synced: false,
+                        error: 'Data saved but view not ready. Try manual sync later.',
+                        error_code: errorCode,
+                        error_details: errorDetails
+                    });
+                    console.warn(`      ⚠️  Data saved but not in view yet (may need manual sync)`);
                 }
             }
             else {
