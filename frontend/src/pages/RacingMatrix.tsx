@@ -3,7 +3,6 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useFavorites } from '../hooks/useFavorites'
-import SantaRider from '../components/SantaRider'
 
 interface MatrixRider {
   // Identity
@@ -427,9 +426,6 @@ export default function RacingDataMatrixModern() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-8">
-      {/* Santa Rider - Bottom Right */}
-      <SantaRider riderId={396624} />
-      
       {/* Modern Hero Header with Glassmorphism */}
       <div className="relative overflow-hidden mb-4 sm:mb-6">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-95"></div>
