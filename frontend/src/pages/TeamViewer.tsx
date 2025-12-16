@@ -48,7 +48,7 @@ interface LineupRider {
   velo_live: number
   velo_30day: number | null
   phenotype: string | null
-  ftp_watts: number | null
+  racing_ftp: number | null
   weight_kg: number | null
   lineup_position: number
 }
@@ -200,14 +200,14 @@ function RidersTable({ lineup }: { lineup: LineupRider[] }) {
             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">#</th>
             <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Rider</th>
             <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">Cat</th>
-            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">vELO Tier</th>
-            <th className="px-3 py-2 text-right text-xs font-semibold text-gray-400 uppercase">vELO (actual)</th>
-            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase" colSpan={2}>zFTP</th>
+            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">vELO Live</th>
+            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">vELO 30-day</th>
+            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase" colSpan={2}>Racing FTP</th>
             <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">Phenotype</th>
           </tr>
           <tr className="border-b border-gray-700/50">
             <th colSpan={5}></th>
-            <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 uppercase">FTP</th>
+            <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 uppercase">FTP (W)</th>
             <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 uppercase">W/kg</th>
             <th></th>
           </tr>
@@ -227,9 +227,10 @@ function RidersTable({ lineup }: { lineup: LineupRider[] }) {
 // Rider Row Component
 function RiderRow({ rider }: { rider: LineupRider }) {
   const velo30day = rider.velo_30day || rider.velo_live
-  const veloTier = getVeloTier(velo30day)
+  const veloLiveTier = getVeloTier(rider.velo_live)
+  const velo30dayTier = getVeloTier(velo30day)
   const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
-  const ftpWkg = rider.ftp_watts && rider.weight_kg ? (rider.ftp_watts / rider.weight_kg).toFixed(1) : null
+  const ftpWkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : null
   
   return (
     <tr className="border-b border-gray-700/30 hover:bg-blue-900/30 transition-colors">
@@ -260,24 +261,25 @@ function RiderRow({ rider }: { rider: LineupRider }) {
         </span>
       </td>
       
-      {/* vELO Tier (Rank badge + 30-day) */}
+      {/* vELO Live Badge (Tier + Score) */}
       <td className="px-3 py-3 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md`}>
-            {veloTier?.rank || '?'}
-          </div>
-          <span className="text-white font-semibold">{Math.floor(velo30day)}</span>
+        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${veloLiveTier?.color || 'from-gray-400 to-gray-600'} ${veloLiveTier?.textColor || 'text-white'} shadow-md border border-white/20`}>
+          <span className="font-bold text-xs">#{veloLiveTier?.rank || '?'}</span>
+          <span className="font-bold text-sm">{rider.velo_live?.toFixed(0) || 'N/A'}</span>
         </div>
       </td>
       
-      {/* vELO (actual = live) */}
-      <td className="px-3 py-3 text-right">
-        <span className="text-white font-semibold">{rider.velo_live?.toFixed(1) || 'N/A'}</span>
+      {/* vELO 30-day Badge (Tier + Score) */}
+      <td className="px-3 py-3 text-center">
+        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${velo30dayTier?.color || 'from-gray-400 to-gray-600'} ${velo30dayTier?.textColor || 'text-white'} shadow-md border border-white/20`}>
+          <span className="font-bold text-xs">#{velo30dayTier?.rank || '?'}</span>
+          <span className="font-bold text-sm">{velo30day?.toFixed(0) || 'N/A'}</span>
+        </div>
       </td>
       
-      {/* zFTP - FTP */}
+      {/* Racing FTP - Watts */}
       <td className="px-3 py-3 text-right">
-        <span className="text-white font-semibold">{rider.ftp_watts || '-'}</span>
+        <span className="text-white font-semibold">{rider.racing_ftp || '-'}</span>
       </td>
       
       {/* zFTP - W/kg */}
