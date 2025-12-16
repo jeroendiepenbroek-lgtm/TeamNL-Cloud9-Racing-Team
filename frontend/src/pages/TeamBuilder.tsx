@@ -657,9 +657,8 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
   
-  // FORCEER altijd een category - gebruik fallback als het ontbreekt
-  const category = rider.category || 'D'
-  const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-600 text-white border-gray-700'
+  // Gebruik de echte category van de rider
+  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-600 text-white border-gray-700'
   
   return (
     <div
@@ -674,7 +673,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
         <div className="flex items-center justify-between gap-3 mb-3">
           {/* CATEGORY BADGE - HUGE & VISIBLE */}
           <div className={`px-5 py-2.5 text-2xl font-black rounded-lg border-3 ${categoryColor} shadow-lg`}>
-            {category}
+            {rider.category || '?'}
           </div>
           
           {/* vELO Badge */}
