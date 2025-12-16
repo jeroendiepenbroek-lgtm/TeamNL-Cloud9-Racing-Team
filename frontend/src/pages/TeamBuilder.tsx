@@ -672,13 +672,13 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       )}
       
       {/* Category Badge - TOP PROMINENT POSITION */}
-      <div className="relative bg-gradient-to-r from-blue-950/80 to-indigo-950/80 px-4 py-2 border-b-2 border-orange-500/30">
+      <div className="relative bg-gradient-to-r from-orange-600/20 via-blue-800/30 to-orange-600/20 px-4 py-2 border-b-2 border-orange-500/40">
         <div className="flex items-center justify-between gap-3">
           <span className={`inline-flex items-center justify-center px-5 py-2 text-xl font-black rounded-lg border-2 ${categoryColor} shadow-2xl shadow-black/50 min-w-[60px] tracking-wider`}>
             {rider.category}
           </span>
           {/* vELO Rank Badge */}
-          <div className="flex items-center gap-2 bg-orange-500/20 px-3 py-1.5 rounded-lg border-2 border-orange-500/50 shadow-lg">
+          <div className="flex items-center gap-2 bg-orange-500/30 px-3 py-1.5 rounded-lg border-2 border-orange-500/60 shadow-lg">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md border-2 border-white/30`}>
               {veloTier?.rank || '?'}
             </div>
