@@ -729,12 +729,10 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
         {/* Bottom: Stats - Subtiel en compact */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-200/60">
           <div className="flex items-center gap-3 text-sm">
-            {/* vELO Rank Badge - Klein en subtiel */}
-            <div className="flex items-center gap-1.5">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
-                {veloTier?.rank || '?'}
-              </div>
-              <span className="text-gray-700 font-semibold text-sm">{Math.floor(velo30day)}</span>
+            {/* vELO Tier Badge met 30-day score - Combined */}
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm border border-white/20`}>
+              <span className="font-bold text-xs">#{veloTier?.rank || '?'}</span>
+              <span className="font-bold text-sm">{Math.floor(velo30day)}</span>
             </div>
             
             {rider.zwift_official_racing_score && (
@@ -760,7 +758,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
   )
 }
 
-// Lineup Rider Card Component - Modern Design
+// Lineup Rider Card Component - Compact Design
 function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: () => void }) {
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
@@ -768,99 +766,67 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
   const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
   
   return (
-    <div className={`relative bg-gradient-to-br p-4 rounded-xl border-2 transition-all shadow-lg ${
+    <div className={`relative bg-gradient-to-br p-2.5 rounded-lg border transition-all shadow-md ${
       rider.is_valid 
-        ? 'from-blue-900 to-indigo-950 border-orange-500/50 shadow-orange-500/10'
-        : 'from-red-900/40 to-gray-900 border-red-500 shadow-red-500/20'
+        ? 'from-blue-900/80 to-indigo-950/80 border-orange-500/40'
+        : 'from-red-900/40 to-gray-900 border-red-500'
     }`}>
-      {/* Position Badge */}
-      <div className="absolute -top-2 -left-2 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-lg border-2 border-gray-900">
+      {/* Position Badge - Smaller */}
+      <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs shadow-md border-2 border-gray-900">
         {rider.lineup_position}
       </div>
       
-      {/* Tier Background Gradient */}
-      {veloTier && rider.is_valid && (
-        <div className={`absolute inset-0 bg-gradient-to-r ${veloTier.color} opacity-5 rounded-xl pointer-events-none`} />
-      )}
-      
-      <div className="relative flex items-center justify-between gap-3">
-        {/* Left: Avatar + Info */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <img 
-            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`}
-            alt={rider.name}
-            className="w-12 h-12 rounded-full border-2 border-gray-600 shadow-md flex-shrink-0"
-            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`; }}
-          />
-          
-          <div className="flex-1 min-w-0">
-            {/* Name */}
-            <div className="font-bold text-white text-base truncate mb-2">
-              {rider.name || rider.full_name}
-            </div>
-            
-            {/* Stats Row 1: Category + vELO + Validation */}
-            <div className="flex items-center gap-2.5 flex-wrap mb-2">
-              {/* Category Badge - Prominent */}
-              <span className={`inline-flex items-center px-3 py-1 text-sm font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
-                {category}
-              </span>
-              
-              {/* vELO Rank Badge + 30-day Value */}
-              <div className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md`}>
-                  {veloTier?.rank || '?'}
-                </div>
-                <span className="text-white text-base font-bold">
-                  {Math.floor(velo30day)}
-                </span>
-              </div>
-              
-              {/* Validation Status */}
-              {rider.is_valid ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-500/20 text-green-300 rounded-md text-xs font-bold border border-green-500/30">
-                  <span>✓</span> Valid
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-500/20 text-red-300 rounded-md text-xs font-bold border border-red-500/30">
-                  <span>✗</span> Invalid
-                </span>
-              )}
-            </div>
-            
-            {/* Stats Row 2: Phenotype + ZRS 30-day */}
-            <div className="flex items-center gap-2.5 flex-wrap text-sm">
-              {/* Phenotype */}
-              {rider.phenotype && (
-                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md border border-purple-500/30 font-semibold">
-                  {rider.phenotype}
-                </span>
-              )}
-              
-              {/* ZRS 30-day */}
-              {rider.zwift_official_racing_score && (
-                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-300 rounded-md border border-orange-500/30 font-semibold">
-                  ZRS {rider.zwift_official_racing_score}
-                </span>
-              )}
-            </div>
-            
-            {/* Validation Warning */}
-            {!rider.is_valid && rider.validation_warning && (
-              <div className="text-xs text-red-400 mt-2 flex items-start gap-1">
-                <span className="flex-shrink-0">⚠️</span>
-                <span>{rider.validation_warning}</span>
-              </div>
-            )}
+      <div className="relative flex items-center gap-2.5">
+        {/* Avatar - Smaller */}
+        <img 
+          src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=36`}
+          alt={rider.name}
+          className="w-9 h-9 rounded-full border-2 border-gray-600 shadow-sm flex-shrink-0"
+          onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=36`; }}
+        />
+        
+        {/* Name - Compact */}
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-white text-sm truncate">
+            {rider.name || rider.full_name}
           </div>
         </div>
         
-        {/* Right: Remove Button */}
+        {/* Stats - Single Row */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Category Badge - Compact */}
+          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-bold rounded border ${categoryColor}`}>
+            {category}
+          </span>
+          
+          {/* vELO Tier Badge met 30-day score - Combined */}
+          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm border border-white/20`}>
+            <span className="font-bold text-xs">#{veloTier?.rank || '?'}</span>
+            <span className="text-white font-bold text-sm">{Math.floor(velo30day)}</span>
+          </div>
+          
+          {/* Phenotype - Compact */}
+          {rider.phenotype && (
+            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs font-semibold border border-purple-500/30">
+              {rider.phenotype}
+            </span>
+          )}
+          
+          {/* Validation Icon - Compact */}
+          {rider.is_valid ? (
+            <span className="text-green-400 text-lg" title="Valid">✓</span>
+          ) : (
+            <span className="text-red-400 text-lg" title={rider.validation_warning || 'Invalid'}>✗</span>
+          )}
+        </div>
+        
+        {/* Remove Button - Compact */}
         <button
           onClick={onRemove}
-          className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+          className="flex-shrink-0 px-2 py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-xs font-bold shadow-sm hover:shadow-md transition-all"
+          title="Remove rider"
         >
-          Remove
+          ✕
         </button>
       </div>
     </div>

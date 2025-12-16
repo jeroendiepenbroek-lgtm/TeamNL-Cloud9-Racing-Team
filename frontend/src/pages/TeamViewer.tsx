@@ -95,13 +95,13 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                 </p>
               </div>
               <button
-                onClick={() => window.location.href = '/team-builder'}
+                onClick={() => window.location.pathname = '/team-competition'}
                 className="px-3 py-2 sm:px-4 sm:py-2.5 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-green-400/50 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl"
               >
                 ✏️ Builder
               </button>
               <button
-                onClick={() => window.location.href = 'https://teamnl-cloud9-racing-team-production.up.railway.app/'}
+                onClick={() => window.location.pathname = '/'}
                 className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl"
               >
                 ← Dashboard
@@ -120,7 +120,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           <div className="text-center text-gray-600 py-12">
             <p className="text-xl mb-4">Geen teams gevonden</p>
             <button
-              onClick={() => window.location.href = '/team-builder'}
+              onClick={() => window.location.pathname = '/team-competition'}
               className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-semibold shadow-lg"
             >
               + Nieuw Team Aanmaken

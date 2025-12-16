@@ -3,7 +3,7 @@ import TeamBuilder from './TeamBuilder'
 import TeamViewer from './TeamViewer'
 
 export default function TeamCompetition() {
-  const [activeTab, setActiveTab] = useState<'builder' | 'viewer'>('builder')
+  const [activeTab, setActiveTab] = useState<'builder' | 'viewer'>('viewer')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
