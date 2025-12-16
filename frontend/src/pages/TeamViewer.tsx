@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
-// Category colors (matching RacingMatrix)
+// Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
 const CATEGORY_COLORS = {
-  'A+': 'bg-red-100 text-red-900 border-red-300',
-  'A': 'bg-red-50 text-red-800 border-red-200',
-  'B': 'bg-green-50 text-green-800 border-green-200',
-  'C': 'bg-blue-50 text-blue-800 border-blue-200',
-  'D': 'bg-yellow-50 text-yellow-800 border-yellow-200',
+  'A+': 'bg-red-500 text-white border-red-400',
+  'A': 'bg-red-600 text-white border-red-500',
+  'B': 'bg-green-500 text-white border-green-400',
+  'C': 'bg-blue-500 text-white border-blue-400',
+  'D': 'bg-yellow-500 text-white border-yellow-400',
 }
 
 // vELO Tiers (matching RacingMatrix)
@@ -158,7 +158,7 @@ function TeamCard({ team }: { team: Team }) {
   }[team.team_status]
   
   return (
-    <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-gray-700 p-6 shadow-xl">
+    <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 p-6 shadow-xl">
       {/* Team Header */}
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-700">
         <div>
@@ -197,11 +197,11 @@ function TeamCard({ team }: { team: Team }) {
 function RiderCard({ rider }: { rider: LineupRider }) {
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
-  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800 border-gray-300'
+  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
   const ftpWkg = rider.ftp_watts && rider.weight_kg ? (rider.ftp_watts / rider.weight_kg).toFixed(1) : null
   
   return (
-    <div className="relative bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-4 border border-gray-600 shadow-lg hover:shadow-xl transition-all">
+    <div className="relative bg-gradient-to-br from-blue-900 to-indigo-950 rounded-lg p-4 border border-orange-500/30 shadow-lg hover:shadow-xl hover:border-orange-400 hover:shadow-orange-500/10 transition-all">
       {/* Position Badge */}
       {rider.lineup_position && (
         <div className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs shadow-md border-2 border-gray-900">

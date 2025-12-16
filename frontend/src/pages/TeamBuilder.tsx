@@ -6,13 +6,13 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter } 
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-// Category colors (matching RacingMatrix)
+// Category colors (aangepast voor donkere achtergrond)
 const CATEGORY_COLORS = {
-  'A+': 'bg-red-100 text-red-900 border-red-300',
-  'A': 'bg-red-50 text-red-800 border-red-200',
-  'B': 'bg-green-50 text-green-800 border-green-200',
-  'C': 'bg-blue-50 text-blue-800 border-blue-200',
-  'D': 'bg-yellow-50 text-yellow-800 border-yellow-200',
+  'A+': 'bg-red-500 text-white border-red-400',
+  'A': 'bg-red-600 text-white border-red-500',
+  'B': 'bg-green-500 text-white border-green-400',
+  'C': 'bg-blue-500 text-white border-blue-400',
+  'D': 'bg-yellow-500 text-white border-yellow-400',
 }
 
 // vELO Tiers (matching RacingMatrix)
@@ -648,7 +648,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
 
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
-  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800 border-gray-300'
+  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
   
   return (
     <div
@@ -656,7 +656,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative bg-gradient-to-br from-gray-800 to-gray-900 hover:from-gray-750 hover:to-gray-850 p-4 rounded-xl cursor-move border-2 border-gray-700 hover:border-blue-500 transition-all shadow-lg hover:shadow-2xl ${isDragging ? 'scale-105' : ''}`}
+      className={`group relative bg-gradient-to-br from-blue-900 to-indigo-950 hover:from-blue-800 hover:to-indigo-900 p-4 rounded-xl cursor-move border-2 border-orange-500/30 hover:border-orange-400 transition-all shadow-lg hover:shadow-2xl ${isDragging ? 'scale-105' : ''}`}
     >
       {/* Tier Background Gradient */}
       {veloTier && (
@@ -737,13 +737,13 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
 function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: () => void }) {
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
-  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-100 text-gray-800 border-gray-300'
+  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
   
   return (
     <div className={`relative bg-gradient-to-br p-4 rounded-xl border-2 transition-all shadow-lg ${
       rider.is_valid 
-        ? 'from-gray-800 to-gray-900 border-green-500/50 shadow-green-500/10'
-        : 'from-red-900/20 to-gray-900 border-red-500 shadow-red-500/20'
+        ? 'from-blue-900 to-indigo-950 border-orange-500/50 shadow-orange-500/10'
+        : 'from-red-900/40 to-gray-900 border-red-500 shadow-red-500/20'
     }`}>
       {/* Position Badge */}
       <div className="absolute -top-2 -left-2 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-lg border-2 border-gray-900">
