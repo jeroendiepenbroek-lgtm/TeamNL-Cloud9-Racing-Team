@@ -6,6 +6,7 @@ import EventsDashboard from './pages/EventsDashboard'
 import ResultsDashboard from './pages/ResultsDashboard'
 import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
+import TeamViewer from './pages/TeamViewer'
 import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
@@ -66,6 +67,9 @@ function Navigation() {
               <Link to="/team-builder" className="text-white hover:text-orange-400 transition font-semibold">
                 🏆 Team Builder
               </Link>
+              <Link to="/team-viewer" className="text-white hover:text-orange-400 transition font-semibold">
+                👁️ Team Viewer
+              </Link>
               <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Manager
               </Link>
@@ -95,6 +99,9 @@ function Navigation() {
               <Link to="/team-builder" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 🏆 Team Builder
               </Link>
+              <Link to="/team-viewer" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                👁️ Team Viewer
+              </Link>
               <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Manager
               </Link>
@@ -118,6 +125,7 @@ function App() {
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/team-manager" element={<TeamManager />} />
           <Route path="/team-builder" element={<TeamBuilder />} />
+          <Route path="/team-viewer" element={<TeamViewer />} />
           <Route path="*" element={
             <div className="flex items-center justify-center min-h-screen">
               <div className="text-center">
