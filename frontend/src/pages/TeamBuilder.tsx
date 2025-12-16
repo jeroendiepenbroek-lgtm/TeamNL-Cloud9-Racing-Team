@@ -105,7 +105,9 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     competition_name: '',
     velo_min_rank: 1,
     velo_max_rank: 3,
+    velo_max_spread: 3,
     allowed_categories: ['A', 'B'],
+    allow_category_up: true,
     min_riders: 4,
     max_riders: 8
   })
@@ -282,7 +284,9 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       competition_name: '',
       velo_min_rank: 1,
       velo_max_rank: 3,
+      velo_max_spread: 3,
       allowed_categories: ['A', 'B'],
+      allow_category_up: true,
       min_riders: 4,
       max_riders: 8
     })
@@ -638,7 +642,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   )
 }
 
-// Draggable Rider Card Component - Modern Racing Matrix Style
+// Draggable Rider Card Component - STATE OF ART MODERN DESIGN
 function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rider.rider_id
@@ -660,78 +664,87 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative bg-gradient-to-br from-blue-900 to-indigo-950 hover:from-blue-800 hover:to-indigo-900 p-4 rounded-xl cursor-move border-2 border-orange-500/30 hover:border-orange-400 transition-all shadow-lg hover:shadow-2xl ${isDragging ? 'scale-105' : ''}`}
+      className={`group relative overflow-hidden bg-gradient-to-br from-orange-500/10 via-blue-900 to-indigo-950 hover:from-orange-500/20 hover:via-blue-800 hover:to-indigo-900 rounded-xl cursor-move border-2 border-orange-500/40 hover:border-orange-400 hover:shadow-orange-500/30 transition-all shadow-xl hover:shadow-2xl ${isDragging ? 'scale-105 ring-4 ring-orange-500/50' : ''}`}
     >
       {/* Tier Background Gradient */}
       {veloTier && (
-        <div className={`absolute inset-0 bg-gradient-to-r ${veloTier.color} opacity-5 rounded-xl pointer-events-none`} />
+        <div className={`absolute inset-0 bg-gradient-to-br ${veloTier.color} opacity-10 pointer-events-none`} />
       )}
       
-      <div className="relative flex items-center justify-between gap-3">
-        {/* Left: Avatar + Info */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <img 
-            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`}
-            alt={rider.name}
-            className="w-12 h-12 rounded-full border-2 border-gray-600 shadow-md flex-shrink-0"
-            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=48`; }}
-          />
-          
-          <div className="flex-1 min-w-0">
-            {/* Name */}
-            <div className="font-bold text-white text-base truncate mb-2">
-              {rider.name || rider.full_name}
+      {/* Category Badge - TOP PROMINENT POSITION */}
+      <div className="relative bg-gradient-to-r from-blue-950/80 to-indigo-950/80 px-4 py-2 border-b-2 border-orange-500/30">
+        <div className="flex items-center justify-between gap-3">
+          <span className={`inline-flex items-center justify-center px-5 py-2 text-xl font-black rounded-lg border-2 ${categoryColor} shadow-2xl shadow-black/50 min-w-[60px] tracking-wider`}>
+            {rider.category}
+          </span>
+          {/* vELO Rank Badge */}
+          <div className="flex items-center gap-2 bg-orange-500/20 px-3 py-1.5 rounded-lg border-2 border-orange-500/50 shadow-lg">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md border-2 border-white/30`}>
+              {veloTier?.rank || '?'}
             </div>
-            
-            {/* Stats Row 1: Category + vELO */}
-            <div className="flex items-center gap-3 flex-wrap mb-2">
-              {/* Category Badge - EXTRA GROOT VOOR ZICHTBAARHEID */}
-              <span className={`inline-flex items-center justify-center px-4 py-1.5 text-base font-black rounded-lg border-2 ${categoryColor} shadow-xl min-w-[50px]`}>
-                {rider.category}
-              </span>
-              
-              {/* vELO Rank + 30-day Value */}
-              <div className="flex items-center gap-2 bg-blue-800/40 px-3 py-1 rounded-lg border border-blue-500/30">
-                {/* Rank Circle */}
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md`}>
-                  {veloTier?.rank || '?'}
-                </div>
-                {/* 30-day Value */}
-                <span className="text-white text-base font-bold">
-                  {Math.floor(velo30day)}
-                </span>
-              </div>
-            </div>
-            
-            {/* Stats Row 2: Phenotype + ZRS 30-day */}
-            <div className="flex items-center gap-2.5 flex-wrap text-sm">
-              {/* Phenotype */}
-              {rider.phenotype && (
-                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md border border-purple-500/30 font-semibold">
-                  {rider.phenotype}
-                </span>
-              )}
-              
-              {/* ZRS 30-day */}
-              {rider.zwift_official_racing_score && (
-                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-300 rounded-md border border-orange-500/30 font-semibold">
-                  ZRS {rider.zwift_official_racing_score}
-                </span>
-              )}
-            </div>
+            <span className="text-orange-200 text-lg font-black">
+              {Math.floor(velo30day)}
+            </span>
           </div>
         </div>
-        
-        {/* Right: Add Button */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onAdd()
-          }}
-          className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg text-sm font-bold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-        >
-          + Add
-        </button>
+      </div>
+      
+      {/* Card Body */}
+      <div className="relative p-4">
+        <div className="flex items-center justify-between gap-3">
+          {/* Left: Avatar + Name */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="relative">
+              <img 
+                src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=f97316&color=fff&size=56`}
+                alt={rider.name}
+                className="w-14 h-14 rounded-full border-3 border-orange-500/60 shadow-xl shadow-orange-500/20 flex-shrink-0"
+                onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=f97316&color=fff&size=56`; }}
+              />
+              {/* Country Flag Overlay */}
+              {rider.country_alpha3 && (
+                <div className="absolute -bottom-1 -right-1 text-xs">
+                  {rider.country_alpha3}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              {/* Name - Bold & Clear */}
+              <div className="font-black text-white text-base truncate mb-1.5 drop-shadow-lg">
+                {rider.name || rider.full_name}
+              </div>
+              
+              {/* Stats Row: Phenotype + ZRS */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Phenotype */}
+                {rider.phenotype && (
+                  <span className="px-2.5 py-1 bg-purple-600/30 text-purple-200 rounded-md border border-purple-400/50 font-bold text-xs shadow-lg">
+                    🧬 {rider.phenotype}
+                  </span>
+                )}
+                
+                {/* ZRS */}
+                {rider.zwift_official_racing_score && (
+                  <span className="px-2.5 py-1 bg-blue-600/30 text-blue-200 rounded-md border border-blue-400/50 font-bold text-xs shadow-lg">
+                    ⚡ {rider.zwift_official_racing_score}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Right: Add Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onAdd()
+            }}
+            className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg text-sm font-black shadow-xl hover:shadow-2xl transition-all hover:scale-110"
+          >
+            + Add
+          </button>
+        </div>
       </div>
     </div>
   )
