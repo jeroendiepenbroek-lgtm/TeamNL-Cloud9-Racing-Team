@@ -5,13 +5,13 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter } 
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-// Category colors (aangepast voor donkere achtergrond)
+// Category colors (RacingMatrix stijl - lichte subtiele kleuren)
 const CATEGORY_COLORS = {
-  'A+': 'bg-red-500 text-white border-red-400',
-  'A': 'bg-red-600 text-white border-red-500',
-  'B': 'bg-green-500 text-white border-green-400',
-  'C': 'bg-blue-500 text-white border-blue-400',
-  'D': 'bg-yellow-500 text-white border-yellow-400',
+  'A+': 'bg-red-100 text-red-900 border-red-300',
+  'A': 'bg-red-50 text-red-800 border-red-200',
+  'B': 'bg-green-50 text-green-800 border-green-200',
+  'C': 'bg-blue-50 text-blue-800 border-blue-200',
+  'D': 'bg-yellow-50 text-yellow-800 border-yellow-200',
 }
 
 // vELO Tiers (matching RacingMatrix)
@@ -362,7 +362,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
         {/* Modern Hero Header with Glassmorphism (Racing Matrix Style) */}
         {!hideHeader && (
         <div className="relative overflow-hidden mb-4 sm:mb-6">
@@ -400,9 +400,9 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             
             {/* Left: Teams List */}
             <div className="lg:col-span-1">
-              <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6">
+              <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold">Teams</h2>
+                  <h2 className="text-xl font-bold text-gray-900">Teams</h2>
                   <button
                     onClick={() => setShowCreateModal(true)}
                     className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg font-semibold shadow-lg"
@@ -423,8 +423,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                         key={team.team_id}
                         className={`p-4 rounded-lg border-2 transition-all ${
                           selectedTeam?.team_id === team.team_id
-                            ? 'bg-orange-500/20 border-orange-500 shadow-lg shadow-orange-500/20'
-                            : 'bg-blue-900/30 border-blue-700 hover:border-orange-500/50'
+                            ? 'bg-indigo-50 border-indigo-500 shadow-md'
+                            : 'bg-gray-50 border-gray-200 hover:border-indigo-300'
                         }`}
                       >
                         <div 
@@ -506,8 +506,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             {/* Middle: Current Lineup */}
             <div className="lg:col-span-1">
               {selectedTeam ? (
-                <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6">
-                  <h2 className="text-xl font-bold mb-4">
+                <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">
                     {selectedTeam.team_name} Lineup
                   </h2>
                   
@@ -559,7 +559,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                   </div>
                 </div>
               ) : (
-                <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6 flex items-center justify-center h-full">
+                <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6 flex items-center justify-center h-full">
                   <div className="text-center text-gray-400">
                     <div className="text-6xl mb-4">🏆</div>
                     <p className="text-lg">Select a team to start building</p>
@@ -570,8 +570,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             
             {/* Right: Available Riders */}
             <div className="lg:col-span-1">
-              <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6">
-                <h2 className="text-xl font-bold mb-4">Available Riders</h2>
+              <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Available Riders</h2>
                 
                 {/* Search */}
                 <input
@@ -579,7 +579,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search riders..."
-                  className="w-full px-4 py-2 bg-gray-700/50 border border-gray-600 rounded-lg mb-4 focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-gray-900"
                 />
                 
                 <div className="space-y-2 max-h-[600px] overflow-y-auto">
@@ -664,7 +664,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative overflow-hidden bg-gradient-to-br from-orange-500/10 via-blue-900 to-indigo-950 hover:from-orange-500/20 hover:via-blue-800 hover:to-indigo-900 rounded-xl cursor-move border-2 border-orange-500/40 hover:border-orange-400 hover:shadow-orange-500/30 transition-all shadow-xl hover:shadow-2xl ${isDragging ? 'scale-105 ring-4 ring-orange-500/50' : ''}`}
+      className={`group relative overflow-hidden bg-white hover:bg-gray-50 rounded-xl cursor-move border-2 border-gray-200 hover:border-indigo-400 hover:shadow-lg transition-all shadow-md ${isDragging ? 'scale-105 ring-4 ring-indigo-500/50 shadow-2xl' : ''}`}
     >
       {/* Tier Background Gradient */}
       {veloTier && (
@@ -672,17 +672,17 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       )}
       
       {/* Category Badge - TOP PROMINENT POSITION */}
-      <div className="relative bg-gradient-to-r from-orange-600/20 via-blue-800/30 to-orange-600/20 px-4 py-2 border-b-2 border-orange-500/40">
+      <div className="relative bg-gradient-to-r from-indigo-50 via-blue-50 to-indigo-50 px-4 py-2.5 border-b-2 border-gray-200">
         <div className="flex items-center justify-between gap-3">
-          <span className={`inline-flex items-center justify-center px-5 py-2 text-xl font-black rounded-lg border-2 ${categoryColor} shadow-2xl shadow-black/50 min-w-[60px] tracking-wider`}>
+          <span className={`inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded border ${categoryColor} shadow-sm min-w-[40px]`}>
             {rider.category}
           </span>
           {/* vELO Rank Badge */}
-          <div className="flex items-center gap-2 bg-orange-500/30 px-3 py-1.5 rounded-lg border-2 border-orange-500/60 shadow-lg">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md border-2 border-white/30`}>
+          <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-300 shadow-sm">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-gray-800'} shadow-sm`}>
               {veloTier?.rank || '?'}
             </div>
-            <span className="text-orange-200 text-lg font-black">
+            <span className="text-gray-700 text-base font-bold">
               {Math.floor(velo30day)}
             </span>
           </div>
@@ -696,9 +696,9 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="relative">
               <img 
-                src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=f97316&color=fff&size=56`}
+                src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=56`}
                 alt={rider.name}
-                className="w-14 h-14 rounded-full border-3 border-orange-500/60 shadow-xl shadow-orange-500/20 flex-shrink-0"
+                className="w-14 h-14 rounded-full border-2 border-gray-300 shadow-md flex-shrink-0"
                 onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=f97316&color=fff&size=56`; }}
               />
               {/* Country Flag Overlay */}
@@ -711,7 +711,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
             
             <div className="flex-1 min-w-0">
               {/* Name - Bold & Clear */}
-              <div className="font-black text-white text-base truncate mb-1.5 drop-shadow-lg">
+              <div className="font-bold text-gray-900 text-base truncate mb-1.5">
                 {rider.name || rider.full_name}
               </div>
               
@@ -719,14 +719,14 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
               <div className="flex items-center gap-2 flex-wrap">
                 {/* Phenotype */}
                 {rider.phenotype && (
-                  <span className="px-2.5 py-1 bg-purple-600/30 text-purple-200 rounded-md border border-purple-400/50 font-bold text-xs shadow-lg">
+                  <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-200 font-semibold text-xs shadow-sm">
                     🧬 {rider.phenotype}
                   </span>
                 )}
                 
                 {/* ZRS */}
                 {rider.zwift_official_racing_score && (
-                  <span className="px-2.5 py-1 bg-blue-600/30 text-blue-200 rounded-md border border-blue-400/50 font-bold text-xs shadow-lg">
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200 font-semibold text-xs shadow-sm">
                     ⚡ {rider.zwift_official_racing_score}
                   </span>
                 )}
@@ -740,7 +740,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
               e.stopPropagation()
               onAdd()
             }}
-            className="flex-shrink-0 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg text-sm font-black shadow-xl hover:shadow-2xl transition-all hover:scale-110"
+            className="flex-shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all"
           >
             + Add
           </button>
