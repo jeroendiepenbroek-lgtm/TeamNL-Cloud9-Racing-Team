@@ -84,7 +84,11 @@ interface LineupRider {
   validation_warning?: string
 }
 
-export default function TeamBuilder() {
+interface TeamBuilderProps {
+  hideHeader?: boolean
+}
+
+export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   const queryClient = useQueryClient()
   
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
@@ -354,10 +358,11 @@ export default function TeamBuilder() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
         {/* Modern Hero Header with Glassmorphism (Racing Matrix Style) */}
+        {!hideHeader && (
         <div className="relative overflow-hidden mb-4 sm:mb-6">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-95"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 opacity-95"></div>
           <div className="relative px-3 py-4 sm:px-6 sm:py-6 lg:py-10">
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
@@ -370,7 +375,7 @@ export default function TeamBuilder() {
                   <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
                     <span className="truncate">TEAM BUILDER</span>
                   </h1>
-                  <p className="text-blue-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
+                  <p className="text-orange-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
                     TeamNL Cloud9 Racing · Competition Teams
                   </p>
                 </div>
@@ -384,6 +389,7 @@ export default function TeamBuilder() {
             </div>
           </div>
         </div>
+        )}
         
         <div className="max-w-7xl mx-auto p-4 sm:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -413,8 +419,8 @@ export default function TeamBuilder() {
                         key={team.team_id}
                         className={`p-4 rounded-lg border-2 transition-all ${
                           selectedTeam?.team_id === team.team_id
-                            ? 'bg-blue-500/20 border-blue-500'
-                            : 'bg-gray-700/30 border-gray-600 hover:border-gray-500'
+                            ? 'bg-orange-500/20 border-orange-500 shadow-lg shadow-orange-500/20'
+                            : 'bg-blue-900/30 border-blue-700 hover:border-orange-500/50'
                         }`}
                       >
                         <div 

@@ -53,7 +53,11 @@ interface LineupRider {
   lineup_position: number
 }
 
-export default function TeamViewer() {
+interface TeamViewerProps {
+  hideHeader?: boolean
+}
+
+export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   // Fetch all teams
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
     queryKey: ['teams'],
@@ -68,10 +72,11 @@ export default function TeamViewer() {
   const teams: Team[] = teamsData || []
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
       {/* Header */}
+      {!hideHeader && (
       <div className="relative overflow-hidden mb-4 sm:mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-95"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 opacity-95"></div>
         <div className="relative px-3 py-4 sm:px-6 sm:py-6 lg:py-10">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
@@ -85,7 +90,7 @@ export default function TeamViewer() {
                 <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
                   <span className="truncate">TEAM VIEWER</span>
                 </h1>
-                <p className="text-blue-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
+                <p className="text-orange-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
                   TeamNL Cloud9 Racing · Team Overzicht
                 </p>
               </div>
@@ -104,8 +109,7 @@ export default function TeamViewer() {
             </div>
           </div>
         </div>
-      </div>
-      
+      </div>      )}      
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         {teamsLoading ? (
           <div className="text-center text-gray-600 py-12">

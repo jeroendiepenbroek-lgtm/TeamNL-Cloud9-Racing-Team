@@ -7,6 +7,7 @@ import ResultsDashboard from './pages/ResultsDashboard'
 import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
+import TeamCompetition from './pages/TeamCompetition'
 import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
@@ -64,11 +65,8 @@ function Navigation() {
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Dashboard
               </Link>
-              <Link to="/team-builder" className="text-white hover:text-orange-400 transition font-semibold">
-                🏆 Team Builder
-              </Link>
-              <Link to="/team-viewer" className="text-white hover:text-orange-400 transition font-semibold">
-                👁️ Team Viewer
+              <Link to="/team-competition" className="text-white hover:text-orange-400 transition font-semibold">
+                🏆 Team Competition
               </Link>
               <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Manager
@@ -96,11 +94,8 @@ function Navigation() {
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Dashboard
               </Link>
-              <Link to="/team-builder" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                🏆 Team Builder
-              </Link>
-              <Link to="/team-viewer" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                👁️ Team Viewer
+              <Link to="/team-competition" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                🏆 Team Competition
               </Link>
               <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Manager
@@ -124,6 +119,7 @@ function App() {
           <Route path="/events" element={<EventsDashboard />} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/team-manager" element={<TeamManager />} />
+          <Route path="/team-competition" element={<TeamCompetition />} />
           <Route path="/team-builder" element={<TeamBuilder />} />
           <Route path="/team-viewer" element={<TeamViewer />} />
           <Route path="*" element={
