@@ -9,16 +9,16 @@ const CATEGORY_COLORS = {
   'D': 'bg-yellow-500 text-white border-yellow-400',
 }
 
-// vELO Tiers (matching RacingMatrix)
+// vELO Tiers (matching RacingMatrix exactly)
 const VELO_TIERS = [
-  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, max: null, color: 'from-cyan-300 to-blue-600', textColor: 'text-cyan-900' },
-  { rank: 2, name: 'Platinum', icon: '⚪', min: 1900, max: 2200, color: 'from-gray-200 to-gray-500', textColor: 'text-gray-900' },
-  { rank: 3, name: 'Gold', icon: '🟡', min: 1650, max: 1900, color: 'from-yellow-300 to-yellow-600', textColor: 'text-yellow-900' },
-  { rank: 4, name: 'Silver', icon: '⚪', min: 1400, max: 1650, color: 'from-gray-300 to-gray-600', textColor: 'text-gray-900' },
-  { rank: 5, name: 'Bronze I', icon: '🟠', min: 1250, max: 1400, color: 'from-orange-300 to-orange-500', textColor: 'text-orange-900' },
-  { rank: 6, name: 'Bronze II', icon: '🟠', min: 1100, max: 1250, color: 'from-orange-400 to-orange-600', textColor: 'text-orange-900' },
-  { rank: 7, name: 'Bronze III', icon: '🟠', min: 950, max: 1100, color: 'from-orange-500 to-orange-700', textColor: 'text-orange-900' },
-  { rank: 8, name: 'Bronze IV', icon: '🟠', min: 850, max: 950, color: 'from-orange-300 to-orange-600', textColor: 'text-orange-900' },
+  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, max: null, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100' },
+  { rank: 2, name: 'Ruby', icon: '💍', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-red-100' },
+  { rank: 3, name: 'Emerald', icon: '💚', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100' },
+  { rank: 4, name: 'Sapphire', icon: '💙', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100' },
+  { rank: 5, name: 'Amethyst', icon: '💜', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100' },
+  { rank: 6, name: 'Platinum', icon: '⚪', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100' },
+  { rank: 7, name: 'Gold', icon: '🟡', min: 1000, max: 1150, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900' },
+  { rank: 8, name: 'Silver', icon: '⚫', min: 850, max: 1000, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700' },
   { rank: 9, name: 'Bronze', icon: '🟠', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900' },
   { rank: 10, name: 'Copper', icon: '🟤', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-orange-100' },
 ]

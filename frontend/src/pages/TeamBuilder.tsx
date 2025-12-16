@@ -14,16 +14,16 @@ const CATEGORY_COLORS = {
   'D': 'bg-yellow-500 text-gray-900 border-yellow-600',
 }
 
-// vELO Tiers (matching RacingMatrix)
+// vELO Tiers (matching RacingMatrix exactly)
 const VELO_TIERS = [
-  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, max: null, color: 'from-cyan-300 to-blue-600', textColor: 'text-cyan-900', bgColor: 'bg-gradient-to-r from-cyan-300/20 to-blue-600/20' },
-  { rank: 2, name: 'Platinum', icon: '⚪', min: 1900, max: 2200, color: 'from-gray-200 to-gray-500', textColor: 'text-gray-900', bgColor: 'bg-gradient-to-r from-gray-200/20 to-gray-500/20' },
-  { rank: 3, name: 'Gold', icon: '🟡', min: 1650, max: 1900, color: 'from-yellow-300 to-yellow-600', textColor: 'text-yellow-900', bgColor: 'bg-gradient-to-r from-yellow-300/20 to-yellow-600/20' },
-  { rank: 4, name: 'Silver', icon: '⚪', min: 1400, max: 1650, color: 'from-gray-300 to-gray-600', textColor: 'text-gray-900', bgColor: 'bg-gradient-to-r from-gray-300/20 to-gray-600/20' },
-  { rank: 5, name: 'Bronze I', icon: '🟠', min: 1250, max: 1400, color: 'from-orange-300 to-orange-500', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-300/20 to-orange-500/20' },
-  { rank: 6, name: 'Bronze II', icon: '🟠', min: 1100, max: 1250, color: 'from-orange-400 to-orange-600', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-400/20 to-orange-600/20' },
-  { rank: 7, name: 'Bronze III', icon: '🟠', min: 950, max: 1100, color: 'from-orange-500 to-orange-700', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-500/20 to-orange-700/20' },
-  { rank: 8, name: 'Bronze IV', icon: '🟠', min: 850, max: 950, color: 'from-orange-300 to-orange-600', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-300/20 to-orange-600/20' },
+  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100', bgColor: 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20' },
+  { rank: 2, name: 'Ruby', icon: '💍', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-red-100', bgColor: 'bg-gradient-to-r from-red-500/20 to-pink-600/20' },
+  { rank: 3, name: 'Emerald', icon: '💚', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100', bgColor: 'bg-gradient-to-r from-emerald-400/20 to-green-600/20' },
+  { rank: 4, name: 'Sapphire', icon: '💙', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100', bgColor: 'bg-gradient-to-r from-blue-400/20 to-indigo-600/20' },
+  { rank: 5, name: 'Amethyst', icon: '💜', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100', bgColor: 'bg-gradient-to-r from-purple-400/20 to-violet-600/20' },
+  { rank: 6, name: 'Platinum', icon: '⚪', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100', bgColor: 'bg-gradient-to-r from-slate-400/20 to-slate-500/20' },
+  { rank: 7, name: 'Gold', icon: '🟡', min: 1000, max: 1150, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900', bgColor: 'bg-gradient-to-r from-yellow-400/20 to-amber-600/20' },
+  { rank: 8, name: 'Silver', icon: '⚫', min: 850, max: 1000, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700', bgColor: 'bg-gradient-to-r from-gray-300/20 to-gray-500/20' },
   { rank: 9, name: 'Bronze', icon: '🟠', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900', bgColor: 'bg-gradient-to-r from-orange-400/20 to-orange-700/20' },
   { rank: 10, name: 'Copper', icon: '🟤', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-orange-100', bgColor: 'bg-gradient-to-r from-orange-600/20 to-red-800/20' },
 ]
@@ -39,7 +39,8 @@ interface Rider {
   rider_id: number
   name: string
   full_name: string
-  category: string
+  zwift_official_category: string | null
+  zwiftracing_category: string | null
   velo_live: number
   velo_30day: number | null
   country_alpha3: string
@@ -273,7 +274,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       return velo >= (selectedTeam.velo_min_rank || 1) && 
              velo <= (selectedTeam.velo_max_rank || 10)
     } else {
-      return selectedTeam.allowed_categories?.includes(rider.category)
+      const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+      return selectedTeam.allowed_categories?.includes(category)
     }
   })
   
@@ -657,8 +659,9 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
   
-  // Gebruik de echte category van de rider
-  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-600 text-white border-gray-700'
+  // Gebruik de category van zwift_official_category (preferred) of zwiftracing_category
+  const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+  const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-600 text-white border-gray-700'
   
   return (
     <div
@@ -673,7 +676,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
         <div className="flex items-center justify-between gap-3 mb-3">
           {/* CATEGORY BADGE - HUGE & VISIBLE */}
           <div className={`px-5 py-2.5 text-2xl font-black rounded-lg border-3 ${categoryColor} shadow-lg`}>
-            {rider.category || '?'}
+            {category}
           </div>
           
           {/* vELO Badge */}
@@ -732,7 +735,8 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
 function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: () => void }) {
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
-  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
+  const category = rider.category || 'D'
+  const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
   
   return (
     <div className={`relative bg-gradient-to-br p-4 rounded-xl border-2 transition-all shadow-lg ${
@@ -770,7 +774,7 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
             <div className="flex items-center gap-2.5 flex-wrap mb-2">
               {/* Category Badge - Prominent */}
               <span className={`inline-flex items-center px-3 py-1 text-sm font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
-                {rider.category}
+                {category}
               </span>
               
               {/* vELO Rank Badge + 30-day Value */}
