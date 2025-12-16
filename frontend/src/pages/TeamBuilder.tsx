@@ -5,13 +5,13 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter } 
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-// Category colors (RacingMatrix stijl - lichte subtiele kleuren)
+// Category colors (STERKE ZICHTBARE KLEUREN - hoog contrast)
 const CATEGORY_COLORS = {
-  'A+': 'bg-red-100 text-red-900 border-red-300',
-  'A': 'bg-red-50 text-red-800 border-red-200',
-  'B': 'bg-green-50 text-green-800 border-green-200',
-  'C': 'bg-blue-50 text-blue-800 border-blue-200',
-  'D': 'bg-yellow-50 text-yellow-800 border-yellow-200',
+  'A+': 'bg-red-600 text-white border-red-700',
+  'A': 'bg-red-500 text-white border-red-600',
+  'B': 'bg-green-600 text-white border-green-700',
+  'C': 'bg-blue-600 text-white border-blue-700',
+  'D': 'bg-yellow-500 text-gray-900 border-yellow-600',
 }
 
 // vELO Tiers (matching RacingMatrix)
@@ -674,7 +674,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       {/* Category Badge - TOP PROMINENT POSITION */}
       <div className="relative bg-gradient-to-r from-indigo-50 via-blue-50 to-indigo-50 px-4 py-2.5 border-b-2 border-gray-200">
         <div className="flex items-center justify-between gap-3">
-          <span className={`inline-flex items-center justify-center px-3 py-1 text-sm font-bold rounded border ${categoryColor} shadow-sm min-w-[40px]`}>
+          <span className={`inline-flex items-center justify-center px-4 py-2 text-lg font-black rounded-lg border-2 ${categoryColor} shadow-md min-w-[50px]`}>
             {rider.category}
           </span>
           {/* vELO Rank Badge */}
