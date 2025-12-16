@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 // Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
@@ -45,10 +46,12 @@ interface LineupRider {
   full_name: string
   avatar_url?: string
   category: string
-  velo_live: number
+  velo_live?: number
+  current_velo_rank?: number // Legacy field name
   velo_30day: number | null
   phenotype: string | null
-  racing_ftp: number | null
+  racing_ftp?: number | null
+  ftp_watts?: number | null // Legacy field name
   weight_kg: number | null
   lineup_position: number
 }
@@ -138,15 +141,32 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   )
 }
 
-// Team Card with Riders
+// Team Card with Riders - Collapsible
 function TeamCard({ team }: { team: Team }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
   const { data: lineupData, isLoading } = useQuery({
     queryKey: ['team-lineup', team.team_id],
     queryFn: async () => {
       const res = await fetch(`/api/teams/${team.team_id}`)
       if (!res.ok) throw new Error('Failed to fetch lineup')
-      return res.json()
-    }
+      const data = await res.json()
+      
+      // Debug logging - eerste rider data
+      if (data.lineup && data.lineup.length > 0) {
+        console.log(`📊 Team ${team.team_name} - First rider:`, {
+          name: data.lineup[0].name,
+          velo_live: data.lineup[0].velo_live,
+          velo_30day: data.lineup[0].velo_30day,
+          racing_ftp: data.lineup[0].racing_ftp,
+          weight_kg: data.lineup[0].weight_kg,
+          allFields: Object.keys(data.lineup[0])
+        })
+      }
+      
+      return data
+    },
+    enabled: isExpanded // Only fetch when expanded
   })
   
   const lineup: LineupRider[] = lineupData?.lineup || []
@@ -159,32 +179,46 @@ function TeamCard({ team }: { team: Team }) {
   }[team.team_status]
   
   return (
-    <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 p-6 shadow-xl">
-      {/* Team Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-700">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-1">{team.team_name}</h2>
+    <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl overflow-hidden">
+      {/* Team Header - Clickable */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
+      >
+        <div className="text-left flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
+            <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
+              {team.current_riders} riders
+            </span>
+          </div>
           <p className="text-gray-400 text-sm">{team.competition_name}</p>
           <div className="flex items-center gap-3 mt-2">
             <span className="text-xs font-semibold text-gray-500 uppercase">
               {team.competition_type === 'velo' ? '🎯 vELO-based' : '📊 Category-based'}
             </span>
-            <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
-              {team.current_riders} riders
-            </span>
           </div>
         </div>
-      </div>
-      
-      {/* Riders Table */}
-      {isLoading ? (
-        <div className="text-center text-gray-400 py-8">Riders laden...</div>
-      ) : !lineup || !Array.isArray(lineup) || lineup.length === 0 ? (
-        <div className="text-center text-gray-400 py-8">
-          <p>Nog geen riders toegevoegd</p>
+        
+        {/* Expand/Collapse Icon */}
+        <div className="text-white text-2xl flex-shrink-0 ml-4">
+          {isExpanded ? '▼' : '▶'}
         </div>
-      ) : (
-        <RidersTable lineup={lineup} />
+      </button>
+      
+      {/* Riders Table - Collapsible */}
+      {isExpanded && (
+        <div className="px-6 pb-6 pt-2 border-t border-gray-700">
+          {isLoading ? (
+            <div className="text-center text-gray-400 py-8">Riders laden...</div>
+          ) : !lineup || !Array.isArray(lineup) || lineup.length === 0 ? (
+            <div className="text-center text-gray-400 py-8">
+              <p>Nog geen riders toegevoegd</p>
+            </div>
+          ) : (
+            <RidersTable lineup={lineup} />
+          )}
+        </div>
       )}
     </div>
   )
@@ -226,11 +260,15 @@ function RidersTable({ lineup }: { lineup: LineupRider[] }) {
 
 // Rider Row Component
 function RiderRow({ rider }: { rider: LineupRider }) {
-  const velo30day = rider.velo_30day || rider.velo_live
-  const veloLiveTier = getVeloTier(rider.velo_live)
+  // Handle both old and new field names
+  const veloLive = rider.velo_live || rider.current_velo_rank || 0
+  const velo30day = rider.velo_30day || veloLive
+  const racingFtp = rider.racing_ftp || rider.ftp_watts
+  
+  const veloLiveTier = getVeloTier(veloLive)
   const velo30dayTier = getVeloTier(velo30day)
   const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
-  const ftpWkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : null
+  const ftpWkg = racingFtp && rider.weight_kg ? (racingFtp / rider.weight_kg).toFixed(1) : null
   
   return (
     <tr className="border-b border-gray-700/30 hover:bg-blue-900/30 transition-colors">
@@ -265,7 +303,7 @@ function RiderRow({ rider }: { rider: LineupRider }) {
       <td className="px-3 py-3 text-center">
         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${veloLiveTier?.color || 'from-gray-400 to-gray-600'} ${veloLiveTier?.textColor || 'text-white'} shadow-md border border-white/20`}>
           <span className="font-bold text-xs">#{veloLiveTier?.rank || '?'}</span>
-          <span className="font-bold text-sm">{rider.velo_live?.toFixed(0) || 'N/A'}</span>
+          <span className="font-bold text-sm">{veloLive?.toFixed(0) || 'N/A'}</span>
         </div>
       </td>
       
@@ -279,7 +317,7 @@ function RiderRow({ rider }: { rider: LineupRider }) {
       
       {/* Racing FTP - Watts */}
       <td className="px-3 py-3 text-right">
-        <span className="text-white font-semibold">{rider.racing_ftp || '-'}</span>
+        <span className="text-white font-semibold">{racingFtp || '-'}</span>
       </td>
       
       {/* zFTP - W/kg */}
