@@ -642,7 +642,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   )
 }
 
-// Draggable Rider Card Component - STATE OF ART MODERN DESIGN
+// Draggable Rider Card - ULTRA SIMPLE met MASSIVE Category Badge
 function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rider.rider_id
@@ -656,7 +656,10 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
 
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
-  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
+  
+  // FORCEER altijd een category - gebruik fallback als het ontbreekt
+  const category = rider.category || 'D'
+  const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-600 text-white border-gray-700'
   
   return (
     <div
@@ -664,83 +667,59 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative overflow-hidden bg-white hover:bg-gray-50 rounded-xl cursor-move border-2 border-gray-200 hover:border-indigo-400 hover:shadow-lg transition-all shadow-md ${isDragging ? 'scale-105 ring-4 ring-indigo-500/50 shadow-2xl' : ''}`}
+      className={`group relative bg-white hover:bg-gray-50 rounded-xl cursor-move border-2 border-gray-200 hover:border-indigo-400 hover:shadow-lg transition-all shadow-md ${isDragging ? 'scale-105 ring-4 ring-indigo-500/50 shadow-2xl' : ''}`}
     >
-      {/* Tier Background Gradient */}
-      {veloTier && (
-        <div className={`absolute inset-0 bg-gradient-to-br ${veloTier.color} opacity-10 pointer-events-none`} />
-      )}
-      
-      {/* Category Badge - TOP PROMINENT POSITION */}
-      <div className="relative bg-gradient-to-r from-indigo-50 via-blue-50 to-indigo-50 px-4 py-2.5 border-b-2 border-gray-200">
-        <div className="flex items-center justify-between gap-3">
-          <span className={`inline-flex items-center justify-center px-4 py-2 text-lg font-black rounded-lg border-2 ${categoryColor} shadow-md min-w-[50px]`}>
-            {rider.category}
-          </span>
-          {/* vELO Rank Badge */}
-          <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-300 shadow-sm">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-gray-800'} shadow-sm`}>
+      <div className="p-4">
+        {/* Row 1: MASSIVE Category Badge + vELO */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          {/* CATEGORY BADGE - HUGE & VISIBLE */}
+          <div className={`px-5 py-2.5 text-2xl font-black rounded-lg border-3 ${categoryColor} shadow-lg`}>
+            {category}
+          </div>
+          
+          {/* vELO Badge */}
+          <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-300">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-gray-800'}`}>
               {veloTier?.rank || '?'}
             </div>
-            <span className="text-gray-700 text-base font-bold">
-              {Math.floor(velo30day)}
-            </span>
+            <span className="text-gray-700 font-bold">{Math.floor(velo30day)}</span>
           </div>
         </div>
-      </div>
-      
-      {/* Card Body */}
-      <div className="relative p-4">
-        <div className="flex items-center justify-between gap-3">
-          {/* Left: Avatar + Name */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="relative">
-              <img 
-                src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=56`}
-                alt={rider.name}
-                className="w-14 h-14 rounded-full border-2 border-gray-300 shadow-md flex-shrink-0"
-                onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=f97316&color=fff&size=56`; }}
-              />
-              {/* Country Flag Overlay */}
-              {rider.country_alpha3 && (
-                <div className="absolute -bottom-1 -right-1 text-xs">
-                  {rider.country_alpha3}
-                </div>
-              )}
+        
+        {/* Row 2: Avatar + Name + Stats */}
+        <div className="flex items-center gap-3">
+          <img 
+            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=48`}
+            alt={rider.name}
+            className="w-12 h-12 rounded-full border-2 border-gray-300 shadow-md flex-shrink-0"
+            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=48`; }}
+          />
+          
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-gray-900 truncate mb-1">
+              {rider.name || rider.full_name}
             </div>
-            
-            <div className="flex-1 min-w-0">
-              {/* Name - Bold & Clear */}
-              <div className="font-bold text-gray-900 text-base truncate mb-1.5">
-                {rider.name || rider.full_name}
-              </div>
-              
-              {/* Stats Row: Phenotype + ZRS */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Phenotype */}
-                {rider.phenotype && (
-                  <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded border border-purple-200 font-semibold text-xs shadow-sm">
-                    🧬 {rider.phenotype}
-                  </span>
-                )}
-                
-                {/* ZRS */}
-                {rider.zwift_official_racing_score && (
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-200 font-semibold text-xs shadow-sm">
-                    ⚡ {rider.zwift_official_racing_score}
-                  </span>
-                )}
-              </div>
+            <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              {rider.phenotype && (
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">
+                  {rider.phenotype}
+                </span>
+              )}
+              {rider.zwift_official_racing_score && (
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-semibold">
+                  ZRS {rider.zwift_official_racing_score}
+                </span>
+              )}
             </div>
           </div>
           
-          {/* Right: Add Button */}
+          {/* Add Button */}
           <button
             onClick={(e) => {
               e.stopPropagation()
               onAdd()
             }}
-            className="flex-shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all"
           >
             + Add
           </button>
