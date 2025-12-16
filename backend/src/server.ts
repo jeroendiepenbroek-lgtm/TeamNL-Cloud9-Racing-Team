@@ -1669,11 +1669,14 @@ app.post('/api/teams/:teamId/riders', async (req, res) => {
     // Get rider current stats
     const { data: rider, error: riderError } = await supabase
       .from('v_rider_complete')
-      .select('category, velo_live')
+      .select('zwift_official_category, zwiftracing_category, velo_live')
       .eq('rider_id', rider_id)
       .single();
     
     if (riderError) throw riderError;
+    
+    // Determine category (prefer official, fallback to racing)
+    const category = rider?.zwift_official_category || rider?.zwiftracing_category;
     
     // Add to lineup
     const { data, error } = await supabase
@@ -1682,7 +1685,7 @@ app.post('/api/teams/:teamId/riders', async (req, res) => {
         team_id: teamId,
         rider_id,
         lineup_position,
-        rider_category: rider?.category,
+        rider_category: category,
         rider_velo_rank: rider?.velo_live
       })
       .select()
