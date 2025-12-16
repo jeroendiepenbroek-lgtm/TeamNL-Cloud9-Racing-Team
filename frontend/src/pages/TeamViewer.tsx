@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 
 // Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
@@ -55,8 +54,6 @@ interface LineupRider {
 }
 
 export default function TeamViewer() {
-  const navigate = useNavigate()
-  
   // Fetch all teams
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
     queryKey: ['teams'],
@@ -93,13 +90,13 @@ export default function TeamViewer() {
                 </p>
               </div>
               <button
-                onClick={() => navigate('/team-builder')}
+                onClick={() => window.location.href = '/team-builder'}
                 className="px-3 py-2 sm:px-4 sm:py-2.5 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-green-400/50 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl"
               >
                 ✏️ Builder
               </button>
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => window.location.href = 'https://teamnl-cloud9-racing-team-production.up.railway.app/'}
                 className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl"
               >
                 ← Dashboard
@@ -119,7 +116,7 @@ export default function TeamViewer() {
           <div className="text-center text-gray-600 py-12">
             <p className="text-xl mb-4">Geen teams gevonden</p>
             <button
-              onClick={() => navigate('/team-builder')}
+              onClick={() => window.location.href = '/team-builder'}
               className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-semibold shadow-lg"
             >
               + Nieuw Team Aanmaken
@@ -178,8 +175,11 @@ function TeamCard({ team }: { team: Team }) {
       {/* Riders Grid */}
       {isLoading ? (
         <div className="text-center text-gray-400 py-8">Riders laden...</div>
-      ) : lineup.length === 0 ? (
-        <div className="text-center text-gray-400 py-8">Nog geen riders toegevoegd</div>
+      ) : !lineup || !Array.isArray(lineup) || lineup.length === 0 ? (
+        <div className="text-center text-gray-400 py-8">
+          <p>Nog geen riders toegevoegd</p>
+          {lineup && <p className="text-xs mt-2 text-gray-500">Debug: lineup is {typeof lineup}, length: {Array.isArray(lineup) ? lineup.length : 'N/A'}</p>}
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {lineup

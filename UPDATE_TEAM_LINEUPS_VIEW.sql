@@ -11,7 +11,7 @@ CREATE VIEW public.v_team_lineups_full AS
 SELECT 
   tl.id AS lineup_id,
   tl.team_id,
-  ct.team_name,
+  ct.team_name,8
   ct.competition_type,
   ct.competition_name,
   ct.velo_min_rank,

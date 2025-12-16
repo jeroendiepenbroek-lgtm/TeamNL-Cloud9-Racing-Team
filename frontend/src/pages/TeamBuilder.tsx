@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter } from '@dnd-kit/core'
@@ -86,7 +85,6 @@ interface LineupRider {
 }
 
 export default function TeamBuilder() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
@@ -377,7 +375,7 @@ export default function TeamBuilder() {
                   </p>
                 </div>
                 <button
-                  onClick={() => navigate('/dashboard')}
+                  onClick={() => window.location.href = 'https://teamnl-cloud9-racing-team-production.up.railway.app/'}
                   className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl"
                 >
                   ← Dashboard
@@ -392,7 +390,7 @@ export default function TeamBuilder() {
             
             {/* Left: Teams List */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-gray-700 p-6">
+              <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-bold">Teams</h2>
                   <button
@@ -498,7 +496,7 @@ export default function TeamBuilder() {
             {/* Middle: Current Lineup */}
             <div className="lg:col-span-1">
               {selectedTeam ? (
-                <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-gray-700 p-6">
+                <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6">
                   <h2 className="text-xl font-bold mb-4">
                     {selectedTeam.team_name} Lineup
                   </h2>
@@ -551,7 +549,7 @@ export default function TeamBuilder() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-gray-700 p-6 flex items-center justify-center h-full">
+                <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6 flex items-center justify-center h-full">
                   <div className="text-center text-gray-400">
                     <div className="text-6xl mb-4">🏆</div>
                     <p className="text-lg">Select a team to start building</p>
@@ -562,7 +560,7 @@ export default function TeamBuilder() {
             
             {/* Right: Available Riders */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-800/50 backdrop-blur rounded-xl border border-gray-700 p-6">
+              <div className="bg-gradient-to-br from-blue-900/70 to-indigo-950/70 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl p-6">
                 <h2 className="text-xl font-bold mb-4">Available Riders</h2>
                 
                 {/* Search */}
@@ -680,14 +678,14 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
             </div>
             
             {/* Stats Row 1: Category + vELO */}
-            <div className="flex items-center gap-2.5 flex-wrap mb-2">
-              {/* Category Badge - RACING MATRIX STYLE */}
-              <span className={`inline-block px-3 py-1 text-sm font-bold rounded-md border-2 ${categoryColor} shadow-lg`}>
+            <div className="flex items-center gap-3 flex-wrap mb-2">
+              {/* Category Badge - EXTRA GROOT VOOR ZICHTBAARHEID */}
+              <span className={`inline-flex items-center justify-center px-4 py-1.5 text-base font-black rounded-lg border-2 ${categoryColor} shadow-xl min-w-[50px]`}>
                 {rider.category}
               </span>
               
               {/* vELO Rank + 30-day Value */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-blue-800/40 px-3 py-1 rounded-lg border border-blue-500/30">
                 {/* Rank Circle */}
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-md`}>
                   {veloTier?.rank || '?'}
