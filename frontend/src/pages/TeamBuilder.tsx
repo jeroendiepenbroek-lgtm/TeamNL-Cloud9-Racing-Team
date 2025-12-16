@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -270,9 +270,14 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     if (!selectedTeam) return true
     
     if (selectedTeam.competition_type === 'velo') {
-      const velo = rider.velo_live
-      return velo >= (selectedTeam.velo_min_rank || 1) && 
-             velo <= (selectedTeam.velo_max_rank || 10)
+      // Convert vELO score to tier rank (1-10)
+      const velo30day = rider.velo_30day || rider.velo_live
+      const veloTier = getVeloTier(velo30day)
+      const riderTierRank = veloTier?.rank || 10
+      
+      // Check if rider's tier is within allowed range
+      return riderTierRank >= (selectedTeam.velo_min_rank || 1) && 
+             riderTierRank <= (selectedTeam.velo_max_rank || 10)
     } else {
       const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
       return selectedTeam.allowed_categories?.includes(category)
@@ -514,33 +519,22 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                   </h2>
                   
                   {/* Drag Drop Zone */}
-                  <div
-                    id="lineup-drop-zone"
-                    className="min-h-[400px] border-2 border-dashed border-blue-500/30 rounded-xl p-4 bg-blue-500/5"
-                  >
-                    {lineup.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-12">
-                        <div className="text-6xl mb-4">👥</div>
-                        <p className="text-lg font-semibold">No riders yet</p>
-                        <p className="text-sm">Drag riders here or click to add</p>
+                  <LineupDropZone lineup={lineup}>
+                    <SortableContext
+                      items={lineup.map(r => r.rider_id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-3">
+                        {lineup.map(rider => (
+                          <LineupRiderCard
+                            key={rider.rider_id}
+                            rider={rider}
+                            onRemove={() => handleRemoveRider(rider.rider_id)}
+                          />
+                        ))}
                       </div>
-                    ) : (
-                      <SortableContext
-                        items={lineup.map(r => r.rider_id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-3">
-                          {lineup.map(rider => (
-                            <LineupRiderCard
-                              key={rider.rider_id}
-                              rider={rider}
-                              onRemove={() => handleRemoveRider(rider.rider_id)}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    )}
-                  </div>
+                    </SortableContext>
+                  </LineupDropZone>
                   
                   {/* Team Stats */}
                   <div className="mt-4 p-4 bg-gray-700/30 rounded-lg">
@@ -644,7 +638,35 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   )
 }
 
-// Draggable Rider Card - ULTRA SIMPLE met MASSIVE Category Badge
+// Lineup Drop Zone Component - Droppable area
+function LineupDropZone({ children, lineup }: { children: React.ReactNode, lineup: LineupRider[] }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'lineup-drop-zone'
+  })
+  
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[400px] border-2 border-dashed rounded-xl p-4 transition-all ${
+        isOver 
+          ? 'border-indigo-500 bg-indigo-500/20' 
+          : 'border-blue-500/30 bg-blue-500/5'
+      }`}
+    >
+      {lineup.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-12">
+          <div className="text-6xl mb-4">👥</div>
+          <p className="text-lg font-semibold">No riders yet</p>
+          <p className="text-sm">Drag riders here or click + Add button</p>
+        </div>
+      ) : (
+        children
+      )}
+    </div>
+  )
+}
+
+// Draggable Rider Card - Modern Design
 function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: rider.rider_id
