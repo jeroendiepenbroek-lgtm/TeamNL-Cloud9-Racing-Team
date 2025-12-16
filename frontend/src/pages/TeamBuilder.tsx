@@ -690,43 +690,45 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className={`group relative bg-gradient-to-br from-white to-gray-50/50 hover:from-indigo-50/30 hover:to-purple-50/30 rounded-xl cursor-move border border-gray-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-200 shadow-sm ${isDragging ? 'scale-105 ring-2 ring-indigo-400/50 shadow-2xl' : ''}`}
+      className={`group relative bg-gradient-to-br from-white to-gray-50/50 hover:from-indigo-50/30 hover:to-purple-50/30 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-200 shadow-sm ${isDragging ? 'scale-105 ring-2 ring-indigo-400/50 shadow-2xl' : ''}`}
     >
       <div className="p-4">
-        {/* Top: Rider Name - Prominent */}
-        <div className="mb-3">
-          <h3 className="text-lg font-bold text-gray-900 truncate">
-            {rider.name || rider.full_name}
-          </h3>
-        </div>
-        
-        {/* Middle: Avatar + Phenotype - Visual Focus */}
-        <div className="flex items-center gap-3 mb-3">
-          <div className="relative">
-            <img 
-              src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`}
-              alt={rider.name}
-              className="w-16 h-16 rounded-full border-2 border-indigo-200 shadow-md"
-              onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`; }}
-            />
-            {/* Category Badge - Subtiel op avatar */}
-            <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 text-xs font-bold rounded-md border ${categoryColor} shadow-md`}>
-              {category}
-            </div>
+        {/* Drag Handle Area - Top and Middle sections */}
+        <div {...listeners} className="cursor-move">
+          {/* Top: Rider Name - Prominent */}
+          <div className="mb-3">
+            <h3 className="text-lg font-bold text-gray-900 truncate">
+              {rider.name || rider.full_name}
+            </h3>
           </div>
           
-          {rider.phenotype && (
-            <div className="flex-1">
-              <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Phenotype</div>
-              <div className="text-lg font-bold text-purple-700">
-                {rider.phenotype}
+          {/* Middle: Avatar + Phenotype - Visual Focus */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="relative">
+              <img 
+                src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`}
+                alt={rider.name}
+                className="w-16 h-16 rounded-full border-2 border-indigo-200 shadow-md"
+                onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`; }}
+              />
+              {/* Category Badge - Subtiel op avatar */}
+              <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 text-xs font-bold rounded-md border ${categoryColor} shadow-md`}>
+                {category}
               </div>
             </div>
-          )}
+            
+            {rider.phenotype && (
+              <div className="flex-1">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Phenotype</div>
+                <div className="text-lg font-bold text-purple-700">
+                  {rider.phenotype}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
-        {/* Bottom: Stats - Subtiel en compact */}
+        {/* Bottom: Stats - Subtiel en compact - NO DRAG HERE */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-200/60">
           <div className="flex items-center gap-3 text-sm">
             {/* vELO Tier Badge met 30-day score - Combined */}
@@ -746,6 +748,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
           <button
             onClick={(e) => {
               e.stopPropagation()
+              e.preventDefault()
               onAdd()
             }}
             className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-all"

@@ -25,14 +25,14 @@ SELECT
   tl.lineup_position,
   rc.racing_name AS name,
   rc.full_name,
-  COALESCE(rc.zwiftracing_category, rc.zwift_official_category) AS category,
-  rc.velo_live AS current_velo_rank,
+  COALESCE(rc.zwift_official_category, rc.zwiftracing_category, 'D') AS category,
+  rc.velo_live,
   rc.velo_30day,
   rc.country_alpha3,
   rc.avatar_url,
   rc.phenotype,
   rc.zwift_official_racing_score,
-  rc.ftp_watts,
+  rc.racing_ftp,
   rc.weight_kg,
   tl.rider_category AS category_at_add,
   tl.rider_velo_rank AS velo_rank_at_add,
@@ -49,4 +49,9 @@ ORDER BY ct.team_name, tl.lineup_position NULLS LAST;
 
 -- Verification
 SELECT '✅ v_team_lineups_full updated!' AS status;
-SELECT 'Added: velo_30day, phenotype, zwift_official_racing_score, ftp_watts, weight_kg' AS info;
+SELECT 'Added: velo_live, velo_30day, phenotype, zwift_official_racing_score, racing_ftp, weight_kg' AS info;
+
+-- Test query to verify all fields are present
+-- SELECT lineup_id, name, category, velo_live, velo_30day, racing_ftp, weight_kg, phenotype, zwift_official_racing_score 
+-- FROM v_team_lineups_full 
+-- LIMIT 5;
