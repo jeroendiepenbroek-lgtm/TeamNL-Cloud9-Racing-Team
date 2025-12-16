@@ -3,8 +3,11 @@
 -- Run this in Supabase SQL Editor to update v_team_lineups_full view
 -- ============================================================================
 
--- Update view: Team lineup with rider details (add phenotype, ZRS, FTP, weight)
-CREATE OR REPLACE VIEW public.v_team_lineups_full AS
+-- Drop existing view first (required because we're changing column order)
+DROP VIEW IF EXISTS public.v_team_lineups_full;
+
+-- Recreate view: Team lineup with rider details (add phenotype, ZRS, FTP, weight)
+CREATE VIEW public.v_team_lineups_full AS
 SELECT 
   tl.id AS lineup_id,
   tl.team_id,
