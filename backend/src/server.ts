@@ -1686,7 +1686,7 @@ app.post('/api/teams/:teamId/riders', async (req, res) => {
         rider_id,
         lineup_position,
         rider_category: category,
-        rider_velo_rank: rider?.velo_live
+        rider_velo_rank: rider?.velo_live ? Math.floor(rider.velo_live) : null
       })
       .select()
       .single();
