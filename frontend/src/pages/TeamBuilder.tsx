@@ -669,59 +669,66 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       style={style}
       {...attributes}
       {...listeners}
-      className={`group relative bg-white hover:bg-gray-50 rounded-xl cursor-move border-2 border-gray-200 hover:border-indigo-400 hover:shadow-lg transition-all shadow-md ${isDragging ? 'scale-105 ring-4 ring-indigo-500/50 shadow-2xl' : ''}`}
+      className={`group relative bg-gradient-to-br from-white to-gray-50/50 hover:from-indigo-50/30 hover:to-purple-50/30 rounded-xl cursor-move border border-gray-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-200 shadow-sm ${isDragging ? 'scale-105 ring-2 ring-indigo-400/50 shadow-2xl' : ''}`}
     >
       <div className="p-4">
-        {/* Row 1: MASSIVE Category Badge + vELO */}
-        <div className="flex items-center justify-between gap-3 mb-3">
-          {/* CATEGORY BADGE - HUGE & VISIBLE */}
-          <div className={`px-5 py-2.5 text-2xl font-black rounded-lg border-3 ${categoryColor} shadow-lg`}>
-            {category}
-          </div>
-          
-          {/* vELO Badge */}
-          <div className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-300">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-gray-800'}`}>
-              {veloTier?.rank || '?'}
-            </div>
-            <span className="text-gray-700 font-bold">{Math.floor(velo30day)}</span>
-          </div>
+        {/* Top: Rider Name - Prominent */}
+        <div className="mb-3">
+          <h3 className="text-lg font-bold text-gray-900 truncate">
+            {rider.name || rider.full_name}
+          </h3>
         </div>
         
-        {/* Row 2: Avatar + Name + Stats */}
-        <div className="flex items-center gap-3">
-          <img 
-            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=48`}
-            alt={rider.name}
-            className="w-12 h-12 rounded-full border-2 border-gray-300 shadow-md flex-shrink-0"
-            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=48`; }}
-          />
-          
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-gray-900 truncate mb-1">
-              {rider.name || rider.full_name}
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap text-xs">
-              {rider.phenotype && (
-                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-semibold">
-                  {rider.phenotype}
-                </span>
-              )}
-              {rider.zwift_official_racing_score && (
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-semibold">
-                  ZRS {rider.zwift_official_racing_score}
-                </span>
-              )}
+        {/* Middle: Avatar + Phenotype - Visual Focus */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="relative">
+            <img 
+              src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`}
+              alt={rider.name}
+              className="w-16 h-16 rounded-full border-2 border-indigo-200 shadow-md"
+              onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`; }}
+            />
+            {/* Category Badge - Subtiel op avatar */}
+            <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 text-xs font-bold rounded-md border ${categoryColor} shadow-md`}>
+              {category}
             </div>
           </div>
           
-          {/* Add Button */}
+          {rider.phenotype && (
+            <div className="flex-1">
+              <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Phenotype</div>
+              <div className="text-lg font-bold text-purple-700">
+                {rider.phenotype}
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Bottom: Stats - Subtiel en compact */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-200/60">
+          <div className="flex items-center gap-3 text-sm">
+            {/* vELO Rank Badge - Klein en subtiel */}
+            <div className="flex items-center gap-1.5">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm`}>
+                {veloTier?.rank || '?'}
+              </div>
+              <span className="text-gray-700 font-semibold text-sm">{Math.floor(velo30day)}</span>
+            </div>
+            
+            {rider.zwift_official_racing_score && (
+              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                ZRS {rider.zwift_official_racing_score}
+              </span>
+            )}
+          </div>
+          
+          {/* Add Button - Rechts onderin */}
           <button
             onClick={(e) => {
               e.stopPropagation()
               onAdd()
             }}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-all"
           >
             + Add
           </button>
