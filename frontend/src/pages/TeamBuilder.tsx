@@ -45,6 +45,8 @@ interface Rider {
   velo_30day: number | null
   country_alpha3: string
   avatar_url: string
+  phenotype: string | null
+  zwift_official_racing_score: number | null
 }
 
 interface Team {
@@ -77,6 +79,8 @@ interface LineupRider {
   category: string
   velo_live: number
   velo_30day: number | null
+  phenotype: string | null
+  zwift_official_racing_score: number | null
   is_valid: boolean
   validation_warning?: string
 }
@@ -379,21 +383,6 @@ export default function TeamBuilder() {
                   ← Dashboard
                 </button>
               </div>
-              
-              {/* vELO Legend */}
-              <div className="bg-white/10 backdrop-blur-lg rounded-xl p-3 sm:p-4 border border-white/20 shadow-lg">
-                <h3 className="text-white text-xs sm:text-sm font-bold mb-2 sm:mb-3">vELO Tiers</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
-                  {VELO_TIERS.map((tier) => (
-                    <div key={tier.rank} className="flex items-center gap-2">
-                      <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs bg-gradient-to-br ${tier.color} ${tier.textColor} shadow-md`}>
-                        {tier.rank}
-                      </div>
-                      <span className="text-white text-xs sm:text-sm font-medium">{tier.icon} {tier.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -690,8 +679,8 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
               {rider.name || rider.full_name}
             </div>
             
-            {/* Stats Row */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Stats Row 1: Category + vELO */}
+            <div className="flex items-center gap-2.5 flex-wrap mb-2">
               {/* Category Badge - RACING MATRIX STYLE */}
               <span className={`inline-block px-3 py-1 text-sm font-bold rounded-md border-2 ${categoryColor} shadow-lg`}>
                 {rider.category}
@@ -708,6 +697,23 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
                   {Math.floor(velo30day)}
                 </span>
               </div>
+            </div>
+            
+            {/* Stats Row 2: Phenotype + ZRS 30-day */}
+            <div className="flex items-center gap-2.5 flex-wrap text-sm">
+              {/* Phenotype */}
+              {rider.phenotype && (
+                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md border border-purple-500/30 font-semibold">
+                  {rider.phenotype}
+                </span>
+              )}
+              
+              {/* ZRS 30-day */}
+              {rider.zwift_official_racing_score && (
+                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-300 rounded-md border border-orange-500/30 font-semibold">
+                  ZRS {rider.zwift_official_racing_score}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -765,8 +771,8 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
               {rider.name || rider.full_name}
             </div>
             
-            {/* Stats Row */}
-            <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Stats Row 1: Category + vELO + Validation */}
+            <div className="flex items-center gap-2.5 flex-wrap mb-2">
               {/* Category Badge - Prominent */}
               <span className={`inline-flex items-center px-3 py-1 text-sm font-bold rounded-md border-2 ${categoryColor} shadow-md`}>
                 {rider.category}
@@ -790,6 +796,23 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
               ) : (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-500/20 text-red-300 rounded-md text-xs font-bold border border-red-500/30">
                   <span>✗</span> Invalid
+                </span>
+              )}
+            </div>
+            
+            {/* Stats Row 2: Phenotype + ZRS 30-day */}
+            <div className="flex items-center gap-2.5 flex-wrap text-sm">
+              {/* Phenotype */}
+              {rider.phenotype && (
+                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-md border border-purple-500/30 font-semibold">
+                  {rider.phenotype}
+                </span>
+              )}
+              
+              {/* ZRS 30-day */}
+              {rider.zwift_official_racing_score && (
+                <span className="px-2 py-0.5 bg-orange-500/20 text-orange-300 rounded-md border border-orange-500/30 font-semibold">
+                  ZRS {rider.zwift_official_racing_score}
                 </span>
               )}
             </div>
