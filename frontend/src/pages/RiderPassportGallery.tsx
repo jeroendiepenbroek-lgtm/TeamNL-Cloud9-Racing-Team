@@ -92,14 +92,6 @@ export default function RiderPassportGallery() {
     setFilteredRiders(filtered)
   }
 
-  const toggleTier = (tier: number) => {
-    setSelectedTiers(prev => 
-      prev.includes(tier) 
-        ? prev.filter(t => t !== tier)
-        : [...prev, tier]
-    )
-  }
-
   const getFlagUrl = (countryCode: string) => {
     const alpha3ToAlpha2: { [key: string]: string } = {
       'NLD': 'nl', 'BEL': 'be', 'GBR': 'gb', 'USA': 'us', 'DEU': 'de',
@@ -109,7 +101,11 @@ export default function RiderPassportGallery() {
       'BRA': 'br', 'MEX': 'mx', 'PRT': 'pt', 'CZE': 'cz', 'SVK': 'sk',
       'HUN': 'hu', 'ROU': 'ro', 'BGR': 'bg', 'HRV': 'hr', 'SVN': 'si',
       'IRL': 'ie', 'LUX': 'lu', 'ISL': 'is', 'LTU': 'lt', 'LVA': 'lv',
-      'EST': 'ee', 'GRC': 'gr', 'TUR': 'tr', 'UKR': 'ua', 'RUS': 'ru'
+      'EST': 'ee', 'GRC': 'gr', 'TUR': 'tr', 'UKR': 'ua', 'RUS': 'ru',
+      'ARG': 'ar', 'CHL': 'cl', 'COL': 'co', 'PER': 'pe', 'URY': 'uy',
+      'VEN': 've', 'CHN': 'cn', 'KOR': 'kr', 'TWN': 'tw', 'THA': 'th',
+      'SGP': 'sg', 'MYS': 'my', 'IDN': 'id', 'PHL': 'ph', 'VNM': 'vn',
+      'IND': 'in', 'PAK': 'pk', 'ISR': 'il', 'SAU': 'sa', 'ARE': 'ae'
     }
     const alpha2 = alpha3ToAlpha2[countryCode?.toUpperCase()]
     return alpha2 ? `https://flagcdn.com/w80/${alpha2}.png` : null
@@ -117,7 +113,7 @@ export default function RiderPassportGallery() {
 
   const getCategoryColor = (category: string) => {
     const colors: { [key: string]: string } = {
-      'A+': '#FF0000', 'A': '#FFA500', 'B': '#4CAF50',
+      'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
       'C': '#0000FF', 'D': '#FF1493', 'E': '#808080'
     }
     return colors[category] || '#666'
@@ -147,6 +143,105 @@ export default function RiderPassportGallery() {
       }
       return newSet
     })
+  }
+
+  const drawSpiderChart = (canvasId: string, rider: Rider) => {
+    setTimeout(() => {
+      const canvas = document.getElementById(canvasId) as HTMLCanvasElement
+      if (!canvas) return
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      const width = canvas.width
+      const height = canvas.height
+      const centerX = width / 2
+      const centerY = height / 2
+      const radius = Math.min(width, height) / 2 - 20
+
+      // Power data (normalized to 0-100 scale based on typical max values)
+      const powerData = [
+        { label: '5s', value: rider.power_5s, max: 1500 },
+        { label: '15s', value: rider.power_15s, max: 1200 },
+        { label: '30s', value: rider.power_30s, max: 1000 },
+        { label: '1m', value: rider.power_60s, max: 800 },
+        { label: '2m', value: rider.power_120s, max: 600 },
+        { label: '5m', value: rider.power_300s, max: 500 },
+        { label: '20m', value: rider.power_1200s, max: 400 }
+      ]
+
+      const numPoints = powerData.length
+      const angleStep = (Math.PI * 2) / numPoints
+
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height)
+
+      // Draw grid circles
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+      ctx.lineWidth = 1
+      for (let i = 1; i <= 5; i++) {
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, (radius * i) / 5, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+
+      // Draw axes
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+      powerData.forEach((_, i) => {
+        const angle = i * angleStep - Math.PI / 2
+        const x = centerX + Math.cos(angle) * radius
+        const y = centerY + Math.sin(angle) * radius
+        ctx.beginPath()
+        ctx.moveTo(centerX, centerY)
+        ctx.lineTo(x, y)
+        ctx.stroke()
+
+        // Draw labels
+        const labelX = centerX + Math.cos(angle) * (radius + 15)
+        const labelY = centerY + Math.sin(angle) * (radius + 15)
+        ctx.fillStyle = '#FFD700'
+        ctx.font = 'bold 10px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(powerData[i].label, labelX, labelY)
+      })
+
+      // Draw data polygon
+      ctx.beginPath()
+      powerData.forEach((data, i) => {
+        const angle = i * angleStep - Math.PI / 2
+        const normalized = Math.min((data.value || 0) / data.max, 1)
+        const r = radius * normalized
+        const x = centerX + Math.cos(angle) * r
+        const y = centerY + Math.sin(angle) * r
+        
+        if (i === 0) {
+          ctx.moveTo(x, y)
+        } else {
+          ctx.lineTo(x, y)
+        }
+      })
+      ctx.closePath()
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.3)'
+      ctx.fill()
+      ctx.strokeStyle = '#FFD700'
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      // Draw data points
+      powerData.forEach((data, i) => {
+        const angle = i * angleStep - Math.PI / 2
+        const normalized = Math.min((data.value || 0) / data.max, 1)
+        const r = radius * normalized
+        const x = centerX + Math.cos(angle) * r
+        const y = centerY + Math.sin(angle) * r
+        
+        ctx.beginPath()
+        ctx.arc(x, y, 4, 0, Math.PI * 2)
+        ctx.fillStyle = '#FFD700'
+        ctx.fill()
+      })
+    }, 100)
   }
 
   const stats = {
@@ -218,35 +313,35 @@ export default function RiderPassportGallery() {
               </select>
             </div>
 
-            {/* Tier Multi-Select */}
+            {/* Tier Dropdown with Badges */}
             <div className="col-span-2">
-              <div className="flex flex-wrap gap-2">
+              <select
+                value={selectedTiers.length === 1 ? selectedTiers[0].toString() : 'all'}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setSelectedTiers(val === 'all' ? [] : [parseInt(val)])
+                }}
+                className="w-full px-4 py-2 rounded-lg bg-white/15 text-white border border-white/30 focus:border-yellow-400 focus:outline-none font-bold appearance-none cursor-pointer"
+                style={{ backgroundImage: 'none' }}
+              >
+                <option value="all" className="bg-gray-800">💎 Alle Tiers</option>
                 {[
-                  { tier: 1, emoji: '💎', label: 'Diamond' },
-                  { tier: 2, emoji: '♦️', label: 'Ruby' },
-                  { tier: 3, emoji: '💚', label: 'Emerald' },
-                  { tier: 4, emoji: '💙', label: 'Sapphire' },
-                  { tier: 5, emoji: '💜', label: 'Amethyst' },
-                  { tier: 6, emoji: '⚪', label: 'Platinum' },
-                  { tier: 7, emoji: '🥇', label: 'Gold' },
-                  { tier: 8, emoji: '⚪', label: 'Silver' },
-                  { tier: 9, emoji: '🥉', label: 'Bronze' },
-                  { tier: 10, emoji: '🟤', label: 'Copper' }
-                ].map(({ tier, emoji }) => (
-                  <button
-                    key={tier}
-                    onClick={() => toggleTier(tier)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                      selectedTiers.includes(tier)
-                        ? 'bg-yellow-400 text-gray-900 shadow-md scale-105'
-                        : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
-                    }`}
-                    title={`Tier ${tier}`}
-                  >
-                    {emoji} {tier}
-                  </button>
+                  { tier: 1, name: 'Diamond', color: '#00D4FF' },
+                  { tier: 2, name: 'Ruby', color: '#E61E50' },
+                  { tier: 3, name: 'Emerald', color: '#50C878' },
+                  { tier: 4, name: 'Sapphire', color: '#0F52BA' },
+                  { tier: 5, name: 'Amethyst', color: '#9966CC' },
+                  { tier: 6, name: 'Platinum', color: '#E5E4E2' },
+                  { tier: 7, name: 'Gold', color: '#FFD700' },
+                  { tier: 8, name: 'Silver', color: '#C0C0C0' },
+                  { tier: 9, name: 'Bronze', color: '#CD7F32' },
+                  { tier: 10, name: 'Copper', color: '#B87333' }
+                ].map(({ tier, name }) => (
+                  <option key={tier} value={tier} className="bg-gray-800">
+                    Tier {tier} - {name}
+                  </option>
                 ))}
-              </div>
+              </select>
             </div>
           </div>
         </div>
@@ -371,14 +466,6 @@ export default function RiderPassportGallery() {
                         </div>
                       </div>
 
-                      {/* Phenotype Bar */}
-                      {rider.phenotype && (
-                        <div className="mx-2 mb-2 bg-white/10 rounded-lg p-2 border border-white/20 text-center">
-                          <div className="text-xs text-yellow-400 font-bold uppercase">Phenotype</div>
-                          <div className="text-sm font-bold text-white capitalize">{rider.phenotype}</div>
-                        </div>
-                      )}
-
                       {/* Velo Ranks */}
                       <div className="grid grid-cols-2 gap-1 px-2 mb-2">
                         <div
@@ -397,6 +484,14 @@ export default function RiderPassportGallery() {
                         </div>
                       </div>
 
+                      {/* Phenotype Bar - Moved below vELO */}
+                      {rider.phenotype && (
+                        <div className="mx-2 mb-2 bg-white/10 rounded-lg p-2 border border-white/20 text-center">
+                          <div className="text-xs text-yellow-400 font-bold uppercase">Phenotype</div>
+                          <div className="text-sm font-bold text-white capitalize">{rider.phenotype}</div>
+                        </div>
+                      )}
+
                       <div className="text-center text-xs text-yellow-400/80 uppercase tracking-wide font-bold mt-2">
                         🔄 Klik voor intervals
                       </div>
@@ -404,13 +499,29 @@ export default function RiderPassportGallery() {
 
                     {/* BACK */}
                     <div
-                      className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col items-center justify-center"
+                      className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col items-center"
                       style={{
                         backfaceVisibility: 'hidden',
                         transform: 'rotateY(180deg)'
                       }}
                     >
-                      <h3 className="text-yellow-400 text-base font-black uppercase mb-2 tracking-wide">Power Intervals</h3>
+                      <h3 className="text-yellow-400 text-base font-black uppercase mb-2 tracking-wide">Power Profile</h3>
+                      
+                      {/* Spider Chart */}
+                      <div className="mb-2">
+                        <canvas
+                          id={`spider-${rider.rider_id}`}
+                          width="200"
+                          height="180"
+                          ref={(el) => {
+                            if (el && isFlipped) {
+                              drawSpiderChart(`spider-${rider.rider_id}`, rider)
+                            }
+                          }}
+                        />
+                      </div>
+
+                      {/* Power Intervals Grid */}
                       <div className="grid grid-cols-2 gap-1 w-full">
                         {[
                           { label: '5s', power: rider.power_5s, wkg: rider.power_5s_wkg },
