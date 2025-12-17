@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rider Passport Gallery</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+    }
+
+    .header h1 {
+      font-size: 48px;
+      font-weight: 900;
+      text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 18px;
+      opacity: 0.9;
+    }
+
+    .search-box {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      background: white;
+      border-radius: 15px;
+      padding: 15px 25px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-box input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      padding: 10px;
+    }
+
+    .search-box button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 30px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .search-box button:hover {
+      transform: scale(1.05);
+    }
+
+    .filters {
+      max-width: 1200px;
+      margin: 0 auto 30px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      padding: 10px 25px;
+      border-radius: 25px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      backdrop-filter: blur(10px);
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      background: rgba(255, 255, 255, 0.9);
+      color: #667eea;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .gallery {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 30px;
+      padding: 0 20px;
+    }
+
+    .rider-card {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 15px;
+      padding: 20px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      border: 2px solid #ffd700;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .rider-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .category-badge {
+      width: 50px;
+      height: 50px;
+      background: #ffd700;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+      color: #1a1a2e;
+    }
+
+    .zrs-badge {
+      text-align: right;
+    }
+
+    .zrs-label {
+      font-size: 10px;
+      color: #ffd700;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .zrs-value {
+      font-size: 24px;
+      font-weight: 900;
+      color: white;
+    }
+
+    .rider-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 3px solid #ffd700;
+      object-fit: cover;
+      margin: 0 auto 15px;
+      display: block;
+      background: #2c3e50;
+    }
+
+    .rider-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      text-align: center;
+      margin-bottom: 5px;
+    }
+
+    .rider-country {
+      font-size: 14px;
+      color: #ffd700;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .stats-mini {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .stat-mini {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .stat-label-mini {
+      font-size: 10px;
+      color: #ffd700;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .stat-value-mini {
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .loading {
+      text-align: center;
+      color: white;
+      font-size: 24px;
+      font-weight: 700;
+      padding: 100px 20px;
+    }
+
+    .no-results {
+      text-align: center;
+      color: white;
+      font-size: 20px;
+      padding: 60px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🏆 Rider Passport Gallery</h1>
+    <p>Team NL Cloud9 Racing - FIFA Style Cards</p>
+  </div>
+
+  <div class="search-box">
+    <input 
+      type="text" 
+      id="searchInput" 
+      placeholder="Zoek op naam of rider ID..."
+      onkeyup="filterRiders()"
+    />
+    <button onclick="clearSearch()">Clear</button>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all" onclick="filterByCategory('all')">Alle Riders</button>
+    <button class="filter-btn" data-filter="A+" onclick="filterByCategory('A+')">A+</button>
+    <button class="filter-btn" data-filter="A" onclick="filterByCategory('A')">A</button>
+    <button class="filter-btn" data-filter="B" onclick="filterByCategory('B')">B</button>
+    <button class="filter-btn" data-filter="C" onclick="filterByCategory('C')">C</button>
+    <button class="filter-btn" data-filter="D" onclick="filterByCategory('D')">D</button>
+  </div>
+
+  <div id="gallery" class="gallery">
+    <div class="loading">Loading riders...</div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin.includes('localhost') 
+      ? 'http://localhost:8080' 
+      : window.location.origin;
+
+    let allRiders = [];
+    let filteredRiders = [];
+    let currentCategory = 'all';
+
+    // Country code to flag emoji
+    function getFlag(countryCode) {
+      if (!countryCode || countryCode.length !== 3) return '🌍';
+      
+      const countryMap = {
+        'NLD': '🇳🇱', 'BEL': '🇧🇪', 'GBR': '🇬🇧', 'USA': '🇺🇸', 'DEU': '🇩🇪',
+        'FRA': '🇫🇷', 'ITA': '🇮🇹', 'ESP': '🇪🇸', 'AUS': '🇦🇺', 'CAN': '🇨🇦',
+        'DNK': '🇩🇰', 'SWE': '🇸🇪', 'NOR': '🇳🇴', 'FIN': '🇫🇮', 'POL': '🇵🇱',
+        'CHE': '🇨🇭', 'AUT': '🇦🇹', 'JPN': '🇯🇵', 'NZL': '🇳🇿', 'ZAF': '🇿🇦'
+      };
+      
+      return countryMap[countryCode] || '🌍';
+    }
+
+    async function loadRiders() {
+      try {
+        const response = await fetch(`${API_BASE}/api/riders`);
+        const data = await response.json();
+        
+        if (!data.success) throw new Error('Failed to load riders');
+        
+        allRiders = data.riders;
+        filteredRiders = allRiders;
+        renderGallery();
+      } catch (error) {
+        document.getElementById('gallery').innerHTML = `
+          <div class="no-results">
+            ❌ Kon riders niet laden<br>
+            <small>${error.message}</small>
+          </div>
+        `;
+      }
+    }
+
+    function renderGallery() {
+      const gallery = document.getElementById('gallery');
+      
+      if (filteredRiders.length === 0) {
+        gallery.innerHTML = `
+          <div class="no-results">
+            Geen riders gevonden
+          </div>
+        `;
+        return;
+      }
+
+      gallery.innerHTML = filteredRiders.map(rider => {
+        const category = rider.zwift_official_category || rider.zwiftracing_category || 'D';
+        const flag = getFlag(rider.country_alpha3);
+        const name = rider.racing_name || rider.full_name || 'Unknown';
+        
+        return `
+          <a href="rider-passport.html?id=${rider.rider_id}" class="rider-card">
+            <div class="card-top">
+              <div class="category-badge">${category}</div>
+              <div class="zrs-badge">
+                <div class="zrs-label">ZRS</div>
+                <div class="zrs-value">${rider.zwift_official_racing_score || '-'}</div>
+              </div>
+            </div>
+            
+            <img 
+              src="${rider.avatar_url || 'https://via.placeholder.com/100?text=No+Avatar'}" 
+              alt="${name}"
+              class="rider-avatar"
+              onerror="this.src='https://via.placeholder.com/100?text=No+Avatar'"
+            />
+            
+            <div class="rider-name">${name}</div>
+            <div class="rider-country">${flag} ${rider.country_alpha3 || 'Unknown'}</div>
+            
+            <div class="stats-mini">
+              <div class="stat-mini">
+                <div class="stat-label-mini">FTP</div>
+                <div class="stat-value-mini">${rider.racing_ftp || rider.ftp_watts || '-'}</div>
+              </div>
+              <div class="stat-mini">
+                <div class="stat-label-mini">W/kg</div>
+                <div class="stat-value-mini">${
+                  rider.racing_ftp && rider.weight_kg 
+                    ? (rider.racing_ftp / rider.weight_kg).toFixed(1) 
+                    : '-'
+                }</div>
+              </div>
+              <div class="stat-mini">
+                <div class="stat-label-mini">Velo</div>
+                <div class="stat-value-mini">${rider.velo_live || '-'}</div>
+              </div>
+              <div class="stat-mini">
+                <div class="stat-label-mini">Type</div>
+                <div class="stat-value-mini">${rider.phenotype || '-'}</div>
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    function filterByCategory(category) {
+      currentCategory = category;
+      
+      // Update active button
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.filter === category) {
+          btn.classList.add('active');
+        }
+      });
+      
+      applyFilters();
+    }
+
+    function filterRiders() {
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      
+      filteredRiders = allRiders.filter(rider => {
+        // Category filter
+        if (currentCategory !== 'all') {
+          const category = rider.zwift_official_category || rider.zwiftracing_category || 'D';
+          if (category !== currentCategory) return false;
+        }
+        
+        // Search filter
+        if (searchTerm) {
+          const name = (rider.racing_name || rider.full_name || '').toLowerCase();
+          const riderId = rider.rider_id.toString();
+          return name.includes(searchTerm) || riderId.includes(searchTerm);
+        }
+        
+        return true;
+      });
+      
+      renderGallery();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      applyFilters();
+    }
+
+    // Load riders on page load
+    loadRiders();
+  </script>
+</body>
+</html>

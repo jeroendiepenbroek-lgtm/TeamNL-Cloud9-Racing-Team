@@ -7,6 +7,7 @@ import ResultsDashboard from './pages/ResultsDashboard'
 import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
+import RiderPassportGallery from './pages/RiderPassportGallery'
 import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
@@ -67,6 +68,9 @@ function Navigation() {
               <Link to="/racing-matrix" className="text-white hover:text-orange-400 transition font-semibold">
                 📊 CLOUD9 Rider Stats
               </Link>
+              <Link to="/rider-passports" className="text-white hover:text-orange-400 transition font-semibold">
+                🎴 Rider Passports
+              </Link>
               <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Manager
               </Link>
@@ -96,6 +100,9 @@ function Navigation() {
               <Link to="/racing-matrix" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 📊 CLOUD9 Rider Stats
               </Link>
+              <Link to="/rider-passports" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                🎴 Rider Passports
+              </Link>
               <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Manager
               </Link>
@@ -116,6 +123,7 @@ function App() {
         <Routes>
           <Route path="/" element={<TeamViewer />} />
           <Route path="/racing-matrix" element={<RacingMatrix />} />
+          <Route path="/rider-passports" element={<RiderPassportGallery />} />
           <Route path="/events" element={<EventsDashboard />} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/team-manager" element={<TeamManager />} />

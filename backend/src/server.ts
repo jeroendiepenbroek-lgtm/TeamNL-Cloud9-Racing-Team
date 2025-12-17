@@ -714,6 +714,72 @@ app.get('/api/riders', async (req, res) => {
   }
 });
 
+// Get single rider by ID (for Rider Passport)
+app.get('/api/rider/:riderId', async (req, res) => {
+  try {
+    const riderId = parseInt(req.params.riderId);
+    
+    if (isNaN(riderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid rider ID'
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('v_rider_complete')
+      .select('*')
+      .eq('rider_id', riderId)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Rider not found'
+      });
+    }
+
+    // Return clean rider data
+    res.json({
+      rider_id: data.rider_id,
+      racing_name: data.racing_name,
+      full_name: data.full_name,
+      category: data.zwift_official_category || data.zwiftracing_category || 'D',
+      country_alpha3: data.country_alpha3,
+      avatar_url: data.avatar_url,
+      velo_live: data.velo_live,
+      velo_30day: data.velo_30day,
+      phenotype: data.phenotype,
+      zwift_official_racing_score: data.zwift_official_racing_score,
+      racing_ftp: data.racing_ftp || data.ftp_watts,
+      weight_kg: data.weight_kg,
+      height_cm: data.height_cm,
+      age: data.age,
+      // Power intervals - gebruik correcte veldnamen uit database
+      power_5s: data.power_5s,
+      power_15s: data.power_15s,
+      power_30s: data.power_30s,
+      power_60s: data.power_60s,
+      power_120s: data.power_120s,
+      power_300s: data.power_300s,
+      power_1200s: data.power_1200s,
+      power_5s_wkg: data.power_5s_wkg,
+      power_15s_wkg: data.power_15s_wkg,
+      power_30s_wkg: data.power_30s_wkg,
+      power_60s_wkg: data.power_60s_wkg,
+      power_120s_wkg: data.power_120s_wkg,
+      power_300s_wkg: data.power_300s_wkg,
+      power_1200s_wkg: data.power_1200s_wkg
+    });
+  } catch (error: any) {
+    console.error('❌ Error fetching rider:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
 // 📥 US1: CSV Export for Rider IDs
 app.get('/api/riders/export/csv', async (req, res) => {
   try {
