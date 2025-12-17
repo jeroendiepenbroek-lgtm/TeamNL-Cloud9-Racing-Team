@@ -302,7 +302,7 @@ function RiderRow({ rider }: { rider: LineupRider }) {
       {/* vELO Live Badge (Tier + Score) */}
       <td className="px-3 py-3 text-center">
         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${veloLiveTier?.color || 'from-gray-400 to-gray-600'} ${veloLiveTier?.textColor || 'text-white'} shadow-md border border-white/20`}>
-          <span className="font-bold text-xs">#{veloLiveTier?.rank || '?'}</span>
+          <span className="font-bold text-xs">{veloLiveTier?.rank || '?'}</span>
           <span className="font-bold text-sm">{veloLive?.toFixed(0) || 'N/A'}</span>
         </div>
       </td>
@@ -310,7 +310,7 @@ function RiderRow({ rider }: { rider: LineupRider }) {
       {/* vELO 30-day Badge (Tier + Score) */}
       <td className="px-3 py-3 text-center">
         <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${velo30dayTier?.color || 'from-gray-400 to-gray-600'} ${velo30dayTier?.textColor || 'text-white'} shadow-md border border-white/20`}>
-          <span className="font-bold text-xs">#{velo30dayTier?.rank || '?'}</span>
+          <span className="font-bold text-xs">{velo30dayTier?.rank || '?'}</span>
           <span className="font-bold text-sm">{velo30day?.toFixed(0) || 'N/A'}</span>
         </div>
       </td>

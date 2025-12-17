@@ -733,7 +733,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
           <div className="flex items-center gap-3 text-sm">
             {/* vELO Tier Badge met 30-day score - Combined */}
             <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm border border-white/20`}>
-              <span className="font-bold text-xs">#{veloTier?.rank || '?'}</span>
+              <span className="font-bold text-xs">{veloTier?.rank || '?'}</span>
               <span className="font-bold text-sm">{Math.floor(velo30day)}</span>
             </div>
             
@@ -804,7 +804,7 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
           
           {/* vELO Tier Badge met 30-day score - Combined */}
           <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm border border-white/20`}>
-            <span className="font-bold text-xs">#{veloTier?.rank || '?'}</span>
+            <span className="font-bold text-xs">{veloTier?.rank || '?'}</span>
             <span className="text-white font-bold text-sm">{Math.floor(velo30day)}</span>
           </div>
           
