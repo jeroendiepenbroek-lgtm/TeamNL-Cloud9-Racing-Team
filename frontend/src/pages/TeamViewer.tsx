@@ -91,7 +91,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
-                  <span className="truncate">TEAM VIEWER</span>
+                  <span className="truncate">CLOUD9 TEAMS</span>
                 </h1>
                 <p className="text-orange-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
                   TeamNL Cloud9 Racing · Team Overzicht
