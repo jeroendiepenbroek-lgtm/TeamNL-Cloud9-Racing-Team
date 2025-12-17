@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface Rider {
   rider_id: number
@@ -34,14 +34,161 @@ interface Rider {
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
+// vELO Tiers (matching Racing Matrix)
+const VELO_TIERS = [
+  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, color: '#00D4FF', border: '#0099CC' },
+  { rank: 2, name: 'Ruby', icon: '♦️', min: 1900, max: 2200, color: '#E61E50', border: '#B30F3A' },
+  { rank: 3, name: 'Emerald', icon: '💚', min: 1650, max: 1900, color: '#50C878', border: '#2E9356' },
+  { rank: 4, name: 'Sapphire', icon: '💙', min: 1450, max: 1650, color: '#0F52BA', border: '#0A3680' },
+  { rank: 5, name: 'Amethyst', icon: '💜', min: 1300, max: 1450, color: '#9966CC', border: '#6B4A99' },
+  { rank: 6, name: 'Platinum', icon: '⚪', min: 1150, max: 1300, color: '#E5E4E2', border: '#B8B7B5' },
+  { rank: 7, name: 'Gold', icon: '🟡', min: 1000, max: 1150, color: '#FFD700', border: '#CCA700' },
+  { rank: 8, name: 'Silver', icon: '⚫', min: 850, max: 1000, color: '#C0C0C0', border: '#8C8C8C' },
+  { rank: 9, name: 'Bronze', icon: '🟠', min: 650, max: 850, color: '#CD7F32', border: '#995F26' },
+  { rank: 10, name: 'Copper', icon: '🟤', min: 0, max: 650, color: '#B87333', border: '#8B5A1F' },
+]
+
+// ZP Categories
+const ZP_CATEGORIES = {
+  'A+': { color: 'bg-red-100 text-red-900 border-red-300', label: 'A+' },
+  'A': { color: 'bg-red-50 text-red-800 border-red-200', label: 'A' },
+  'B': { color: 'bg-green-50 text-green-800 border-green-200', label: 'B' },
+  'C': { color: 'bg-blue-50 text-blue-800 border-blue-200', label: 'C' },
+  'D': { color: 'bg-yellow-50 text-yellow-800 border-yellow-200', label: 'D' },
+}
+
+// Multi-select Dropdown Component (from Racing Matrix)
+interface MultiSelectDropdownProps<T extends string | number> {
+  label: string
+  options: { value: T; label: string; icon?: string }[]
+  selectedValues: T[]
+  onChange: (values: T[]) => void
+}
+
+function MultiSelectDropdown<T extends string | number>({ 
+  label, 
+  options, 
+  selectedValues, 
+  onChange 
+}: MultiSelectDropdownProps<T>) {
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const toggleOption = (value: T) => {
+    if (selectedValues.includes(value)) {
+      onChange(selectedValues.filter(v => v !== value))
+    } else {
+      onChange([...selectedValues, value])
+    }
+  }
+
+  // Helper om badge te renderen voor vELO tiers
+  const renderVeloBadge = (option: { value: T; label: string; icon?: string }) => {
+    const tier = VELO_TIERS.find(t => t.rank === option.value)
+    if (!tier) return null
+    
+    return (
+      <div className="flex items-center gap-2">
+        <div 
+          className="w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] text-white shadow-sm"
+          style={{ 
+            background: tier.color,
+            borderColor: tier.border,
+            borderWidth: '2px',
+            borderStyle: 'solid'
+          }}
+        >
+          {tier.rank}
+        </div>
+        <span className="text-xs font-medium text-gray-800">{tier.name}</span>
+      </div>
+    )
+  }
+
+  // Helper om badge te renderen voor ZP categories
+  const renderCategoryBadge = (option: { value: T; label: string; icon?: string }) => {
+    const categoryStyle = ZP_CATEGORIES[option.value as keyof typeof ZP_CATEGORIES]
+    if (!categoryStyle) return null
+    
+    return (
+      <span className={`px-2 py-0.5 text-[11px] font-semibold rounded border ${categoryStyle.color}`}>
+        {categoryStyle.label}
+      </span>
+    )
+  }
+
+  // Bepaal of dit een vELO of Category dropdown is
+  const isVeloDropdown = label.includes('vELO')
+  const isCategoryDropdown = label.includes('Category')
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="px-3 py-2 border border-white/30 rounded-lg text-xs focus:ring-2 focus:ring-yellow-400 bg-white/15 text-white hover:bg-white/20 transition-colors w-full flex items-center justify-between font-bold"
+      >
+        <span>
+          {label}
+          {selectedValues.length > 0 && (
+            <span className="ml-1.5 px-1.5 py-0.5 bg-yellow-400 text-gray-900 rounded text-[10px] font-bold">
+              {selectedValues.length}
+            </span>
+          )}
+        </span>
+        <svg
+          className={`w-4 h-4 ml-2 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+          {options.map((option) => (
+            <label
+              key={option.value}
+              className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+            >
+              <input
+                type="checkbox"
+                checked={selectedValues.includes(option.value)}
+                onChange={() => toggleOption(option.value)}
+                className="w-4 h-4 text-yellow-500 border-gray-300 rounded focus:ring-yellow-400"
+              />
+              <div className="ml-2">
+                {isVeloDropdown ? renderVeloBadge(option) : 
+                 isCategoryDropdown ? renderCategoryBadge(option) : 
+                 <span className="text-xs text-gray-700">{option.label}</span>}
+              </div>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function RiderPassportGallery() {
   const [riders, setRiders] = useState<Rider[]>([])
   const [filteredRiders, setFilteredRiders] = useState<Rider[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState('all')
-  const [selectedTiers, setSelectedTiers] = useState<number[]>([])
+  const [filterCategories, setFilterCategories] = useState<string[]>([])
+  const [filterVeloTiers, setFilterVeloTiers] = useState<number[]>([])
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
   const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: {[key: string]: number}}>({})
 
@@ -51,7 +198,7 @@ export default function RiderPassportGallery() {
 
   useEffect(() => {
     applyFilters()
-  }, [riders, searchTerm, categoryFilter, selectedTiers])
+  }, [riders, searchTerm, filterCategories, filterVeloTiers])
 
   const loadRiders = async () => {
     try {
@@ -98,17 +245,19 @@ export default function RiderPassportGallery() {
       )
     }
 
-    // Category filter
-    if (categoryFilter !== 'all') {
-      const riderCategory = (r: Rider) => r.zwift_official_category || r.zwiftracing_category || 'D'
-      filtered = filtered.filter(r => riderCategory(r) === categoryFilter)
+    // Category filter - multiselect
+    if (filterCategories.length > 0) {
+      filtered = filtered.filter(r => {
+        const category = r.zwift_official_category || r.zwiftracing_category || 'D'
+        return filterCategories.includes(category)
+      })
     }
 
-    // Tier filter - individual tier selection
-    if (selectedTiers.length > 0) {
+    // Tier filter - multiselect
+    if (filterVeloTiers.length > 0) {
       filtered = filtered.filter(r => {
         const tier = getVeloTier(r.velo_live).tier
-        return selectedTiers.includes(tier)
+        return filterVeloTiers.includes(tier)
       })
     }
 
@@ -510,7 +659,7 @@ export default function RiderPassportGallery() {
         <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-3 shadow-lg">
           <div className="grid md:grid-cols-12 gap-3 items-center">
             {/* Search */}
-            <div className="md:col-span-4">
+            <div className="md:col-span-6">
               <input
                 type="text"
                 placeholder="🔍 Zoek rider..."
@@ -520,49 +669,34 @@ export default function RiderPassportGallery() {
               />
             </div>
 
-            {/* Category Dropdown */}
-            <div className="md:col-span-2">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/15 text-white border border-white/30 focus:border-yellow-400 focus:outline-none font-bold appearance-none cursor-pointer text-sm"
-                style={{ backgroundImage: 'none' }}
-              >
-                <option value="all" className="bg-gray-800">🏅 Alle</option>
-                <option value="A+" className="bg-gray-800">A+</option>
-                <option value="A" className="bg-gray-800">A</option>
-                <option value="B" className="bg-gray-800">B</option>
-                <option value="C" className="bg-gray-800">C</option>
-                <option value="D" className="bg-gray-800">D</option>
-                <option value="E" className="bg-gray-800">E</option>
-              </select>
+            {/* Category Multiselect Dropdown */}
+            <div className="md:col-span-3">
+              <MultiSelectDropdown
+                label="🏅 Category"
+                options={[
+                  { value: 'A+', label: 'A+' },
+                  { value: 'A', label: 'A' },
+                  { value: 'B', label: 'B' },
+                  { value: 'C', label: 'C' },
+                  { value: 'D', label: 'D' },
+                ]}
+                selectedValues={filterCategories}
+                onChange={setFilterCategories}
+              />
             </div>
 
             {/* Tier Multiselect Dropdown */}
-            <div className="md:col-span-2">
-              <select
-                multiple
-                value={selectedTiers.map(String)}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions).map(opt => parseInt(opt.value))
-                  setSelectedTiers(selected)
-                }}
-                className="w-full px-3 py-2 rounded-lg bg-white/15 text-white border border-white/30 focus:border-yellow-400 focus:outline-none font-bold text-sm appearance-none cursor-pointer"
-                style={{ height: '38px', backgroundImage: 'none' }}
-                size={1}
-              >
-                <option value="" disabled className="bg-gray-800">💎 Selecteer Tier(s) - Ctrl+Click</option>
-                <option value="1" className="bg-gray-800">1 - Diamond (≥2200)</option>
-                <option value="2" className="bg-gray-800">2 - Ruby (≥1900)</option>
-                <option value="3" className="bg-gray-800">3 - Emerald (≥1650)</option>
-                <option value="4" className="bg-gray-800">4 - Sapphire (≥1450)</option>
-                <option value="5" className="bg-gray-800">5 - Amethyst (≥1300)</option>
-                <option value="6" className="bg-gray-800">6 - Platinum (≥1150)</option>
-                <option value="7" className="bg-gray-800">7 - Gold (≥1000)</option>
-                <option value="8" className="bg-gray-800">8 - Silver (≥850)</option>
-                <option value="9" className="bg-gray-800">9 - Bronze (≥650)</option>
-                <option value="10" className="bg-gray-800">10 - Copper (&lt;650)</option>
-              </select>
+            <div className="md:col-span-3">
+              <MultiSelectDropdown
+                label="💎 vELO Tier"
+                options={VELO_TIERS.map(tier => ({
+                  value: tier.rank,
+                  label: tier.name,
+                  icon: tier.icon
+                }))}
+                selectedValues={filterVeloTiers}
+                onChange={setFilterVeloTiers}
+              />
             </div>
           </div>
         </div>
