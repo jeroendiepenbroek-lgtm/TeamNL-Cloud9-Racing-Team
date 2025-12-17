@@ -120,17 +120,17 @@ export default function RiderPassportGallery() {
   }
 
   const getVeloTier = (veloLive: number) => {
-    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#D4A76A' }
-    if (veloLive >= 1750) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#7FEFFF' }
-    if (veloLive >= 1650) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#FF6B9D' }
-    if (veloLive >= 1550) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#8FE5A0' }
-    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#5B9BD5' }
-    if (veloLive >= 1350) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#C8A2D0' }
-    if (veloLive >= 1200) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#FFFFFF' }
-    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#FFF700' }
-    if (veloLive >= 800) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#E8E8E8' }
-    if (veloLive >= 600) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#E4A672' }
-    return { tier: 10, name: 'Copper', color: '#B87333', border: '#D4A76A' }
+    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+    if (veloLive >= 1750) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' }
+    if (veloLive >= 1650) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' }
+    if (veloLive >= 1550) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' }
+    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680', emoji: '💙' }
+    if (veloLive >= 1350) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' }
+    if (veloLive >= 1200) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' }
+    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700', emoji: '🥇' }
+    if (veloLive >= 800) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' }
+    if (veloLive >= 600) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' }
+    return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
   }
 
   const toggleFlip = (riderId: number) => {
@@ -313,35 +313,49 @@ export default function RiderPassportGallery() {
               </select>
             </div>
 
-            {/* Tier Dropdown with Badges */}
+            {/* Tier Filter with Colored Badges */}
             <div className="col-span-2">
-              <select
-                value={selectedTiers.length === 1 ? selectedTiers[0].toString() : 'all'}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setSelectedTiers(val === 'all' ? [] : [parseInt(val)])
-                }}
-                className="w-full px-4 py-2 rounded-lg bg-white/15 text-white border border-white/30 focus:border-yellow-400 focus:outline-none font-bold appearance-none cursor-pointer"
-                style={{ backgroundImage: 'none' }}
-              >
-                <option value="all" className="bg-gray-800">💎 Alle Tiers</option>
+              <div className="flex flex-wrap gap-2 items-center">
+                <button
+                  onClick={() => setSelectedTiers([])}
+                  className={`px-3 py-1 rounded-lg text-sm font-bold transition-all ${
+                    selectedTiers.length === 0
+                      ? 'bg-yellow-400 text-gray-900 shadow-md scale-105'
+                      : 'bg-white/10 text-white/70 border border-white/20 hover:bg-white/20'
+                  }`}
+                >
+                  💎 Alle
+                </button>
                 {[
-                  { tier: 1, name: 'Diamond', color: '#00D4FF' },
-                  { tier: 2, name: 'Ruby', color: '#E61E50' },
-                  { tier: 3, name: 'Emerald', color: '#50C878' },
-                  { tier: 4, name: 'Sapphire', color: '#0F52BA' },
-                  { tier: 5, name: 'Amethyst', color: '#9966CC' },
-                  { tier: 6, name: 'Platinum', color: '#E5E4E2' },
-                  { tier: 7, name: 'Gold', color: '#FFD700' },
-                  { tier: 8, name: 'Silver', color: '#C0C0C0' },
-                  { tier: 9, name: 'Bronze', color: '#CD7F32' },
-                  { tier: 10, name: 'Copper', color: '#B87333' }
-                ].map(({ tier, name }) => (
-                  <option key={tier} value={tier} className="bg-gray-800">
-                    Tier {tier} - {name}
-                  </option>
+                  { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' },
+                  { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' },
+                  { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' },
+                  { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680', emoji: '💙' },
+                  { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' },
+                  { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' },
+                  { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700', emoji: '🥇' },
+                  { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' },
+                  { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' },
+                  { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+                ].map(({ tier, color, border }) => (
+                  <button
+                    key={tier}
+                    onClick={() => setSelectedTiers([tier])}
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-white text-sm transition-all shadow-md ${
+                      selectedTiers.includes(tier) ? 'scale-125 ring-4 ring-yellow-400' : 'hover:scale-110'
+                    }`}
+                    style={{
+                      background: color,
+                      borderColor: border,
+                      borderWidth: '3px',
+                      borderStyle: 'solid'
+                    }}
+                    title={`Tier ${tier}`}
+                  >
+                    {tier}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
           </div>
         </div>
@@ -398,8 +412,10 @@ export default function RiderPassportGallery() {
                         <div
                           className="absolute top-2 left-3 w-10 h-10 rounded-full flex items-center justify-center border-3"
                           style={{
-                            background: 'rgba(255,255,255,0.15)',
-                            borderColor: veloTier.color
+                            background: veloTier.color,
+                            borderColor: veloTier.border,
+                            borderWidth: '3px',
+                            borderStyle: 'solid'
                           }}
                           title={veloTier.name}
                         >
