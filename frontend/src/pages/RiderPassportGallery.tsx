@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import { useFavorites } from '../hooks/useFavorites'
+import toast from 'react-hot-toast'
 
 interface Rider {
   rider_id: number
@@ -188,9 +190,14 @@ export default function RiderPassportGallery() {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategories, setFilterCategories] = useState<string[]>([])
-  const [filterVeloTiers, setFilterVeloTiers] = useState<number[]>([])
+  const [filterVeloLiveRanks, setFilterVeloLiveRanks] = useState<number[]>([])
+  const [filterVelo30dayRanks, setFilterVelo30dayRanks] = useState<number[]>([])
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
   const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: {[key: string]: number}}>({})
+
+  // Favorites
+  const { favorites, toggleFavorite, isFavorite } = useFavorites()
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
 
   useEffect(() => {
     loadRiders()
@@ -198,7 +205,7 @@ export default function RiderPassportGallery() {
 
   useEffect(() => {
     applyFilters()
-  }, [riders, searchTerm, filterCategories, filterVeloTiers])
+  }, [riders, searchTerm, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, showOnlyFavorites, favorites])
 
   const loadRiders = async () => {
     try {
@@ -245,6 +252,11 @@ export default function RiderPassportGallery() {
       )
     }
 
+    // Favorites filter
+    if (showOnlyFavorites && favorites.length > 0) {
+      filtered = filtered.filter(r => favorites.includes(r.rider_id))
+    }
+
     // Category filter - multiselect
     if (filterCategories.length > 0) {
       filtered = filtered.filter(r => {
@@ -253,11 +265,19 @@ export default function RiderPassportGallery() {
       })
     }
 
-    // Tier filter - multiselect
-    if (filterVeloTiers.length > 0) {
+    // vELO Live filter - multiselect
+    if (filterVeloLiveRanks.length > 0) {
       filtered = filtered.filter(r => {
         const tier = getVeloTier(r.velo_live).tier
-        return filterVeloTiers.includes(tier)
+        return filterVeloLiveRanks.includes(tier)
+      })
+    }
+
+    // vELO 30-day filter - multiselect
+    if (filterVelo30dayRanks.length > 0) {
+      filtered = filtered.filter(r => {
+        const tier = getVeloTier(r.velo_30day).tier
+        return filterVelo30dayRanks.includes(tier)
       })
     }
 
@@ -379,6 +399,18 @@ export default function RiderPassportGallery() {
               <div className="text-xs font-bold text-gray-900 uppercase">ZRS</div>
               <div className="text-lg font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
             </div>
+
+            {/* Favorite Star - Top Right */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleFavorite(rider.rider_id)
+              }}
+              className="absolute top-16 right-2 z-10 text-2xl transition-transform hover:scale-125 active:scale-95"
+              title={isFavorite(rider.rider_id) ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {isFavorite(rider.rider_id) ? '⭐' : '☆'}
+            </button>
           </div>
 
           {/* Avatar */}
@@ -657,9 +689,9 @@ export default function RiderPassportGallery() {
       {/* Compact Search + Filters Row */}
       <div className="max-w-7xl mx-auto mb-6">
         <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-3 shadow-lg">
-          <div className="grid md:grid-cols-12 gap-3 items-center">
-            {/* Search */}
-            <div className="md:col-span-6">
+          <div className="space-y-3">
+            {/* Search Bar */}
+            <div>
               <input
                 type="text"
                 placeholder="🔍 Zoek rider..."
@@ -669,10 +701,11 @@ export default function RiderPassportGallery() {
               />
             </div>
 
-            {/* Category Multiselect Dropdown */}
-            <div className="md:col-span-3">
+            {/* Filter Buttons Row */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              {/* Category Filter */}
               <MultiSelectDropdown
-                label="🏅 Category"
+                label="ZP-category"
                 options={[
                   { value: 'A+', label: 'A+' },
                   { value: 'A', label: 'A' },
@@ -683,20 +716,75 @@ export default function RiderPassportGallery() {
                 selectedValues={filterCategories}
                 onChange={setFilterCategories}
               />
-            </div>
 
-            {/* Tier Multiselect Dropdown */}
-            <div className="md:col-span-3">
+              {/* vELO Live Filter */}
               <MultiSelectDropdown
-                label="💎 vELO Tier"
+                label="vELO Live"
                 options={VELO_TIERS.map(tier => ({
                   value: tier.rank,
                   label: tier.name,
-                  icon: tier.icon
                 }))}
-                selectedValues={filterVeloTiers}
-                onChange={setFilterVeloTiers}
+                selectedValues={filterVeloLiveRanks}
+                onChange={setFilterVeloLiveRanks}
               />
+
+              {/* vELO 30-day Filter */}
+              <MultiSelectDropdown
+                label="vELO 30-day"
+                options={VELO_TIERS.map(tier => ({
+                  value: tier.rank,
+                  label: tier.name,
+                }))}
+                selectedValues={filterVelo30dayRanks}
+                onChange={setFilterVelo30dayRanks}
+              />
+
+              {/* Favorites Toggle */}
+              <button
+                onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
+                  showOnlyFavorites 
+                    ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
+                    : 'bg-white/15 text-white/80 hover:bg-white/20 border border-white/30'
+                }`}
+                title={showOnlyFavorites ? 'Toon alle riders' : 'Toon alleen favorieten'}
+              >
+                <span className="text-sm sm:text-base">{showOnlyFavorites ? '⭐' : '☆'}</span>
+                <span className="hidden sm:inline">{showOnlyFavorites ? 'Favorieten' : 'Alle Riders'}</span>
+                {showOnlyFavorites && favorites.length > 0 && (
+                  <span className="ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-white/30 rounded text-[10px] sm:text-xs">
+                    {favorites.length}
+                  </span>
+                )}
+              </button>
+
+              {/* Clear Filters Button */}
+              <button
+                onClick={() => {
+                  const totalFilters = filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length
+                  setFilterCategories([])
+                  setFilterVeloLiveRanks([])
+                  setFilterVelo30dayRanks([])
+                  if (totalFilters > 0) {
+                    toast.success(`${totalFilters} filter${totalFilters > 1 ? 's' : ''} verwijderd`, { icon: '🗑️' })
+                  }
+                }}
+                disabled={filterCategories.length === 0 && filterVeloLiveRanks.length === 0 && filterVelo30dayRanks.length === 0}
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
+                  filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0
+                    ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer'
+                    : 'bg-white/10 text-white/40 cursor-not-allowed border border-white/20'
+                }`}
+                title="Verwijder alle filters"
+              >
+                <span className="text-sm sm:text-base">🗑️</span>
+                <span className="hidden sm:inline">Clear</span>
+                {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
+                  <span className="ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-white/30 rounded text-[10px] sm:text-xs font-bold">
+                    {filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
