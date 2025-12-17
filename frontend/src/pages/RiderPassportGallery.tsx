@@ -144,15 +144,15 @@ export default function RiderPassportGallery() {
 
   const getVeloTier = (veloLive: number) => {
     if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
-    if (veloLive >= 1750) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' }
-    if (veloLive >= 1650) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' }
-    if (veloLive >= 1550) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' }
+    if (veloLive >= 2200) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' }
+    if (veloLive >= 1900) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' }
+    if (veloLive >= 1650) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' }
     if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680', emoji: '💙' }
-    if (veloLive >= 1350) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' }
-    if (veloLive >= 1200) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' }
+    if (veloLive >= 1300) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' }
+    if (veloLive >= 1150) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' }
     if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700', emoji: '🥇' }
-    if (veloLive >= 800) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' }
-    if (veloLive >= 600) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' }
+    if (veloLive >= 850) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' }
+    if (veloLive >= 650) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' }
     return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
   }
 
@@ -167,6 +167,201 @@ export default function RiderPassportGallery() {
       return newSet
     })
   }
+
+  const renderCard = (
+    rider: Rider,
+    category: string,
+    flagUrl: string | null,
+    categoryColor: string,
+    veloLive: number,
+    velo30day: number,
+    veloTier: { tier: number; name: string; color: string; border: string; emoji: string },
+    heightCm: string | number,
+    wkg: string,
+    isFlipped: boolean
+  ) => (
+    <div
+      key={rider.rider_id}
+      className="perspective-1000 cursor-pointer snap-center flex-shrink-0"
+      onClick={() => toggleFlip(rider.rider_id)}
+      style={{ perspective: '1000px', width: '280px' }}
+    >
+      <div
+        className={`relative w-full h-[460px] transition-transform duration-600 transform-style-3d ${
+          isFlipped ? 'rotate-y-180' : ''
+        }`}
+        style={{
+          transformStyle: 'preserve-3d',
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+        }}
+      >
+        {/* FRONT */}
+        <div
+          className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          {/* Header with tier badge and category */}
+          <div
+            className="h-16 rounded-t-lg relative mb-12"
+            style={{
+              background: `linear-gradient(135deg, ${veloTier.color} 0%, ${veloTier.border} 100%)`,
+              clipPath: 'polygon(0 0, 100% 0, 100% 85%, 0 100%)'
+            }}
+          >
+            <div
+              className="absolute top-2 left-3 w-10 h-10 rounded-full flex items-center justify-center border-3"
+              style={{
+                background: veloTier.color,
+                borderColor: veloTier.border,
+                borderWidth: '3px',
+                borderStyle: 'solid'
+              }}
+              title={veloTier.name}
+            >
+              <span className="text-2xl font-black text-white drop-shadow-lg">{veloTier.tier}</span>
+            </div>
+            <div
+              className="absolute top-2 left-14 w-10 h-10 rounded-full flex items-center justify-center border-3 border-white"
+              style={{ background: categoryColor }}
+            >
+              <span className="text-2xl font-black text-white drop-shadow-lg">{category}</span>
+            </div>
+            <div className="absolute top-2 right-3 text-center">
+              <div className="text-xs font-bold text-gray-900 uppercase">ZRS</div>
+              <div className="text-lg font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
+            </div>
+          </div>
+
+          {/* Avatar */}
+          <img
+            src={rider.avatar_url || 'https://via.placeholder.com/100?text=No+Avatar'}
+            alt={rider.racing_name}
+            className="absolute top-12 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-yellow-400 object-cover bg-gray-700 shadow-xl"
+            onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Avatar' }}
+          />
+
+          {/* Name and Flag */}
+          <div className="text-center mb-2 mt-3">
+            <h2 className="text-sm font-black text-white uppercase drop-shadow-lg mb-1 px-1 leading-tight">
+              {rider.racing_name || rider.full_name || 'Unknown'}
+            </h2>
+            <div className="flex items-center justify-center gap-1">
+              {flagUrl && (
+                <img
+                  src={flagUrl}
+                  alt={rider.country_alpha3}
+                  className="w-8 h-6 rounded shadow"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-1 mb-2 px-2">
+            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+              <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">zFTP</div>
+              <div className="text-sm font-black text-white">{rider.racing_ftp || '-'}<span className="text-xs text-white/70">W</span></div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+              <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Wgt</div>
+              <div className="text-sm font-black text-white">{rider.weight_kg || '-'}<span className="text-xs text-white/70">kg</span></div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+              <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">W/kg</div>
+              <div className="text-sm font-black text-white">{wkg}</div>
+            </div>
+            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+              <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Hgt</div>
+              <div className="text-sm font-black text-white">{heightCm}<span className="text-xs text-white/70">cm</span></div>
+            </div>
+            <div></div>
+            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+              <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Age</div>
+              <div className="text-sm font-black text-white">{rider.age || '-'}<span className="text-xs text-white/70">yr</span></div>
+            </div>
+          </div>
+
+          {/* Velo Ranks */}
+          <div className="grid grid-cols-2 gap-1 px-2 mb-2">
+            <div
+              className="rounded-lg p-1 text-center border-2"
+              style={{ background: 'rgba(255,255,255,0.1)', borderColor: veloTier.color }}
+            >
+              <div className="text-xs font-bold uppercase" style={{ color: veloTier.color }}>Velo Live</div>
+              <div className="text-sm font-black text-white">{veloLive || '-'}</div>
+            </div>
+            <div
+              className="rounded-lg p-1 text-center border-2"
+              style={{ background: 'rgba(255,255,255,0.1)', borderColor: veloTier.color }}
+            >
+              <div className="text-xs font-bold uppercase" style={{ color: veloTier.color }}>Velo 30d</div>
+              <div className="text-sm font-black text-white">{velo30day || '-'}</div>
+            </div>
+          </div>
+
+          {/* Phenotype Bar - Moved below vELO */}
+          {rider.phenotype && (
+            <div className="mx-2 mb-2 bg-white/10 rounded-lg p-2 border border-white/20 text-center">
+              <div className="text-xs text-yellow-400 font-bold uppercase">Phenotype</div>
+              <div className="text-sm font-bold text-white capitalize">{rider.phenotype}</div>
+            </div>
+          )}
+
+          <div className="text-center text-xs text-yellow-400/80 uppercase tracking-wide font-bold mt-2">
+            🔄 Klik voor intervals
+          </div>
+        </div>
+
+        {/* BACK */}
+        <div
+          className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col items-center"
+          style={{
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)'
+          }}
+        >
+          <h3 className="text-yellow-400 text-base font-black uppercase mb-2 tracking-wide">Power Profile</h3>
+          
+          {/* Spider Chart */}
+          <div className="mb-2">
+            <canvas
+              id={`spider-${rider.rider_id}`}
+              width="200"
+              height="180"
+              ref={(el) => {
+                if (el && isFlipped) {
+                  drawSpiderChart(`spider-${rider.rider_id}`, rider)
+                }
+              }}
+            />
+          </div>
+
+          {/* Power Intervals Grid */}
+          <div className="grid grid-cols-2 gap-1 w-full">
+            {[
+              { label: '5s', power: rider.power_5s, wkg: rider.power_5s_wkg },
+              { label: '15s', power: rider.power_15s, wkg: rider.power_15s_wkg },
+              { label: '30s', power: rider.power_30s, wkg: rider.power_30s_wkg },
+              { label: '1m', power: rider.power_60s, wkg: rider.power_60s_wkg },
+              { label: '2m', power: rider.power_120s, wkg: rider.power_120s_wkg },
+              { label: '5m', power: rider.power_300s, wkg: rider.power_300s_wkg },
+              { label: '20m', power: rider.power_1200s, wkg: rider.power_1200s_wkg }
+            ].map(interval => (
+              <div key={interval.label} className="bg-white/10 border border-white/20 rounded p-1 text-center">
+                <div className="text-xs text-yellow-400 font-bold mb-1">{interval.label}</div>
+                <div className="text-xs font-black text-white">
+                  {interval.power ? Math.round(interval.power) + ' W' : '-'}
+                </div>
+                <div className="text-xs text-yellow-400/80 font-black">
+                  {interval.wkg ? interval.wkg.toFixed(1) + ' W/kg' : '-'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   const drawSpiderChart = (canvasId: string, rider: Rider) => {
     setTimeout(() => {
@@ -343,261 +538,84 @@ export default function RiderPassportGallery() {
               </select>
             </div>
 
-            {/* Tier Multiselect Badges */}
+            {/* Tier Multiselect Dropdown */}
             <div className="md:col-span-2">
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC' },
-                  { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A' },
-                  { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356' },
-                  { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680' },
-                  { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99' },
-                  { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5' },
-                  { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700' },
-                  { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C' },
-                  { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26' },
-                  { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F' }
-                ].map(({ tier, name, color, border }) => (
-                  <button
-                    key={tier}
-                    onClick={() => {
-                      setSelectedTiers(prev => 
-                        prev.includes(tier) 
-                          ? prev.filter(t => t !== tier)
-                          : [...prev, tier]
-                      )
-                    }}
-                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                      selectedTiers.includes(tier) 
-                        ? 'ring-2 ring-yellow-400 scale-105 shadow-lg' 
-                        : 'hover:scale-105 opacity-90 hover:opacity-100'
-                    }`}
-                    style={{
-                      background: color,
-                      borderColor: border,
-                      borderWidth: '2px',
-                      borderStyle: 'solid',
-                      color: 'white'
-                    }}
-                    title={`${tier} - ${name}`}
-                  >
-                    {tier} - {name}
-                  </button>
-                ))}
-              </div>
+              <select
+                multiple
+                value={selectedTiers.map(String)}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions).map(opt => parseInt(opt.value))
+                  setSelectedTiers(selected)
+                }}
+                className="w-full px-3 py-2 rounded-lg bg-white/15 text-white border border-white/30 focus:border-yellow-400 focus:outline-none font-bold text-sm appearance-none cursor-pointer"
+                style={{ height: '38px', backgroundImage: 'none' }}
+                size={1}
+              >
+                <option value="" disabled className="bg-gray-800">💎 Selecteer Tier(s) - Ctrl+Click</option>
+                <option value="1" className="bg-gray-800">1 - Diamond (≥2200)</option>
+                <option value="2" className="bg-gray-800">2 - Ruby (≥1900)</option>
+                <option value="3" className="bg-gray-800">3 - Emerald (≥1650)</option>
+                <option value="4" className="bg-gray-800">4 - Sapphire (≥1450)</option>
+                <option value="5" className="bg-gray-800">5 - Amethyst (≥1300)</option>
+                <option value="6" className="bg-gray-800">6 - Platinum (≥1150)</option>
+                <option value="7" className="bg-gray-800">7 - Gold (≥1000)</option>
+                <option value="8" className="bg-gray-800">8 - Silver (≥850)</option>
+                <option value="9" className="bg-gray-800">9 - Bronze (≥650)</option>
+                <option value="10" className="bg-gray-800">10 - Copper (&lt;650)</option>
+              </select>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Gallery Grid - Smaller Cards */}
-      <div className="max-w-7xl mx-auto">
+      {/* Card Deck - Mobile Optimized & Desktop Carousel */}
+      <div className="max-w-full mx-auto px-4">
         {filteredRiders.length === 0 ? (
           <div className="text-center text-white text-xl py-20">
             Geen riders gevonden met deze filters.
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredRiders.map(rider => {
-              // US2-5: Calculate tier FRESH for each card based on actual velo_live
-              const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
-              const flagUrl = getFlagUrl(rider.country_alpha3)
-              const categoryColor = getCategoryColor(category)
-              const veloLive = Math.floor(rider.velo_live || 0)
-              const velo30day = Math.floor(rider.velo_30day || 0)
-              
-              // Recalculate tier for THIS specific rider based on THEIR velo_live
-              const veloTier = getVeloTier(veloLive)
-              
-              const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
-              const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
-              const isFlipped = flippedCards.has(rider.rider_id)
-
-              return (
-                <div
-                  key={rider.rider_id}
-                  className="perspective-1000 cursor-pointer"
-                  onClick={() => toggleFlip(rider.rider_id)}
-                  style={{ perspective: '1000px' }}
-                >
-                  <div
-                    className={`relative w-full h-[460px] transition-transform duration-600 transform-style-3d ${
-                      isFlipped ? 'rotate-y-180' : ''
-                    }`}
-                    style={{
-                      transformStyle: 'preserve-3d',
-                      transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
-                    }}
-                  >
-                    {/* FRONT */}
-                    <div
-                      className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2"
-                      style={{ backfaceVisibility: 'hidden' }}
-                    >
-                      {/* Header with tier badge and category */}
-                      <div
-                        className="h-16 rounded-t-lg relative mb-12"
-                        style={{
-                          background: `linear-gradient(135deg, ${veloTier.color} 0%, ${veloTier.border} 100%)`,
-                          clipPath: 'polygon(0 0, 100% 0, 100% 85%, 0 100%)'
-                        }}
-                      >
-                        <div
-                          className="absolute top-2 left-3 w-10 h-10 rounded-full flex items-center justify-center border-3"
-                          style={{
-                            background: veloTier.color,
-                            borderColor: veloTier.border,
-                            borderWidth: '3px',
-                            borderStyle: 'solid'
-                          }}
-                          title={veloTier.name}
-                        >
-                          <span className="text-2xl font-black text-white drop-shadow-lg">{veloTier.tier}</span>
-                        </div>
-                        <div
-                          className="absolute top-2 left-14 w-10 h-10 rounded-full flex items-center justify-center border-3 border-white"
-                          style={{ background: categoryColor }}
-                        >
-                          <span className="text-2xl font-black text-white drop-shadow-lg">{category}</span>
-                        </div>
-                        <div className="absolute top-2 right-3 text-center">
-                          <div className="text-xs font-bold text-gray-900 uppercase">ZRS</div>
-                          <div className="text-lg font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
-                        </div>
-                      </div>
-
-                      {/* Avatar */}
-                      <img
-                        src={rider.avatar_url || 'https://via.placeholder.com/100?text=No+Avatar'}
-                        alt={rider.racing_name}
-                        className="absolute top-12 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-yellow-400 object-cover bg-gray-700 shadow-xl"
-                        onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Avatar' }}
-                      />
-
-                      {/* Name and Flag */}
-                      <div className="text-center mb-2 mt-3">
-                        <h2 className="text-sm font-black text-white uppercase drop-shadow-lg mb-1 px-1 leading-tight">
-                          {rider.racing_name || rider.full_name || 'Unknown'}
-                        </h2>
-                        <div className="flex items-center justify-center gap-1">
-                          {flagUrl && (
-                            <img
-                              src={flagUrl}
-                              alt={rider.country_alpha3}
-                              className="w-8 h-6 rounded shadow"
-                            />
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Stats Grid */}
-                      <div className="grid grid-cols-3 gap-1 mb-2 px-2">
-                        <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
-                          <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">zFTP</div>
-                          <div className="text-sm font-black text-white">{rider.racing_ftp || '-'}<span className="text-xs text-white/70">W</span></div>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
-                          <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Wgt</div>
-                          <div className="text-sm font-black text-white">{rider.weight_kg || '-'}<span className="text-xs text-white/70">kg</span></div>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
-                          <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">W/kg</div>
-                          <div className="text-sm font-black text-white">{wkg}</div>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
-                          <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Hgt</div>
-                          <div className="text-sm font-black text-white">{heightCm}<span className="text-xs text-white/70">cm</span></div>
-                        </div>
-                        <div></div>
-                        <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
-                          <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Age</div>
-                          <div className="text-sm font-black text-white">{rider.age || '-'}<span className="text-xs text-white/70">yr</span></div>
-                        </div>
-                      </div>
-
-                      {/* Velo Ranks */}
-                      <div className="grid grid-cols-2 gap-1 px-2 mb-2">
-                        <div
-                          className="rounded-lg p-1 text-center border-2"
-                          style={{ background: 'rgba(255,255,255,0.1)', borderColor: veloTier.color }}
-                        >
-                          <div className="text-xs font-bold uppercase" style={{ color: veloTier.color }}>Velo Live</div>
-                          <div className="text-sm font-black text-white">{veloLive || '-'}</div>
-                        </div>
-                        <div
-                          className="rounded-lg p-1 text-center border-2"
-                          style={{ background: 'rgba(255,255,255,0.1)', borderColor: veloTier.color }}
-                        >
-                          <div className="text-xs font-bold uppercase" style={{ color: veloTier.color }}>Velo 30d</div>
-                          <div className="text-sm font-black text-white">{velo30day || '-'}</div>
-                        </div>
-                      </div>
-
-                      {/* Phenotype Bar - Moved below vELO */}
-                      {rider.phenotype && (
-                        <div className="mx-2 mb-2 bg-white/10 rounded-lg p-2 border border-white/20 text-center">
-                          <div className="text-xs text-yellow-400 font-bold uppercase">Phenotype</div>
-                          <div className="text-sm font-bold text-white capitalize">{rider.phenotype}</div>
-                        </div>
-                      )}
-
-                      <div className="text-center text-xs text-yellow-400/80 uppercase tracking-wide font-bold mt-2">
-                        🔄 Klik voor intervals
-                      </div>
-                    </div>
-
-                    {/* BACK */}
-                    <div
-                      className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col items-center"
-                      style={{
-                        backfaceVisibility: 'hidden',
-                        transform: 'rotateY(180deg)'
-                      }}
-                    >
-                      <h3 className="text-yellow-400 text-base font-black uppercase mb-2 tracking-wide">Power Profile</h3>
-                      
-                      {/* Spider Chart */}
-                      <div className="mb-2">
-                        <canvas
-                          id={`spider-${rider.rider_id}`}
-                          width="200"
-                          height="180"
-                          ref={(el) => {
-                            if (el && isFlipped) {
-                              drawSpiderChart(`spider-${rider.rider_id}`, rider)
-                            }
-                          }}
-                        />
-                      </div>
-
-                      {/* Power Intervals Grid */}
-                      <div className="grid grid-cols-2 gap-1 w-full">
-                        {[
-                          { label: '5s', power: rider.power_5s, wkg: rider.power_5s_wkg },
-                          { label: '15s', power: rider.power_15s, wkg: rider.power_15s_wkg },
-                          { label: '30s', power: rider.power_30s, wkg: rider.power_30s_wkg },
-                          { label: '1m', power: rider.power_60s, wkg: rider.power_60s_wkg },
-                          { label: '2m', power: rider.power_120s, wkg: rider.power_120s_wkg },
-                          { label: '5m', power: rider.power_300s, wkg: rider.power_300s_wkg },
-                          { label: '20m', power: rider.power_1200s, wkg: rider.power_1200s_wkg }
-                        ].map(interval => (
-                          <div key={interval.label} className="bg-white/10 border border-white/20 rounded p-1 text-center">
-                            <div className="text-xs text-yellow-400 font-bold mb-1">{interval.label}</div>
-                            <div className="text-xs font-black text-white">
-                              {interval.power ? Math.round(interval.power) + ' W' : '-'}
-                            </div>
-                            <div className="text-xs text-yellow-400/80 font-black">
-                              {interval.wkg ? interval.wkg.toFixed(1) + ' W/kg' : '-'}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+          <>
+            {/* Mobile: Vertical Stack */}
+            <div className="md:hidden flex flex-col gap-6 pb-6">
+              {filteredRiders.map(rider => {
+                const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+                const flagUrl = getFlagUrl(rider.country_alpha3)
+                const categoryColor = getCategoryColor(category)
+                const veloLive = Math.floor(rider.velo_live || 0)
+                const velo30day = Math.floor(rider.velo_30day || 0)
+                const veloTier = getVeloTier(veloLive)
+                const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
+                const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+                const isFlipped = flippedCards.has(rider.rider_id)
+                
+                return (
+                  <div key={rider.rider_id} className="mx-auto" style={{ maxWidth: '340px' }}>
+                    {renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)}
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+            
+            {/* Desktop: Horizontal Carousel */}
+            <div className="hidden md:block overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
+              <div className="flex gap-6 snap-x snap-mandatory px-4" style={{ minWidth: 'min-content' }}>
+                {filteredRiders.map(rider => {
+                  const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+                  const flagUrl = getFlagUrl(rider.country_alpha3)
+                  const categoryColor = getCategoryColor(category)
+                  const veloLive = Math.floor(rider.velo_live || 0)
+                  const velo30day = Math.floor(rider.velo_30day || 0)
+                  const veloTier = getVeloTier(veloLive)
+                  const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
+                  const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+                  const isFlipped = flippedCards.has(rider.rider_id)
+                  
+                  return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
+                })}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
