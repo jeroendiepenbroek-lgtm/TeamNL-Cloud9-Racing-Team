@@ -43,6 +43,7 @@ export default function RiderPassportGallery() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [selectedTiers, setSelectedTiers] = useState<number[]>([])
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
+  const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: {[key: string]: number}}>({})
 
   useEffect(() => {
     loadRiders()
@@ -56,7 +57,29 @@ export default function RiderPassportGallery() {
     try {
       const response = await fetch(`${API_BASE}/api/riders`)
       const data = await response.json()
-      setRiders(data.riders || [])
+      const loadedRiders = data.riders || []
+      setRiders(loadedRiders)
+      
+      // Calculate tier max values for spider chart normalization
+      const tierMaxes: {[tier: number]: {[key: string]: number}} = {}
+      loadedRiders.forEach((r: Rider) => {
+        const tier = getVeloTier(r.velo_live).tier
+        if (!tierMaxes[tier]) {
+          tierMaxes[tier] = {
+            power_5s: 0, power_15s: 0, power_30s: 0, power_60s: 0,
+            power_120s: 0, power_300s: 0, power_1200s: 0
+          }
+        }
+        tierMaxes[tier].power_5s = Math.max(tierMaxes[tier].power_5s, r.power_5s || 0)
+        tierMaxes[tier].power_15s = Math.max(tierMaxes[tier].power_15s, r.power_15s || 0)
+        tierMaxes[tier].power_30s = Math.max(tierMaxes[tier].power_30s, r.power_30s || 0)
+        tierMaxes[tier].power_60s = Math.max(tierMaxes[tier].power_60s, r.power_60s || 0)
+        tierMaxes[tier].power_120s = Math.max(tierMaxes[tier].power_120s, r.power_120s || 0)
+        tierMaxes[tier].power_300s = Math.max(tierMaxes[tier].power_300s, r.power_300s || 0)
+        tierMaxes[tier].power_1200s = Math.max(tierMaxes[tier].power_1200s, r.power_1200s || 0)
+      })
+      setTierMaxValues(tierMaxes)
+      
       setLoading(false)
     } catch (err) {
       setError('Fout bij laden van riders')
@@ -159,15 +182,22 @@ export default function RiderPassportGallery() {
       const centerY = height / 2
       const radius = Math.min(width, height) / 2 - 20
 
-      // Power data (normalized to 0-100 scale based on typical max values)
+      // Get rider's tier and tier max values
+      const tier = getVeloTier(rider.velo_live).tier
+      const tierMax = tierMaxValues[tier] || {
+        power_5s: 1500, power_15s: 1200, power_30s: 1000, power_60s: 800,
+        power_120s: 600, power_300s: 500, power_1200s: 400
+      }
+
+      // Power data (normalized to tier's best rider = 100%)
       const powerData = [
-        { label: '5s', value: rider.power_5s, max: 1500 },
-        { label: '15s', value: rider.power_15s, max: 1200 },
-        { label: '30s', value: rider.power_30s, max: 1000 },
-        { label: '1m', value: rider.power_60s, max: 800 },
-        { label: '2m', value: rider.power_120s, max: 600 },
-        { label: '5m', value: rider.power_300s, max: 500 },
-        { label: '20m', value: rider.power_1200s, max: 400 }
+        { label: '5s', value: rider.power_5s, max: tierMax.power_5s || 1 },
+        { label: '15s', value: rider.power_15s, max: tierMax.power_15s || 1 },
+        { label: '30s', value: rider.power_30s, max: tierMax.power_30s || 1 },
+        { label: '1m', value: rider.power_60s, max: tierMax.power_60s || 1 },
+        { label: '2m', value: rider.power_120s, max: tierMax.power_120s || 1 },
+        { label: '5m', value: rider.power_300s, max: tierMax.power_300s || 1 },
+        { label: '20m', value: rider.power_1200s, max: tierMax.power_1200s || 1 }
       ]
 
       const numPoints = powerData.length
@@ -553,7 +583,7 @@ export default function RiderPassportGallery() {
                             <div className="text-xs font-black text-white">
                               {interval.power ? Math.round(interval.power) + ' W' : '-'}
                             </div>
-                            <div className="text-xs text-yellow-400/80">
+                            <div className="text-xs text-yellow-400/80 font-black">
                               {interval.wkg ? interval.wkg.toFixed(1) + ' W/kg' : '-'}
                             </div>
                           </div>
