@@ -300,7 +300,7 @@ function RidersTable({ lineup }: { lineup: LineupRider[] }) {
             <SortableHeader label="Cat" sortKeyValue="category" align="center" />
             <SortableHeader label="vELO Live" sortKeyValue="veloLive" align="center" />
             <SortableHeader label="vELO 30-day" sortKeyValue="velo30day" align="center" />
-            <SortableHeader label="Racing FTP" sortKeyValue="ftp" align="center" colSpan={2} />
+            <SortableHeader label="zFTP" sortKeyValue="ftp" align="center" colSpan={2} />
             <SortableHeader label="ZRS" sortKeyValue="zrs" align="center" />
             <SortableHeader label="Phenotype" sortKeyValue="phenotype" align="center" />
           </tr>
@@ -406,7 +406,7 @@ function RiderRow({ rider }: { rider: LineupRider }) {
         </div>
       </td>
       
-      {/* Racing FTP - Watts */}
+      {/* zFTP - Watts */}
       <td className="px-3 py-3 text-right">
         <span className="text-white font-semibold">{racingFtp || '-'}</span>
       </td>
