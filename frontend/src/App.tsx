@@ -7,7 +7,6 @@ import ResultsDashboard from './pages/ResultsDashboard'
 import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
-import TeamCompetition from './pages/TeamCompetition'
 import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
@@ -57,16 +56,16 @@ function Navigation() {
               <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
               </svg>
-              <span className="text-sm font-bold text-white tracking-wide">🔴 LIVE STREAMS</span>
+              <span className="text-sm font-bold text-white tracking-wide">🔴 STREAMS</span>
             </a>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
-                Team Dashboard
+                👁️ Team Viewer
               </Link>
-              <Link to="/team-competition" className="text-white hover:text-orange-400 transition font-semibold">
-                🏆 Team Competition
+              <Link to="/racing-matrix" className="text-white hover:text-orange-400 transition font-semibold">
+                Racing Matrix
               </Link>
               <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Manager
@@ -92,10 +91,10 @@ function Navigation() {
           {mobileMenuOpen && (
             <div className="md:hidden py-4 space-y-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                Team Dashboard
+                👁️ Team Viewer
               </Link>
-              <Link to="/team-competition" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                🏆 Team Competition
+              <Link to="/racing-matrix" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                Racing Matrix
               </Link>
               <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Manager
@@ -115,20 +114,19 @@ function App() {
         <ChristmasSnow />
         <Navigation />
         <Routes>
-          <Route path="/" element={<RacingMatrix />} />
+          <Route path="/" element={<TeamViewer />} />
+          <Route path="/racing-matrix" element={<RacingMatrix />} />
           <Route path="/events" element={<EventsDashboard />} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/team-manager" element={<TeamManager />} />
-          <Route path="/team-competition" element={<TeamCompetition />} />
           <Route path="/team-builder" element={<TeamBuilder />} />
-          <Route path="/team-viewer" element={<TeamViewer />} />
           <Route path="*" element={
             <div className="flex items-center justify-center min-h-screen">
               <div className="text-center">
                 <h1 className="text-4xl font-bold text-white mb-4">404</h1>
                 <p className="text-gray-400 mb-8">Page not found</p>
                 <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg inline-block">
-                  Back to Team Dashboard
+                  Back to Team Viewer
                 </Link>
               </div>
             </div>
