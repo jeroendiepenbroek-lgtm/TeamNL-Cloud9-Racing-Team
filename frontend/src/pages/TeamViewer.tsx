@@ -50,6 +50,7 @@ interface LineupRider {
   current_velo_rank?: number // Legacy field name
   velo_30day: number | null
   phenotype: string | null
+  zwift_official_racing_score: number | null
   racing_ftp?: number | null
   ftp_watts?: number | null // Legacy field name
   weight_kg: number | null
@@ -224,34 +225,96 @@ function TeamCard({ team }: { team: Team }) {
   )
 }
 
-// Riders Table - Table Row Design
+// Riders Table - Table Row Design met sorteer functionaliteit
 function RidersTable({ lineup }: { lineup: LineupRider[] }) {
+  type SortKey = 'position' | 'name' | 'category' | 'veloLive' | 'velo30day' | 'ftp' | 'zrs' | 'phenotype'
+  const [sortKey, setSortKey] = useState<SortKey>('position')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDirection('asc')
+    }
+  }
+  
+  const sortedLineup = [...lineup].sort((a, b) => {
+    let comparison = 0
+    const catOrder: Record<string, number> = { 'A+': 0, 'A': 1, 'B': 2, 'C': 3, 'D': 4 }
+    
+    if (sortKey === 'position') {
+      comparison = (a.lineup_position || 999) - (b.lineup_position || 999)
+    } else if (sortKey === 'name') {
+      comparison = (a.name || '').localeCompare(b.name || '')
+    } else if (sortKey === 'category') {
+      const aVal = catOrder[a.category || 'D'] ?? 5
+      const bVal = catOrder[b.category || 'D'] ?? 5
+      comparison = aVal - bVal
+    } else if (sortKey === 'veloLive') {
+      const aVal = a.velo_live || a.current_velo_rank || 0
+      const bVal = b.velo_live || b.current_velo_rank || 0
+      comparison = bVal - aVal
+    } else if (sortKey === 'velo30day') {
+      const aVal = a.velo_30day || 0
+      const bVal = b.velo_30day || 0
+      comparison = bVal - aVal
+    } else if (sortKey === 'ftp') {
+      const aVal = a.racing_ftp || a.ftp_watts || 0
+      const bVal = b.racing_ftp || b.ftp_watts || 0
+      comparison = bVal - aVal
+    } else if (sortKey === 'zrs') {
+      const aVal = a.zwift_official_racing_score || 0
+      const bVal = b.zwift_official_racing_score || 0
+      comparison = bVal - aVal
+    } else if (sortKey === 'phenotype') {
+      comparison = (a.phenotype || '').localeCompare(b.phenotype || '')
+    }
+    
+    return sortDirection === 'asc' ? comparison : -comparison
+  })
+  
+  const SortableHeader = ({ label, sortKeyValue, align = 'left', colSpan }: { label: string; sortKeyValue: SortKey; align?: 'left' | 'center'; colSpan?: number }) => (
+    <th 
+      onClick={() => handleSort(sortKeyValue)}
+      className={`px-3 py-2 text-${align} text-xs font-semibold text-gray-400 uppercase cursor-pointer hover:text-orange-400 transition-colors select-none`}
+      colSpan={colSpan}
+    >
+      <div className={`flex items-center gap-1 ${align === 'center' ? 'justify-center' : ''}`}>
+        {label}
+        {sortKey === sortKeyValue && (
+          <span className="text-orange-400">{sortDirection === 'asc' ? '▲' : '▼'}</span>
+        )}
+      </div>
+    </th>
+  )
+  
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-700">
-            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">#</th>
-            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-400 uppercase">Rider</th>
-            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">Cat</th>
-            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">vELO Live</th>
-            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">vELO 30-day</th>
-            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase" colSpan={2}>Racing FTP</th>
-            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-400 uppercase">Phenotype</th>
+            <SortableHeader label="#" sortKeyValue="position" />
+            <SortableHeader label="Rider" sortKeyValue="name" />
+            <SortableHeader label="Cat" sortKeyValue="category" align="center" />
+            <SortableHeader label="vELO Live" sortKeyValue="veloLive" align="center" />
+            <SortableHeader label="vELO 30-day" sortKeyValue="velo30day" align="center" />
+            <SortableHeader label="Racing FTP" sortKeyValue="ftp" align="center" colSpan={2} />
+            <SortableHeader label="ZRS" sortKeyValue="zrs" align="center" />
+            <SortableHeader label="Phenotype" sortKeyValue="phenotype" align="center" />
           </tr>
           <tr className="border-b border-gray-700/50">
             <th colSpan={5}></th>
             <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 uppercase">FTP (W)</th>
             <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 uppercase">W/kg</th>
-            <th></th>
+            <th colSpan={2}></th>
           </tr>
         </thead>
         <tbody>
-          {lineup
-            .sort((a, b) => (a.lineup_position || 999) - (b.lineup_position || 999))
-            .map(rider => (
-              <RiderRow key={rider.rider_id} rider={rider} />
-            ))}
+          {sortedLineup.map(rider => (
+            <RiderRow key={rider.rider_id} rider={rider} />
+          ))}
         </tbody>
       </table>
     </div>
@@ -351,6 +414,11 @@ function RiderRow({ rider }: { rider: LineupRider }) {
       {/* zFTP - W/kg */}
       <td className="px-3 py-3 text-right">
         <span className="text-white font-semibold">{ftpWkg || '-'}</span>
+      </td>
+      
+      {/* ZRS (Zwift Racing Score) */}
+      <td className="px-3 py-3 text-center">
+        <span className="text-white font-semibold">{rider.zwift_official_racing_score || '-'}</span>
       </td>
       
       {/* Phenotype */}

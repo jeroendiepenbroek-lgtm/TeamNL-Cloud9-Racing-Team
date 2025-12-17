@@ -62,10 +62,10 @@ function Navigation() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
-                👁️ Team Viewer
+                👁️ CLOUD9 Teams
               </Link>
               <Link to="/racing-matrix" className="text-white hover:text-orange-400 transition font-semibold">
-                Racing Matrix
+                📊 CLOUD9 Rider Stats
               </Link>
               <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
                 Team Manager
@@ -91,10 +91,10 @@ function Navigation() {
           {mobileMenuOpen && (
             <div className="md:hidden py-4 space-y-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                👁️ Team Viewer
+                👁️ CLOUD9 Teams
               </Link>
               <Link to="/racing-matrix" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                Racing Matrix
+                📊 CLOUD9 Rider Stats
               </Link>
               <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Team Manager
