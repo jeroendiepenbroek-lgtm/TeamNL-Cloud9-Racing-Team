@@ -343,31 +343,61 @@ export default function RiderPassportGallery() {
               </select>
             </div>
 
-            {/* Tier Multiselect Dropdown */}
+            {/* Tier Multiselect Badges */}
             <div className="md:col-span-6">
-              <select
-                multiple
-                value={selectedTiers.map(String)}
-                onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions).map(opt => parseInt(opt.value))
-                  setSelectedTiers(selected)
-                }}
-                className="w-full px-3 py-2 rounded-lg bg-white/15 text-white border border-white/30 focus:border-yellow-400 focus:outline-none font-bold text-sm"
-                style={{ height: '38px' }}
-                size={1}
-              >
-                <option value="" disabled className="bg-gray-800">💎 Selecteer Tier(s) - Ctrl+Click voor meerdere</option>
-                <option value="1" className="bg-gray-800">Tier 1 - Diamond (≥1750)</option>
-                <option value="2" className="bg-gray-800">Tier 2 - Ruby (≥1650)</option>
-                <option value="3" className="bg-gray-800">Tier 3 - Emerald (≥1550)</option>
-                <option value="4" className="bg-gray-800">Tier 4 - Sapphire (≥1450)</option>
-                <option value="5" className="bg-gray-800">Tier 5 - Amethyst (≥1350)</option>
-                <option value="6" className="bg-gray-800">Tier 6 - Platinum (≥1200)</option>
-                <option value="7" className="bg-gray-800">Tier 7 - Gold (≥1000)</option>
-                <option value="8" className="bg-gray-800">Tier 8 - Silver (≥800)</option>
-                <option value="9" className="bg-gray-800">Tier 9 - Bronze (≥600)</option>
-                <option value="10" className="bg-gray-800">Tier 10 - Copper (&lt;600)</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <span className="text-white/70 text-xs font-bold whitespace-nowrap">💎 Tier:</span>
+                <button
+                  onClick={() => setSelectedTiers([])}
+                  className={`px-2 py-1 rounded text-xs font-bold transition-all whitespace-nowrap ${
+                    selectedTiers.length === 0
+                      ? 'bg-yellow-400 text-gray-900 shadow-md'
+                      : 'bg-white/10 text-white/60 hover:bg-white/20'
+                  }`}
+                >
+                  Alle
+                </button>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC' },
+                    { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A' },
+                    { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356' },
+                    { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680' },
+                    { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99' },
+                    { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5' },
+                    { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700' },
+                    { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C' },
+                    { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26' },
+                    { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F' }
+                  ].map(({ tier, name, color, border }) => (
+                    <button
+                      key={tier}
+                      onClick={() => {
+                        setSelectedTiers(prev => 
+                          prev.includes(tier) 
+                            ? prev.filter(t => t !== tier)
+                            : [...prev, tier]
+                        )
+                      }}
+                      className={`px-2 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                        selectedTiers.includes(tier) 
+                          ? 'ring-2 ring-yellow-400 scale-105 shadow-lg' 
+                          : 'hover:scale-105 opacity-90 hover:opacity-100'
+                      }`}
+                      style={{
+                        background: color,
+                        borderColor: border,
+                        borderWidth: '2px',
+                        borderStyle: 'solid',
+                        color: 'white'
+                      }}
+                      title={`Tier ${tier} - ${name}`}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
