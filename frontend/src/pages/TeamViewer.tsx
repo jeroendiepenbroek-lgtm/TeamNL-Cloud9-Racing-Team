@@ -299,19 +299,47 @@ function RiderRow({ rider }: { rider: LineupRider }) {
         </span>
       </td>
       
-      {/* vELO Live Badge (Tier + Score) */}
+      {/* vELO Live Badge met cirkel en progressbar */}
       <td className="px-3 py-3 text-center">
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${veloLiveTier?.color || 'from-gray-400 to-gray-600'} ${veloLiveTier?.textColor || 'text-white'} shadow-md border border-white/20`}>
-          <span className="font-bold text-xs">{veloLiveTier?.rank || '?'}</span>
-          <span className="font-bold text-sm">{veloLive?.toFixed(0) || 'N/A'}</span>
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br ${veloLiveTier?.color || 'from-gray-400 to-gray-600'} shadow-md`}>
+          {/* Cirkel om tier nummer */}
+          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/30 backdrop-blur-sm border-2 border-white/50">
+            <span className="font-black text-xs text-white">{veloLiveTier?.rank || '?'}</span>
+          </div>
+          {/* Score + Progressbar */}
+          <div className="flex flex-col gap-0.5">
+            <span className={`font-bold text-sm leading-none ${veloLiveTier?.textColor || 'text-white'}`}>{veloLive?.toFixed(0) || 'N/A'}</span>
+            {veloLiveTier && veloLiveTier.max && veloLive && (
+              <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-white/60 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, ((veloLive - veloLiveTier.min) / (veloLiveTier.max - veloLiveTier.min)) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </td>
       
-      {/* vELO 30-day Badge (Tier + Score) */}
+      {/* vELO 30-day Badge met cirkel en progressbar */}
       <td className="px-3 py-3 text-center">
-        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${velo30dayTier?.color || 'from-gray-400 to-gray-600'} ${velo30dayTier?.textColor || 'text-white'} shadow-md border border-white/20`}>
-          <span className="font-bold text-xs">{velo30dayTier?.rank || '?'}</span>
-          <span className="font-bold text-sm">{velo30day?.toFixed(0) || 'N/A'}</span>
+        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br ${velo30dayTier?.color || 'from-gray-400 to-gray-600'} shadow-md`}>
+          {/* Cirkel om tier nummer */}
+          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/30 backdrop-blur-sm border-2 border-white/50">
+            <span className="font-black text-xs text-white">{velo30dayTier?.rank || '?'}</span>
+          </div>
+          {/* Score + Progressbar */}
+          <div className="flex flex-col gap-0.5">
+            <span className={`font-bold text-sm leading-none ${velo30dayTier?.textColor || 'text-white'}`}>{velo30day?.toFixed(0) || 'N/A'}</span>
+            {velo30dayTier && velo30dayTier.max && velo30day && (
+              <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-white/60 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, ((velo30day - velo30dayTier.min) / (velo30dayTier.max - velo30dayTier.min)) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </td>
       

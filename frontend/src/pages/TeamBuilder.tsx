@@ -740,10 +740,24 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
         {/* Bottom: Stats - Subtiel en compact - NO DRAG HERE */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-200/60">
           <div className="flex items-center gap-3 text-sm">
-            {/* vELO Tier Badge met 30-day score - Combined */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm border border-white/20`}>
-              <span className="font-bold text-xs">{veloTier?.rank || '?'}</span>
-              <span className="font-bold text-sm">{Math.floor(velo30day)}</span>
+            {/* vELO Tier Badge met cirkel en progressbar */}
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} shadow-sm`}>
+              {/* Cirkel om tier nummer */}
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/30 backdrop-blur-sm border-2 border-white/50">
+                <span className="font-black text-xs text-white">{veloTier?.rank || '?'}</span>
+              </div>
+              {/* Score + Progressbar */}
+              <div className="flex flex-col gap-0.5">
+                <span className={`font-bold text-sm leading-none ${veloTier?.textColor || 'text-white'}`}>{Math.floor(velo30day)}</span>
+                {veloTier && veloTier.max && (
+                  <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-white/60 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, ((velo30day - veloTier.min) / (veloTier.max - veloTier.min)) * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             
             {rider.zwift_official_racing_score && (
@@ -811,10 +825,24 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
             {category}
           </span>
           
-          {/* vELO Tier Badge met 30-day score - Combined */}
-          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} ${veloTier?.textColor || 'text-white'} shadow-sm border border-white/20`}>
-            <span className="font-bold text-xs">{veloTier?.rank || '?'}</span>
-            <span className="text-white font-bold text-sm">{Math.floor(velo30day)}</span>
+          {/* vELO Tier Badge met cirkel en progressbar */}
+          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} shadow-sm`}>
+            {/* Cirkel om tier nummer */}
+            <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/30 backdrop-blur-sm border border-white/50">
+              <span className="font-black text-xs text-white">{veloTier?.rank || '?'}</span>
+            </div>
+            {/* Score + Progressbar */}
+            <div className="flex flex-col gap-0.5">
+              <span className={`font-bold text-xs leading-none ${veloTier?.textColor || 'text-white'}`}>{Math.floor(velo30day)}</span>
+              {veloTier && veloTier.max && (
+                <div className="w-10 h-0.5 bg-black/20 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-white/60 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, ((velo30day - veloTier.min) / (veloTier.max - veloTier.min)) * 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
           
           {/* Phenotype - Compact */}
