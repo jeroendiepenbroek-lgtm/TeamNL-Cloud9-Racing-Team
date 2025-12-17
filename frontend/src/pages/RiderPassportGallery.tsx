@@ -158,7 +158,7 @@ function MultiSelectDropdown<T extends string | number>({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-[100] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {options.map((option) => (
             <label
               key={option.value}
@@ -495,20 +495,20 @@ export default function RiderPassportGallery() {
 
         {/* BACK */}
         <div
-          className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col items-center"
+          className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2 flex flex-col"
           style={{
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)'
           }}
         >
-          <h3 className="text-yellow-400 text-base font-black uppercase mb-2 tracking-wide">Power Profile</h3>
+          <h3 className="text-yellow-400 text-sm font-black uppercase mb-1 tracking-wide text-center">Power Profile</h3>
           
-          {/* Spider Chart */}
-          <div className="mb-2">
+          {/* Spider Chart - Smaller */}
+          <div className="flex justify-center mb-1">
             <canvas
               id={`spider-${rider.rider_id}`}
-              width="200"
-              height="180"
+              width="180"
+              height="160"
               ref={(el) => {
                 if (el && isFlipped) {
                   drawSpiderChart(`spider-${rider.rider_id}`, rider)
@@ -517,8 +517,8 @@ export default function RiderPassportGallery() {
             />
           </div>
 
-          {/* Power Intervals Grid */}
-          <div className="grid grid-cols-2 gap-1 w-full">
+          {/* Power Intervals Grid - Compact with all 7 intervals */}
+          <div className="grid grid-cols-2 gap-0.5 px-2 flex-1">
             {[
               { label: '5s', power: rider.power_5s, wkg: rider.power_5s_wkg },
               { label: '15s', power: rider.power_15s, wkg: rider.power_15s_wkg },
@@ -528,13 +528,13 @@ export default function RiderPassportGallery() {
               { label: '5m', power: rider.power_300s, wkg: rider.power_300s_wkg },
               { label: '20m', power: rider.power_1200s, wkg: rider.power_1200s_wkg }
             ].map(interval => (
-              <div key={interval.label} className="bg-white/10 border border-white/20 rounded p-1 text-center">
-                <div className="text-xs text-yellow-400 font-bold mb-1">{interval.label}</div>
-                <div className="text-xs font-black text-white">
-                  {interval.power ? Math.round(interval.power) + ' W' : '-'}
+              <div key={interval.label} className="bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center">
+                <div className="text-[10px] text-yellow-400 font-bold leading-tight">{interval.label}</div>
+                <div className="text-[10px] font-black text-white leading-tight">
+                  {interval.power ? Math.round(interval.power) + 'W' : '-'}
                 </div>
-                <div className="text-xs text-yellow-400/80 font-black">
-                  {interval.wkg ? interval.wkg.toFixed(1) + ' W/kg' : '-'}
+                <div className="text-[9px] text-yellow-400/80 font-bold leading-tight">
+                  {interval.wkg ? interval.wkg.toFixed(1) : '-'}
                 </div>
               </div>
             ))}
