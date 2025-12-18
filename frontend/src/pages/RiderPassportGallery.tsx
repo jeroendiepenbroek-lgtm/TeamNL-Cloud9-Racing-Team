@@ -351,9 +351,9 @@ export default function RiderPassportGallery() {
   ) => (
     <div
       key={rider.rider_id}
-      className="perspective-1000 cursor-pointer mx-auto"
+      className="perspective-1000 cursor-pointer snap-center flex-shrink-0 flex-shrink-0 snap-center"
       onClick={() => toggleFlip(rider.rider_id)}
-      style={{ perspective: '1000px', maxWidth: '300px' }}
+      style={{ perspective: '1000px', width: '300px' }}
     >
       <div
         className={`relative w-full h-[520px] transition-transform duration-600 transform-style-3d ${
@@ -828,38 +828,54 @@ export default function RiderPassportGallery() {
           </div>
         ) : (
           <>
-            {/* Mobile: Modern Grid Layout */}
-            <div className="md:hidden grid grid-cols-1 gap-6 px-4">
-              {filteredRiders.map(rider => {
-                const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
-                const flagUrl = getFlagUrl(rider.country_alpha3)
-                const categoryColor = getCategoryColor(category)
-                const veloLive = Math.floor(rider.velo_live || 0)
-                const velo30day = Math.floor(rider.velo_30day || 0)
-                const veloTier = getVeloTier(veloLive)
-                const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
-                const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
-                const isFlipped = flippedCards.has(rider.rider_id)
-                
-                return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
-              })}
+            {/* Mobile: Horizontal Snap Scroll */}
+            <div className="md:hidden overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
+              <div className="flex gap-4 snap-x snap-mandatory px-4" style={{ minWidth: 'min-content' }}>
+                {filteredRiders.map(rider => {
+                  const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+                  const flagUrl = getFlagUrl(rider.country_alpha3)
+                  const categoryColor = getCategoryColor(category)
+                  const veloLive = Math.floor(rider.velo_live || 0)
+                  const velo30day = Math.floor(rider.velo_30day || 0)
+                  const veloTier = getVeloTier(veloLive)
+                  const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
+                  const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+                  const isFlipped = flippedCards.has(rider.rider_id)
+                  
+                  return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
+                })}
+              </div>
             </div>
             
-            {/* Desktop: Modern Grid Layout */}
-            <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4">
-              {filteredRiders.map((rider) => {
-                const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
-                const flagUrl = getFlagUrl(rider.country_alpha3)
-                const categoryColor = getCategoryColor(category)
-                const veloLive = Math.floor(rider.velo_live || 0)
-                const velo30day = Math.floor(rider.velo_30day || 0)
-                const veloTier = getVeloTier(veloLive)
-                const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
-                const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
-                const isFlipped = flippedCards.has(rider.rider_id)
-                
-                return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
-              })}
+            {/* Desktop: State-of-the-art Horizontal Scroll */}
+            <div className="hidden md:block relative">
+              {/* Subtle shadow indicators */}
+              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900/50 to-transparent pointer-events-none z-10" />
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900/50 to-transparent pointer-events-none z-10" />
+              
+              <div 
+                className="overflow-x-auto overflow-y-hidden pb-4 scroll-smooth"
+                style={{
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#FACC15 #1F2937'
+                }}
+              >
+                <div className="flex gap-6 px-4" style={{ minWidth: 'min-content' }}>
+                  {filteredRiders.map((rider) => {
+                    const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+                    const flagUrl = getFlagUrl(rider.country_alpha3)
+                    const categoryColor = getCategoryColor(category)
+                    const veloLive = Math.floor(rider.velo_live || 0)
+                    const velo30day = Math.floor(rider.velo_30day || 0)
+                    const veloTier = getVeloTier(veloLive)
+                    const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
+                    const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+                    const isFlipped = flippedCards.has(rider.rider_id)
+                    
+                    return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
+                  })}
+                </div>
+              </div>
             </div>
           </>
         )}
