@@ -80,28 +80,29 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       {/* Header */}
       {!hideHeader && (
       <div className="relative overflow-hidden mb-4 sm:mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 opacity-95"></div>
-        <div className="relative px-3 py-4 sm:px-6 sm:py-6 lg:py-10">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-900 via-green-900 to-red-900 opacity-95"></div>
+        <div className="relative px-3 py-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4">
-              <div className="p-2 sm:p-3 lg:p-4 bg-white/20 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-2xl flex-shrink-0">
-                <svg className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
-                  <span className="truncate">CLOUD9 TEAMS</span>
-                </h1>
-                <p className="text-orange-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
-                  TeamNL Cloud9 Racing · Team Overzicht
-                </p>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur-lg rounded-xl shadow-xl flex-shrink-0">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white tracking-tight">
+                    👥 Team Lineup
+                  </h1>
+                  <p className="text-orange-100 text-sm font-semibold mt-0.5">
+                    TeamNL Cloud9 Racing
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => window.location.pathname = '/team-builder'}
-                className="flex items-center gap-2 px-4 py-2.5 bg-orange-500/20 hover:bg-orange-500/30 backdrop-blur-lg rounded-xl border-2 border-orange-400/50 text-white font-bold text-sm transition-all shadow-lg hover:shadow-xl hover:scale-105"
-                title="Team Builder - Beheer je teams"
+                className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 backdrop-blur-lg rounded-lg border border-orange-400/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />

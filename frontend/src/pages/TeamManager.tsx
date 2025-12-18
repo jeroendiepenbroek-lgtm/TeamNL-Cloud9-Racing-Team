@@ -409,45 +409,42 @@ export default function TeamManager() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white">
-      {/* Hero Header - Match Racing Matrix */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-cyan-500/10 to-transparent"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          <div className="bg-gradient-to-br from-blue-600/40 via-cyan-500/30 to-blue-700/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 border border-white/20 shadow-2xl">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              {/* Logo + Title */}
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0">
-                  <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {/* Compact Modern Header */}
+      <div className="relative overflow-hidden mb-4 sm:mb-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-900 via-green-900 to-red-900 opacity-95"></div>
+        <div className="relative px-3 py-4 sm:px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur-lg rounded-xl shadow-xl flex-shrink-0">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
-                    <span className="truncate">TEAM MANAGER</span>
+                <div>
+                  <h1 className="text-3xl font-bold text-white tracking-tight">
+                    ⚙️ Team Manager
                   </h1>
-                  <p className="text-blue-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
-                    TeamNL Cloud9 Racing · Rider Management
+                  <p className="text-orange-100 text-sm font-semibold mt-0.5">
+                    TeamNL Cloud9 Racing
                   </p>
                 </div>
               </div>
-              {/* Back Button */}
-              <div className="flex-shrink-0">
+              <div className="flex gap-2">
                 <button
                   onClick={() => navigate('/')}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
-                  title="Back to Dashboard"
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg border border-white/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                   </svg>
                   <span className="hidden sm:inline">Dashboard</span>
                 </button>
               </div>
             </div>
-            {/* Stats Bar */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 lg:px-5 lg:py-3 border border-white/20 shadow-xl mt-3 sm:mt-4">
-              <span className="text-white/80 text-xs sm:text-sm font-medium">Active Team Members</span>
+            {/* Rider Count Badge */}
+            <div className="flex flex-wrap items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20 shadow-lg mt-3">
+              <span className="text-white/80 text-sm font-medium">Active Team Members</span>
               <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">{riders.length}</span>
               <span className="text-white/60 hidden sm:inline">·</span>
               <span className="text-cyan-300 font-semibold text-xs sm:text-sm">{view === 'add' ? '➕ Adding Mode' : '⚙️ Management Mode'}</span>

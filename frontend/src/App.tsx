@@ -63,16 +63,16 @@ function Navigation() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
-                👁️ CLOUD9 Teams
+                � Team Lineup
               </Link>
               <Link to="/racing-matrix" className="text-white hover:text-orange-400 transition font-semibold">
-                📊 CLOUD9 Rider Stats
+                📊 Performance Matrix
               </Link>
               <Link to="/rider-passports" className="text-white hover:text-orange-400 transition font-semibold">
                 🎴 Rider Passports
               </Link>
               <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
-                Team Manager
+                ⚙️ Team Manager
               </Link>
             </div>
 
@@ -95,16 +95,16 @@ function Navigation() {
           {mobileMenuOpen && (
             <div className="md:hidden py-4 space-y-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                👁️ CLOUD9 Teams
+                � Team Lineup
               </Link>
               <Link to="/racing-matrix" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                📊 CLOUD9 Rider Stats
+                📊 Performance Matrix
               </Link>
               <Link to="/rider-passports" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 🎴 Rider Passports
               </Link>
               <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                Team Manager
+                ⚙️ Team Manager
               </Link>
             </div>
           )}

@@ -465,54 +465,55 @@ export default function RacingDataMatrixModern() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-8">
-      {/* Modern Hero Header with Glassmorphism */}
+      {/* Modern Compact Header */}
       <div className="relative overflow-hidden mb-4 sm:mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-95"></div>
-        <div className="relative px-3 py-4 sm:px-6 sm:py-6 lg:py-10">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-900 via-green-900 to-red-900 opacity-95"></div>
+        <div className="relative px-3 py-4 sm:px-6">
           <div className="max-w-[98vw] mx-auto">
-            <div className="flex items-center gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
-              <div className="p-2 sm:p-3 lg:p-4 bg-white/20 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-2xl flex-shrink-0">
-                <svg className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 backdrop-blur-lg rounded-xl shadow-xl flex-shrink-0">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white tracking-tight">
+                    📊 Performance Matrix
+                  </h1>
+                  <p className="text-orange-100 text-sm font-semibold mt-0.5">
+                    TeamNL Cloud9 Racing
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl lg:text-4xl xl:text-5xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
-                  <span className="truncate">TEAM DASHBOARD</span>
-                </h1>
-                <p className="text-blue-100 text-xs sm:text-sm lg:text-lg xl:text-xl font-semibold mt-1 sm:mt-2 truncate">
-                  TeamNL Cloud9 Racing · Performance Matrix
-                </p>
-              </div>
-              <div className="flex-shrink-0 flex gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => { refetch(); toast.success('Dashboard ververst!'); }}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-green-400/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
-                  title="Ververs Dashboard"
+                  className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 backdrop-blur-lg rounded-lg border border-green-400/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   <span className="hidden sm:inline">Ververs</span>
                 </button>
                 <button
                   onClick={() => navigate('/team-manager')}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg sm:rounded-xl border border-white/30 text-white font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 sm:gap-2"
-                  title="Team Management"
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-lg border border-white/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                 >
-                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   <span className="hidden sm:inline">Team</span>
                 </button>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-4 bg-white/10 backdrop-blur-lg rounded-lg sm:rounded-xl px-3 py-2 sm:px-4 sm:py-2.5 lg:px-5 lg:py-3 border border-white/20 shadow-xl mt-3 sm:mt-4">
-              <span className="text-white/80 text-xs sm:text-sm font-medium">Showing</span>
-              <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">{sortedRiders.length}</span>
-              <span className="text-white/80 text-xs sm:text-sm font-medium">of</span>
-              <span className="text-white font-bold text-lg sm:text-xl lg:text-2xl">{riders?.length || 0}</span>
-              <span className="text-white/80 text-xs sm:text-sm font-medium">riders</span>
+            {/* Rider Count Badge */}
+            <div className="flex flex-wrap items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20 shadow-lg mt-3">
+              <span className="text-white/80 text-sm font-medium">Showing</span>
+              <span className="text-white font-bold text-lg">{sortedRiders.length}</span>
+              <span className="text-white/80 text-sm font-medium">of</span>
+              <span className="text-white font-bold text-lg">{riders?.length || 0}</span>
+              <span className="text-white/80 text-sm font-medium">riders</span>
               {searchTerm && (
                 <>
                   <span className="text-white/60 hidden sm:inline">·</span>
