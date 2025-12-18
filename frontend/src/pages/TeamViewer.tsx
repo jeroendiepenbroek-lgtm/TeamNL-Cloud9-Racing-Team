@@ -62,6 +62,8 @@ interface TeamViewerProps {
 }
 
 export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
+  const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('matrix')
+  
   // Fetch all teams
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
     queryKey: ['teams'],
@@ -99,17 +101,43 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => window.location.pathname = '/team-builder'}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 backdrop-blur-lg rounded-lg border border-orange-400/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="hidden sm:inline">Team Builder</span>
-                <span className="sm:hidden">⚙️</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {/* View Toggle */}
+                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
+                  <button
+                    onClick={() => setViewMode('matrix')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      viewMode === 'matrix'
+                        ? 'bg-orange-500 text-white shadow-md'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    📊 Matrix
+                  </button>
+                  <button
+                    onClick={() => setViewMode('passports')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                      viewMode === 'passports'
+                        ? 'bg-orange-500 text-white shadow-md'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    🎴 Passports
+                  </button>
+                </div>
+                
+                <button
+                  onClick={() => window.location.pathname = '/team-builder'}
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 backdrop-blur-lg rounded-lg border border-orange-400/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="hidden sm:inline">Team Builder</span>
+                  <span className="sm:hidden">⚙️</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -133,7 +161,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         ) : (
           <div className="space-y-6">
             {teams.map(team => (
-              <TeamCard key={team.team_id} team={team} />
+              <TeamCard key={team.team_id} team={team} viewMode={viewMode} />
             ))}
           </div>
         )}
@@ -143,7 +171,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
 }
 
 // Team Card with Riders - Collapsible
-function TeamCard({ team }: { team: Team }) {
+function TeamCard({ team, viewMode }: { team: Team; viewMode: 'matrix' | 'passports' }) {
   const [isExpanded, setIsExpanded] = useState(false)
   
   const { data: lineupData, isLoading } = useQuery({
@@ -216,11 +244,121 @@ function TeamCard({ team }: { team: Team }) {
             <div className="text-center text-gray-400 py-8">
               <p>Nog geen riders toegevoegd</p>
             </div>
+          ) : viewMode === 'passports' ? (
+            <RidersPassports lineup={lineup} />
           ) : (
             <RidersTable lineup={lineup} />
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// Riders Passports - Horizontal Scroll with Mini Cards
+function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
+  const getVeloTier = (rating: number | null) => {
+    if (!rating) return null
+    return VELO_TIERS.find(tier => 
+      rating >= tier.min && (!tier.max || rating < tier.max)
+    )
+  }
+
+
+
+  return (
+    <div className="overflow-x-auto pb-4 scroll-smooth">
+      <div className="flex gap-4 px-2" style={{ minWidth: 'min-content' }}>
+        {lineup.map(rider => {
+          const veloLiveTier = getVeloTier(rider.velo_live || null)
+          const category = rider.category || 'D'
+          const categoryColors: {[key: string]: string} = {
+            'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
+            'C': '#0000FF', 'D': '#FF1493', 'E': '#808080'
+          }
+          const categoryColor = categoryColors[category] || '#666'
+          const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+
+          return (
+            <div
+              key={rider.rider_id}
+              className="flex-shrink-0 w-[220px] bg-gradient-to-br from-gray-900 to-blue-900 border-2 border-yellow-400 rounded-lg shadow-lg overflow-hidden"
+            >
+              {/* Header with tier and category */}
+              <div
+                className="h-12 relative"
+                style={{
+                  background: veloLiveTier ? `linear-gradient(135deg, ${veloLiveTier.color.split(' ')[0].replace('from-', '')} 0%, ${veloLiveTier.color.split(' ')[2].replace('to-', '')} 100%)` : '#666',
+                  clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 100%)'
+                }}
+              >
+                <div className="flex items-center justify-between px-2 py-1">
+                  {veloLiveTier && (
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white"
+                      style={{ background: veloLiveTier.color.split(' ')[0].replace('from-', '') }}
+                    >
+                      <span className="text-sm font-black text-white">{veloLiveTier.rank}</span>
+                    </div>
+                  )}
+                  <div
+                    className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white"
+                    style={{ background: categoryColor }}
+                  >
+                    <span className="text-sm font-black text-white">{category}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[10px] font-bold text-gray-900">ZRS</div>
+                    <div className="text-sm font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Avatar */}
+              <div className="flex justify-center -mt-6 mb-2">
+                <img
+                  src={rider.avatar_url || 'https://via.placeholder.com/60?text=No+Avatar'}
+                  alt={rider.name}
+                  className="w-16 h-16 rounded-full border-2 border-yellow-400 object-cover bg-gray-700 shadow-lg"
+                  onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Avatar' }}
+                />
+              </div>
+
+              {/* Name */}
+              <div className="text-center px-2 mb-2">
+                <h3 className="text-xs font-bold text-white leading-tight truncate">
+                  {rider.name || rider.full_name || 'Unknown'}
+                </h3>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-1 px-2 pb-2">
+                <div className="bg-white/10 rounded p-1 text-center">
+                  <div className="text-[9px] text-yellow-400 font-bold">FTP</div>
+                  <div className="text-xs font-black text-white">{rider.racing_ftp || rider.ftp_watts || '-'}</div>
+                </div>
+                <div className="bg-white/10 rounded p-1 text-center">
+                  <div className="text-[9px] text-yellow-400 font-bold">W/kg</div>
+                  <div className="text-xs font-black text-white">{wkg}</div>
+                </div>
+                <div className="bg-white/10 rounded p-1 text-center">
+                  <div className="text-[9px] text-yellow-400 font-bold">vELO</div>
+                  <div className="text-xs font-black text-white">{Math.floor(rider.velo_live || 0)}</div>
+                </div>
+              </div>
+
+              {/* Phenotype */}
+              {rider.phenotype && (
+                <div className="px-2 pb-2">
+                  <div className="bg-purple-500/20 rounded px-2 py-1 text-center">
+                    <span className="text-[10px] font-bold text-purple-300">{rider.phenotype}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
