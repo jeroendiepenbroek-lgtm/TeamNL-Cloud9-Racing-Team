@@ -401,14 +401,14 @@ export default function RiderPassportGallery() {
             </div>
           </div>
 
-          {/* Favorite Star - Same height as badges */}
+          {/* Favorite Star - Positioned below header, right side */}
           <button
             onClick={(e) => {
               e.stopPropagation()
               e.preventDefault()
               toggleFavorite(rider.rider_id)
             }}
-            className="absolute top-2 right-[70px] z-20 text-2xl transition-transform hover:scale-125 active:scale-95 bg-black/40 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-lg"
+            className="absolute top-[72px] right-3 z-20 text-2xl transition-transform hover:scale-125 active:scale-95 bg-black/50 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-lg border-2 border-yellow-400"
             title={isFavorite(rider.rider_id) ? 'Remove from favorites' : 'Add to favorites'}
           >
             {isFavorite(rider.rider_id) ? '⭐' : '☆'}
@@ -846,9 +846,9 @@ export default function RiderPassportGallery() {
               </div>
             </div>
             
-            {/* Desktop: Card Deck with Centered Layout */}
-            <div className="hidden md:flex justify-center items-center min-h-[600px] relative">
-              <div className="flex items-center justify-center gap-3 perspective-2000" style={{ perspective: '2000px' }}>
+            {/* Desktop: Scrollable Card Deck with Top 5 Visible */}
+            <div className="hidden md:block overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
+              <div className="flex gap-4 px-8 py-4" style={{ minWidth: 'min-content', perspective: '1500px' }}>
                 {filteredRiders.map((rider, index) => {
                   const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
@@ -860,25 +860,37 @@ export default function RiderPassportGallery() {
                   const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
                   const isFlipped = flippedCards.has(rider.rider_id)
                   
-                  const middleIndex = Math.floor(filteredRiders.length / 2)
-                  const distanceFromCenter = Math.abs(index - middleIndex)
-                  const isCenter = index === middleIndex
+                  // Card deck effect: first 5 cards prominently visible, rest stacked behind
+                  let scale = 1
+                  let zIndex = 100 - index
+                  let opacity = 1
+                  let translateX = 0
+                  let rotateY = 0
                   
-                  // Stack effect: center card full size, others scaled down and offset
-                  const scale = isCenter ? 1 : Math.max(0.85 - (distanceFromCenter * 0.08), 0.6)
-                  const zIndex = 50 - distanceFromCenter
-                  const opacity = isCenter ? 1 : Math.max(0.5 - (distanceFromCenter * 0.1), 0.3)
-                  const translateX = index < middleIndex ? (distanceFromCenter * -15) : (distanceFromCenter * 15)
+                  if (index < 5) {
+                    // First 5 cards: full size, slightly rotated for deck effect
+                    scale = 1 - (index * 0.03) // 1.0, 0.97, 0.94, 0.91, 0.88
+                    translateX = index * -30 // Stack with 30px overlap
+                    rotateY = index * 2 // Slight rotation for depth
+                    opacity = 1 - (index * 0.1) // Subtle fade
+                  } else {
+                    // Rest of cards: heavily stacked behind
+                    scale = 0.85
+                    translateX = -150 // Hidden behind the deck
+                    opacity = 0.3
+                    zIndex = 10
+                  }
                   
                   return (
                     <div
                       key={rider.rider_id}
-                      className="transition-all duration-300"
+                      className="flex-shrink-0 transition-all duration-300"
                       style={{
-                        transform: `scale(${scale}) translateX(${translateX}px)`,
+                        transform: `scale(${scale}) translateX(${translateX}px) rotateY(${rotateY}deg)`,
+                        transformStyle: 'preserve-3d',
                         zIndex,
                         opacity,
-                        marginLeft: index === 0 ? '0' : '-100px'
+                        marginLeft: index === 0 ? '0' : '-80px'
                       }}
                     >
                       {renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)}
