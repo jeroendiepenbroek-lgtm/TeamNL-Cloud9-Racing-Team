@@ -401,14 +401,14 @@ export default function RiderPassportGallery() {
             </div>
           </div>
 
-          {/* Favorite Star - Positioned outside header for visibility */}
+          {/* Favorite Star - Rechter bovenhoek bij avatar */}
           <button
             onClick={(e) => {
               e.stopPropagation()
               e.preventDefault()
               toggleFavorite(rider.rider_id)
             }}
-            className="absolute top-2 right-12 z-20 text-3xl transition-transform hover:scale-125 active:scale-95 bg-black/30 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center"
+            className="absolute top-10 right-[110px] z-20 text-2xl transition-transform hover:scale-125 active:scale-95 bg-black/40 backdrop-blur-sm rounded-full w-9 h-9 flex items-center justify-center shadow-lg"
             title={isFavorite(rider.rider_id) ? 'Remove from favorites' : 'Add to favorites'}
           >
             {isFavorite(rider.rider_id) ? '⭐' : '☆'}
