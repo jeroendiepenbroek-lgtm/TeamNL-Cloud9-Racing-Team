@@ -134,7 +134,7 @@ function MultiSelectDropdown<T extends string | number>({
   const isCategoryDropdown = label.includes('Category')
 
   return (
-    <div className="relative z-50" ref={dropdownRef}>
+    <div className="relative z-[200]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="px-3 py-2 border border-white/30 rounded-lg text-xs focus:ring-2 focus:ring-yellow-400 bg-white/15 text-white hover:bg-white/20 transition-colors w-full flex items-center justify-between font-bold"
@@ -158,7 +158,7 @@ function MultiSelectDropdown<T extends string | number>({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[100] mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-[300] mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {options.map((option) => (
             <label
               key={option.value}
@@ -734,8 +734,9 @@ export default function RiderPassportGallery() {
             {/* Filter Buttons Row */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {/* Category Filter */}
-              <MultiSelectDropdown
-                label="ZP-category"
+              <div className="min-w-[140px]">
+                <MultiSelectDropdown
+                  label="ZP-category"
                 options={[
                   { value: 'A+', label: 'A+' },
                   { value: 'A', label: 'A' },
@@ -743,31 +744,36 @@ export default function RiderPassportGallery() {
                   { value: 'C', label: 'C' },
                   { value: 'D', label: 'D' },
                 ]}
-                selectedValues={filterCategories}
-                onChange={setFilterCategories}
-              />
+                  selectedValues={filterCategories}
+                  onChange={setFilterCategories}
+                />
+              </div>
 
               {/* vELO Live Filter */}
-              <MultiSelectDropdown
+              <div className="min-w-[160px]">
+                <MultiSelectDropdown
                 label="vELO Live"
                 options={VELO_TIERS.map(tier => ({
                   value: tier.rank,
                   label: tier.name,
                 }))}
-                selectedValues={filterVeloLiveRanks}
-                onChange={setFilterVeloLiveRanks}
-              />
+                  selectedValues={filterVeloLiveRanks}
+                  onChange={setFilterVeloLiveRanks}
+                />
+              </div>
 
               {/* vELO 30-day Filter */}
-              <MultiSelectDropdown
+              <div className="min-w-[160px]">
+                <MultiSelectDropdown
                 label="vELO 30-day"
                 options={VELO_TIERS.map(tier => ({
                   value: tier.rank,
                   label: tier.name,
                 }))}
-                selectedValues={filterVelo30dayRanks}
-                onChange={setFilterVelo30dayRanks}
-              />
+                  selectedValues={filterVelo30dayRanks}
+                  onChange={setFilterVelo30dayRanks}
+                />
+              </div>
 
               {/* Favorites Toggle */}
               <button
