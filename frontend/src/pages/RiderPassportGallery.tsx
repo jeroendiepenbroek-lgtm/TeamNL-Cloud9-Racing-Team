@@ -401,14 +401,14 @@ export default function RiderPassportGallery() {
             </div>
           </div>
 
-          {/* Favorite Star - Rechter bovenhoek bij avatar */}
+          {/* Favorite Star - Same height as badges */}
           <button
             onClick={(e) => {
               e.stopPropagation()
               e.preventDefault()
               toggleFavorite(rider.rider_id)
             }}
-            className="absolute top-10 right-[110px] z-20 text-2xl transition-transform hover:scale-125 active:scale-95 bg-black/40 backdrop-blur-sm rounded-full w-9 h-9 flex items-center justify-center shadow-lg"
+            className="absolute top-2 right-[70px] z-20 text-2xl transition-transform hover:scale-125 active:scale-95 bg-black/40 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-lg"
             title={isFavorite(rider.rider_id) ? 'Remove from favorites' : 'Add to favorites'}
           >
             {isFavorite(rider.rider_id) ? '⭐' : '☆'}
@@ -846,10 +846,10 @@ export default function RiderPassportGallery() {
               </div>
             </div>
             
-            {/* Desktop: Horizontal Carousel */}
-            <div className="hidden md:block overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
-              <div className="flex gap-6 snap-x snap-mandatory px-4" style={{ minWidth: 'min-content' }}>
-                {filteredRiders.map(rider => {
+            {/* Desktop: Card Deck with Centered Layout */}
+            <div className="hidden md:flex justify-center items-center min-h-[600px] relative">
+              <div className="flex items-center justify-center gap-3 perspective-2000" style={{ perspective: '2000px' }}>
+                {filteredRiders.map((rider, index) => {
                   const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
                   const categoryColor = getCategoryColor(category)
@@ -860,7 +860,30 @@ export default function RiderPassportGallery() {
                   const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
                   const isFlipped = flippedCards.has(rider.rider_id)
                   
-                  return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
+                  const middleIndex = Math.floor(filteredRiders.length / 2)
+                  const distanceFromCenter = Math.abs(index - middleIndex)
+                  const isCenter = index === middleIndex
+                  
+                  // Stack effect: center card full size, others scaled down and offset
+                  const scale = isCenter ? 1 : Math.max(0.85 - (distanceFromCenter * 0.08), 0.6)
+                  const zIndex = 50 - distanceFromCenter
+                  const opacity = isCenter ? 1 : Math.max(0.5 - (distanceFromCenter * 0.1), 0.3)
+                  const translateX = index < middleIndex ? (distanceFromCenter * -15) : (distanceFromCenter * 15)
+                  
+                  return (
+                    <div
+                      key={rider.rider_id}
+                      className="transition-all duration-300"
+                      style={{
+                        transform: `scale(${scale}) translateX(${translateX}px)`,
+                        zIndex,
+                        opacity,
+                        marginLeft: index === 0 ? '0' : '-100px'
+                      }}
+                    >
+                      {renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)}
+                    </div>
+                  )
                 })}
               </div>
             </div>
