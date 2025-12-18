@@ -543,20 +543,26 @@ export default function RiderPassportGallery() {
 
   // Draw spider charts voor alle geflipte cards
   useEffect(() => {
-    // Short delay om te zorgen dat DOM is updated
-    const timer = setTimeout(() => {
-      flippedCards.forEach(riderId => {
-        const canvas = document.getElementById(`spider-${riderId}`) as HTMLCanvasElement
-        if (canvas) {
-          const rider = filteredRiders.find(r => r.rider_id === riderId)
-          if (rider) {
-            drawSpiderChartForRider(canvas, rider)
-          }
-        }
-      })
-    }, 50)
+    // Multiple timeouts voor verschillende render cycles
+    const timers: NodeJS.Timeout[] = []
     
-    return () => clearTimeout(timer)
+    // Probeer meerdere keren met verschillende delays
+    ;[50, 150, 300].forEach(delay => {
+      const timer = setTimeout(() => {
+        flippedCards.forEach(riderId => {
+          const canvas = document.getElementById(`spider-${riderId}`) as HTMLCanvasElement
+          if (canvas) {
+            const rider = filteredRiders.find(r => r.rider_id === riderId)
+            if (rider) {
+              drawSpiderChartForRider(canvas, rider)
+            }
+          }
+        })
+      }, delay)
+      timers.push(timer)
+    })
+    
+    return () => timers.forEach(t => clearTimeout(t))
   }, [flippedCards, filteredRiders, tierMaxValues])
 
   const drawSpiderChartForRider = (canvas: HTMLCanvasElement, rider: Rider) => {
@@ -812,25 +818,23 @@ export default function RiderPassportGallery() {
           </div>
         ) : (
           <>
-            {/* Mobile: Vertical Stack */}
-            <div className="md:hidden flex flex-col gap-6 pb-6">
-              {filteredRiders.map(rider => {
-                const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
-                const flagUrl = getFlagUrl(rider.country_alpha3)
-                const categoryColor = getCategoryColor(category)
-                const veloLive = Math.floor(rider.velo_live || 0)
-                const velo30day = Math.floor(rider.velo_30day || 0)
-                const veloTier = getVeloTier(veloLive)
-                const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
-                const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
-                const isFlipped = flippedCards.has(rider.rider_id)
-                
-                return (
-                  <div key={rider.rider_id} className="mx-auto" style={{ maxWidth: '340px' }}>
-                    {renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)}
-                  </div>
-                )
-              })}
+            {/* Mobile: Horizontal Swipe Carousel */}
+            <div className="md:hidden overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
+              <div className="flex gap-4 snap-x snap-mandatory px-4" style={{ minWidth: 'min-content' }}>
+                {filteredRiders.map(rider => {
+                  const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+                  const flagUrl = getFlagUrl(rider.country_alpha3)
+                  const categoryColor = getCategoryColor(category)
+                  const veloLive = Math.floor(rider.velo_live || 0)
+                  const velo30day = Math.floor(rider.velo_30day || 0)
+                  const veloTier = getVeloTier(veloLive)
+                  const heightCm = rider.height_cm ? Math.round(rider.height_cm / 10) : '-'
+                  const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+                  const isFlipped = flippedCards.has(rider.rider_id)
+                  
+                  return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
+                })}
+              </div>
             </div>
             
             {/* Desktop: Horizontal Carousel */}
