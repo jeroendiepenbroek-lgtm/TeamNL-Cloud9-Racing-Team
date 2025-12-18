@@ -32,6 +32,8 @@ interface Rider {
   power_120s_wkg: number
   power_300s_wkg: number
   power_1200s_wkg: number
+  team_id?: number | null
+  team_name?: string | null
 }
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
@@ -134,15 +136,15 @@ function MultiSelectDropdown<T extends string | number>({
   const isCategoryDropdown = label.includes('Category')
 
   return (
-    <div className="relative z-[200]" ref={dropdownRef}>
+    <div className="relative z-[500]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 border border-white/30 rounded-lg text-xs focus:ring-2 focus:ring-yellow-400 bg-white/15 text-white hover:bg-white/20 transition-colors w-full flex items-center justify-between font-bold"
+        className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-orange-400 bg-white text-gray-900 hover:bg-gray-50 transition-colors w-full flex items-center justify-between font-bold shadow-sm"
       >
         <span>
           {label}
           {selectedValues.length > 0 && (
-            <span className="ml-1.5 px-1.5 py-0.5 bg-yellow-400 text-gray-900 rounded text-[10px] font-bold">
+            <span className="ml-1.5 px-1.5 py-0.5 bg-orange-500 text-white rounded text-[10px] font-bold">
               {selectedValues.length}
             </span>
           )}
@@ -158,7 +160,7 @@ function MultiSelectDropdown<T extends string | number>({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[300] mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-[600] mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {options.map((option) => (
             <label
               key={option.value}
@@ -192,6 +194,8 @@ export default function RiderPassportGallery() {
   const [filterCategories, setFilterCategories] = useState<string[]>([])
   const [filterVeloLiveRanks, setFilterVeloLiveRanks] = useState<number[]>([])
   const [filterVelo30dayRanks, setFilterVelo30dayRanks] = useState<number[]>([])
+  const [filterTeams, setFilterTeams] = useState<number[]>([])
+  const [teams, setTeams] = useState<{team_id: number, team_name: string}[]>([])
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
   const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: {[key: string]: number}}>({})
 
@@ -201,11 +205,12 @@ export default function RiderPassportGallery() {
 
   useEffect(() => {
     loadRiders()
+    loadTeams()
   }, [])
 
   useEffect(() => {
     applyFilters()
-  }, [riders, searchTerm, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, showOnlyFavorites, favorites])
+  }, [riders, searchTerm, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, filterTeams, showOnlyFavorites, favorites])
 
   const loadRiders = async () => {
     try {
@@ -238,6 +243,16 @@ export default function RiderPassportGallery() {
     } catch (err) {
       setError('Fout bij laden van riders')
       setLoading(false)
+    }
+  }
+
+  const loadTeams = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/teams`)
+      const data = await response.json()
+      setTeams(data.teams || [])
+    } catch (err) {
+      console.error('Error loading teams:', err)
     }
   }
 
@@ -278,6 +293,13 @@ export default function RiderPassportGallery() {
       filtered = filtered.filter(r => {
         const tier = getVeloTier(r.velo_30day).tier
         return filterVelo30dayRanks.includes(tier)
+      })
+    }
+
+    // Team filter - multiselect
+    if (filterTeams.length > 0) {
+      filtered = filtered.filter(r => {
+        return r.team_id && filterTeams.includes(r.team_id)
       })
     }
 
@@ -702,15 +724,15 @@ export default function RiderPassportGallery() {
 
   return (
     <div className="min-h-screen py-8 px-4" style={{
-      background: 'linear-gradient(135deg, #7f1d1d 0%, #166534 50%, #7f1d1d 100%)'
+      background: 'linear-gradient(135deg, #FF6B35 0%, #F7F7F7 35%, #FFFFFF 50%, #F7F7F7 65%, #0077BE 100%)'
     }}>
       {/* Modern Compact Header */}
       <div className="max-w-7xl mx-auto mb-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             🎴 Rider Passports
           </h1>
-          <div className="bg-white/10 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg font-semibold text-sm border border-white/20">
+          <div className="bg-orange-500 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg font-semibold text-sm border border-orange-600 shadow-md">
             {stats.total} riders
           </div>
         </div>
@@ -718,7 +740,7 @@ export default function RiderPassportGallery() {
 
       {/* Compact Search + Filters Row */}
       <div className="max-w-7xl mx-auto mb-6">
-        <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-3 shadow-lg">
+        <div className="bg-white/90 backdrop-blur-md rounded-xl border border-gray-200 p-3 shadow-lg">
           <div className="space-y-3">
             {/* Search Bar */}
             <div>
@@ -727,7 +749,7 @@ export default function RiderPassportGallery() {
                 placeholder="🔍 Zoek rider..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg bg-white/15 text-white placeholder-white/50 border border-white/30 focus:border-yellow-400 focus:outline-none font-semibold text-sm"
+                className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 focus:outline-none font-semibold text-sm"
               />
             </div>
 
@@ -775,13 +797,26 @@ export default function RiderPassportGallery() {
                 />
               </div>
 
+              {/* Team Filter */}
+              <div className="min-w-[160px]">
+                <MultiSelectDropdown
+                  label="Team"
+                  options={teams.map(team => ({
+                    value: team.team_id,
+                    label: team.team_name,
+                  }))}
+                  selectedValues={filterTeams}
+                  onChange={setFilterTeams}
+                />
+              </div>
+
               {/* Favorites Toggle */}
               <button
                 onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 shadow-sm ${
                   showOnlyFavorites 
-                    ? 'bg-yellow-500 text-white hover:bg-yellow-600' 
-                    : 'bg-white/15 text-white/80 hover:bg-white/20 border border-white/30'
+                    ? 'bg-orange-500 text-white hover:bg-orange-600 border border-orange-600' 
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
                 }`}
                 title={showOnlyFavorites ? 'Toon alle riders' : 'Toon alleen favorieten'}
               >
@@ -797,27 +832,28 @@ export default function RiderPassportGallery() {
               {/* Clear Filters Button */}
               <button
                 onClick={() => {
-                  const totalFilters = filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length
+                  const totalFilters = filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length + filterTeams.length
                   setFilterCategories([])
                   setFilterVeloLiveRanks([])
                   setFilterVelo30dayRanks([])
+                  setFilterTeams([])
                   if (totalFilters > 0) {
                     toast.success(`${totalFilters} filter${totalFilters > 1 ? 's' : ''} verwijderd`, { icon: '🗑️' })
                   }
                 }}
-                disabled={filterCategories.length === 0 && filterVeloLiveRanks.length === 0 && filterVelo30dayRanks.length === 0}
-                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
-                  filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0
-                    ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer'
-                    : 'bg-white/10 text-white/40 cursor-not-allowed border border-white/20'
+                disabled={filterCategories.length === 0 && filterVeloLiveRanks.length === 0 && filterVelo30dayRanks.length === 0 && filterTeams.length === 0}
+                className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-xs font-medium flex items-center gap-1 sm:gap-2 flex-shrink-0 shadow-sm ${
+                  filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0 || filterTeams.length > 0
+                    ? 'bg-red-500 text-white hover:bg-red-600 cursor-pointer border border-red-600'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                 }`}
                 title="Verwijder alle filters"
               >
                 <span className="text-sm sm:text-base">🗑️</span>
                 <span className="hidden sm:inline">Clear</span>
-                {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0) && (
+                {(filterCategories.length > 0 || filterVeloLiveRanks.length > 0 || filterVelo30dayRanks.length > 0 || filterTeams.length > 0) && (
                   <span className="ml-0.5 sm:ml-1 px-1 sm:px-1.5 py-0.5 bg-white/30 rounded text-[10px] sm:text-xs font-bold">
-                    {filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length}
+                    {filterCategories.length + filterVeloLiveRanks.length + filterVelo30dayRanks.length + filterTeams.length}
                   </span>
                 )}
               </button>

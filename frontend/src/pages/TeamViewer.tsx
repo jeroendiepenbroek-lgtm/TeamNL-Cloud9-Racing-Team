@@ -76,11 +76,11 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const teams: Team[] = teamsData || []
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-blue-50">
       {/* Header */}
       {!hideHeader && (
       <div className="relative overflow-hidden mb-4 sm:mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-900 via-green-900 to-red-900 opacity-95"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-orange-400 to-blue-500 opacity-95"></div>
         <div className="relative px-3 py-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between gap-4">
