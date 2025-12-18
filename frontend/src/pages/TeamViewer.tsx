@@ -1,35 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-
-// Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
-const CATEGORY_COLORS = {
-  'A+': 'bg-red-500 text-white border-red-400',
-  'A': 'bg-red-600 text-white border-red-500',
-  'B': 'bg-green-500 text-white border-green-400',
-  'C': 'bg-blue-500 text-white border-blue-400',
-  'D': 'bg-yellow-500 text-white border-yellow-400',
-}
-
-// vELO Tiers (matching RacingMatrix exactly)
-const VELO_TIERS = [
-  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, max: null, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100' },
-  { rank: 2, name: 'Ruby', icon: '💍', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-red-100' },
-  { rank: 3, name: 'Emerald', icon: '💚', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100' },
-  { rank: 4, name: 'Sapphire', icon: '💙', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100' },
-  { rank: 5, name: 'Amethyst', icon: '💜', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100' },
-  { rank: 6, name: 'Platinum', icon: '⚪', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100' },
-  { rank: 7, name: 'Gold', icon: '🟡', min: 1000, max: 1150, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900' },
-  { rank: 8, name: 'Silver', icon: '⚫', min: 850, max: 1000, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700' },
-  { rank: 9, name: 'Bronze', icon: '🟠', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900' },
-  { rank: 10, name: 'Copper', icon: '🟤', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-orange-100' },
-]
-
-const getVeloTier = (rating: number | null) => {
-  if (!rating) return null
-  return VELO_TIERS.find(tier => 
-    rating >= tier.min && (!tier.max || rating < tier.max)
-  )
-}
+import RiderPassportCard from '../components/RiderPassportCard'
 
 interface Team {
   team_id: number
@@ -87,8 +58,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 backdrop-blur-lg rounded-xl shadow-xl flex-shrink-0">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
                 <div>
@@ -208,9 +178,9 @@ function TeamCard({ team }: { team: Team }) {
         </div>
       </button>
       
-      {/* Riders Table - Collapsible */}
+      {/* Riders Passports - Collapsible */}
       {isExpanded && (
-        <div className="px-6 pb-6 pt-2 border-t border-gray-700">
+        <div className="px-6 pb-6 pt-4 border-t border-gray-700">
           {isLoading ? (
             <div className="text-center text-gray-400 py-8">Riders laden...</div>
           ) : !lineup || !Array.isArray(lineup) || lineup.length === 0 ? (
@@ -218,220 +188,44 @@ function TeamCard({ team }: { team: Team }) {
               <p>Nog geen riders toegevoegd</p>
             </div>
           ) : (
-            <RidersTable lineup={lineup} />
+            <div className="overflow-x-auto pb-4">
+              <div className="flex gap-6 justify-center" style={{ minWidth: 'min-content' }}>
+                {lineup.map((rider) => (
+                  <RiderPassportCard
+                    key={rider.rider_id}
+                    rider={{
+                      rider_id: rider.rider_id,
+                      racing_name: rider.name,
+                      full_name: rider.full_name,
+                      zwift_official_category: rider.category,
+                      zwiftracing_category: null,
+                      country_alpha3: 'NLD',
+                      velo_live: rider.velo_live || rider.current_velo_rank || 0,
+                      velo_30day: rider.velo_30day || 0,
+                      racing_ftp: rider.racing_ftp || rider.ftp_watts || 0,
+                      ftp_watts: rider.ftp_watts || rider.racing_ftp || 0,
+                      weight_kg: rider.weight_kg,
+                      height_cm: 175,
+                      age: 0,
+                      zwift_official_racing_score: rider.zwift_official_racing_score,
+                      avatar_url: rider.avatar_url || '',
+                      phenotype: rider.phenotype,
+                      power_5s: 0,
+                      power_15s: 0,
+                      power_30s: 0,
+                      power_60s: 0,
+                      power_120s: 0,
+                      power_300s: 0,
+                      power_1200s: 0,
+                    }}
+                    showFavorite={false}
+                  />
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
     </div>
-  )
-}
-
-// Riders Table - Table Row Design met sorteer functionaliteit
-function RidersTable({ lineup }: { lineup: LineupRider[] }) {
-  type SortKey = 'position' | 'name' | 'category' | 'veloLive' | 'velo30day' | 'ftp' | 'zrs' | 'phenotype'
-  const [sortKey, setSortKey] = useState<SortKey>('position')
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortKey(key)
-      setSortDirection('asc')
-    }
-  }
-  
-  const sortedLineup = [...lineup].sort((a, b) => {
-    let comparison = 0
-    const catOrder: Record<string, number> = { 'A+': 0, 'A': 1, 'B': 2, 'C': 3, 'D': 4 }
-    
-    if (sortKey === 'position') {
-      comparison = (a.lineup_position || 999) - (b.lineup_position || 999)
-    } else if (sortKey === 'name') {
-      comparison = (a.name || '').localeCompare(b.name || '')
-    } else if (sortKey === 'category') {
-      const aVal = catOrder[a.category || 'D'] ?? 5
-      const bVal = catOrder[b.category || 'D'] ?? 5
-      comparison = aVal - bVal
-    } else if (sortKey === 'veloLive') {
-      const aVal = a.velo_live || a.current_velo_rank || 0
-      const bVal = b.velo_live || b.current_velo_rank || 0
-      comparison = bVal - aVal
-    } else if (sortKey === 'velo30day') {
-      const aVal = a.velo_30day || 0
-      const bVal = b.velo_30day || 0
-      comparison = bVal - aVal
-    } else if (sortKey === 'ftp') {
-      const aVal = a.racing_ftp || a.ftp_watts || 0
-      const bVal = b.racing_ftp || b.ftp_watts || 0
-      comparison = bVal - aVal
-    } else if (sortKey === 'zrs') {
-      const aVal = a.zwift_official_racing_score || 0
-      const bVal = b.zwift_official_racing_score || 0
-      comparison = bVal - aVal
-    } else if (sortKey === 'phenotype') {
-      comparison = (a.phenotype || '').localeCompare(b.phenotype || '')
-    }
-    
-    return sortDirection === 'asc' ? comparison : -comparison
-  })
-  
-  const SortableHeader = ({ label, sortKeyValue, align = 'left', colSpan }: { label: string; sortKeyValue: SortKey; align?: 'left' | 'center'; colSpan?: number }) => (
-    <th 
-      onClick={() => handleSort(sortKeyValue)}
-      className={`px-3 py-2 text-${align} text-xs font-semibold text-gray-400 uppercase cursor-pointer hover:text-orange-400 transition-colors select-none`}
-      colSpan={colSpan}
-    >
-      <div className={`flex items-center gap-1 ${align === 'center' ? 'justify-center' : ''}`}>
-        {label}
-        {sortKey === sortKeyValue && (
-          <span className="text-orange-400">{sortDirection === 'asc' ? '▲' : '▼'}</span>
-        )}
-      </div>
-    </th>
-  )
-  
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-700">
-            <SortableHeader label="#" sortKeyValue="position" />
-            <SortableHeader label="Rider" sortKeyValue="name" />
-            <SortableHeader label="Cat" sortKeyValue="category" align="center" />
-            <SortableHeader label="vELO Live" sortKeyValue="veloLive" align="center" />
-            <SortableHeader label="vELO 30-day" sortKeyValue="velo30day" align="center" />
-            <SortableHeader label="zFTP" sortKeyValue="ftp" align="center" colSpan={2} />
-            <SortableHeader label="ZRS" sortKeyValue="zrs" align="center" />
-            <SortableHeader label="Phenotype" sortKeyValue="phenotype" align="center" />
-          </tr>
-          <tr className="border-b border-gray-700/50">
-            <th colSpan={5}></th>
-            <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 uppercase">FTP (W)</th>
-            <th className="px-3 py-1 text-right text-[10px] font-medium text-gray-500 uppercase">W/kg</th>
-            <th colSpan={2}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {sortedLineup.map(rider => (
-            <RiderRow key={rider.rider_id} rider={rider} />
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-// Rider Row Component
-function RiderRow({ rider }: { rider: LineupRider }) {
-  // Handle both old and new field names
-  const veloLive = rider.velo_live || rider.current_velo_rank || 0
-  const velo30day = rider.velo_30day || veloLive
-  const racingFtp = rider.racing_ftp || rider.ftp_watts
-  
-  const veloLiveTier = getVeloTier(veloLive)
-  const velo30dayTier = getVeloTier(velo30day)
-  const categoryColor = CATEGORY_COLORS[rider.category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
-  const ftpWkg = racingFtp && rider.weight_kg ? (racingFtp / rider.weight_kg).toFixed(1) : null
-  
-  return (
-    <tr className="border-b border-gray-700/30 hover:bg-blue-900/30 transition-colors">
-      {/* Position */}
-      <td className="px-3 py-3 text-center">
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-md">
-          {rider.lineup_position}
-        </div>
-      </td>
-      
-      {/* Rider (Avatar + Name) */}
-      <td className="px-3 py-3">
-        <div className="flex items-center gap-3">
-          <img 
-            src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=40`}
-            alt={rider.name}
-            className="w-10 h-10 rounded-full border-2 border-gray-600 shadow-md flex-shrink-0"
-            onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=40`; }}
-          />
-          <span className="font-semibold text-white">{rider.name || rider.full_name}</span>
-        </div>
-      </td>
-      
-      {/* Category */}
-      <td className="px-3 py-3 text-center">
-        <span className={`inline-block px-3 py-1 text-sm font-bold rounded border ${categoryColor}`}>
-          {rider.category}
-        </span>
-      </td>
-      
-      {/* vELO Live Badge met cirkel en progressbar */}
-      <td className="px-3 py-3 text-center">
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br ${veloLiveTier?.color || 'from-gray-400 to-gray-600'} shadow-md`}>
-          {/* Cirkel om tier nummer */}
-          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/30 backdrop-blur-sm border-2 border-white/50">
-            <span className="font-black text-xs text-white">{veloLiveTier?.rank || '?'}</span>
-          </div>
-          {/* Score + Progressbar */}
-          <div className="flex flex-col gap-0.5">
-            <span className={`font-bold text-sm leading-none ${veloLiveTier?.textColor || 'text-white'}`}>{veloLive?.toFixed(0) || 'N/A'}</span>
-            {veloLiveTier && veloLiveTier.max && veloLive && (
-              <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-white/60 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, ((veloLive - veloLiveTier.min) / (veloLiveTier.max - veloLiveTier.min)) * 100)}%` }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </td>
-      
-      {/* vELO 30-day Badge met cirkel en progressbar */}
-      <td className="px-3 py-3 text-center">
-        <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br ${velo30dayTier?.color || 'from-gray-400 to-gray-600'} shadow-md`}>
-          {/* Cirkel om tier nummer */}
-          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/30 backdrop-blur-sm border-2 border-white/50">
-            <span className="font-black text-xs text-white">{velo30dayTier?.rank || '?'}</span>
-          </div>
-          {/* Score + Progressbar */}
-          <div className="flex flex-col gap-0.5">
-            <span className={`font-bold text-sm leading-none ${velo30dayTier?.textColor || 'text-white'}`}>{velo30day?.toFixed(0) || 'N/A'}</span>
-            {velo30dayTier && velo30dayTier.max && velo30day && (
-              <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-white/60 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, ((velo30day - velo30dayTier.min) / (velo30dayTier.max - velo30dayTier.min)) * 100)}%` }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </td>
-      
-      {/* zFTP - Watts */}
-      <td className="px-3 py-3 text-right">
-        <span className="text-white font-semibold">{racingFtp || '-'}</span>
-      </td>
-      
-      {/* zFTP - W/kg */}
-      <td className="px-3 py-3 text-right">
-        <span className="text-white font-semibold">{ftpWkg || '-'}</span>
-      </td>
-      
-      {/* ZRS (Zwift Racing Score) */}
-      <td className="px-3 py-3 text-center">
-        <span className="text-white font-semibold">{rider.zwift_official_racing_score || '-'}</span>
-      </td>
-      
-      {/* Phenotype */}
-      <td className="px-3 py-3 text-center">
-        {rider.phenotype ? (
-          <span className="inline-block px-3 py-1 bg-purple-500/20 text-purple-300 rounded border border-purple-500/30 text-sm font-semibold">
-            {rider.phenotype}
-          </span>
-        ) : (
-          <span className="text-gray-500">-</span>
-        )}
-      </td>
-    </tr>
   )
 }

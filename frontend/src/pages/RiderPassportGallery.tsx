@@ -136,7 +136,7 @@ function MultiSelectDropdown<T extends string | number>({
   const isCategoryDropdown = label.includes('Category')
 
   return (
-    <div className="relative z-[500]" ref={dropdownRef}>
+    <div className="relative z-[9999]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-orange-400 bg-white text-gray-900 hover:bg-gray-50 transition-colors w-full flex items-center justify-between font-bold shadow-sm"
@@ -160,7 +160,7 @@ function MultiSelectDropdown<T extends string | number>({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[600] mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-[10000] mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {options.map((option) => (
             <label
               key={option.value}
@@ -865,7 +865,7 @@ export default function RiderPassportGallery() {
       {/* Card Deck - Mobile Optimized & Desktop Carousel */}
       <div className="max-w-full mx-auto px-4">
         {filteredRiders.length === 0 ? (
-          <div className="text-center text-white text-xl py-20">
+          <div className="text-center text-gray-700 text-xl py-20 font-semibold">
             Geen riders gevonden met deze filters.
           </div>
         ) : (
@@ -890,11 +890,7 @@ export default function RiderPassportGallery() {
             </div>
             
             {/* Desktop: State-of-the-art Horizontal Scroll */}
-            <div className="hidden md:block relative">
-              {/* Subtle shadow indicators */}
-              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900/50 to-transparent pointer-events-none z-10" />
-              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900/50 to-transparent pointer-events-none z-10" />
-              
+            <div className="hidden md:block">
               <div 
                 className="overflow-x-auto overflow-y-hidden pb-4 scroll-smooth"
                 style={{
