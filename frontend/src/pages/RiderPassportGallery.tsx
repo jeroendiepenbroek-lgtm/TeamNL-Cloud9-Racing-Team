@@ -134,7 +134,7 @@ function MultiSelectDropdown<T extends string | number>({
   const isCategoryDropdown = label.includes('Category')
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-50" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="px-3 py-2 border border-white/30 rounded-lg text-xs focus:ring-2 focus:ring-yellow-400 bg-white/15 text-white hover:bg-white/20 transition-colors w-full flex items-center justify-between font-bold"
@@ -353,10 +353,10 @@ export default function RiderPassportGallery() {
       key={rider.rider_id}
       className="perspective-1000 cursor-pointer snap-center flex-shrink-0"
       onClick={() => toggleFlip(rider.rider_id)}
-      style={{ perspective: '1000px', width: '280px' }}
+      style={{ perspective: '1000px', width: '300px' }}
     >
       <div
-        className={`relative w-full h-[460px] transition-transform duration-600 transform-style-3d ${
+        className={`relative w-full h-[520px] transition-transform duration-600 transform-style-3d ${
           isFlipped ? 'rotate-y-180' : ''
         }`}
         style={{
@@ -495,30 +495,27 @@ export default function RiderPassportGallery() {
 
         {/* BACK */}
         <div
-          className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2 flex flex-col"
+          className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col"
           style={{
             backfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)'
           }}
         >
-          <h3 className="text-yellow-400 text-sm font-black uppercase mb-1 tracking-wide text-center">Power Profile</h3>
+          <h3 className="text-yellow-400 text-base font-black uppercase mb-2 tracking-wide text-center">Power Profile</h3>
           
-          {/* Spider Chart - Smaller */}
-          <div className="flex justify-center mb-1">
+          {/* Spider Chart */}
+          <div className="flex justify-center mb-3">
             <canvas
               id={`spider-${rider.rider_id}`}
-              width="180"
-              height="160"
-              ref={(el) => {
-                if (el && isFlipped) {
-                  drawSpiderChart(`spider-${rider.rider_id}`, rider)
-                }
-              }}
+              width="240"
+              height="200"
+              className="spider-chart"
+              data-rider-id={rider.rider_id}
             />
           </div>
 
-          {/* Power Intervals Grid - Compact with all 7 intervals */}
-          <div className="grid grid-cols-2 gap-0.5 px-2 flex-1">
+          {/* Power Intervals Grid - Compact 2 columns */}
+          <div className="grid grid-cols-2 gap-1.5 px-3">
             {[
               { label: '5s', power: rider.power_5s, wkg: rider.power_5s_wkg },
               { label: '15s', power: rider.power_15s, wkg: rider.power_15s_wkg },
@@ -528,12 +525,12 @@ export default function RiderPassportGallery() {
               { label: '5m', power: rider.power_300s, wkg: rider.power_300s_wkg },
               { label: '20m', power: rider.power_1200s, wkg: rider.power_1200s_wkg }
             ].map(interval => (
-              <div key={interval.label} className="bg-white/10 border border-white/20 rounded px-1 py-0.5 text-center">
+              <div key={interval.label} className="bg-white/10 border border-white/20 rounded p-1.5 text-center">
                 <div className="text-[10px] text-yellow-400 font-bold leading-tight">{interval.label}</div>
-                <div className="text-[10px] font-black text-white leading-tight">
+                <div className="text-xs font-black text-white leading-tight mt-0.5">
                   {interval.power ? Math.round(interval.power) + 'W' : '-'}
                 </div>
-                <div className="text-[9px] text-yellow-400/80 font-bold leading-tight">
+                <div className="text-[10px] text-yellow-400/80 font-black leading-tight">
                   {interval.wkg ? interval.wkg.toFixed(1) : '-'}
                 </div>
               </div>
@@ -544,9 +541,26 @@ export default function RiderPassportGallery() {
     </div>
   )
 
-  const drawSpiderChart = (canvasId: string, rider: Rider) => {
+  // Draw spider charts voor alle geflipte cards
+  useEffect(() => {
+    // Short delay om te zorgen dat DOM is updated
+    const timer = setTimeout(() => {
+      flippedCards.forEach(riderId => {
+        const canvas = document.getElementById(`spider-${riderId}`) as HTMLCanvasElement
+        if (canvas) {
+          const rider = filteredRiders.find(r => r.rider_id === riderId)
+          if (rider) {
+            drawSpiderChartForRider(canvas, rider)
+          }
+        }
+      })
+    }, 50)
+    
+    return () => clearTimeout(timer)
+  }, [flippedCards, filteredRiders, tierMaxValues])
+
+  const drawSpiderChartForRider = (canvas: HTMLCanvasElement, rider: Rider) => {
     setTimeout(() => {
-      const canvas = document.getElementById(canvasId) as HTMLCanvasElement
       if (!canvas) return
 
       const ctx = canvas.getContext('2d')
