@@ -846,10 +846,10 @@ export default function RiderPassportGallery() {
               </div>
             </div>
             
-            {/* Desktop: Scrollable Card Deck with Top 5 Visible */}
+            {/* Desktop: Scrollable Card Deck - First 5 visible, rest behind */}
             <div className="hidden md:block overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
-              <div className="flex gap-4 px-8 py-4" style={{ minWidth: 'min-content', perspective: '1500px' }}>
-                {filteredRiders.map((rider, index) => {
+              <div className="flex gap-3 px-4" style={{ minWidth: 'min-content' }}>
+                {filteredRiders.map((rider) => {
                   const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
                   const categoryColor = getCategoryColor(category)
@@ -860,42 +860,7 @@ export default function RiderPassportGallery() {
                   const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
                   const isFlipped = flippedCards.has(rider.rider_id)
                   
-                  // Card deck effect: first 5 cards prominently visible, rest stacked behind
-                  let scale = 1
-                  let zIndex = 100 - index
-                  let opacity = 1
-                  let translateX = 0
-                  let rotateY = 0
-                  
-                  if (index < 5) {
-                    // First 5 cards: full size, slightly rotated for deck effect
-                    scale = 1 - (index * 0.03) // 1.0, 0.97, 0.94, 0.91, 0.88
-                    translateX = index * -30 // Stack with 30px overlap
-                    rotateY = index * 2 // Slight rotation for depth
-                    opacity = 1 - (index * 0.1) // Subtle fade
-                  } else {
-                    // Rest of cards: heavily stacked behind
-                    scale = 0.85
-                    translateX = -150 // Hidden behind the deck
-                    opacity = 0.3
-                    zIndex = 10
-                  }
-                  
-                  return (
-                    <div
-                      key={rider.rider_id}
-                      className="flex-shrink-0 transition-all duration-300"
-                      style={{
-                        transform: `scale(${scale}) translateX(${translateX}px) rotateY(${rotateY}deg)`,
-                        transformStyle: 'preserve-3d',
-                        zIndex,
-                        opacity,
-                        marginLeft: index === 0 ? '0' : '-80px'
-                      }}
-                    >
-                      {renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)}
-                    </div>
-                  )
+                  return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
                 })}
               </div>
             </div>
