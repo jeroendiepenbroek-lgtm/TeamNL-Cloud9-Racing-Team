@@ -847,10 +847,14 @@ export default function RiderPassportGallery() {
               </div>
             </div>
             
-            {/* Desktop: 3D Carousel - Center card forward, 2 left/right visible, rest fade */}
-            <div className="hidden md:block overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
-              <div className="flex gap-4 px-4 py-8" style={{ minWidth: 'min-content', perspective: '1500px' }}>
-                {filteredRiders.map((rider, index) => {
+            {/* Desktop: Horizontal Scroll - Center 5 sharp, edges fade */}
+            <div className="hidden md:block overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4 relative">
+              {/* Fade gradients on edges */}
+              <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none z-10" />
+              <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none z-10" />
+              
+              <div className="flex gap-4 px-4 py-4" style={{ minWidth: 'min-content' }}>
+                {filteredRiders.map((rider) => {
                   const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
                   const categoryColor = getCategoryColor(category)
@@ -861,47 +865,7 @@ export default function RiderPassportGallery() {
                   const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
                   const isFlipped = flippedCards.has(rider.rider_id)
                   
-                  // 3D carousel effect: center is index 2 (0-indexed: 0, 1, [2], 3, 4)
-                  const middleIndex = Math.floor(filteredRiders.length / 2)
-                  const distanceFromCenter = index - middleIndex
-                  const absDistance = Math.abs(distanceFromCenter)
-                  
-                  // Scale: center=1.0, ±1=0.92, ±2=0.85, >2=0.75
-                  let scale = 1.0
-                  if (absDistance === 1) scale = 0.92
-                  else if (absDistance === 2) scale = 0.85
-                  else if (absDistance > 2) scale = 0.75
-                  
-                  // Opacity: center=1.0, ±1=0.9, ±2=0.7, >2=0.4
-                  let opacity = 1.0
-                  if (absDistance === 1) opacity = 0.9
-                  else if (absDistance === 2) opacity = 0.7
-                  else if (absDistance > 2) opacity = 0.4
-                  
-                  // Z-index: higher for closer to center
-                  const zIndex = 100 - absDistance * 10
-                  
-                  // TranslateZ: center forward, sides backward
-                  const translateZ = absDistance === 0 ? 50 : (absDistance === 1 ? 0 : (absDistance === 2 ? -50 : -100))
-                  
-                  // RotateY: slight rotation for depth
-                  const rotateY = distanceFromCenter * 3
-                  
-                  return (
-                    <div
-                      key={rider.rider_id}
-                      className="flex-shrink-0 transition-all duration-500 ease-out"
-                      style={{
-                        transform: `scale(${scale}) translateZ(${translateZ}px) rotateY(${rotateY}deg)`,
-                        transformStyle: 'preserve-3d',
-                        opacity,
-                        zIndex,
-                        filter: absDistance > 2 ? 'blur(1px)' : 'none'
-                      }}
-                    >
-                      {renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)}
-                    </div>
-                  )
+                  return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
                 })}
               </div>
             </div>
