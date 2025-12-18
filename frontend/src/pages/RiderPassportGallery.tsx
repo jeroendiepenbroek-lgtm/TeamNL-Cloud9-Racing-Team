@@ -408,7 +408,8 @@ export default function RiderPassportGallery() {
               e.preventDefault()
               toggleFavorite(rider.rider_id)
             }}
-            className="absolute top-[72px] right-3 z-20 text-2xl transition-transform hover:scale-125 active:scale-95 bg-black/50 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-lg border-2 border-yellow-400"
+            className="absolute top-[72px] right-3 z-20 text-2xl transition-transform hover:scale-125 active:scale-95 bg-gradient-to-br from-yellow-500/30 to-orange-500/30 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-[0_0_15px_rgba(255,215,0,0.6)] border-2 border-yellow-400"
+            style={{ boxShadow: '0 0 20px rgba(255, 215, 0, 0.8), 0 0 10px rgba(255, 215, 0, 0.4)' }}
             title={isFavorite(rider.rider_id) ? 'Remove from favorites' : 'Add to favorites'}
           >
             {isFavorite(rider.rider_id) ? '⭐' : '☆'}
@@ -846,10 +847,10 @@ export default function RiderPassportGallery() {
               </div>
             </div>
             
-            {/* Desktop: Scrollable Card Deck - First 5 visible, rest behind */}
+            {/* Desktop: 3D Carousel - Center card forward, 2 left/right visible, rest fade */}
             <div className="hidden md:block overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
-              <div className="flex gap-3 px-4" style={{ minWidth: 'min-content' }}>
-                {filteredRiders.map((rider) => {
+              <div className="flex gap-4 px-4 py-8" style={{ minWidth: 'min-content', perspective: '1500px' }}>
+                {filteredRiders.map((rider, index) => {
                   const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
                   const categoryColor = getCategoryColor(category)
@@ -860,7 +861,47 @@ export default function RiderPassportGallery() {
                   const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
                   const isFlipped = flippedCards.has(rider.rider_id)
                   
-                  return renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)
+                  // 3D carousel effect: center is index 2 (0-indexed: 0, 1, [2], 3, 4)
+                  const middleIndex = Math.floor(filteredRiders.length / 2)
+                  const distanceFromCenter = index - middleIndex
+                  const absDistance = Math.abs(distanceFromCenter)
+                  
+                  // Scale: center=1.0, ±1=0.92, ±2=0.85, >2=0.75
+                  let scale = 1.0
+                  if (absDistance === 1) scale = 0.92
+                  else if (absDistance === 2) scale = 0.85
+                  else if (absDistance > 2) scale = 0.75
+                  
+                  // Opacity: center=1.0, ±1=0.9, ±2=0.7, >2=0.4
+                  let opacity = 1.0
+                  if (absDistance === 1) opacity = 0.9
+                  else if (absDistance === 2) opacity = 0.7
+                  else if (absDistance > 2) opacity = 0.4
+                  
+                  // Z-index: higher for closer to center
+                  const zIndex = 100 - absDistance * 10
+                  
+                  // TranslateZ: center forward, sides backward
+                  const translateZ = absDistance === 0 ? 50 : (absDistance === 1 ? 0 : (absDistance === 2 ? -50 : -100))
+                  
+                  // RotateY: slight rotation for depth
+                  const rotateY = distanceFromCenter * 3
+                  
+                  return (
+                    <div
+                      key={rider.rider_id}
+                      className="flex-shrink-0 transition-all duration-500 ease-out"
+                      style={{
+                        transform: `scale(${scale}) translateZ(${translateZ}px) rotateY(${rotateY}deg)`,
+                        transformStyle: 'preserve-3d',
+                        opacity,
+                        zIndex,
+                        filter: absDistance > 2 ? 'blur(1px)' : 'none'
+                      }}
+                    >
+                      {renderCard(rider, category, flagUrl, categoryColor, veloLive, velo30day, veloTier, heightCm, wkg, isFlipped)}
+                    </div>
+                  )
                 })}
               </div>
             </div>
