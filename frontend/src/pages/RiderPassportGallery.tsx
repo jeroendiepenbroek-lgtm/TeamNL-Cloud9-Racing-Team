@@ -438,53 +438,53 @@ export default function RiderPassportGallery() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-3 gap-1 mb-2 px-2">
-            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+          <div className="grid grid-cols-3 gap-2 mb-3 px-2">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
               <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">zFTP</div>
-              <div className="text-sm font-black text-white">{rider.racing_ftp || '-'}<span className="text-xs text-white/70">W</span></div>
+              <div className="text-lg font-black text-white">{rider.racing_ftp || '-'}<span className="text-sm text-white/70">W</span></div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
               <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Wgt</div>
-              <div className="text-sm font-black text-white">{rider.weight_kg || '-'}<span className="text-xs text-white/70">kg</span></div>
+              <div className="text-lg font-black text-white">{rider.weight_kg || '-'}<span className="text-sm text-white/70">kg</span></div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
               <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">W/kg</div>
-              <div className="text-sm font-black text-white">{wkg}</div>
+              <div className="text-lg font-black text-white">{wkg}</div>
             </div>
-            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
               <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Hgt</div>
-              <div className="text-sm font-black text-white">{heightCm}<span className="text-xs text-white/70">cm</span></div>
+              <div className="text-lg font-black text-white">{heightCm}<span className="text-sm text-white/70">cm</span></div>
             </div>
             <div></div>
-            <div className="bg-white/10 backdrop-blur-md rounded p-1 text-center border border-white/20">
+            <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
               <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Age</div>
-              <div className="text-sm font-black text-white">{rider.age || '-'}<span className="text-xs text-white/70">yr</span></div>
+              <div className="text-lg font-black text-white">{rider.age || '-'}<span className="text-sm text-white/70">yr</span></div>
             </div>
           </div>
 
           {/* Velo Ranks */}
-          <div className="grid grid-cols-2 gap-1 px-2 mb-2">
+          <div className="grid grid-cols-2 gap-2 px-2 mb-3">
             <div
-              className="rounded-lg p-1 text-center border-2"
+              className="rounded-lg p-2 text-center border-2"
               style={{ background: 'rgba(255,255,255,0.1)', borderColor: veloTier.color }}
             >
               <div className="text-xs font-bold uppercase" style={{ color: veloTier.color }}>Velo Live</div>
-              <div className="text-sm font-black text-white">{veloLive || '-'}</div>
+              <div className="text-lg font-black text-white">{veloLive || '-'}</div>
             </div>
             <div
-              className="rounded-lg p-1 text-center border-2"
+              className="rounded-lg p-2 text-center border-2"
               style={{ background: 'rgba(255,255,255,0.1)', borderColor: veloTier.color }}
             >
               <div className="text-xs font-bold uppercase" style={{ color: veloTier.color }}>Velo 30d</div>
-              <div className="text-sm font-black text-white">{velo30day || '-'}</div>
+              <div className="text-lg font-black text-white">{velo30day || '-'}</div>
             </div>
           </div>
 
           {/* Phenotype Bar - Moved below vELO */}
           {rider.phenotype && (
-            <div className="mx-2 mb-2 bg-white/10 rounded-lg p-2 border border-white/20 text-center">
+            <div className="mx-2 mb-3 bg-white/10 rounded-lg p-3 border border-white/20 text-center">
               <div className="text-xs text-yellow-400 font-bold uppercase">Phenotype</div>
-              <div className="text-sm font-bold text-white capitalize">{rider.phenotype}</div>
+              <div className="text-lg font-bold text-white capitalize">{rider.phenotype}</div>
             </div>
           )}
 
@@ -506,6 +506,14 @@ export default function RiderPassportGallery() {
           {/* Spider Chart */}
           <div className="flex justify-center mb-3">
             <canvas
+              ref={(canvas) => {
+                if (canvas && flippedCards.has(rider.rider_id)) {
+                  // Direct render via ref callback voor desktop reliability
+                  requestAnimationFrame(() => {
+                    drawSpiderChartForRider(canvas, rider)
+                  })
+                }
+              }}
               id={`spider-${rider.rider_id}`}
               width="240"
               height="200"
