@@ -828,9 +828,9 @@ export default function RiderPassportGallery() {
           </div>
         ) : (
           <>
-            {/* Mobile: Horizontal Snap Scroll */}
+            {/* Mobile: Horizontal Snap Scroll - Centered */}
             <div className="md:hidden overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
-              <div className="flex gap-4 snap-x snap-mandatory px-4" style={{ minWidth: 'min-content' }}>
+              <div className="flex gap-4 snap-x snap-mandatory px-4 justify-center" style={{ minWidth: 'min-content' }}>
                 {filteredRiders.map(rider => {
                   const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
@@ -860,7 +860,7 @@ export default function RiderPassportGallery() {
                   scrollbarColor: '#FACC15 #1F2937'
                 }}
               >
-                <div className="flex gap-6 px-4" style={{ minWidth: 'min-content' }}>
+                <div className="flex gap-6 px-4 justify-center" style={{ minWidth: 'min-content' }}>
                   {filteredRiders.map((rider) => {
                     const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                     const flagUrl = getFlagUrl(rider.country_alpha3)
