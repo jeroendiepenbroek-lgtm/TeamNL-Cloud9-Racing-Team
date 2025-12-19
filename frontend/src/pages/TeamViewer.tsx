@@ -206,19 +206,86 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {teams.map(team => (
-              <TeamCard key={team.team_id} team={team} />
-            ))}
-          </div>
+          <>
+            {/* Team Builder Integration - Professional Card Style */}
+            {showTeamBuilder && (
+              <div className="mb-8 bg-gradient-to-br from-orange-900/30 to-amber-950/30 backdrop-blur-xl rounded-2xl border-2 border-orange-500/50 shadow-2xl overflow-hidden animate-in slide-in-from-top-4 duration-500">
+                <div className="bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">Nieuw Team Bouwen</h3>
+                      <p className="text-orange-100 text-sm">Sleep riders naar je nieuwe team</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowTeamBuilder(false)}
+                    className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-all hover:rotate-90 duration-300"
+                    title="Sluiten"
+                  >
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="p-6">
+                  <div className="bg-gradient-to-br from-blue-900/40 to-indigo-950/40 backdrop-blur-sm rounded-xl border border-white/10 p-8 text-center">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-orange-500/20 border-2 border-orange-500/50 mb-4">
+                      <svg className="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-2xl font-bold text-white mb-2">Team Builder komt hier</h4>
+                    <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+                      De volledige Team Builder interface met drag & drop functionaliteit wordt hier geïntegreerd. 
+                      Sleep riders uit de sidebar, maak teams aan, en beheer je lineup - alles op één plek.
+                    </p>
+                    <div className="flex items-center justify-center gap-4">
+                      <a
+                        href="/integrated-team-builder"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                        Open Volledige Team Builder
+                      </a>
+                      <button
+                        onClick={() => setShowTeamBuilder(false)}
+                        className="px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/20 transition-all"
+                      >
+                        Later
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Team Cards List */}
+            <div className="space-y-6">
+              {teams.map(team => (
+                <TeamCard 
+                  key={team.team_id} 
+                  team={team}
+                  isFavorite={favoriteTeams.has(team.team_id)}
+                  toggleFavorite={toggleFavorite}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>
   )
 }
 
-// Team Card with Riders - Collapsible
-function TeamCard({ team }: { team: Team }) {
+// Team Card with Riders - Collapsible (Modernized with Favorite)
+function TeamCard({ team, isFavorite, toggleFavorite }: { team: Team; isFavorite: boolean; toggleFavorite: (teamId: number) => void }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('passports')
   const [passportSize, setPassportSize] = useState<'compact' | 'full'>('compact')
@@ -257,14 +324,25 @@ function TeamCard({ team }: { team: Team }) {
   }[team.team_status]
   
   return (
-    <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl overflow-hidden">
+    <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl hover:shadow-2xl hover:border-orange-400/50 transition-all duration-300 overflow-hidden group">
       {/* Team Header - Clickable */}
-      <div className="p-6">
+      <div className="p-6 relative">
+        {/* Favorite Star Button - Top Right Corner */}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleFavorite(team.team_id) }}
+          className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all hover:scale-110"
+          title={isFavorite ? 'Verwijder van favorieten' : 'Toevoegen aan favorieten'}
+        >
+          <span className={`text-2xl transition-transform ${isFavorite ? 'scale-110' : ''}`}>
+            {isFavorite ? '⭐' : '☆'}
+          </span>
+        </button>
+        
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg p-2 -m-2"
         >
-          <div className="text-left flex-1">
+          <div className="text-left flex-1 pr-12">
             <div className="flex items-center gap-3 mb-1">
               <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
               <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
