@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import TeamCard from '../components/TeamCard'
-import RiderPassportSidebar from '../components/RiderPassportSidebar'
-import TeamLineupModal from '../components/TeamLineupModal'
+import TeamCard from '../components/TeamCard.tsx'
+import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
+import TeamLineupModal from '../components/TeamLineupModal.tsx'
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
@@ -39,19 +39,6 @@ interface Team {
   valid_riders: number
   invalid_riders: number
   team_status: 'incomplete' | 'ready' | 'warning' | 'overfilled'
-}
-
-interface TeamLineup {
-  rider_id: number
-  name: string
-  full_name: string
-  avatar_url?: string
-  category: string
-  current_velo_rank?: number
-  racing_ftp?: number
-  zwift_official_racing_score?: number
-  phenotype?: string
-  weight_kg?: number
 }
 
 export default function IntegratedTeamBuilder() {
