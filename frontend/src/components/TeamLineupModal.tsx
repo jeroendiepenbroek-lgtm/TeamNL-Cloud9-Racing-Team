@@ -188,11 +188,17 @@ export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProp
                             <span 
                               className="px-2 py-1 rounded text-sm font-bold"
                               style={{
-                                backgroundColor: `${tier.color}40`,
+                                backgroundColor: tier.color,
                                 color: '#fff'
                               }}
+                              title={`${tier.name} Tier`}
                             >
-                              {tier.name} {rider.current_velo_rank}
+                              {tier.rank}
+                            </span>
+                          )}
+                          {rider.current_velo_rank && (
+                            <span className="text-sm text-cyan-400 font-bold">
+                              {Math.floor(rider.current_velo_rank)}
                             </span>
                           )}
                         </div>
