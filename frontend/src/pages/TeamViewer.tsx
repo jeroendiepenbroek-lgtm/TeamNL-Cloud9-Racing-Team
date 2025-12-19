@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
 // Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
@@ -54,6 +54,14 @@ interface LineupRider {
   racing_ftp?: number | null
   ftp_watts?: number | null // Legacy field name
   ftp_wkg?: number | null
+  // Power intervals for spider chart
+  power_5s?: number | null
+  power_15s?: number | null
+  power_30s?: number | null
+  power_60s?: number | null
+  power_120s?: number | null
+  power_300s?: number | null
+  power_1200s?: number | null
   weight_kg: number | null
   lineup_position: number
 }
@@ -275,14 +283,183 @@ function TeamCard({ team, viewMode, passportSize }: { team: Team; viewMode: 'mat
   )
 }
 
-// Riders Passports - Full Size Cards zoals in Passport Gallery
+// Riders Passports - Full Size Cards zoals in Passport Gallery met flip & spider chart
 function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
+  const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: any}>({})
+
   const getCategoryColor = (cat: string) => {
     const colors: {[key: string]: string} = {
       'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
       'C': '#0000FF', 'D': '#FF1493', 'E': '#808080'
     }
     return colors[cat] || '#666'
+  }
+
+  const toggleFlip = (riderId: number) => {
+    setFlippedCards(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(riderId)) {
+        newSet.delete(riderId)
+      } else {
+        newSet.add(riderId)
+      }
+      return newSet
+    })
+  }
+
+  // Calculate tier max values for spider chart normalization
+  useEffect(() => {
+    const maxByTier: {[tier: number]: any} = {}
+    
+    lineup.forEach(rider => {
+      const tierData = getVeloTier(rider.current_velo_rank || rider.velo_live || 0)
+      if (!tierData) return
+      const tier = tierData.rank
+      
+      if (!maxByTier[tier]) {
+        maxByTier[tier] = {
+          power_5s: 0, power_15s: 0, power_30s: 0, power_60s: 0,
+          power_120s: 0, power_300s: 0, power_1200s: 0
+        }
+      }
+      
+      // Update max values (note: lineup might not have all power fields, we'll use defaults if missing)
+      maxByTier[tier].power_5s = Math.max(maxByTier[tier].power_5s, rider.power_5s || 0)
+      maxByTier[tier].power_15s = Math.max(maxByTier[tier].power_15s, rider.power_15s || 0)
+      maxByTier[tier].power_30s = Math.max(maxByTier[tier].power_30s, rider.power_30s || 0)
+      maxByTier[tier].power_60s = Math.max(maxByTier[tier].power_60s, rider.power_60s || 0)
+      maxByTier[tier].power_120s = Math.max(maxByTier[tier].power_120s, rider.power_120s || 0)
+      maxByTier[tier].power_300s = Math.max(maxByTier[tier].power_300s, rider.power_300s || 0)
+      maxByTier[tier].power_1200s = Math.max(maxByTier[tier].power_1200s, rider.power_1200s || 0)
+    })
+    
+    setTierMaxValues(maxByTier)
+  }, [lineup])
+
+  // Draw spider charts for flipped cards
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = []
+    
+    ;[50, 150, 300].forEach(delay => {
+      const timer = setTimeout(() => {
+        flippedCards.forEach(riderId => {
+          const canvas = document.getElementById(`spider-${riderId}`) as HTMLCanvasElement
+          if (canvas) {
+            const rider = lineup.find(r => r.rider_id === riderId)
+            if (rider) {
+              drawSpiderChartForRider(canvas, rider)
+            }
+          }
+        })
+      }, delay)
+      timers.push(timer)
+    })
+    
+    return () => timers.forEach(t => clearTimeout(t))
+  }, [flippedCards, lineup, tierMaxValues])
+
+  const drawSpiderChartForRider = (canvas: HTMLCanvasElement, rider: LineupRider) => {
+    setTimeout(() => {
+      if (!canvas) return
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      const width = canvas.width
+      const height = canvas.height
+      const centerX = width / 2
+      const centerY = height / 2
+      const radius = Math.min(width, height) / 2 - 20
+
+      const tierData = getVeloTier(rider.current_velo_rank || rider.velo_live || 0)
+      if (!tierData) return
+      const tier = tierData.rank
+      const tierMax = tierMaxValues[tier] || {
+        power_5s: 1500, power_15s: 1200, power_30s: 1000, power_60s: 800,
+        power_120s: 600, power_300s: 500, power_1200s: 400
+      }
+
+      const powerData = [
+        { label: '5s', value: rider.power_5s || 0, max: tierMax.power_5s || 1 },
+        { label: '15s', value: rider.power_15s || 0, max: tierMax.power_15s || 1 },
+        { label: '30s', value: rider.power_30s || 0, max: tierMax.power_30s || 1 },
+        { label: '1m', value: rider.power_60s || 0, max: tierMax.power_60s || 1 },
+        { label: '2m', value: rider.power_120s || 0, max: tierMax.power_120s || 1 },
+        { label: '5m', value: rider.power_300s || 0, max: tierMax.power_300s || 1 },
+        { label: '20m', value: rider.power_1200s || 0, max: tierMax.power_1200s || 1 }
+      ]
+
+      const numPoints = powerData.length
+      const angleStep = (Math.PI * 2) / numPoints
+
+      ctx.clearRect(0, 0, width, height)
+
+      // Draw grid circles
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
+      ctx.lineWidth = 1
+      for (let i = 1; i <= 5; i++) {
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, (radius * i) / 5, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+
+      // Draw axes
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+      powerData.forEach((_, i) => {
+        const angle = i * angleStep - Math.PI / 2
+        const x = centerX + Math.cos(angle) * radius
+        const y = centerY + Math.sin(angle) * radius
+        ctx.beginPath()
+        ctx.moveTo(centerX, centerY)
+        ctx.lineTo(x, y)
+        ctx.stroke()
+
+        const labelX = centerX + Math.cos(angle) * (radius + 15)
+        const labelY = centerY + Math.sin(angle) * (radius + 15)
+        ctx.fillStyle = '#FFD700'
+        ctx.font = 'bold 10px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(powerData[i].label, labelX, labelY)
+      })
+
+      // Draw data polygon
+      ctx.beginPath()
+      powerData.forEach((data, i) => {
+        const angle = i * angleStep - Math.PI / 2
+        const normalized = Math.min((data.value || 0) / data.max, 1)
+        const r = radius * normalized
+        const x = centerX + Math.cos(angle) * r
+        const y = centerY + Math.sin(angle) * r
+        
+        if (i === 0) {
+          ctx.moveTo(x, y)
+        } else {
+          ctx.lineTo(x, y)
+        }
+      })
+      ctx.closePath()
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.3)'
+      ctx.fill()
+      ctx.strokeStyle = '#FFD700'
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      // Draw data points
+      powerData.forEach((data, i) => {
+        const angle = i * angleStep - Math.PI / 2
+        const normalized = Math.min((data.value || 0) / data.max, 1)
+        const r = radius * normalized
+        const x = centerX + Math.cos(angle) * r
+        const y = centerY + Math.sin(angle) * r
+        
+        ctx.beginPath()
+        ctx.arc(x, y, 4, 0, Math.PI * 2)
+        ctx.fillStyle = '#FFD700'
+        ctx.fill()
+      })
+    }, 100)
   }
 
   return (
@@ -295,14 +472,27 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
           const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
           const veloLive = Math.floor(rider.current_velo_rank || rider.velo_live || 0)
           const velo30day = Math.floor(rider.velo_30day || veloLive)
+          const isFlipped = flippedCards.has(rider.rider_id)
 
           return (
             <div
               key={rider.rider_id}
-              className="flex-shrink-0"
-              style={{ width: '300px' }}
+              className="flex-shrink-0 cursor-pointer"
+              style={{ width: '300px', perspective: '1000px' }}
+              onClick={() => toggleFlip(rider.rider_id)}
             >
-              <div className="w-full h-[520px] rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2">
+              <div 
+                className="relative w-full h-[520px] transition-transform duration-700"
+                style={{
+                  transformStyle: 'preserve-3d',
+                  transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+                }}
+              >
+                {/* VOORKANT */}
+                <div 
+                  className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2"
+                  style={{ backfaceVisibility: 'hidden' }}
+                >
                 {/* Header with tier badge and category */}
                 <div
                   className="h-16 rounded-t-lg relative mb-12"
@@ -408,7 +598,35 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                     <div className="text-base font-bold text-white">{rider.ftp_wkg}</div>
                   </div>
                 )}
+
+                {/* Flip Hint */}
+                <div className="absolute bottom-2 left-0 right-0 text-center">
+                  <span className="text-xs text-yellow-400 font-bold">🔄 Klik voor intervals</span>
+                </div>
               </div>
+
+              {/* ACHTERKANT - Spider Chart */}
+              <div
+                className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 to-indigo-950 border-4 border-yellow-400 shadow-xl p-4 flex items-center justify-center"
+                style={{
+                  backfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)'
+                }}
+              >
+                <div className="text-center">
+                  <h3 className="text-white font-bold text-lg mb-2">Power Intervals</h3>
+                  <canvas
+                    id={`spider-${rider.rider_id}`}
+                    width="240"
+                    height="240"
+                    className="mx-auto"
+                  />
+                  <div className="mt-2 text-yellow-400 text-xs font-bold">
+                    🔄 Klik om terug te keren
+                  </div>
+                </div>
+              </div>
+            </div>
             </div>
           )
         })}
