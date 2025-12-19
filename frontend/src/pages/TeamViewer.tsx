@@ -188,7 +188,8 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     }
   })
 
-  const riders = ridersData || []
+  // Riders kan array zijn OF object met riders property
+  const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
 
   const handleDragStart = (rider: any) => {
     setDraggedRider(rider)
