@@ -195,7 +195,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         ) : (
           <div className="space-y-6">
             {teams.map(team => (
-              <TeamCard key={team.team_id} team={team} viewMode={viewMode} passportSize={passportSize} />
+              <TeamCard key={team.team_id} team={team} />
             ))}
           </div>
         )}
@@ -205,8 +205,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
 }
 
 // Team Card with Riders - Collapsible
-function TeamCard({ team, viewMode, passportSize }: { team: Team; viewMode: 'matrix' | 'passports'; passportSize: 'compact' | 'full' }) {
+function TeamCard({ team }: { team: Team }) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('passports')
+  const [passportSize, setPassportSize] = useState<'compact' | 'full'>('compact')
   
   const { data: lineupData, isLoading } = useQuery({
     queryKey: ['team-lineup', team.team_id],
@@ -244,30 +246,87 @@ function TeamCard({ team, viewMode, passportSize }: { team: Team; viewMode: 'mat
   return (
     <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl overflow-hidden">
       {/* Team Header - Clickable */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-colors"
-      >
-        <div className="text-left flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
-            <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
-              {team.current_riders} riders
-            </span>
+      <div className="p-6">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg p-2 -m-2"
+        >
+          <div className="text-left flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
+              <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
+                {team.current_riders} riders
+              </span>
+            </div>
+            <p className="text-gray-400 text-sm">{team.competition_name}</p>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase">
+                {team.competition_type === 'velo' ? '🎯 vELO-based' : '📊 Category-based'}
+              </span>
+            </div>
           </div>
-          <p className="text-gray-400 text-sm">{team.competition_name}</p>
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-xs font-semibold text-gray-500 uppercase">
-              {team.competition_type === 'velo' ? '🎯 vELO-based' : '📊 Category-based'}
-            </span>
+          
+          {/* Expand/Collapse Icon */}
+          <div className="text-white text-2xl flex-shrink-0 ml-4">
+            {isExpanded ? '▼' : '▶'}
           </div>
-        </div>
-        
-        {/* Expand/Collapse Icon */}
-        <div className="text-white text-2xl flex-shrink-0 ml-4">
-          {isExpanded ? '▼' : '▶'}
-        </div>
-      </button>
+        </button>
+
+        {/* View Toggles - Only visible when expanded */}
+        {isExpanded && (
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-700">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode('matrix') }}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  viewMode === 'matrix'
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                📊 Matrix
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setViewMode('passports') }}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  viewMode === 'passports'
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                🎴 Passports
+              </button>
+            </div>
+
+            {/* Passport Size Toggle - Only show when passports mode */}
+            {viewMode === 'passports' && (
+              <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setPassportSize('compact') }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                    passportSize === 'compact'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  📋 Compact
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setPassportSize('full') }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                    passportSize === 'full'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'text-white/70 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  📄 Full
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
       
       {/* Riders Table - Collapsible */}
       {isExpanded && (
@@ -748,55 +807,50 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
           return (
             <div
               key={rider.rider_id}
-              className="flex-shrink-0 w-[220px] bg-gradient-to-br from-gray-900 to-blue-900 border-2 border-yellow-400 rounded-lg shadow-lg overflow-hidden"
+              className="flex-shrink-0 w-[220px] bg-gradient-to-br from-gray-900 to-blue-900 border-2 border-yellow-400 rounded-lg shadow-lg overflow-hidden relative"
             >
               {/* Header with tier and category */}
               <div
-                className="h-12 relative"
+                className="h-12 rounded-t-lg relative mb-8"
                 style={{
                   background: veloLiveTier 
                     ? `linear-gradient(135deg, ${veloLiveTier.color} 0%, ${veloLiveTier.border} 100%)` 
                     : '#666',
-                  clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 100%)'
+                  clipPath: 'polygon(0 0, 100% 0, 100% 85%, 0 100%)'
                 }}
               >
-                <div className="flex items-center justify-between px-2 py-1">
-                  {veloLiveTier && (
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center border-2"
-                      style={{ 
-                        background: veloLiveTier.color,
-                        borderColor: veloLiveTier.border
-                      }}
-                    >
-                      <span className="text-sm font-black text-white">{veloLiveTier.tier}</span>
-                    </div>
-                  )}
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white"
-                    style={{ background: categoryColor }}
-                  >
-                    <span className="text-sm font-black text-white">{category}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] font-bold text-gray-900">ZRS</div>
-                    <div className="text-sm font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
-                  </div>
+                <div
+                  className="absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center border-2"
+                  style={{ 
+                    background: veloLiveTier?.color || '#666',
+                    borderColor: veloLiveTier?.border || '#fff'
+                  }}
+                  title={veloLiveTier?.name}
+                >
+                  <span className="text-sm font-black text-white drop-shadow-lg">{veloLiveTier?.tier || '?'}</span>
+                </div>
+                <div
+                  className="absolute top-2 left-11 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white"
+                  style={{ background: categoryColor }}
+                >
+                  <span className="text-sm font-black text-white drop-shadow-lg">{category}</span>
+                </div>
+                <div className="absolute top-2 right-2 text-center">
+                  <div className="text-[10px] font-bold text-gray-900 uppercase">ZRS</div>
+                  <div className="text-sm font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
                 </div>
               </div>
 
               {/* Avatar */}
-              <div className="flex justify-center -mt-6 mb-2">
-                <img
-                  src={rider.avatar_url || 'https://via.placeholder.com/60?text=No+Avatar'}
-                  alt={rider.name}
-                  className="w-16 h-16 rounded-full border-2 border-yellow-400 object-cover bg-gray-700 shadow-lg"
-                  onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Avatar' }}
-                />
-              </div>
+              <img
+                src={rider.avatar_url || 'https://via.placeholder.com/60?text=No+Avatar'}
+                alt={rider.name}
+                className="absolute top-9 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-2 border-yellow-400 object-cover bg-gray-700 shadow-xl"
+                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Avatar' }}
+              />
 
               {/* Name */}
-              <div className="text-center px-2 mb-2">
+              <div className="text-center px-2 mb-2 mt-1">
                 <h3 className="text-xs font-bold text-white leading-tight truncate">
                   {rider.name || rider.full_name || 'Unknown'}
                 </h3>
