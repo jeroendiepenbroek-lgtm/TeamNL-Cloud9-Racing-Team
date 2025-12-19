@@ -53,6 +53,7 @@ interface LineupRider {
   zwift_official_racing_score: number | null
   racing_ftp?: number | null
   ftp_watts?: number | null // Legacy field name
+  ftp_wkg?: number | null
   weight_kg: number | null
   lineup_position: number
 }
@@ -63,6 +64,7 @@ interface TeamViewerProps {
 
 export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('matrix')
+  const [passportSize, setPassportSize] = useState<'compact' | 'full'>('full')
   
   // Fetch all teams
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
@@ -126,6 +128,20 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   </button>
                 </div>
                 
+                {/* Passport Size Dropdown - alleen zichtbaar in passport mode */}
+                {viewMode === 'passports' && (
+                  <div className="relative z-[9999]">
+                    <select
+                      value={passportSize}
+                      onChange={(e) => setPassportSize(e.target.value as 'compact' | 'full')}
+                      className="bg-white/10 backdrop-blur-lg text-white px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/20 hover:border-orange-500 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="compact">📦 Compact</option>
+                      <option value="full">🖼️ Full Size</option>
+                    </select>
+                  </div>
+                )}
+                
                 <button
                   onClick={() => window.location.pathname = '/team-builder'}
                   className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 backdrop-blur-lg rounded-lg border border-orange-400/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl"
@@ -161,7 +177,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         ) : (
           <div className="space-y-6">
             {teams.map(team => (
-              <TeamCard key={team.team_id} team={team} viewMode={viewMode} />
+              <TeamCard key={team.team_id} team={team} viewMode={viewMode} passportSize={passportSize} />
             ))}
           </div>
         )}
@@ -171,7 +187,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
 }
 
 // Team Card with Riders - Collapsible
-function TeamCard({ team, viewMode }: { team: Team; viewMode: 'matrix' | 'passports' }) {
+function TeamCard({ team, viewMode, passportSize }: { team: Team; viewMode: 'matrix' | 'passports'; passportSize: 'compact' | 'full' }) {
   const [isExpanded, setIsExpanded] = useState(false)
   
   const { data: lineupData, isLoading } = useQuery({
@@ -245,7 +261,11 @@ function TeamCard({ team, viewMode }: { team: Team; viewMode: 'matrix' | 'passpo
               <p>Nog geen riders toegevoegd</p>
             </div>
           ) : viewMode === 'passports' ? (
-            <RidersPassports lineup={lineup} />
+            passportSize === 'full' ? (
+              <RidersPassportsFull lineup={lineup} />
+            ) : (
+              <RidersPassportsCompact lineup={lineup} />
+            )
           ) : (
             <RidersTable lineup={lineup} />
           )}
@@ -255,22 +275,150 @@ function TeamCard({ team, viewMode }: { team: Team; viewMode: 'matrix' | 'passpo
   )
 }
 
-// Riders Passports - Horizontal Scroll with Mini Cards
-function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
-  // Tier to hex color mapping for inline styles
-  const tierColors: {[key: number]: {start: string, end: string, badge: string}} = {
-    1: { start: '#22D3EE', end: '#3B82F6', badge: '#06B6D4' }, // Cyan to Blue
-    2: { start: '#EF4444', end: '#EC4899', badge: '#DC2626' }, // Red to Pink
-    3: { start: '#34D399', end: '#16A34A', badge: '#10B981' }, // Emerald to Green
-    4: { start: '#60A5FA', end: '#4F46E5', badge: '#3B82F6' }, // Blue to Indigo
-    5: { start: '#A78BFA', end: '#7C3AED', badge: '#8B5CF6' }, // Purple to Violet
-    6: { start: '#CBD5E1', end: '#64748B', badge: '#94A3B8' }, // Slate
-    7: { start: '#FACC15', end: '#D97706', badge: '#EAB308' }, // Yellow to Amber
-    8: { start: '#D1D5DB', end: '#6B7280', badge: '#9CA3AF' }, // Gray
-    9: { start: '#FB923C', end: '#C2410C', badge: '#F97316' }, // Orange to Dark Orange
-    10: { start: '#EA580C', end: '#991B1B', badge: '#DC2626' }, // Orange to Red
+// Riders Passports - Full Size Cards zoals in Passport Gallery
+function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
+  const getCategoryColor = (cat: string) => {
+    const colors: {[key: string]: string} = {
+      'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
+      'C': '#0000FF', 'D': '#FF1493', 'E': '#808080'
+    }
+    return colors[cat] || '#666'
   }
 
+  return (
+    <div className="overflow-x-auto pb-4 scroll-smooth">
+      <div className="flex gap-6 px-2" style={{ minWidth: 'min-content' }}>
+        {lineup.map(rider => {
+          const veloLiveTier = getVeloTier(rider.current_velo_rank || rider.velo_live || null)
+          const category = rider.category || 'D'
+          const categoryColor = getCategoryColor(category)
+          const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+          const veloLive = Math.floor(rider.current_velo_rank || rider.velo_live || 0)
+          const velo30day = Math.floor(rider.velo_30day || veloLive)
+
+          return (
+            <div
+              key={rider.rider_id}
+              className="flex-shrink-0"
+              style={{ width: '300px' }}
+            >
+              <div className="w-full h-[520px] rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2">
+                {/* Header with tier badge and category */}
+                <div
+                  className="h-16 rounded-t-lg relative mb-12"
+                  style={{
+                    background: veloLiveTier 
+                      ? `linear-gradient(135deg, ${veloLiveTier.color} 0%, ${veloLiveTier.color} 100%)` 
+                      : '#666',
+                    clipPath: 'polygon(0 0, 100% 0, 100% 85%, 0 100%)'
+                  }}
+                >
+                  <div
+                    className="absolute top-2 left-3 w-10 h-10 rounded-full flex items-center justify-center border-3"
+                    style={{
+                      background: veloLiveTier?.color || '#666',
+                      borderColor: '#fff',
+                      borderWidth: '3px',
+                      borderStyle: 'solid'
+                    }}
+                    title={veloLiveTier?.name}
+                  >
+                    <span className="text-2xl font-black text-white drop-shadow-lg">{veloLiveTier?.rank || '?'}</span>
+                  </div>
+                  <div
+                    className="absolute top-2 left-14 w-10 h-10 rounded-full flex items-center justify-center border-3 border-white"
+                    style={{ background: categoryColor }}
+                  >
+                    <span className="text-2xl font-black text-white drop-shadow-lg">{category}</span>
+                  </div>
+                  <div className="absolute top-2 right-3 text-center">
+                    <div className="text-xs font-bold text-gray-900 uppercase">ZRS</div>
+                    <div className="text-lg font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
+                  </div>
+                </div>
+
+                {/* Avatar */}
+                <img
+                  src={rider.avatar_url || 'https://via.placeholder.com/100?text=No+Avatar'}
+                  alt={rider.name}
+                  className="absolute top-14 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-yellow-400 object-cover bg-gray-700 shadow-xl"
+                  style={{ position: 'relative', marginTop: '-3rem', marginBottom: '1rem', marginLeft: 'auto', marginRight: 'auto', display: 'block', transform: 'none', left: 0 }}
+                  onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Avatar' }}
+                />
+
+                {/* Name */}
+                <div className="text-center mb-2">
+                  <h2 className="text-sm font-black text-white uppercase drop-shadow-lg leading-tight px-1">
+                    {rider.name || rider.full_name || 'Unknown'}
+                  </h2>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-2 mb-3 px-2">
+                  <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
+                    <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">zFTP</div>
+                    <div className="text-lg font-black text-white">{rider.racing_ftp || '-'}<span className="text-sm text-white/70">W</span></div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
+                    <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Wgt</div>
+                    <div className="text-lg font-black text-white">{rider.weight_kg || '-'}<span className="text-sm text-white/70">kg</span></div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
+                    <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">W/kg</div>
+                    <div className="text-lg font-black text-white">{wkg}</div>
+                  </div>
+                </div>
+
+                {/* Velo Ranks */}
+                <div className="grid grid-cols-2 gap-2 px-2 mb-3">
+                  <div
+                    className="rounded-lg p-2 text-center border-2"
+                    style={{ 
+                      background: 'rgba(255,255,255,0.1)', 
+                      borderColor: veloLiveTier?.color || '#666'
+                    }}
+                  >
+                    <div className="text-xs font-bold uppercase" style={{ color: veloLiveTier?.color || '#999' }}>Velo Live</div>
+                    <div className="text-lg font-black text-white">{veloLive || '-'}</div>
+                  </div>
+                  <div
+                    className="rounded-lg p-2 text-center border-2"
+                    style={{ 
+                      background: 'rgba(255,255,255,0.1)', 
+                      borderColor: veloLiveTier?.color || '#666'
+                    }}
+                  >
+                    <div className="text-xs font-bold uppercase" style={{ color: veloLiveTier?.color || '#999' }}>Velo 30d</div>
+                    <div className="text-lg font-black text-white">{velo30day || '-'}</div>
+                  </div>
+                </div>
+
+                {/* Phenotype Bar */}
+                {rider.phenotype && (
+                  <div className="mx-2 mb-3 bg-white/10 rounded-lg p-3 border border-white/20 text-center">
+                    <div className="text-xs text-yellow-400 font-bold uppercase">Phenotype</div>
+                    <div className="text-lg font-bold text-white capitalize">{rider.phenotype}</div>
+                  </div>
+                )}
+
+                {/* Racing FTP W/kg Label */}
+                {rider.ftp_wkg && (
+                  <div className="mx-2 mb-2 bg-green-500/20 rounded-lg p-2 border border-green-500/30 text-center">
+                    <div className="text-xs text-green-400 font-bold uppercase">Racing FTP W/kg</div>
+                    <div className="text-base font-bold text-white">{rider.ftp_wkg}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// Riders Passports - Compact Size (mini cards 220px)
+function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
   const getCategoryColor = (cat: string) => {
     const colors: {[key: string]: string} = {
       'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
@@ -283,11 +431,10 @@ function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
     <div className="overflow-x-auto pb-4 scroll-smooth">
       <div className="flex gap-4 px-2" style={{ minWidth: 'min-content' }}>
         {lineup.map(rider => {
-          const veloLiveTier = getVeloTier(rider.velo_live || null)
+          const veloLiveTier = getVeloTier(rider.current_velo_rank || rider.velo_live || null)
           const category = rider.category || 'D'
           const categoryColor = getCategoryColor(category)
           const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
-          const tierColorMap = veloLiveTier ? tierColors[veloLiveTier.rank] : null
 
           return (
             <div
@@ -298,17 +445,17 @@ function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
               <div
                 className="h-12 relative"
                 style={{
-                  background: tierColorMap 
-                    ? `linear-gradient(135deg, ${tierColorMap.start} 0%, ${tierColorMap.end} 100%)` 
+                  background: veloLiveTier 
+                    ? `linear-gradient(135deg, ${veloLiveTier.color} 0%, ${veloLiveTier.color} 100%)` 
                     : '#666',
                   clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 100%)'
                 }}
               >
                 <div className="flex items-center justify-between px-2 py-1">
-                  {veloLiveTier && tierColorMap && (
+                  {veloLiveTier && (
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white"
-                      style={{ background: tierColorMap.badge }}
+                      style={{ background: veloLiveTier.color }}
                     >
                       <span className="text-sm font-black text-white">{veloLiveTier.rank}</span>
                     </div>
