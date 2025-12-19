@@ -145,7 +145,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   }
 
   // Fetch all riders voor team builder
-  const { data: ridersData } = useQuery({
+  const { data: ridersData, isLoading: ridersLoading } = useQuery({
     queryKey: ['riders'],
     queryFn: async () => {
       const res = await fetch('/api/riders')
@@ -314,34 +314,43 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                 </div>
 
                 <div className="flex">
-                  {/* Sidebar met Riders */}
-                  <RiderPassportSidebar
-                    riders={riders}
-                    isOpen={sidebarOpen}
-                    onDragStart={handleDragStart}
-                  />
+                  {ridersLoading ? (
+                    <div className="flex-1 text-center text-white py-20">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
+                      <p>Riders laden...</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Sidebar met Riders */}
+                      <RiderPassportSidebar
+                        riders={riders}
+                        isOpen={sidebarOpen}
+                        onDragStart={handleDragStart}
+                      />
 
-                  {/* Team Cards Grid */}
-                  <div className={`flex-1 p-6 transition-all duration-300`}>
-                    {teams.length === 0 ? (
-                      <div className="text-center text-white py-20">
-                        <p className="text-xl">Geen teams gevonden</p>
-                        <p className="text-slate-400 mt-2">Maak eerst teams aan via Team Manager</p>
+                      {/* Team Cards Grid */}
+                      <div className={`flex-1 p-6 transition-all duration-300`}>
+                        {teams.length === 0 ? (
+                          <div className="text-center text-white py-20">
+                            <p className="text-xl">Geen teams gevonden</p>
+                            <p className="text-slate-400 mt-2">Maak eerst teams aan via Team Manager</p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+                            {teams.map(team => (
+                              <TeamBuilderCard
+                                key={team.team_id}
+                                team={team}
+                                onDrop={handleDrop}
+                                onOpenDetail={handleOpenTeamDetail}
+                                isDragging={draggedRider !== null}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
-                        {teams.map(team => (
-                          <TeamBuilderCard
-                            key={team.team_id}
-                            team={team}
-                            onDrop={handleDrop}
-                            onOpenDetail={handleOpenTeamDetail}
-                            isDragging={draggedRider !== null}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
