@@ -124,11 +124,11 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
     <aside className="w-80 border-r border-slate-700/50 bg-slate-800/30 h-[calc(100vh-73px)] sticky top-[73px] flex flex-col">
       {/* Sticky Filter Section */}
       <div className="sticky top-0 z-20 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50">
-        <div className="p-4 space-y-4">
+        <div className="p-3 space-y-2">
           {/* Team Filter Indicator */}
           {selectedTeam && (
-            <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-3">
-              <div className="flex items-center justify-between mb-2">
+            <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-2">
+              <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold text-orange-400">🎯 FILTERING OP TEAM</span>
                 <button
                   onClick={onClearTeamFilter}
@@ -154,18 +154,18 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
               placeholder="🔍 Zoek rider..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-1.5 text-sm bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
             />
           </div>
 
           {/* Filters - Horizontal Layout */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex gap-2">
               {/* Category Filter */}
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                className="flex-1 px-2 py-1.5 text-sm bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
               >
                 <option value="">Alle Categorieën</option>
                 <option value="A+">A+</option>
@@ -179,7 +179,7 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
               <select
                 value={selectedTier}
                 onChange={(e) => setSelectedTier(e.target.value)}
-                className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                className="flex-1 px-2 py-1.5 text-sm bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
               >
                 <option value="">Alle vELO Tiers</option>
                 {VELO_TIERS.map(tier => (
@@ -189,27 +189,27 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
             </div>
 
             {/* Hide Assigned Toggle */}
-            <label className="flex items-center gap-2 text-sm text-white cursor-pointer">
+            <label className="flex items-center gap-2 text-xs text-white cursor-pointer">
               <input
                 type="checkbox"
                 checked={hideAssigned}
                 onChange={(e) => setHideAssigned(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-blue-500"
+                className="w-3.5 h-3.5 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-blue-500"
               />
               Verberg toegewezen riders
             </label>
           </div>
 
         {/* Stats */}
-          <div className="text-xs text-slate-400 pb-2">
+          <div className="text-xs text-slate-400 pb-1">
             {filteredRiders.length} riders gevonden
           </div>
         </div>
       </div>
 
       {/* Scrollable Rider Cards */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-2">
+      <div className="flex-1 overflow-y-auto p-3">
+        <div className="space-y-1.5">
           {filteredRiders.map(rider => {
             const tier = getVeloTier(rider.velo_live)
             const category = rider.zwiftracing_category || rider.zwift_official_category
@@ -224,30 +224,30 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
                 draggable
                 onDragStart={(e) => handleDragStart(e, rider)}
                 className={`
-                  p-3 rounded-lg border cursor-move transition-all
+                  p-2 rounded-lg border cursor-move transition-all
                   ${rider.team_id 
                     ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
                     : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20'
                   }
                 `}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {/* Avatar */}
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
                     {rider.avatar_url ? (
                       <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
+                      <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
                     )}
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{rider.full_name}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs font-bold text-white truncate">{rider.full_name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
                       {category && (
                         <span 
-                          className="text-xs px-1.5 py-0.5 text-white rounded font-bold"
+                          className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
                           style={{ backgroundColor: categoryColor }}
                         >
                           {category}
@@ -255,7 +255,7 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
                       )}
                       {tier && (
                         <span 
-                          className="text-xs px-2 py-0.5 rounded font-bold text-white"
+                          className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
                           style={{ 
                             backgroundColor: tier.color,
                           }}
@@ -265,7 +265,7 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
                       <span>FTP: {rider.racing_ftp || '-'}W</span>
                       <span>•</span>
                       <span>{ftpWkg} W/kg</span>
