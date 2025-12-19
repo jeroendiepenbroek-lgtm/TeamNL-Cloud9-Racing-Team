@@ -932,17 +932,17 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
                 </div>
               </div>
 
-              {/* Avatar */}
+              {/* Avatar - z-index 10 */}
               <img
                 src={rider.avatar_url || 'https://via.placeholder.com/60?text=No+Avatar'}
                 alt={rider.name}
-                className="absolute top-9 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-2 border-yellow-400 object-cover bg-gray-700 shadow-xl"
+                className="absolute top-9 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-2 border-yellow-400 object-cover bg-gray-700 shadow-xl z-10"
                 onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Avatar' }}
               />
 
-              {/* Name */}
-              <div className="text-center px-2 mb-2 mt-1">
-                <h3 className="text-xs font-bold text-white leading-tight truncate">
+              {/* Name - z-index 20 (voor avatar) */}
+              <div className="text-center px-2 mb-2 mt-1 relative z-20">
+                <h3 className="text-xs font-bold text-white leading-tight truncate drop-shadow-lg">
                   {rider.name || rider.full_name || 'Unknown'}
                 </h3>
               </div>
