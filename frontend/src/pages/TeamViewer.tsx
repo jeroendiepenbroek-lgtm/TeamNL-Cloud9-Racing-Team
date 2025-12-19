@@ -568,8 +568,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                 <img
                   src={rider.avatar_url || 'https://via.placeholder.com/100?text=No+Avatar'}
                   alt={rider.name}
-                  className="absolute top-14 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-yellow-400 object-cover bg-gray-700 shadow-xl"
-                  style={{ position: 'relative', marginTop: '-3rem', marginBottom: '1rem', marginLeft: 'auto', marginRight: 'auto', display: 'block', transform: 'none', left: 0 }}
+                  className="absolute top-12 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-yellow-400 object-cover bg-gray-700 shadow-xl"
                   onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Avatar' }}
                 />
 
@@ -646,7 +645,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                   </div>
                 )}
 
-                <div className="text-center text-xs text-yellow-400/80 uppercase tracking-wide font-bold mt-2">
+                <div className="text-center text-xs text-yellow-400/80 uppercase tracking-wide font-bold mt-auto mb-2">
                   🔄 Klik voor intervals
                 </div>
               </div>
