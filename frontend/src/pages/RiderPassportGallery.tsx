@@ -758,7 +758,7 @@ export default function RiderPassportGallery() {
               {/* Category Filter */}
               <div className="min-w-[140px] relative z-[99999]">
                 <MultiSelectDropdown
-                  label="ZP-category"
+                  label="Category"
                 options={[
                   { value: 'A+', label: 'A+' },
                   { value: 'A', label: 'A' },
