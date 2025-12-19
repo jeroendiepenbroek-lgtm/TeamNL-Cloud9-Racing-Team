@@ -158,45 +158,47 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
             />
           </div>
 
-          {/* Filters */}
-          <div className="space-y-2">
-          {/* Category Filter */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-          >
-            <option value="">Alle Categorieën</option>
-            <option value="A+">A+</option>
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-            <option value="D">D</option>
-          </select>
+          {/* Filters - Horizontal Layout */}
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              {/* Category Filter */}
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Alle Categorieën</option>
+                <option value="A+">A+</option>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
 
-          {/* Tier Filter */}
-          <select
-            value={selectedTier}
-            onChange={(e) => setSelectedTier(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-          >
-            <option value="">Alle vELO Tiers</option>
-            {VELO_TIERS.map(tier => (
-              <option key={tier.rank} value={tier.name}>{tier.name}</option>
-            ))}
-          </select>
+              {/* Tier Filter */}
+              <select
+                value={selectedTier}
+                onChange={(e) => setSelectedTier(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Alle vELO Tiers</option>
+                {VELO_TIERS.map(tier => (
+                  <option key={tier.rank} value={tier.name}>{tier.name}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Hide Assigned Toggle */}
-          <label className="flex items-center gap-2 text-sm text-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hideAssigned}
-              onChange={(e) => setHideAssigned(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-blue-500"
-            />
-            Verberg toegewezen riders
-          </label>
-        </div>
+            {/* Hide Assigned Toggle */}
+            <label className="flex items-center gap-2 text-sm text-white cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hideAssigned}
+                onChange={(e) => setHideAssigned(e.target.checked)}
+                className="w-4 h-4 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-blue-500"
+              />
+              Verberg toegewezen riders
+            </label>
+          </div>
 
         {/* Stats */}
           <div className="text-xs text-slate-400 pb-2">
@@ -212,7 +214,6 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
             const tier = getVeloTier(rider.velo_live)
             const category = rider.zwiftracing_category || rider.zwift_official_category
             const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
-            const veloRounded = Math.floor(rider.velo_live || 0)
             const ftpWkg = rider.racing_ftp && rider.weight_kg 
               ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
               : '-'
@@ -260,7 +261,7 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
                           }}
                           title={`${tier.name} Tier`}
                         >
-                          {tier.rank} {veloRounded}
+                          {tier.rank}
                         </span>
                       )}
                     </div>
