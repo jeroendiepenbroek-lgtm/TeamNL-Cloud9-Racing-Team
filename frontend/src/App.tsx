@@ -8,6 +8,7 @@ import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
 import RiderPassportGallery from './pages/RiderPassportGallery'
+import IntegratedTeamBuilder from './pages/IntegratedTeamBuilder'
 import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
@@ -71,6 +72,9 @@ function Navigation() {
               <Link to="/rider-passports" className="text-white hover:text-orange-400 transition font-semibold">
                 🎴 Rider Passports
               </Link>
+              <Link to="/integrated-team-builder" className="text-white hover:text-orange-400 transition font-semibold">
+                🏆 Team Builder
+              </Link>
               <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
                 ⚙️ Team Manager
               </Link>
@@ -103,6 +107,9 @@ function Navigation() {
               <Link to="/rider-passports" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 🎴 Rider Passports
               </Link>
+              <Link to="/integrated-team-builder" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                🏆 Team Builder
+              </Link>
               <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 ⚙️ Team Manager
               </Link>
@@ -124,6 +131,7 @@ function App() {
           <Route path="/" element={<TeamViewer />} />
           <Route path="/racing-matrix" element={<RacingMatrix />} />
           <Route path="/rider-passports" element={<RiderPassportGallery />} />
+          <Route path="/integrated-team-builder" element={<IntegratedTeamBuilder />} />
           <Route path="/events" element={<EventsDashboard />} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/team-manager" element={<TeamManager />} />

@@ -76,7 +76,7 @@ SELECT DISTINCT ON (COALESCE(zo.rider_id, zr.rider_id))
   -- Physical (prefer Official for accuracy, convert from grams to kg)
   COALESCE(zo.weight / 1000.0, zr.weight) AS weight_kg,
   COALESCE(zo.height, zr.height) AS height_cm,
-  COALESCE(zo.ftp, zr.ftp) AS ftp_watts,
+  zo.ftp AS ftp_watts,  -- ZFTP = Zwift Official FTP only
   
   -- Avatar & Visual (only from Official)
   zo.image_src AS avatar_url,
@@ -158,7 +158,9 @@ GRANT SELECT ON v_rider_complete TO anon;
 -- Belangrijk: Deze views moeten NIET afhankelijk zijn van v_rider_complete's team_id
 -- omdat dat duplicaten voorkomt. We joinen direct met de brontabellen.
 
-CREATE OR REPLACE VIEW v_team_lineups_full AS
+DROP VIEW IF EXISTS v_team_lineups_full;
+
+CREATE VIEW v_team_lineups_full AS
 SELECT 
   tl.id AS lineup_id,
   tl.team_id,
@@ -184,7 +186,6 @@ SELECT
   zr.velo_live AS current_velo_rank,
   zo.country_alpha3,
   zo.image_src AS avatar_url,
-  COALESCE(zo.weight / 1000.0, zr.weight) AS weight_kg,
   
   -- Validation snapshot
   tl.rider_category AS category_at_add,
@@ -197,10 +198,17 @@ SELECT
   tl.updated_at,
   ct.created_at AS team_created_at,
   
-  -- Racing metrics (ZFTP, ZRS, Phenotype) - NEW at end to avoid column position conflicts
-  COALESCE(zo.ftp, zr.ftp) AS ftp_watts,
-  zo.competition_racing_score AS zwift_racing_score,
-  zr.phenotype
+  -- Racing metrics (Racing FTP, ZRS, Phenotype, Weight) - NEW at end to avoid column position conflicts
+  zr.ftp AS racing_ftp,  -- ZwiftRacing FTP (zoals in Performance Matrix)
+  zo.competition_racing_score AS zwift_official_racing_score,  -- ZRS = Zwift Racing Score
+  zr.phenotype,
+  COALESCE(zo.weight / 1000.0, zr.weight) AS weight_kg,  -- Voor W/kg berekening
+  -- W/kg calculated
+  CASE 
+    WHEN zr.ftp IS NOT NULL AND COALESCE(zo.weight / 1000.0, zr.weight) > 0 
+    THEN ROUND((zr.ftp::NUMERIC / COALESCE(zo.weight / 1000.0, zr.weight)), 2)
+    ELSE NULL
+  END AS ftp_wkg
   
 FROM team_lineups tl
 JOIN competition_teams ct ON tl.team_id = ct.id
@@ -212,7 +220,9 @@ ORDER BY ct.team_name, tl.lineup_position NULLS LAST;
 GRANT SELECT ON v_team_lineups_full TO authenticated;
 GRANT SELECT ON v_team_lineups_full TO anon;
 
-CREATE OR REPLACE VIEW v_team_summary AS
+DROP VIEW IF EXISTS v_team_summary;
+
+CREATE VIEW v_team_summary AS
 SELECT 
   ct.id AS team_id,
   ct.team_name,
