@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
 import TeamBuilderCard from '../components/TeamCard.tsx'
+import { TeamCreationModal } from '../components/TeamCreationModal.tsx'
 
 // Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
 const CATEGORY_COLORS = {
@@ -94,6 +95,8 @@ interface TeamViewerProps {
 
 export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [showTeamBuilder, setShowTeamBuilder] = useState(false)
+  const [showTeamCreationModal, setShowTeamCreationModal] = useState(false)
+  const [selectedTeamForFiltering, setSelectedTeamForFiltering] = useState<number | null>(null)
   const [favoriteTeams, setFavoriteTeams] = useState<Set<number>>(() => {
     // Load favorites from localStorage
     const stored = localStorage.getItem('favoriteTeams')
@@ -334,6 +337,15 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
+                      onClick={() => setShowTeamCreationModal(true)}
+                      className="px-4 py-2 bg-white hover:bg-white/90 text-orange-600 rounded-lg font-bold border border-white shadow-lg transition-all text-sm flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Nieuw Team
+                    </button>
+                    <button
                       onClick={() => setSidebarOpen(!sidebarOpen)}
                       className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/20 transition-all text-sm"
                     >
@@ -364,35 +376,12 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                         riders={riders}
                         isOpen={sidebarOpen}
                         onDragStart={handleDragStart}
+                        selectedTeam={selectedTeamForFiltering ? teams.find(t => t.team_id === selectedTeamForFiltering) : null}
+                        onClearTeamFilter={() => setSelectedTeamForFiltering(null)}
                       />
 
                       {/* Team Cards Grid */}
                       <div className={`flex-1 p-6 transition-all duration-300`}>
-                        {/* Team Management Actions Bar */}
-                        <div className="mb-6 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-xl border border-blue-500/30 p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                              </svg>
-                              <div>
-                                <h4 className="text-white font-bold text-sm">Team Beheer</h4>
-                                <p className="text-slate-400 text-xs">Maak nieuwe teams aan of verwijder bestaande teams</p>
-                              </div>
-                            </div>
-                            <a
-                              href="/team-manager"
-                              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              Team Manager
-                            </a>
-                          </div>
-                        </div>
-
                         {teams.length === 0 ? (
                           <div className="text-center text-white py-20">
                             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-500/50 mb-4">
@@ -401,16 +390,16 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                               </svg>
                             </div>
                             <p className="text-xl font-bold mb-2">Geen teams gevonden</p>
-                            <p className="text-slate-400 mb-6">Maak eerst teams aan via Team Manager</p>
-                            <a
-                              href="/team-manager"
-                              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                            <p className="text-slate-400 mb-6">Klik op 'Nieuw Team' om te beginnen</p>
+                            <button
+                              onClick={() => setShowTeamCreationModal(true)}
+                              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transition-all"
                             >
                               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
                               Nieuw Team Aanmaken
-                            </a>
+                            </button>
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
@@ -421,6 +410,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                                 onDrop={handleDrop}
                                 onOpenDetail={handleOpenTeamDetail}
                                 onDelete={() => handleDeleteTeam(team.team_id, team.team_name)}
+                                onSelectForFiltering={(teamId) => {
+                                  setSelectedTeamForFiltering(teamId === selectedTeamForFiltering ? null : teamId)
+                                }}
+                                isSelectedForFiltering={team.team_id === selectedTeamForFiltering}
                                 isDragging={draggedRider !== null}
                               />
                             ))}
@@ -455,6 +448,16 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           onClose={handleCloseTeamDetail}
         />
       )}
+
+      {/* Team Creation Modal */}
+      <TeamCreationModal
+        isOpen={showTeamCreationModal}
+        onClose={() => setShowTeamCreationModal(false)}
+        onTeamCreated={() => {
+          queryClient.invalidateQueries({ queryKey: ['teams'] })
+          setShowTeamCreationModal(false)
+        }}
+      />
     </div>
   )
 }

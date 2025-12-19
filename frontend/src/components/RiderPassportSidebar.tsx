@@ -17,10 +17,22 @@ interface Rider {
   team_name?: string | null
 }
 
+interface Team {
+  team_id: number
+  team_name: string
+  competition_type: 'velo' | 'category' | 'velo-based' | 'category-based'
+  velo_min_rank?: number
+  velo_max_rank?: number
+  velo_max_spread?: number
+  allowed_categories?: string[]
+}
+
 interface RiderPassportSidebarProps {
   riders: Rider[]
   isOpen: boolean
   onDragStart: (rider: Rider) => void
+  selectedTeam?: Team | null
+  onClearTeamFilter?: () => void
 }
 
 const VELO_TIERS = [
@@ -52,7 +64,7 @@ const getVeloTier = (rating: number | null) => {
   )
 }
 
-export default function RiderPassportSidebar({ riders, isOpen, onDragStart }: RiderPassportSidebarProps) {
+export default function RiderPassportSidebar({ riders, isOpen, onDragStart, selectedTeam, onClearTeamFilter }: RiderPassportSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedTier, setSelectedTier] = useState<string>('')
@@ -80,9 +92,26 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart }: Ri
       // Hide assigned riders
       if (hideAssigned && rider.team_id) return false
       
+      // Team-based filtering (US4)
+      if (selectedTeam) {
+        const category = rider.zwiftracing_category || rider.zwift_official_category
+        const veloRank = getVeloTier(rider.velo_live)?.rank
+        
+        if (selectedTeam.competition_type === 'velo' || selectedTeam.competition_type === 'velo-based') {
+          // vELO-based filtering
+          if (selectedTeam.velo_min_rank && veloRank && veloRank < selectedTeam.velo_min_rank) return false
+          if (selectedTeam.velo_max_rank && veloRank && veloRank > selectedTeam.velo_max_rank) return false
+        } else if (selectedTeam.competition_type === 'category' || selectedTeam.competition_type === 'category-based') {
+          // Category-based filtering
+          if (selectedTeam.allowed_categories && category && !selectedTeam.allowed_categories.includes(category)) {
+            return false
+          }
+        }
+      }
+      
       return true
     })
-  }, [riders, searchQuery, selectedCategory, selectedTier, hideAssigned])
+  }, [riders, searchQuery, selectedCategory, selectedTier, hideAssigned, selectedTeam])
 
   const handleDragStart = (e: React.DragEvent, rider: Rider) => {
     e.dataTransfer.effectAllowed = 'copy'
@@ -92,21 +121,45 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart }: Ri
   if (!isOpen) return null
 
   return (
-    <aside className="w-80 border-r border-slate-700/50 bg-slate-800/30 overflow-y-auto h-[calc(100vh-73px)] sticky top-[73px]">
-      <div className="p-4 space-y-4">
-        {/* Search */}
-        <div>
-          <input
-            type="text"
-            placeholder="🔍 Zoek rider..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
-          />
-        </div>
+    <aside className="w-80 border-r border-slate-700/50 bg-slate-800/30 h-[calc(100vh-73px)] sticky top-[73px] flex flex-col">
+      {/* Sticky Filter Section */}
+      <div className="sticky top-0 z-20 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50">
+        <div className="p-4 space-y-4">
+          {/* Team Filter Indicator */}
+          {selectedTeam && (
+            <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-orange-400">🎯 FILTERING OP TEAM</span>
+                <button
+                  onClick={onClearTeamFilter}
+                  className="text-orange-400 hover:text-orange-300 text-xs font-semibold"
+                >
+                  ✕ Wis filter
+                </button>
+              </div>
+              <div className="text-sm font-semibold text-white">{selectedTeam.team_name}</div>
+              <div className="text-xs text-orange-200 mt-1">
+                {selectedTeam.competition_type === 'velo' || selectedTeam.competition_type === 'velo-based' 
+                  ? `vELO Tier ${selectedTeam.velo_min_rank}-${selectedTeam.velo_max_rank}` 
+                  : `Categorieën: ${selectedTeam.allowed_categories?.join(', ')}`
+                }
+              </div>
+            </div>
+          )}
 
-        {/* Filters */}
-        <div className="space-y-2">
+          {/* Search */}
+          <div>
+            <input
+              type="text"
+              placeholder="🔍 Zoek rider..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="space-y-2">
           {/* Category Filter */}
           <select
             value={selectedCategory}
@@ -146,11 +199,14 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart }: Ri
         </div>
 
         {/* Stats */}
-        <div className="text-xs text-slate-400 pb-2 border-b border-slate-700/50">
-          {filteredRiders.length} riders gevonden
+          <div className="text-xs text-slate-400 pb-2">
+            {filteredRiders.length} riders gevonden
+          </div>
         </div>
+      </div>
 
-        {/* Rider Cards */}
+      {/* Scrollable Rider Cards */}
+      <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-2">
           {filteredRiders.map(rider => {
             const tier = getVeloTier(rider.velo_live)

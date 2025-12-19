@@ -33,6 +33,8 @@ interface TeamCardProps {
   onDrop: (teamId: number) => void
   onOpenDetail: (teamId: number) => void
   onDelete?: () => void
+  onSelectForFiltering?: (teamId: number) => void
+  isSelectedForFiltering?: boolean
   isDragging: boolean
 }
 
@@ -50,7 +52,7 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, isDragging }: TeamCardProps) {
+export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging }: TeamCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
 
   // Fetch team lineup
@@ -90,18 +92,30 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, isDragg
         ${isDragOver && canAddMore ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
         ${isDragOver && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
         ${isDragging && canAddMore ? 'hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30' : ''}
+        ${isSelectedForFiltering ? 'ring-4 ring-orange-500 border-orange-500' : ''}
       `}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       {/* Header */}
-      <div className="p-4 border-b border-slate-700/50 bg-slate-900/50">
+      <div 
+        className="p-4 border-b border-slate-700/50 bg-slate-900/50 cursor-pointer hover:bg-slate-900/70 transition-colors"
+        onClick={() => onSelectForFiltering?.(team.team_id)}
+        title="Klik om riders te filteren voor dit team"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-bold text-white truncate">
-              {team.team_name}
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-white truncate">
+                {team.team_name}
+              </h3>
+              {isSelectedForFiltering && (
+                <span className="text-xs font-bold px-2 py-0.5 bg-orange-500 text-white rounded-full animate-pulse">
+                  FILTERING
+                </span>
+              )}
+            </div>
             <p className="text-sm text-slate-400">{team.competition_name}</p>
           </div>
           <div className="flex items-center gap-2">
