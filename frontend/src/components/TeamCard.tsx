@@ -180,7 +180,7 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
                 {/* Mini Passport Card */}
                 <div className="absolute inset-0 rounded-lg overflow-hidden border border-slate-600 bg-slate-900/80">
                   {/* Avatar */}
-                  <div className="h-1/2 bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center">
+                  <div className="h-2/5 bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center">
                     {rider.avatar_url ? (
                       <img 
                         src={rider.avatar_url} 
@@ -188,22 +188,32 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-3xl">👤</span>
+                      <span className="text-2xl">👤</span>
                     )}
                   </div>
                   
                   {/* Info */}
-                  <div className="h-1/2 p-1.5 flex flex-col justify-between">
+                  <div className="h-3/5 p-1.5 flex flex-col justify-between">
                     <p className="text-[10px] font-bold text-white leading-tight truncate">
                       {rider.name}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] px-1.5 py-0.5 bg-blue-600 text-white rounded">
+                      <span 
+                        className="text-[9px] px-1.5 py-0.5 text-white rounded font-bold"
+                        style={{ 
+                          backgroundColor: rider.category === 'A+' || rider.category === 'A' ? '#FF0000' 
+                            : rider.category === 'B' ? '#4CAF50' 
+                            : rider.category === 'C' ? '#0000FF' 
+                            : rider.category === 'D' ? '#FF1493' 
+                            : rider.category === 'E' ? '#808080' 
+                            : '#666666' 
+                        }}
+                      >
                         {rider.category || 'N/A'}
                       </span>
                       {rider.current_velo_rank && (
                         <span className="text-[9px] text-cyan-400 font-bold">
-                          {rider.current_velo_rank}
+                          {Math.floor(rider.current_velo_rank)}
                         </span>
                       )}
                     </div>
