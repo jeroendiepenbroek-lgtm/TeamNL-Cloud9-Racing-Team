@@ -798,7 +798,7 @@ export default function RiderPassportGallery() {
               </div>
 
               {/* Team Filter */}
-              <div className="min-w-[160px]">
+              <div className="min-w-[160px] relative z-[99999]">
                 <MultiSelectDropdown
                   label="Team"
                   options={teams.map(team => ({
