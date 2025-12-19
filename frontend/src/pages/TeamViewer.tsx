@@ -257,14 +257,27 @@ function TeamCard({ team, viewMode }: { team: Team; viewMode: 'matrix' | 'passpo
 
 // Riders Passports - Horizontal Scroll with Mini Cards
 function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
-  const getVeloTier = (rating: number | null) => {
-    if (!rating) return null
-    return VELO_TIERS.find(tier => 
-      rating >= tier.min && (!tier.max || rating < tier.max)
-    )
+  // Tier to hex color mapping for inline styles
+  const tierColors: {[key: number]: {start: string, end: string, badge: string}} = {
+    1: { start: '#22D3EE', end: '#3B82F6', badge: '#06B6D4' }, // Cyan to Blue
+    2: { start: '#EF4444', end: '#EC4899', badge: '#DC2626' }, // Red to Pink
+    3: { start: '#34D399', end: '#16A34A', badge: '#10B981' }, // Emerald to Green
+    4: { start: '#60A5FA', end: '#4F46E5', badge: '#3B82F6' }, // Blue to Indigo
+    5: { start: '#A78BFA', end: '#7C3AED', badge: '#8B5CF6' }, // Purple to Violet
+    6: { start: '#CBD5E1', end: '#64748B', badge: '#94A3B8' }, // Slate
+    7: { start: '#FACC15', end: '#D97706', badge: '#EAB308' }, // Yellow to Amber
+    8: { start: '#D1D5DB', end: '#6B7280', badge: '#9CA3AF' }, // Gray
+    9: { start: '#FB923C', end: '#C2410C', badge: '#F97316' }, // Orange to Dark Orange
+    10: { start: '#EA580C', end: '#991B1B', badge: '#DC2626' }, // Orange to Red
   }
 
-
+  const getCategoryColor = (cat: string) => {
+    const colors: {[key: string]: string} = {
+      'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
+      'C': '#0000FF', 'D': '#FF1493', 'E': '#808080'
+    }
+    return colors[cat] || '#666'
+  }
 
   return (
     <div className="overflow-x-auto pb-4 scroll-smooth">
@@ -272,12 +285,9 @@ function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
         {lineup.map(rider => {
           const veloLiveTier = getVeloTier(rider.velo_live || null)
           const category = rider.category || 'D'
-          const categoryColors: {[key: string]: string} = {
-            'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
-            'C': '#0000FF', 'D': '#FF1493', 'E': '#808080'
-          }
-          const categoryColor = categoryColors[category] || '#666'
+          const categoryColor = getCategoryColor(category)
           const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
+          const tierColorMap = veloLiveTier ? tierColors[veloLiveTier.rank] : null
 
           return (
             <div
@@ -288,15 +298,17 @@ function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
               <div
                 className="h-12 relative"
                 style={{
-                  background: veloLiveTier ? `linear-gradient(135deg, ${veloLiveTier.color.split(' ')[0].replace('from-', '')} 0%, ${veloLiveTier.color.split(' ')[2].replace('to-', '')} 100%)` : '#666',
+                  background: tierColorMap 
+                    ? `linear-gradient(135deg, ${tierColorMap.start} 0%, ${tierColorMap.end} 100%)` 
+                    : '#666',
                   clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 100%)'
                 }}
               >
                 <div className="flex items-center justify-between px-2 py-1">
-                  {veloLiveTier && (
+                  {veloLiveTier && tierColorMap && (
                     <div
                       className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white"
-                      style={{ background: veloLiveTier.color.split(' ')[0].replace('from-', '') }}
+                      style={{ background: tierColorMap.badge }}
                     >
                       <span className="text-sm font-black text-white">{veloLiveTier.rank}</span>
                     </div>
@@ -308,8 +320,8 @@ function RidersPassports({ lineup }: { lineup: LineupRider[] }) {
                     <span className="text-sm font-black text-white">{category}</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-bold text-gray-900">ZRS</div>
-                    <div className="text-sm font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
+                    <div className="text-[10px] font-bold text-white">ZRS</div>
+                    <div className="text-sm font-black text-white">{rider.zwift_official_racing_score || '-'}</div>
                   </div>
                 </div>
               </div>
