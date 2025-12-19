@@ -54,6 +54,10 @@ interface LineupRider {
   racing_ftp?: number | null
   ftp_watts?: number | null // Legacy field name
   ftp_wkg?: number | null
+  weight_kg?: number | null
+  height_cm?: number | null
+  age?: number | null
+  country_alpha3?: string | null
   // Power intervals for spider chart
   power_5s?: number | null
   power_15s?: number | null
@@ -62,8 +66,14 @@ interface LineupRider {
   power_120s?: number | null
   power_300s?: number | null
   power_1200s?: number | null
-  weight_kg: number | null
-  lineup_position: number
+  power_5s_wkg?: number | null
+  power_15s_wkg?: number | null
+  power_30s_wkg?: number | null
+  power_60s_wkg?: number | null
+  power_120s_wkg?: number | null
+  power_300s_wkg?: number | null
+  power_1200s_wkg?: number | null
+  lineup_position?: number
 }
 
 interface TeamViewerProps {
@@ -283,7 +293,7 @@ function TeamCard({ team, viewMode, passportSize }: { team: Team; viewMode: 'mat
   )
 }
 
-// Riders Passports - Full Size Cards zoals in Passport Gallery met flip & spider chart
+// Riders Passports - Full Size Cards - EXACT COPY van Passport Gallery met flip & spider chart
 function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
   const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: any}>({})
@@ -294,6 +304,16 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
       'C': '#0000FF', 'D': '#FF1493', 'E': '#808080'
     }
     return colors[cat] || '#666'
+  }
+
+  const getFlagUrl = (countryCode: string) => {
+    const alpha3ToAlpha2: { [key: string]: string} = {
+      'NLD': 'nl', 'BEL': 'be', 'GBR': 'gb', 'USA': 'us', 'DEU': 'de',
+      'FRA': 'fr', 'ITA': 'it', 'ESP': 'es', 'AUS': 'au', 'CAN': 'ca',
+      'DNK': 'dk', 'SWE': 'se', 'NOR': 'no', 'FIN': 'fi', 'POL': 'pl'
+    }
+    const alpha2 = alpha3ToAlpha2[countryCode?.toUpperCase()]
+    return alpha2 ? `https://flagcdn.com/w80/${alpha2}.png` : null
   }
 
   const toggleFlip = (riderId: number) => {
