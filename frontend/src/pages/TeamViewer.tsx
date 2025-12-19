@@ -298,6 +298,21 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
   const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: any}>({})
 
+  // Helper function voor vELO tiers (EXACT zoals RiderPassportGallery.tsx)
+  const getVeloTier = (veloLive: number | null) => {
+    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+    if (veloLive >= 2200) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' }
+    if (veloLive >= 1900) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' }
+    if (veloLive >= 1650) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' }
+    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680', emoji: '💙' }
+    if (veloLive >= 1300) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' }
+    if (veloLive >= 1150) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' }
+    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700', emoji: '🥇' }
+    if (veloLive >= 850) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' }
+    if (veloLive >= 650) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' }
+    return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+  }
+
   const getCategoryColor = (cat: string) => {
     const colors: {[key: string]: string} = {
       'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
@@ -333,9 +348,9 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
     const maxByTier: {[tier: number]: any} = {}
     
     lineup.forEach(rider => {
-      const tierData = getVeloTier(rider.current_velo_rank || rider.velo_live || 0)
+      const tierData = getVeloTier(rider.current_velo_rank || rider.velo_live || null)
       if (!tierData) return
-      const tier = tierData.rank
+      const tier = tierData.tier
       
       if (!maxByTier[tier]) {
         maxByTier[tier] = {
@@ -392,9 +407,9 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
       const centerY = height / 2
       const radius = Math.min(width, height) / 2 - 20
 
-      const tierData = getVeloTier(rider.current_velo_rank || rider.velo_live || 0)
+      const tierData = getVeloTier(rider.current_velo_rank || rider.velo_live || null)
       if (!tierData) return
-      const tier = tierData.rank
+      const tier = tierData.tier
       const tierMax = tierMaxValues[tier] || {
         power_5s: 1500, power_15s: 1200, power_30s: 1000, power_60s: 800,
         power_120s: 600, power_300s: 500, power_1200s: 400
@@ -520,7 +535,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                   className="h-16 rounded-t-lg relative mb-12"
                   style={{
                     background: veloLiveTier 
-                      ? `linear-gradient(135deg, ${veloLiveTier.color} 0%, ${veloLiveTier.color} 100%)` 
+                      ? `linear-gradient(135deg, ${veloLiveTier.color} 0%, ${veloLiveTier.border} 100%)` 
                       : '#666',
                     clipPath: 'polygon(0 0, 100% 0, 100% 85%, 0 100%)'
                   }}
@@ -529,13 +544,13 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                     className="absolute top-2 left-3 w-10 h-10 rounded-full flex items-center justify-center border-3"
                     style={{
                       background: veloLiveTier?.color || '#666',
-                      borderColor: '#fff',
+                      borderColor: veloLiveTier?.border || '#fff',
                       borderWidth: '3px',
                       borderStyle: 'solid'
                     }}
                     title={veloLiveTier?.name}
                   >
-                    <span className="text-2xl font-black text-white drop-shadow-lg">{veloLiveTier?.rank || '?'}</span>
+                    <span className="text-2xl font-black text-white drop-shadow-lg">{veloLiveTier?.tier || '?'}</span>
                   </div>
                   <div
                     className="absolute top-2 left-14 w-10 h-10 rounded-full flex items-center justify-center border-3 border-white"
@@ -644,17 +659,47 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                   transform: 'rotateY(180deg)'
                 }}
               >
-                <div className="text-center">
-                  <h3 className="text-white font-bold text-lg mb-2">Power Intervals</h3>
+                <h3 className="text-yellow-400 text-base font-black uppercase mb-2 tracking-wide text-center">Power Profile</h3>
+                
+                {/* Spider Chart */}
+                <div className="flex justify-center mb-3">
                   <canvas
+                    ref={(canvas) => {
+                      if (canvas && isFlipped) {
+                        requestAnimationFrame(() => {
+                          drawSpiderChartForRider(canvas, rider)
+                        })
+                      }
+                    }}
                     id={`spider-${rider.rider_id}`}
                     width="240"
-                    height="240"
-                    className="mx-auto"
+                    height="200"
+                    className="spider-chart"
+                    data-rider-id={rider.rider_id}
                   />
-                  <div className="mt-2 text-yellow-400 text-xs font-bold">
-                    🔄 Klik om terug te keren
-                  </div>
+                </div>
+
+                {/* Power Intervals Grid - Compact 2 columns */}
+                <div className="grid grid-cols-2 gap-1.5 px-3">
+                  {[
+                    { label: '5s', power: rider.power_5s, wkg: rider.power_5s_wkg },
+                    { label: '15s', power: rider.power_15s, wkg: rider.power_15s_wkg },
+                    { label: '30s', power: rider.power_30s, wkg: rider.power_30s_wkg },
+                    { label: '1m', power: rider.power_60s, wkg: rider.power_60s_wkg },
+                    { label: '2m', power: rider.power_120s, wkg: rider.power_120s_wkg },
+                    { label: '5m', power: rider.power_300s, wkg: rider.power_300s_wkg },
+                    { label: '20m', power: rider.power_1200s, wkg: rider.power_1200s_wkg }
+                  ].map(interval => (
+                    <div key={interval.label} className="bg-white/10 border border-white/20 rounded p-1.5 text-center">
+                      <div className="text-[10px] text-yellow-400 font-bold leading-tight">{interval.label}</div>
+                      <div className="text-xs font-black text-white leading-tight mt-0.5">
+                        {interval.power ? Math.round(interval.power) + 'W' : '-'}
+                      </div>
+                      <div className="text-[10px] text-yellow-400/80 font-black leading-tight">
+                        {interval.wkg ? interval.wkg.toFixed(1) : '-'}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
