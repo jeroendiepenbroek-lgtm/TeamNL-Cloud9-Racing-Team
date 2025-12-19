@@ -283,16 +283,16 @@ export default function RiderPassportGallery() {
     // vELO Live filter - multiselect
     if (filterVeloLiveRanks.length > 0) {
       filtered = filtered.filter(r => {
-        const tier = getVeloTier(r.velo_live).tier
-        return filterVeloLiveRanks.includes(tier)
+        const tierData = getVeloTier(r.velo_live)
+        return tierData && filterVeloLiveRanks.includes(tierData.tier)
       })
     }
 
     // vELO 30-day filter - multiselect
     if (filterVelo30dayRanks.length > 0) {
       filtered = filtered.filter(r => {
-        const tier = getVeloTier(r.velo_30day).tier
-        return filterVelo30dayRanks.includes(tier)
+        const tierData = getVeloTier(r.velo_30day)
+        return tierData && filterVelo30dayRanks.includes(tierData.tier)
       })
     }
 
@@ -756,7 +756,7 @@ export default function RiderPassportGallery() {
             {/* Filter Buttons Row */}
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               {/* Category Filter */}
-              <div className="min-w-[140px]">
+              <div className="min-w-[140px] relative z-[99999]">
                 <MultiSelectDropdown
                   label="ZP-category"
                 options={[
@@ -772,7 +772,7 @@ export default function RiderPassportGallery() {
               </div>
 
               {/* vELO Live Filter */}
-              <div className="min-w-[160px]">
+              <div className="min-w-[160px] relative z-[99999]">
                 <MultiSelectDropdown
                 label="vELO Live"
                 options={VELO_TIERS.map(tier => ({
@@ -785,7 +785,7 @@ export default function RiderPassportGallery() {
               </div>
 
               {/* vELO 30-day Filter */}
-              <div className="min-w-[160px]">
+              <div className="min-w-[160px] relative z-[99999]">
                 <MultiSelectDropdown
                 label="vELO 30-day"
                 options={VELO_TIERS.map(tier => ({
