@@ -283,19 +283,18 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                 
                 {/* Team Builder Toggle */}
                 <button
-                  onClick={() => {
-                    if (!showTeamBuilder) {
-                      setShowTeamBuilder(true)
-                    }
-                    setShowTeamCreationModal(true)
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 backdrop-blur-lg rounded-lg border border-orange-400 font-bold text-sm transition-all shadow-lg hover:shadow-xl text-white"
+                  onClick={() => setShowTeamBuilder(!showTeamBuilder)}
+                  className={`flex items-center gap-2 px-4 py-2 backdrop-blur-lg rounded-lg border font-bold text-sm transition-all shadow-lg hover:shadow-xl ${
+                    showTeamBuilder
+                      ? 'bg-orange-500 border-orange-400 text-white'
+                      : 'bg-orange-500/20 border-orange-400/30 text-white hover:bg-orange-500/30'
+                  }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
-                  <span className="hidden sm:inline">Nieuw Team</span>
-                  <span className="sm:hidden">+</span>
+                  <span className="hidden sm:inline">{showTeamBuilder ? 'Sluiten' : 'Team Builder'}</span>
+                  <span className="sm:hidden">{showTeamBuilder ? '✖' : '🏗️'}</span>
                 </button>
               </div>
             </div>
