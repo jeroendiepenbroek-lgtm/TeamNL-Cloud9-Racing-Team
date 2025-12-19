@@ -63,7 +63,7 @@ function Navigation() {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
-                � Team Lineup
+                👥 Team Lineup
               </Link>
               <Link to="/racing-matrix" className="text-white hover:text-orange-400 transition font-semibold">
                 📊 Performance Matrix
@@ -95,7 +95,7 @@ function Navigation() {
           {mobileMenuOpen && (
             <div className="md:hidden py-4 space-y-2">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                � Team Lineup
+                👥 Team Lineup
               </Link>
               <Link to="/racing-matrix" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 📊 Performance Matrix

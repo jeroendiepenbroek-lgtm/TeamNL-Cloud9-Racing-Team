@@ -136,7 +136,7 @@ function MultiSelectDropdown<T extends string | number>({
   const isCategoryDropdown = label.includes('Category')
 
   return (
-    <div className="relative z-[9999]" ref={dropdownRef}>
+    <div className="relative z-[99999]" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="px-3 py-2 border border-white/30 rounded-lg text-xs focus:ring-2 focus:ring-yellow-400 bg-white/15 text-white hover:bg-white/20 transition-colors w-full flex items-center justify-between font-bold"
@@ -160,7 +160,7 @@ function MultiSelectDropdown<T extends string | number>({
       </button>
 
       {isOpen && (
-        <div className="absolute z-[10000] mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-[999999] mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
           {options.map((option) => (
             <label
               key={option.value}
