@@ -185,6 +185,11 @@ SELECT
   zo.country_alpha3,
   zo.image_src AS avatar_url,
   
+  -- Racing metrics (ZFTP, ZRS, Phenotype)
+  COALESCE(zo.ftp, zr.ftp) AS ftp_watts,
+  zo.competition_racing_score AS zwift_racing_score,
+  zr.phenotype,
+  
   -- Validation snapshot
   tl.rider_category AS category_at_add,
   tl.rider_velo_rank AS velo_rank_at_add,

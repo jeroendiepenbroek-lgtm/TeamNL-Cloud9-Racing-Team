@@ -272,10 +272,10 @@ export default function RiderPassportGallery() {
       filtered = filtered.filter(r => favorites.includes(r.rider_id))
     }
 
-    // Category filter - multiselect
+    // Category filter - multiselect (use zwiftracing_category for A+ support)
     if (filterCategories.length > 0) {
       filtered = filtered.filter(r => {
-        const category = r.zwift_official_category || r.zwiftracing_category || 'D'
+        const category = r.zwiftracing_category || r.zwift_official_category || 'D'
         return filterCategories.includes(category)
       })
     }
