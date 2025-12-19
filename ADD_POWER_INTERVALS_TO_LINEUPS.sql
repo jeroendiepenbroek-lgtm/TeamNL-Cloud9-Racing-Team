@@ -51,6 +51,8 @@ SELECT
   zo.competition_racing_score AS zwift_official_racing_score,
   zr.phenotype,
   COALESCE(zo.weight / 1000.0, zr.weight) AS weight_kg,
+  zo.height AS height_cm,
+  zo.age,
   CASE 
     WHEN zr.ftp IS NOT NULL AND COALESCE(zo.weight / 1000.0, zr.weight) > 0 
     THEN ROUND((zr.ftp::NUMERIC / COALESCE(zo.weight / 1000.0, zr.weight)), 2)
