@@ -81,8 +81,9 @@ interface TeamViewerProps {
 }
 
 export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
-  const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('matrix')
-  const [passportSize, setPassportSize] = useState<'compact' | 'full'>('full')
+  const [showTeamBuilder, setShowTeamBuilder] = useState(false)
+  const [favoriteTeams, setFavoriteTeams] = useState<Set<number>>(new Set())
+  const [sortBy, setSortBy] = useState<'name' | 'riders' | 'status'>('name')
   
   // Fetch all teams
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
@@ -95,7 +96,37 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     }
   })
   
-  const teams: Team[] = teamsData || []
+  const rawTeams: Team[] = teamsData || []
+  
+  // Sort teams
+  const teams = [...rawTeams].sort((a, b) => {
+    // Favorites first
+    const aFav = favoriteTeams.has(a.team_id)
+    const bFav = favoriteTeams.has(b.team_id)
+    if (aFav && !bFav) return -1
+    if (!aFav && bFav) return 1
+    
+    // Then by sort criteria
+    if (sortBy === 'name') return a.team_name.localeCompare(b.team_name)
+    if (sortBy === 'riders') return b.current_riders - a.current_riders
+    if (sortBy === 'status') {
+      const statusOrder = { ready: 0, warning: 1, incomplete: 2, overfilled: 3 }
+      return statusOrder[a.team_status] - statusOrder[b.team_status]
+    }
+    return 0
+  })
+  
+  const toggleFavorite = (teamId: number) => {
+    setFavoriteTeams(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(teamId)) {
+        newSet.delete(teamId)
+      } else {
+        newSet.add(teamId)
+      }
+      return newSet
+    })
+  }
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
@@ -121,55 +152,37 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {/* View Toggle */}
-                <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
-                  <button
-                    onClick={() => setViewMode('matrix')}
-                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                      viewMode === 'matrix'
-                        ? 'bg-orange-500 text-white shadow-md'
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
+              <div className="flex items-center gap-3">
+                {/* Sort Dropdown */}
+                <div className="flex items-center gap-2 bg-white/10 backdrop-blur-lg rounded-lg px-3 py-2 border border-white/20">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+                  </svg>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'riders' | 'status')}
+                    className="bg-transparent text-white text-sm font-semibold cursor-pointer focus:outline-none"
                   >
-                    📊 Matrix
-                  </button>
-                  <button
-                    onClick={() => setViewMode('passports')}
-                    className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
-                      viewMode === 'passports'
-                        ? 'bg-orange-500 text-white shadow-md'
-                        : 'text-white/70 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    🎴 Passports
-                  </button>
+                    <option value="name" className="bg-gray-900">Naam</option>
+                    <option value="riders" className="bg-gray-900">Riders</option>
+                    <option value="status" className="bg-gray-900">Status</option>
+                  </select>
                 </div>
                 
-                {/* Passport Size Dropdown - alleen zichtbaar in passport mode */}
-                {viewMode === 'passports' && (
-                  <div className="relative z-[9999]">
-                    <select
-                      value={passportSize}
-                      onChange={(e) => setPassportSize(e.target.value as 'compact' | 'full')}
-                      className="bg-white/10 backdrop-blur-lg text-white px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/20 hover:border-orange-500 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    >
-                      <option value="compact">📦 Compact</option>
-                      <option value="full">🖼️ Full Size</option>
-                    </select>
-                  </div>
-                )}
-                
+                {/* Team Builder Toggle */}
                 <button
-                  onClick={() => window.location.pathname = '/team-builder'}
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-500/20 hover:bg-orange-500/30 backdrop-blur-lg rounded-lg border border-orange-400/30 text-white font-semibold text-sm transition-all shadow-lg hover:shadow-xl"
+                  onClick={() => setShowTeamBuilder(!showTeamBuilder)}
+                  className={`flex items-center gap-2 px-4 py-2 backdrop-blur-lg rounded-lg border font-semibold text-sm transition-all shadow-lg hover:shadow-xl ${
+                    showTeamBuilder
+                      ? 'bg-orange-500 border-orange-400 text-white'
+                      : 'bg-orange-500/20 border-orange-400/30 text-white hover:bg-orange-500/30'
+                  }`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  <span className="hidden sm:inline">Team Builder</span>
-                  <span className="sm:hidden">⚙️</span>
+                  <span className="hidden sm:inline">{showTeamBuilder ? 'Sluiten' : 'Nieuw Team'}</span>
+                  <span className="sm:hidden">{showTeamBuilder ? '✖' : '+'}</span>
                 </button>
               </div>
             </div>
