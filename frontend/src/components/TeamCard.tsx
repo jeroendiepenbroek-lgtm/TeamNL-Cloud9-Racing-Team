@@ -171,62 +171,59 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2">
-            {lineup.slice(0, 12).map((rider) => (
-              <div
-                key={rider.rider_id}
-                className="aspect-[3/4] relative group"
-              >
-                {/* Mini Passport Card */}
-                <div className="absolute inset-0 rounded-lg overflow-hidden border border-slate-600 bg-slate-900/80">
-                  {/* Avatar */}
-                  <div className="h-2/5 bg-gradient-to-br from-blue-900/50 to-purple-900/50 flex items-center justify-center">
-                    {rider.avatar_url ? (
-                      <img 
-                        src={rider.avatar_url} 
-                        alt={rider.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-2xl">👤</span>
-                    )}
-                  </div>
-                  
-                  {/* Info */}
-                  <div className="h-3/5 p-1.5 flex flex-col justify-between">
-                    <p className="text-[10px] font-bold text-white leading-tight truncate">
-                      {rider.name}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span 
-                        className="text-[9px] px-1.5 py-0.5 text-white rounded font-bold"
-                        style={{ 
-                          backgroundColor: rider.category === 'A+' || rider.category === 'A' ? '#FF0000' 
-                            : rider.category === 'B' ? '#4CAF50' 
-                            : rider.category === 'C' ? '#0000FF' 
-                            : rider.category === 'D' ? '#FF1493' 
-                            : rider.category === 'E' ? '#808080' 
-                            : '#666666' 
-                        }}
-                      >
-                        {rider.category || 'N/A'}
-                      </span>
-                      {rider.current_velo_rank && (
-                        <span className="text-[9px] text-cyan-400 font-bold">
-                          {Math.floor(rider.current_velo_rank)}
-                        </span>
+          <div className="space-y-1.5">
+            {lineup.slice(0, 12).map((rider) => {
+              const getCategoryColor = (cat: string) => {
+                if (cat === 'A+' || cat === 'A') return '#FF0000'
+                if (cat === 'B') return '#4CAF50'
+                if (cat === 'C') return '#0000FF'
+                if (cat === 'D') return '#FF1493'
+                if (cat === 'E') return '#808080'
+                return '#666666'
+              }
+              
+              return (
+                <div
+                  key={rider.rider_id}
+                  className="p-2 rounded-lg border bg-slate-900/50 border-slate-600"
+                >
+                  <div className="flex items-center gap-2">
+                    {/* Avatar */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+                      {rider.avatar_url ? (
+                        <img src={rider.avatar_url} alt={rider.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
                       )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{rider.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span 
+                          className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
+                          style={{ backgroundColor: getCategoryColor(rider.category) }}
+                        >
+                          {rider.category || 'N/A'}
+                        </span>
+                        {rider.current_velo_rank && (
+                          <span className="text-[10px] text-cyan-400 font-bold">
+                            {Math.floor(rider.current_velo_rank)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
             {/* Add more placeholder spots if needed */}
             {Array.from({ length: Math.min(team.max_riders - lineup.length, 12 - lineup.length) }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                className="aspect-[3/4] border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center"
+                className="p-2 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center h-14"
               >
                 <span className="text-slate-600 text-xl">+</span>
               </div>

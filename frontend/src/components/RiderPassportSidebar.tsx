@@ -124,7 +124,7 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
     <aside className="w-80 border-r border-slate-700/50 bg-slate-800/30 h-[calc(100vh-73px)] sticky top-[73px] flex flex-col">
       {/* Sticky Filter Section */}
       <div className="sticky top-0 z-20 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50">
-        <div className="p-3 space-y-2">
+        <div className="p-2 space-y-1.5">
           {/* Team Filter Indicator */}
           {selectedTeam && (
             <div className="bg-orange-500/20 border border-orange-500/50 rounded-lg p-2">
@@ -158,51 +158,49 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
             />
           </div>
 
-          {/* Filters - Horizontal Layout */}
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              {/* Category Filter */}
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="flex-1 px-2 py-1.5 text-sm bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="">Alle Categorieën</option>
-                <option value="A+">A+</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-              </select>
+          {/* Filters - Compact Layout */}
+          <div className="flex gap-1.5">
+            {/* Category Filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="flex-1 px-2 py-1 text-xs bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Cat</option>
+              <option value="A+">A+</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+            </select>
 
-              {/* Tier Filter */}
-              <select
-                value={selectedTier}
-                onChange={(e) => setSelectedTier(e.target.value)}
-                className="flex-1 px-2 py-1.5 text-sm bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-              >
-                <option value="">Alle vELO Tiers</option>
-                {VELO_TIERS.map(tier => (
-                  <option key={tier.rank} value={tier.name}>{tier.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Tier Filter */}
+            <select
+              value={selectedTier}
+              onChange={(e) => setSelectedTier(e.target.value)}
+              className="flex-1 px-2 py-1 text-xs bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Tier</option>
+              {VELO_TIERS.map(tier => (
+                <option key={tier.rank} value={tier.name}>{tier.rank}</option>
+              ))}
+            </select>
 
             {/* Hide Assigned Toggle */}
-            <label className="flex items-center gap-2 text-xs text-white cursor-pointer">
+            <label className="flex items-center gap-1 text-xs text-white cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={hideAssigned}
                 onChange={(e) => setHideAssigned(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-blue-500"
+                className="w-3 h-3 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-0"
               />
-              Verberg toegewezen riders
+              <span className="text-[10px]">Verberg</span>
             </label>
           </div>
 
         {/* Stats */}
-          <div className="text-xs text-slate-400 pb-1">
-            {filteredRiders.length} riders gevonden
+          <div className="text-[10px] text-slate-400">
+            {filteredRiders.length} riders
           </div>
         </div>
       </div>
