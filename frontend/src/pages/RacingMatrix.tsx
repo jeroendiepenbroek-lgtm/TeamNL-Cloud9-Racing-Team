@@ -555,16 +555,18 @@ export default function RacingDataMatrixModern() {
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Team Filter - Dropdown met team namen */}
           {teams && teams.length > 0 && (
-            <MultiSelectDropdown
-              label="🏆 Teams"
-              options={teams.map(team => ({
-                value: team.team_id,
-                label: team.team_name,
-                icon: team.competition_type === 'velo' ? '⚡' : '🏆'
-              }))}
-              selectedValues={filterTeamIds}
-              onChange={setFilterTeamIds}
-            />
+            <div className="min-w-[200px]">
+              <MultiSelectDropdown
+                label="🏆 Teams"
+                options={teams.map(team => ({
+                  value: team.team_id,
+                  label: team.team_name,
+                  icon: team.competition_type === 'velo' ? '⚡' : '🏆'
+                }))}
+                selectedValues={filterTeamIds}
+                onChange={setFilterTeamIds}
+              />
+            </div>
           )}
           
           {/* ZP Category Filter - Dropdown met badge icons */}
