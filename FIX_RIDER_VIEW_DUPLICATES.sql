@@ -184,11 +184,7 @@ SELECT
   zr.velo_live AS current_velo_rank,
   zo.country_alpha3,
   zo.image_src AS avatar_url,
-  
-  -- Racing metrics (ZFTP, ZRS, Phenotype)
-  COALESCE(zo.ftp, zr.ftp) AS ftp_watts,
-  zo.competition_racing_score AS zwift_racing_score,
-  zr.phenotype,
+  COALESCE(zo.weight / 1000.0, zr.weight) AS weight_kg,
   
   -- Validation snapshot
   tl.rider_category AS category_at_add,
@@ -199,7 +195,12 @@ SELECT
   -- Timestamps
   tl.added_at,
   tl.updated_at,
-  ct.created_at AS team_created_at
+  ct.created_at AS team_created_at,
+  
+  -- Racing metrics (ZFTP, ZRS, Phenotype) - NEW at end to avoid column position conflicts
+  COALESCE(zo.ftp, zr.ftp) AS ftp_watts,
+  zo.competition_racing_score AS zwift_racing_score,
+  zr.phenotype
   
 FROM team_lineups tl
 JOIN competition_teams ct ON tl.team_id = ct.id

@@ -196,6 +196,7 @@ export default function RiderPassportGallery() {
   const [filterVelo30dayRanks, setFilterVelo30dayRanks] = useState<number[]>([])
   const [filterTeams, setFilterTeams] = useState<number[]>([])
   const [teams, setTeams] = useState<{team_id: number, team_name: string}[]>([])
+  const [teamLineups, setTeamLineups] = useState<number[]>([])
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
   const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: {[key: string]: number}}>({})
 
@@ -210,7 +211,11 @@ export default function RiderPassportGallery() {
 
   useEffect(() => {
     applyFilters()
-  }, [riders, searchTerm, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, filterTeams, showOnlyFavorites, favorites])
+  }, [riders, searchTerm, filterCategories, filterVeloLiveRanks, filterVelo30dayRanks, filterTeams, teamLineups, showOnlyFavorites, favorites])
+
+  useEffect(() => {
+    loadTeamLineups()
+  }, [filterTeams])
 
   const loadRiders = async () => {
     try {
@@ -256,6 +261,28 @@ export default function RiderPassportGallery() {
     }
   }
 
+  const loadTeamLineups = async () => {
+    if (filterTeams.length === 0) {
+      setTeamLineups([])
+      return
+    }
+    
+    try {
+      const allRiderIds = new Set<number>()
+      for (const teamId of filterTeams) {
+        const response = await fetch(`${API_BASE}/api/teams/${teamId}`)
+        if (response.ok) {
+          const data = await response.json()
+          data.lineup?.forEach((l: any) => allRiderIds.add(l.rider_id))
+        }
+      }
+      setTeamLineups(Array.from(allRiderIds))
+    } catch (err) {
+      console.error('Error loading team lineups:', err)
+      setTeamLineups([])
+    }
+  }
+
   const applyFilters = () => {
     let filtered = riders
 
@@ -296,11 +323,9 @@ export default function RiderPassportGallery() {
       })
     }
 
-    // Team filter - multiselect
-    if (filterTeams.length > 0) {
-      filtered = filtered.filter(r => {
-        return r.team_id && filterTeams.includes(r.team_id)
-      })
+    // Team filter - multiselect (gebruik actual team lineups zoals Racing Matrix)
+    if (filterTeams.length > 0 && teamLineups.length > 0) {
+      filtered = filtered.filter(r => teamLineups.includes(r.rider_id))
     }
 
     setFilteredRiders(filtered)
