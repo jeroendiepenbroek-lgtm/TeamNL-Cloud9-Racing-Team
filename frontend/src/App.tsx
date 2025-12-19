@@ -12,111 +12,114 @@ import IntegratedTeamBuilder from './pages/IntegratedTeamBuilder'
 import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const navigate = useNavigate()
+
+  const menuItems = [
+    { path: '/', label: 'Team Lineup', icon: '👥' },
+    { path: '/racing-matrix', label: 'Performance Matrix', icon: '📊' },
+    { path: '/rider-passports', label: 'Rider Passports', icon: '🎴' },
+    { path: '/integrated-team-builder', label: 'Team Builder', icon: '🏆' },
+    { path: '/team-manager', label: 'Team Manager', icon: '⚙️' },
+  ]
+
+  const handleNavigation = (path: string) => {
+    navigate(path)
+    setMenuOpen(false)
+  }
 
   return (
     <>
-      <nav className="bg-gradient-to-r from-red-900 via-green-900 to-red-900 shadow-lg border-b-4 border-yellow-400">
+      <nav className="bg-gradient-to-r from-red-900 via-green-900 to-red-900 shadow-lg border-b-4 border-yellow-400 relative z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo + Brand with Christmas Trees */}
             <button 
-              onClick={() => navigate('/')}
-              className="flex items-center space-x-4 hover:opacity-90 transition"
+              onClick={() => handleNavigation('/')}
+              className="flex items-center space-x-2 sm:space-x-4 hover:opacity-90 transition"
             >
-              <span className="text-4xl">🎄</span>
+              <span className="text-2xl sm:text-4xl">🎄</span>
               <div className="relative">
                 <div className="absolute inset-0 bg-orange-500 rounded-full blur-sm opacity-75"></div>
                 <div className="relative bg-white rounded-full p-1 ring-4 ring-orange-500">
                   <img 
                     src="/CloudRacer9.png" 
                     alt="CloudRacer" 
-                    className="h-16 w-16 rounded-full" 
+                    className="h-12 w-12 sm:h-16 sm:w-16 rounded-full" 
                   />
                 </div>
               </div>
               
               <div className="text-left">
-                <div className="text-white font-black text-2xl flex items-center gap-2">
+                <div className="text-white font-black text-lg sm:text-2xl flex items-center gap-1 sm:gap-2">
                   TeamNL
                   <span className="text-red-500">🎅</span>
                 </div>
-                <div className="text-orange-400 font-bold text-lg">Cloud9 Racing</div>
+                <div className="text-orange-400 font-bold text-sm sm:text-lg">Cloud9 Racing</div>
               </div>
-              <span className="text-4xl">🎄</span>
+              <span className="hidden sm:inline text-4xl">🎄</span>
             </button>
 
-            {/* YouTube Streams Badge - Next to logo */}
-            <a 
-              href="https://www.youtube.com/@CloudRacer-9/streams" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all hover:scale-105 shadow-lg hover:shadow-xl border-2 border-white/20"
-              title="Race livestreams op YouTube - CloudRacer-9"
-            >
-              <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-              </svg>
-              <span className="text-sm font-bold text-white tracking-wide">🔴 STREAMS</span>
-            </a>
+            {/* Right Side - YouTube + Menu */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* YouTube Streams Badge */}
+              <a 
+                href="https://www.youtube.com/@CloudRacer-9/streams" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 transition-all hover:scale-105 shadow-lg hover:shadow-xl border-2 border-white/20"
+                title="Race livestreams op YouTube - CloudRacer-9"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                <span className="hidden sm:inline text-sm font-bold text-white tracking-wide">🔴 STREAMS</span>
+              </a>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/" className="text-white hover:text-orange-400 transition font-semibold">
-                👥 Team Lineup
-              </Link>
-              <Link to="/racing-matrix" className="text-white hover:text-orange-400 transition font-semibold">
-                📊 Performance Matrix
-              </Link>
-              <Link to="/rider-passports" className="text-white hover:text-orange-400 transition font-semibold">
-                🎴 Rider Passports
-              </Link>
-              <Link to="/integrated-team-builder" className="text-white hover:text-orange-400 transition font-semibold">
-                🏆 Team Builder
-              </Link>
-              <Link to="/team-manager" className="text-white hover:text-orange-400 transition font-semibold">
-                ⚙️ Team Manager
-              </Link>
+              {/* Hamburger Menu Button */}
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="text-white p-2 hover:bg-white/10 rounded-lg transition-all"
+                aria-label="Menu"
+              >
+                <svg className="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {menuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
             </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-white p-2"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {mobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
           </div>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden py-4 space-y-2">
-              <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                👥 Team Lineup
-              </Link>
-              <Link to="/racing-matrix" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                📊 Performance Matrix
-              </Link>
-              <Link to="/rider-passports" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                🎴 Rider Passports
-              </Link>
-              <Link to="/integrated-team-builder" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                🏆 Team Builder
-              </Link>
-              <Link to="/team-manager" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                ⚙️ Team Manager
-              </Link>
+          {/* Dropdown Menu - Works for both mobile and desktop */}
+          {menuOpen && (
+            <div className="absolute right-4 top-24 w-72 bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl shadow-2xl border-2 border-yellow-400 overflow-hidden z-50">
+              <div className="py-2">
+                {menuItems.map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => handleNavigation(item.path)}
+                    className="w-full text-left px-5 py-3 text-white hover:bg-white/10 transition-all flex items-center gap-3 border-b border-white/5 last:border-b-0 group"
+                  >
+                    <span className="text-2xl group-hover:scale-110 transition-transform">{item.icon}</span>
+                    <span className="font-semibold text-base group-hover:text-orange-400 transition-colors">{item.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
       </nav>
+
+      {/* Backdrop overlay when menu is open */}
+      {menuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
     </>
   )
 }
