@@ -17,16 +17,16 @@ const CATEGORY_COLORS = {
 
 // vELO Tiers (matching RacingMatrix exactly)
 const VELO_TIERS = [
-  { rank: 1, name: 'Diamond', icon: '💎', min: 2200, max: null, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100' },
-  { rank: 2, name: 'Ruby', icon: '💍', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-red-100' },
-  { rank: 3, name: 'Emerald', icon: '💚', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100' },
-  { rank: 4, name: 'Sapphire', icon: '💙', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100' },
-  { rank: 5, name: 'Amethyst', icon: '💜', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100' },
-  { rank: 6, name: 'Platinum', icon: '⚪', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100' },
-  { rank: 7, name: 'Gold', icon: '🟡', min: 1000, max: 1150, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900' },
-  { rank: 8, name: 'Silver', icon: '⚫', min: 850, max: 1000, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700' },
-  { rank: 9, name: 'Bronze', icon: '🟠', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900' },
-  { rank: 10, name: 'Copper', icon: '🟤', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-orange-100' },
+  { rank: 1, name: 'Diamond', min: 2200, max: null, color: 'from-cyan-400 to-blue-500', textColor: 'text-cyan-100' },
+  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: 'from-red-500 to-pink-600', textColor: 'text-red-100' },
+  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: 'from-emerald-400 to-green-600', textColor: 'text-emerald-100' },
+  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: 'from-blue-400 to-indigo-600', textColor: 'text-blue-100' },
+  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: 'from-purple-400 to-violet-600', textColor: 'text-purple-100' },
+  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: 'from-slate-300 to-slate-500', textColor: 'text-slate-100' },
+  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: 'from-yellow-400 to-amber-600', textColor: 'text-yellow-900' },
+  { rank: 8, name: 'Silver', min: 850, max: 1000, color: 'from-gray-300 to-gray-500', textColor: 'text-gray-700' },
+  { rank: 9, name: 'Bronze', min: 650, max: 850, color: 'from-orange-400 to-orange-700', textColor: 'text-orange-900' },
+  { rank: 10, name: 'Copper', min: 0, max: 650, color: 'from-orange-600 to-red-800', textColor: 'text-orange-100' },
 ]
 
 const getVeloTier = (rating: number | null) => {
@@ -625,19 +625,19 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
   const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set())
   const [tierMaxValues, setTierMaxValues] = useState<{[tier: number]: any}>({})
 
-  // Helper function voor vELO tiers (EXACT zoals RiderPassportGallery.tsx)
+  // Helper function voor vELO tiers
   const getVeloTier = (veloLive: number | null) => {
-    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
-    if (veloLive >= 2200) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' }
-    if (veloLive >= 1900) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' }
-    if (veloLive >= 1650) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' }
-    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680', emoji: '💙' }
-    if (veloLive >= 1300) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' }
-    if (veloLive >= 1150) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' }
-    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700', emoji: '🥇' }
-    if (veloLive >= 850) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' }
-    if (veloLive >= 650) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' }
-    return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F' }
+    if (veloLive >= 2200) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC' }
+    if (veloLive >= 1900) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A' }
+    if (veloLive >= 1650) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356' }
+    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680' }
+    if (veloLive >= 1300) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99' }
+    if (veloLive >= 1150) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5' }
+    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700' }
+    if (veloLive >= 850) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C' }
+    if (veloLive >= 650) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26' }
+    return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F' }
   }
 
   const getCategoryColor = (cat: string) => {
@@ -1039,19 +1039,19 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
 
 // Riders Passports - Compact Size (mini cards 220px)
 function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
-  // Helper function voor vELO tiers (EXACT zoals RiderPassportGallery.tsx)
+  // Helper function voor vELO tiers
   const getVeloTier = (veloLive: number | null) => {
-    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
-    if (veloLive >= 2200) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' }
-    if (veloLive >= 1900) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' }
-    if (veloLive >= 1650) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' }
-    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680', emoji: '💙' }
-    if (veloLive >= 1300) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' }
-    if (veloLive >= 1150) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' }
-    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700', emoji: '🥇' }
-    if (veloLive >= 850) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' }
-    if (veloLive >= 650) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' }
-    return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F' }
+    if (veloLive >= 2200) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC' }
+    if (veloLive >= 1900) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A' }
+    if (veloLive >= 1650) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356' }
+    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680' }
+    if (veloLive >= 1300) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99' }
+    if (veloLive >= 1150) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5' }
+    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700' }
+    if (veloLive >= 850) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C' }
+    if (veloLive >= 650) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26' }
+    return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F' }
   }
 
   const getCategoryColor = (cat: string) => {

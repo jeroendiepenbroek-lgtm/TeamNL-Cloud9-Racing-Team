@@ -28,16 +28,16 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({ isOpen, on
   const [loading, setLoading] = useState(false)
 
   const VELO_TIERS = [
-    { rank: 1, name: 'Diamond', emoji: '💎' },
-    { rank: 2, name: 'Ruby', emoji: '💍' },
-    { rank: 3, name: 'Emerald', emoji: '💚' },
-    { rank: 4, name: 'Sapphire', emoji: '💙' },
-    { rank: 5, name: 'Amethyst', emoji: '💜' },
-    { rank: 6, name: 'Pearl', emoji: '⚪' },
-    { rank: 7, name: 'Gold', emoji: '🟡' },
-    { rank: 8, name: 'Silver', emoji: '⚫' },
-    { rank: 9, name: 'Bronze', emoji: '🟠' },
-    { rank: 10, name: 'Copper', emoji: '🟤' }
+    { rank: 1, name: 'Diamond' },
+    { rank: 2, name: 'Ruby' },
+    { rank: 3, name: 'Emerald' },
+    { rank: 4, name: 'Sapphire' },
+    { rank: 5, name: 'Amethyst' },
+    { rank: 6, name: 'Pearl' },
+    { rank: 7, name: 'Gold' },
+    { rank: 8, name: 'Silver' },
+    { rank: 9, name: 'Bronze' },
+    { rank: 10, name: 'Copper' }
   ]
 
   const CATEGORIES = [
@@ -219,7 +219,7 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({ isOpen, on
                   >
                     {VELO_TIERS.map(tier => (
                       <option key={tier.rank} value={tier.rank}>
-                        {tier.emoji} {tier.name} (Tier {tier.rank})
+                        Tier {tier.rank} - {tier.name}
                       </option>
                     ))}
                   </select>
@@ -235,7 +235,7 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({ isOpen, on
                   >
                     {VELO_TIERS.map(tier => (
                       <option key={tier.rank} value={tier.rank}>
-                        {tier.emoji} {tier.name} (Tier {tier.rank})
+                        Tier {tier.rank} - {tier.name}
                       </option>
                     ))}
                   </select>

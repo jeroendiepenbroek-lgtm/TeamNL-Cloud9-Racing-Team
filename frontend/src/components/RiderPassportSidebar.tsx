@@ -36,16 +36,16 @@ interface RiderPassportSidebarProps {
 }
 
 const VELO_TIERS = [
-  { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE', emoji: '💎' },
-  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444', emoji: '💍' },
-  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981', emoji: '💚' },
-  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6', emoji: '💙' },
-  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7', emoji: '💜' },
-  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8', emoji: '⚪' },
-  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308', emoji: '🟡' },
-  { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A', emoji: '⚫' },
-  { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316', emoji: '🟠' },
-  { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626', emoji: '🟤' },
+  { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE' },
+  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444' },
+  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981' },
+  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6' },
+  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7' },
+  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8' },
+  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308' },
+  { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A' },
+  { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316' },
+  { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626' },
 ]
 
 const CATEGORY_COLORS: {[key: string]: string} = {
@@ -254,14 +254,13 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
                       )}
                       {tier && (
                         <span 
-                          className="text-xs px-1.5 py-0.5 rounded font-bold text-white flex items-center gap-1"
+                          className="text-xs px-2 py-0.5 rounded font-bold text-white"
                           style={{ 
                             backgroundColor: tier.color,
                           }}
                           title={`${tier.name} Tier`}
                         >
-                          <span>{tier.emoji}</span>
-                          <span>{veloRounded}</span>
+                          {tier.rank} {veloRounded}
                         </span>
                       )}
                     </div>
