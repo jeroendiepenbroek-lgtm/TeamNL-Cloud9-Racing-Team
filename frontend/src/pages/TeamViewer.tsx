@@ -106,6 +106,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
   const [draggedRider, setDraggedRider] = useState<any>(null)
+  const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
   const queryClient = useQueryClient()
 
   // Save favorites to localStorage whenever they change
@@ -415,6 +416,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                                 }}
                                 isSelectedForFiltering={team.team_id === selectedTeamForFiltering}
                                 isDragging={draggedRider !== null}
+                                isExpanded={team.team_id === expandedTeamId}
+                                onToggleExpand={(teamId) => {
+                                  setExpandedTeamId(expandedTeamId === teamId ? null : teamId)
+                                }}
                               />
                             ))}
                           </div>

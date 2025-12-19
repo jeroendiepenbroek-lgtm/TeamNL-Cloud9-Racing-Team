@@ -36,6 +36,8 @@ interface TeamCardProps {
   onSelectForFiltering?: (teamId: number) => void
   isSelectedForFiltering?: boolean
   isDragging: boolean
+  isExpanded?: boolean
+  onToggleExpand?: (teamId: number) => void
 }
 
 const STATUS_COLORS = {
@@ -52,7 +54,7 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging }: TeamCardProps) {
+export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
 
   // Fetch team lineup
@@ -101,22 +103,40 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
       {/* Header */}
       <div 
         className="p-4 border-b border-slate-700/50 bg-slate-900/50 cursor-pointer hover:bg-slate-900/70 transition-colors"
-        onClick={() => onSelectForFiltering?.(team.team_id)}
-        title="Klik om riders te filteren voor dit team"
+        onClick={() => {
+          if (onToggleExpand) {
+            onToggleExpand(team.team_id)
+          } else {
+            onSelectForFiltering?.(team.team_id)
+          }
+        }}
+        title={onToggleExpand ? "Klik om uit/in te vouwen" : "Klik om riders te filteren voor dit team"}
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-white truncate">
-                {team.team_name}
-              </h3>
-              {isSelectedForFiltering && (
-                <span className="text-xs font-bold px-2 py-0.5 bg-orange-500 text-white rounded-full animate-pulse">
-                  FILTERING
-                </span>
-              )}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {onToggleExpand && (
+              <svg 
+                className={`w-5 h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-white truncate">
+                  {team.team_name}
+                </h3>
+                {isSelectedForFiltering && (
+                  <span className="text-xs font-bold px-2 py-0.5 bg-orange-500 text-white rounded-full animate-pulse">
+                    FILTERING
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-400">{team.competition_name}</p>
             </div>
-            <p className="text-sm text-slate-400">{team.competition_name}</p>
           </div>
           <div className="flex items-center gap-2">
             {onDelete && (
@@ -161,8 +181,16 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
         </div>
       </div>
 
-      {/* Passport Grid */}
-      <div className="p-4">
+      {/* Collapsible Content */}
+      <div 
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ 
+          maxHeight: isExpanded ? '2000px' : '0px',
+          opacity: isExpanded ? 1 : 0
+        }}
+      >
+        {/* Passport Grid */}
+        <div className="p-4">
         {lineup.length === 0 ? (
           <div className="h-48 flex items-center justify-center border-2 border-dashed border-slate-600 rounded-lg">
             <div className="text-center">
@@ -238,14 +266,15 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
         )}
       </div>
 
-      {/* Footer Actions */}
-      <div className="p-3 border-t border-slate-700/50 bg-slate-900/30">
-        <button
-          onClick={() => onOpenDetail(team.team_id)}
-          className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
-        >
-          📋 Open Team LINE-UP
-        </button>
+        {/* Footer Actions */}
+        <div className="p-3 border-t border-slate-700/50 bg-slate-900/30">
+          <button
+            onClick={(e) => { e.stopPropagation(); onOpenDetail(team.team_id) }}
+            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+          >
+            📋 Open Team LINE-UP
+          </button>
+        </div>
       </div>
 
       {/* Drag Over Indicator */}
