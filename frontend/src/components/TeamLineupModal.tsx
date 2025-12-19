@@ -162,23 +162,13 @@ export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProp
                   >
                     {/* Passport Card */}
                     <div className="aspect-[3/4] relative">
-                      {/* Background Gradient */}
-                      {tier && (
-                        <div 
-                          className="absolute inset-0"
-                          style={{
-                            background: `linear-gradient(135deg, ${tier.color}, ${tier.border})`
-                          }}
-                        />
-                      )}
-
                       {/* Avatar */}
-                      <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
                         {rider.avatar_url ? (
                           <img 
                             src={rider.avatar_url} 
                             alt={rider.full_name}
-                            className="w-full h-full object-cover mix-blend-overlay"
+                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <span className="text-8xl opacity-20">👤</span>
