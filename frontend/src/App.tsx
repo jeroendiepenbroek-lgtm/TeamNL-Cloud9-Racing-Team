@@ -18,7 +18,7 @@ function Navigation() {
     { path: '/', label: 'Team Lineup', icon: '👥' },
     { path: '/racing-matrix', label: 'Performance Matrix', icon: '📊' },
     { path: '/rider-passports', label: 'Rider Passports', icon: '🎴' },
-    { path: '/team-manager', label: 'Team Manager', icon: '⚙️' },
+    { path: '/team-manager', label: 'Rider Manager', icon: '⚙️' },
   ]
 
   const handleNavigation = (path: string) => {
