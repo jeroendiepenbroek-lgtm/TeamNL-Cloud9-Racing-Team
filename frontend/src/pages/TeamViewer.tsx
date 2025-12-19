@@ -493,6 +493,8 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
           const veloLive = Math.floor(rider.current_velo_rank || rider.velo_live || 0)
           const velo30day = Math.floor(rider.velo_30day || veloLive)
           const isFlipped = flippedCards.has(rider.rider_id)
+          const flagUrl = getFlagUrl(rider.country_alpha3 || '')
+          const heightCm = rider.height_cm || '-'
 
           return (
             <div
@@ -556,11 +558,20 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                   onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Avatar' }}
                 />
 
-                {/* Name */}
-                <div className="text-center mb-2">
-                  <h2 className="text-sm font-black text-white uppercase drop-shadow-lg leading-tight px-1">
+                {/* Name and Flag */}
+                <div className="text-center mb-2 mt-3">
+                  <h2 className="text-sm font-black text-white uppercase drop-shadow-lg mb-1 px-1 leading-tight">
                     {rider.name || rider.full_name || 'Unknown'}
                   </h2>
+                  <div className="flex items-center justify-center gap-1">
+                    {flagUrl && (
+                      <img
+                        src={flagUrl}
+                        alt={rider.country_alpha3 || ''}
+                        className="w-8 h-6 rounded shadow"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 {/* Stats Grid */}
@@ -576,6 +587,15 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                   <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
                     <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">W/kg</div>
                     <div className="text-lg font-black text-white">{wkg}</div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
+                    <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Hgt</div>
+                    <div className="text-lg font-black text-white">{heightCm}<span className="text-sm text-white/70">cm</span></div>
+                  </div>
+                  <div></div>
+                  <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 text-center border border-white/20">
+                    <div className="text-xs text-yellow-400 font-bold uppercase leading-tight">Age</div>
+                    <div className="text-lg font-black text-white">{rider.age || '-'}<span className="text-sm text-white/70">yr</span></div>
                   </div>
                 </div>
 
@@ -611,23 +631,14 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                   </div>
                 )}
 
-                {/* Racing FTP W/kg Label */}
-                {rider.ftp_wkg && (
-                  <div className="mx-2 mb-2 bg-green-500/20 rounded-lg p-2 border border-green-500/30 text-center">
-                    <div className="text-xs text-green-400 font-bold uppercase">Racing FTP W/kg</div>
-                    <div className="text-base font-bold text-white">{rider.ftp_wkg}</div>
-                  </div>
-                )}
-
-                {/* Flip Hint */}
-                <div className="absolute bottom-2 left-0 right-0 text-center">
-                  <span className="text-xs text-yellow-400 font-bold">🔄 Klik voor intervals</span>
+                <div className="text-center text-xs text-yellow-400/80 uppercase tracking-wide font-bold mt-2">
+                  🔄 Klik voor intervals
                 </div>
               </div>
 
-              {/* ACHTERKANT - Spider Chart */}
+              {/* BACK */}
               <div
-                className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 to-indigo-950 border-4 border-yellow-400 shadow-xl p-4 flex items-center justify-center"
+                className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col"
                 style={{
                   backfaceVisibility: 'hidden',
                   transform: 'rotateY(180deg)'
