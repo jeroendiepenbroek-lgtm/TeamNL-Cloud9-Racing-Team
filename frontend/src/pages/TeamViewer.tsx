@@ -188,6 +188,33 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     }
   })
 
+  // Delete team mutation
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const res = await fetch(`/api/teams/${teamId}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to delete team')
+      }
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      toast.success('Team verwijderd!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    }
+  })
+
+  const handleDeleteTeam = (teamId: number, teamName: string) => {
+    if (confirm(`Weet je zeker dat je team "${teamName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+      deleteTeamMutation.mutate(teamId)
+    }
+  }
+
   // Riders kan array zijn OF object met riders property
   const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
 
@@ -292,7 +319,8 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
             {/* Team Builder Integration - Volledig Geïntegreerd */}
             {showTeamBuilder && (
               <div className="mb-8 bg-slate-800/50 backdrop-blur-xl rounded-2xl border-2 border-orange-500/50 shadow-2xl overflow-hidden">
-                <div className="bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-4 flex items-center justify-between">
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-30 bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-4 flex items-center justify-between shadow-lg">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                       <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,10 +368,49 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
 
                       {/* Team Cards Grid */}
                       <div className={`flex-1 p-6 transition-all duration-300`}>
+                        {/* Team Management Actions Bar */}
+                        <div className="mb-6 bg-gradient-to-r from-blue-900/40 to-indigo-900/40 backdrop-blur-sm rounded-xl border border-blue-500/30 p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                              </svg>
+                              <div>
+                                <h4 className="text-white font-bold text-sm">Team Beheer</h4>
+                                <p className="text-slate-400 text-xs">Maak nieuwe teams aan of verwijder bestaande teams</p>
+                              </div>
+                            </div>
+                            <a
+                              href="/team-manager"
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              Team Manager
+                            </a>
+                          </div>
+                        </div>
+
                         {teams.length === 0 ? (
                           <div className="text-center text-white py-20">
-                            <p className="text-xl">Geen teams gevonden</p>
-                            <p className="text-slate-400 mt-2">Maak eerst teams aan via Team Manager</p>
+                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-500/50 mb-4">
+                              <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </div>
+                            <p className="text-xl font-bold mb-2">Geen teams gevonden</p>
+                            <p className="text-slate-400 mb-6">Maak eerst teams aan via Team Manager</p>
+                            <a
+                              href="/team-manager"
+                              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              Nieuw Team Aanmaken
+                            </a>
                           </div>
                         ) : (
                           <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
@@ -353,6 +420,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                                 team={team}
                                 onDrop={handleDrop}
                                 onOpenDetail={handleOpenTeamDetail}
+                                onDelete={() => handleDeleteTeam(team.team_id, team.team_name)}
                                 isDragging={draggedRider !== null}
                               />
                             ))}
