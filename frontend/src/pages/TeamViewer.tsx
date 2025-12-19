@@ -509,7 +509,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
           const velo30day = Math.floor(rider.velo_30day || veloLive)
           const isFlipped = flippedCards.has(rider.rider_id)
           const flagUrl = getFlagUrl(rider.country_alpha3 || '')
-          const heightCm = rider.height_cm || '-'
+          const heightCm = rider.height_cm ? Math.round(rider.height_cm) : '-'
 
           return (
             <div
@@ -712,6 +712,21 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
 
 // Riders Passports - Compact Size (mini cards 220px)
 function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
+  // Helper function voor vELO tiers (EXACT zoals RiderPassportGallery.tsx)
+  const getVeloTier = (veloLive: number | null) => {
+    if (!veloLive) return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+    if (veloLive >= 2200) return { tier: 1, name: 'Diamond', color: '#00D4FF', border: '#0099CC', emoji: '💎' }
+    if (veloLive >= 1900) return { tier: 2, name: 'Ruby', color: '#E61E50', border: '#B30F3A', emoji: '♦️' }
+    if (veloLive >= 1650) return { tier: 3, name: 'Emerald', color: '#50C878', border: '#2E9356', emoji: '💚' }
+    if (veloLive >= 1450) return { tier: 4, name: 'Sapphire', color: '#0F52BA', border: '#0A3680', emoji: '💙' }
+    if (veloLive >= 1300) return { tier: 5, name: 'Amethyst', color: '#9966CC', border: '#6B4A99', emoji: '💜' }
+    if (veloLive >= 1150) return { tier: 6, name: 'Platinum', color: '#E5E4E2', border: '#B8B7B5', emoji: '⚪' }
+    if (veloLive >= 1000) return { tier: 7, name: 'Gold', color: '#FFD700', border: '#CCA700', emoji: '🥇' }
+    if (veloLive >= 850) return { tier: 8, name: 'Silver', color: '#C0C0C0', border: '#8C8C8C', emoji: '⚪' }
+    if (veloLive >= 650) return { tier: 9, name: 'Bronze', color: '#CD7F32', border: '#995F26', emoji: '🥉' }
+    return { tier: 10, name: 'Copper', color: '#B87333', border: '#8B5A1F', emoji: '🟤' }
+  }
+
   const getCategoryColor = (cat: string) => {
     const colors: {[key: string]: string} = {
       'A+': '#FF0000', 'A': '#FF0000', 'B': '#4CAF50',
@@ -724,7 +739,8 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
     <div className="overflow-x-auto pb-4 scroll-smooth">
       <div className="flex gap-4 px-2" style={{ minWidth: 'min-content' }}>
         {lineup.map(rider => {
-          const veloLiveTier = getVeloTier(rider.current_velo_rank || rider.velo_live || null)
+          const veloLive = Math.floor(rider.current_velo_rank || rider.velo_live || 0)
+          const veloLiveTier = getVeloTier(veloLive)
           const category = rider.category || 'D'
           const categoryColor = getCategoryColor(category)
           const wkg = rider.racing_ftp && rider.weight_kg ? (rider.racing_ftp / rider.weight_kg).toFixed(1) : '-'
@@ -739,7 +755,7 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
                 className="h-12 relative"
                 style={{
                   background: veloLiveTier 
-                    ? `linear-gradient(135deg, ${veloLiveTier.color} 0%, ${veloLiveTier.color} 100%)` 
+                    ? `linear-gradient(135deg, ${veloLiveTier.color} 0%, ${veloLiveTier.border} 100%)` 
                     : '#666',
                   clipPath: 'polygon(0 0, 100% 0, 100% 70%, 0 100%)'
                 }}
@@ -747,10 +763,13 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
                 <div className="flex items-center justify-between px-2 py-1">
                   {veloLiveTier && (
                     <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center border-2 border-white"
-                      style={{ background: veloLiveTier.color }}
+                      className="w-8 h-8 rounded-full flex items-center justify-center border-2"
+                      style={{ 
+                        background: veloLiveTier.color,
+                        borderColor: veloLiveTier.border
+                      }}
                     >
-                      <span className="text-sm font-black text-white">{veloLiveTier.rank}</span>
+                      <span className="text-sm font-black text-white">{veloLiveTier.tier}</span>
                     </div>
                   )}
                   <div
@@ -760,8 +779,8 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
                     <span className="text-sm font-black text-white">{category}</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-bold text-white">ZRS</div>
-                    <div className="text-sm font-black text-white">{rider.zwift_official_racing_score || '-'}</div>
+                    <div className="text-[10px] font-bold text-gray-900">ZRS</div>
+                    <div className="text-sm font-black text-gray-900">{rider.zwift_official_racing_score || '-'}</div>
                   </div>
                 </div>
               </div>
@@ -793,9 +812,12 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
                   <div className="text-[9px] text-yellow-400 font-bold">W/kg</div>
                   <div className="text-xs font-black text-white">{wkg}</div>
                 </div>
-                <div className="bg-white/10 rounded p-1 text-center">
-                  <div className="text-[9px] text-yellow-400 font-bold">vELO</div>
-                  <div className="text-xs font-black text-white">{Math.floor(rider.velo_live || 0)}</div>
+                <div 
+                  className="bg-white/10 rounded p-1 text-center border"
+                  style={{ borderColor: veloLiveTier?.color || '#666' }}
+                >
+                  <div className="text-[9px] font-bold" style={{ color: veloLiveTier?.color || '#999' }}>vELO</div>
+                  <div className="text-xs font-black text-white">{veloLive || '-'}</div>
                 </div>
               </div>
 
