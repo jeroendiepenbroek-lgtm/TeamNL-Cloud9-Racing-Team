@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
+import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
+import TeamLineupModal from '../components/TeamLineupModal.tsx'
+import TeamBuilderCard from '../components/TeamCard.tsx'
 
 // Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
 const CATEGORY_COLORS = {
@@ -36,7 +40,15 @@ interface Team {
   team_name: string
   competition_type: 'velo' | 'category'
   competition_name: string
+  velo_min_rank?: number
+  velo_max_rank?: number
+  velo_max_spread?: number
+  allowed_categories?: string[]
+  min_riders: number
+  max_riders: number
   current_riders: number
+  valid_riders: number
+  invalid_riders: number
   team_status: 'incomplete' | 'ready' | 'warning' | 'overfilled'
 }
 
@@ -84,6 +96,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [showTeamBuilder, setShowTeamBuilder] = useState(false)
   const [favoriteTeams, setFavoriteTeams] = useState<Set<number>>(new Set())
   const [sortBy, setSortBy] = useState<'name' | 'riders' | 'status'>('name')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
+  const [draggedRider, setDraggedRider] = useState<any>(null)
+  const queryClient = useQueryClient()
   
   // Fetch all teams
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
@@ -126,6 +142,62 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       }
       return newSet
     })
+  }
+
+  // Fetch all riders voor team builder
+  const { data: ridersData } = useQuery({
+    queryKey: ['riders'],
+    queryFn: async () => {
+      const res = await fetch('/api/riders')
+      if (!res.ok) throw new Error('Failed to fetch riders')
+      return res.json()
+    },
+    enabled: showTeamBuilder
+  })
+
+  // Add rider to team mutation
+  const addRiderMutation = useMutation({
+    mutationFn: async ({ teamId, riderId }: { teamId: number; riderId: number }) => {
+      const res = await fetch(`/api/teams/${teamId}/riders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rider_id: riderId })
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to add rider')
+      }
+      return res.json()
+    },
+    onSuccess: (_, { teamId }) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team-lineup', teamId] })
+      toast.success('Rider toegevoegd aan team!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    }
+  })
+
+  const riders = ridersData || []
+
+  const handleDragStart = (rider: any) => {
+    setDraggedRider(rider)
+  }
+
+  const handleDrop = (teamId: number) => {
+    if (draggedRider) {
+      addRiderMutation.mutate({ teamId, riderId: draggedRider.rider_id })
+      setDraggedRider(null)
+    }
+  }
+
+  const handleOpenTeamDetail = (teamId: number) => {
+    setSelectedTeamId(teamId)
+  }
+
+  const handleCloseTeamDetail = () => {
+    setSelectedTeamId(null)
   }
   
   return (
@@ -207,9 +279,9 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </div>
         ) : (
           <>
-            {/* Team Builder Integration - Professional Card Style */}
+            {/* Team Builder Integration - Volledig Geïntegreerd */}
             {showTeamBuilder && (
-              <div className="mb-8 bg-gradient-to-br from-orange-900/30 to-amber-950/30 backdrop-blur-xl rounded-2xl border-2 border-orange-500/50 shadow-2xl overflow-hidden animate-in slide-in-from-top-4 duration-500">
+              <div className="mb-8 bg-slate-800/50 backdrop-blur-xl rounded-2xl border-2 border-orange-500/50 shadow-2xl overflow-hidden">
                 <div className="bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -218,49 +290,57 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">Nieuw Team Bouwen</h3>
-                      <p className="text-orange-100 text-sm">Sleep riders naar je nieuwe team</p>
+                      <h3 className="text-xl font-bold text-white">🏆 Team Builder</h3>
+                      <p className="text-orange-100 text-sm">Sleep riders naar je teams</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setShowTeamBuilder(false)}
-                    className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-all hover:rotate-90 duration-300"
-                    title="Sluiten"
-                  >
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="p-6">
-                  <div className="bg-gradient-to-br from-blue-900/40 to-indigo-950/40 backdrop-blur-sm rounded-xl border border-white/10 p-8 text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-orange-500/20 border-2 border-orange-500/50 mb-4">
-                      <svg className="w-10 h-10 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/20 transition-all text-sm"
+                    >
+                      {sidebarOpen ? '← Verberg Riders' : '→ Toon Riders'}
+                    </button>
+                    <button
+                      onClick={() => setShowTeamBuilder(false)}
+                      className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-all hover:rotate-90 duration-300"
+                      title="Sluiten"
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
-                    </div>
-                    <h4 className="text-2xl font-bold text-white mb-2">Team Builder komt hier</h4>
-                    <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-                      De volledige Team Builder interface met drag & drop functionaliteit wordt hier geïntegreerd. 
-                      Sleep riders uit de sidebar, maak teams aan, en beheer je lineup - alles op één plek.
-                    </p>
-                    <div className="flex items-center justify-center gap-4">
-                      <a
-                        href="/integrated-team-builder"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                        Open Volledige Team Builder
-                      </a>
-                      <button
-                        onClick={() => setShowTeamBuilder(false)}
-                        className="px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/20 transition-all"
-                      >
-                        Later
-                      </button>
-                    </div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex">
+                  {/* Sidebar met Riders */}
+                  <RiderPassportSidebar
+                    riders={riders}
+                    isOpen={sidebarOpen}
+                    onDragStart={handleDragStart}
+                  />
+
+                  {/* Team Cards Grid */}
+                  <div className={`flex-1 p-6 transition-all duration-300`}>
+                    {teams.length === 0 ? (
+                      <div className="text-center text-white py-20">
+                        <p className="text-xl">Geen teams gevonden</p>
+                        <p className="text-slate-400 mt-2">Maak eerst teams aan via Team Manager</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+                        {teams.map(team => (
+                          <TeamBuilderCard
+                            key={team.team_id}
+                            team={team}
+                            onDrop={handleDrop}
+                            onOpenDetail={handleOpenTeamDetail}
+                            isDragging={draggedRider !== null}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -280,6 +360,14 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </>
         )}
       </div>
+
+      {/* Team Lineup Detail Modal */}
+      {selectedTeamId && (
+        <TeamLineupModal
+          teamId={selectedTeamId}
+          onClose={handleCloseTeamDetail}
+        />
+      )}
     </div>
   )
 }

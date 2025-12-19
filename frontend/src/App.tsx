@@ -8,7 +8,6 @@ import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
 import RiderPassportGallery from './pages/RiderPassportGallery'
-import IntegratedTeamBuilder from './pages/IntegratedTeamBuilder'
 import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
@@ -19,7 +18,6 @@ function Navigation() {
     { path: '/', label: 'Team Lineup', icon: '👥' },
     { path: '/racing-matrix', label: 'Performance Matrix', icon: '📊' },
     { path: '/rider-passports', label: 'Rider Passports', icon: '🎴' },
-    { path: '/integrated-team-builder', label: 'Team Builder', icon: '🏆' },
     { path: '/team-manager', label: 'Team Manager', icon: '⚙️' },
   ]
 
@@ -134,7 +132,6 @@ function App() {
           <Route path="/" element={<TeamViewer />} />
           <Route path="/racing-matrix" element={<RacingMatrix />} />
           <Route path="/rider-passports" element={<RiderPassportGallery />} />
-          <Route path="/integrated-team-builder" element={<IntegratedTeamBuilder />} />
           <Route path="/events" element={<EventsDashboard />} />
           <Route path="/results" element={<ResultsDashboard />} />
           <Route path="/team-manager" element={<TeamManager />} />
