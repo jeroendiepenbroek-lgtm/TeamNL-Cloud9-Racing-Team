@@ -94,12 +94,21 @@ interface TeamViewerProps {
 
 export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [showTeamBuilder, setShowTeamBuilder] = useState(false)
-  const [favoriteTeams, setFavoriteTeams] = useState<Set<number>>(new Set())
+  const [favoriteTeams, setFavoriteTeams] = useState<Set<number>>(() => {
+    // Load favorites from localStorage
+    const stored = localStorage.getItem('favoriteTeams')
+    return stored ? new Set(JSON.parse(stored)) : new Set()
+  })
   const [sortBy, setSortBy] = useState<'name' | 'riders' | 'status'>('name')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
   const [draggedRider, setDraggedRider] = useState<any>(null)
   const queryClient = useQueryClient()
+
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('favoriteTeams', JSON.stringify(Array.from(favoriteTeams)))
+  }, [favoriteTeams])
   
   // Fetch all teams
   const { data: teamsData, isLoading: teamsLoading } = useQuery({
@@ -424,23 +433,22 @@ function TeamCard({ team, isFavorite, toggleFavorite }: { team: Team; isFavorite
     <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl hover:shadow-2xl hover:border-orange-400/50 transition-all duration-300 overflow-hidden group">
       {/* Team Header - Clickable */}
       <div className="p-6 relative">
-        {/* Favorite Star Button - Top Right Corner */}
-        <button
-          onClick={(e) => { e.stopPropagation(); toggleFavorite(team.team_id) }}
-          className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all hover:scale-110"
-          title={isFavorite ? 'Verwijder van favorieten' : 'Toevoegen aan favorieten'}
-        >
-          <span className={`text-2xl transition-transform ${isFavorite ? 'scale-110' : ''}`}>
-            {isFavorite ? '⭐' : '☆'}
-          </span>
-        </button>
-        
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-full flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg p-2 -m-2"
         >
-          <div className="text-left flex-1 pr-12">
+          <div className="text-left flex-1">
             <div className="flex items-center gap-3 mb-1">
+              {/* Favorite Star Button - Links van teamnaam */}
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleFavorite(team.team_id) }}
+                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all hover:scale-110"
+                title={isFavorite ? 'Verwijder van favorieten' : 'Toevoegen aan favorieten'}
+              >
+                <span className={`text-xl transition-transform ${isFavorite ? 'scale-110' : ''}`}>
+                  {isFavorite ? '⭐' : '☆'}
+                </span>
+              </button>
               <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
               <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
                 {team.current_riders} riders
