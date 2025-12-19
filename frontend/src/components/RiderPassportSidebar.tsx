@@ -24,17 +24,26 @@ interface RiderPassportSidebarProps {
 }
 
 const VELO_TIERS = [
-  { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE' },
-  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444' },
-  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981' },
-  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6' },
-  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7' },
-  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8' },
-  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308' },
-  { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A' },
-  { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316' },
-  { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626' },
+  { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE', emoji: '💎' },
+  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444', emoji: '💍' },
+  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981', emoji: '💚' },
+  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6', emoji: '💙' },
+  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7', emoji: '💜' },
+  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8', emoji: '⚪' },
+  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308', emoji: '🟡' },
+  { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A', emoji: '⚫' },
+  { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316', emoji: '🟠' },
+  { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626', emoji: '🟤' },
 ]
+
+const CATEGORY_COLORS: {[key: string]: string} = {
+  'A+': '#FF0000',
+  'A': '#FF0000',
+  'B': '#4CAF50',
+  'C': '#0000FF',
+  'D': '#FF1493',
+  'E': '#808080'
+}
 
 const getVeloTier = (rating: number | null) => {
   if (!rating) return null
@@ -146,6 +155,8 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart }: Ri
           {filteredRiders.map(rider => {
             const tier = getVeloTier(rider.velo_live)
             const category = rider.zwiftracing_category || rider.zwift_official_category
+            const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
+            const veloRounded = Math.floor(rider.velo_live || 0)
             const ftpWkg = rider.racing_ftp && rider.weight_kg 
               ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
               : '-'
@@ -178,19 +189,23 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart }: Ri
                     <p className="text-sm font-bold text-white truncate">{rider.full_name}</p>
                     <div className="flex items-center gap-2 mt-1">
                       {category && (
-                        <span className="text-xs px-1.5 py-0.5 bg-blue-600 text-white rounded">
+                        <span 
+                          className="text-xs px-1.5 py-0.5 text-white rounded font-bold"
+                          style={{ backgroundColor: categoryColor }}
+                        >
                           {category}
                         </span>
                       )}
                       {tier && (
                         <span 
-                          className="text-xs px-1.5 py-0.5 rounded font-bold"
+                          className="text-xs px-1.5 py-0.5 rounded font-bold text-white flex items-center gap-1"
                           style={{ 
-                            backgroundColor: `${tier.color}20`,
-                            color: tier.color
+                            backgroundColor: tier.color,
                           }}
+                          title={`${tier.name} Tier`}
                         >
-                          {rider.velo_live}
+                          <span>{tier.emoji}</span>
+                          <span>{veloRounded}</span>
                         </span>
                       )}
                     </div>
