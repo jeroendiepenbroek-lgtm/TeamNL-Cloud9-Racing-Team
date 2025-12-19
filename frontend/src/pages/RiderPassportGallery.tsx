@@ -739,7 +739,7 @@ export default function RiderPassportGallery() {
       </div>
 
       {/* Compact Search + Filters Row */}
-      <div className="max-w-7xl mx-auto mb-6">
+      <div className="max-w-7xl mx-auto mb-6 relative z-[9999]">
         <div className="bg-white/10 backdrop-blur-md rounded-xl border border-white/20 p-3 shadow-lg">
           <div className="space-y-3">
             {/* Search Bar */}
