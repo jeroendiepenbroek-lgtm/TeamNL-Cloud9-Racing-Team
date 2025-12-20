@@ -26,6 +26,8 @@ interface TeamLineup {
   avatar_url?: string
   category: string
   current_velo_rank?: number
+  racing_ftp?: number
+  weight_kg?: number
 }
 
 interface TeamCardProps {
@@ -103,11 +105,12 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
       {/* Header */}
       <div 
         className="p-4 border-b border-slate-700/50 bg-slate-900/50 cursor-pointer hover:bg-slate-900/70 transition-colors"
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation()
           if (onToggleExpand) {
             onToggleExpand(team.team_id)
-          } else {
-            onSelectForFiltering?.(team.team_id)
+          } else if (onSelectForFiltering) {
+            onSelectForFiltering(team.team_id)
           }
         }}
         title={onToggleExpand ? "Klik om uit/in te vouwen" : "Klik om riders te filteren voor dit team"}
@@ -210,10 +213,35 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
                 return '#666666'
               }
               
+              const VELO_TIERS = [
+                { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE', border: '#3B82F6' },
+                { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444', border: '#EC4899' },
+                { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981', border: '#059669' },
+                { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6', border: '#2563EB' },
+                { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7', border: '#9333EA' },
+                { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8', border: '#64748B' },
+                { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308', border: '#CA8A04' },
+                { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A', border: '#52525B' },
+                { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316', border: '#EA580C' },
+                { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626', border: '#B91C1C' },
+              ]
+              
+              const getVeloTier = (rating: number | null) => {
+                if (!rating) return null
+                return VELO_TIERS.find(tier => 
+                  rating >= tier.min && (!tier.max || rating < tier.max)
+                )
+              }
+              
+              const tier = getVeloTier(rider.current_velo_rank || null)
+              const ftpWkg = rider.racing_ftp && rider.weight_kg 
+                ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
+                : '-'
+              
               return (
                 <div
                   key={rider.rider_id}
-                  className="p-2 rounded-lg border bg-slate-900/50 border-slate-600"
+                  className="p-2 rounded-lg border bg-slate-900/50 border-slate-600 hover:border-slate-500 transition-all group"
                 >
                   <div className="flex items-center gap-2">
                     {/* Avatar */}
@@ -235,13 +263,48 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
                         >
                           {rider.category || 'N/A'}
                         </span>
-                        {rider.current_velo_rank && (
-                          <span className="text-[10px] text-cyan-400 font-bold">
-                            {Math.floor(rider.current_velo_rank)}
+                        {tier && (
+                          <span 
+                            className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
+                            style={{ 
+                              backgroundColor: tier.color,
+                            }}
+                            title={`${tier.name} Tier`}
+                          >
+                            {tier.rank}
                           </span>
                         )}
                       </div>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
+                        <span>FTP: {rider.racing_ftp || '-'}W</span>
+                        <span>•</span>
+                        <span>{ftpWkg} W/kg</span>
+                      </div>
                     </div>
+                    
+                    {/* Delete Button - US2 */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm(`Weet je zeker dat je ${rider.name} wilt verwijderen uit dit team?`)) {
+                          fetch(`${API_BASE}/api/teams/${team.team_id}/riders/${rider.rider_id}`, {
+                            method: 'DELETE'
+                          })
+                          .then(res => {
+                            if (res.ok) {
+                              // Refresh team data
+                              window.location.reload()
+                            }
+                          })
+                        }
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300"
+                      title="Verwijder rider"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               )
