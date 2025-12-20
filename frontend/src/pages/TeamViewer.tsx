@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
@@ -474,23 +474,38 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   // Riders kan array zijn OF object met riders property
   const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
 
-  const handleDragStart = (rider: any, isMobile: boolean = false) => {
+  const handleDragStart = useCallback((rider: any, isMobile: boolean = false) => {
+    console.log('handleDragStart called', { rider: rider.racing_name, isMobile })
     setDraggedRider(rider)
     setIsTouchDragging(isMobile)
-  }
+  }, [])
 
-  const handleDrop = (teamId: number) => {
+  const handleDrop = useCallback((teamId: number) => {
+    console.log('handleDrop called', { teamId, draggedRider })
     if (draggedRider) {
       addRiderMutation.mutate({ teamId, riderId: draggedRider.rider_id })
+      
+      // Reset visual feedback
+      document.querySelectorAll('[style*="opacity: 0.7"]').forEach(el => {
+        const element = el as HTMLElement
+        element.style.opacity = ''
+        element.style.transform = ''
+      })
+      
       setDraggedRider(null)
       setIsTouchDragging(false)
       setTouchPosition(null)
     }
-  }
+  }, [draggedRider, addRiderMutation])
 
   // Global touch handlers for mobile drag & drop
   useEffect(() => {
-    if (!isTouchDragging) return
+    if (!isTouchDragging) {
+      console.log('Touch dragging not active')
+      return
+    }
+
+    console.log('Setting up touch handlers for rider:', draggedRider?.racing_name)
 
     const handleTouchMove = (e: TouchEvent) => {
       const touch = e.touches[0]
@@ -499,15 +514,21 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     }
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (!draggedRider) return
+      console.log('Touch end detected')
+      if (!draggedRider) {
+        console.log('No dragged rider')
+        return
+      }
 
       const touch = e.changedTouches[0]
       const element = document.elementFromPoint(touch.clientX, touch.clientY)
+      console.log('Element at drop point:', element)
       
       // Check if dropped on a team card
       const teamCard = element?.closest('[data-team-id]') as HTMLElement
       if (teamCard) {
         const teamId = parseInt(teamCard.dataset.teamId || '0')
+        console.log('Dropped on team card:', teamId)
         if (teamId) {
           handleDrop(teamId)
           return
@@ -518,13 +539,20 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       const sidebar = element?.closest('[data-sidebar-team]') as HTMLElement
       if (sidebar) {
         const teamId = parseInt(sidebar.dataset.sidebarTeam || '0')
+        console.log('Dropped on sidebar:', teamId)
         if (teamId) {
           handleDrop(teamId)
           return
         }
       }
 
-      // No valid drop target
+      console.log('No valid drop target found')
+      // No valid drop target - reset visual feedback
+      document.querySelectorAll('[style*="opacity: 0.7"]').forEach(el => {
+        const element = el as HTMLElement
+        element.style.opacity = ''
+        element.style.transform = ''
+      })
       setDraggedRider(null)
       setIsTouchDragging(false)
       setTouchPosition(null)
@@ -537,7 +565,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [isTouchDragging, draggedRider])
+  }, [isTouchDragging, draggedRider, handleDrop])
 
   const handleOpenTeamDetail = (teamId: number) => {
     setSelectedTeamId(teamId)

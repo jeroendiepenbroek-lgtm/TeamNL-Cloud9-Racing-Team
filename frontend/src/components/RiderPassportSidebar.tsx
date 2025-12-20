@@ -122,8 +122,13 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
     if (rider.team_id) return // Don't drag assigned riders
     
     // Start mobile drag
-    e.preventDefault()
+    console.log('Touch start on rider:', rider.racing_name || rider.full_name)
     onDragStart(rider, true)
+    
+    // Add visual feedback
+    const target = e.currentTarget as HTMLElement
+    target.style.opacity = '0.7'
+    target.style.transform = 'scale(0.95)'
   }
 
   if (!isOpen) return null
