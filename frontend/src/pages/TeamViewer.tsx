@@ -459,7 +459,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       />
 
                       {/* Team Cards Grid */}
-                      <div className={`flex-1 p-6 transition-all duration-300 ${expandedTeamId ? 'mr-[520px]' : ''}`}>
+                      <div className={`flex-1 p-6 transition-all duration-300`}>
                         {teams.length === 0 ? (
                           <div className="text-center text-white py-20">
                             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-500/50 mb-4">
@@ -480,7 +480,11 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                             </button>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6 items-start">
+                          <div className={`grid gap-6 items-start transition-all duration-300 ${
+                            expandedTeamId 
+                              ? 'grid-cols-1 xl:grid-cols-2' 
+                              : 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3'
+                          }`}>
                             {teams.map(team => (
                               <TeamBuilderCard
                                 key={team.team_id}
