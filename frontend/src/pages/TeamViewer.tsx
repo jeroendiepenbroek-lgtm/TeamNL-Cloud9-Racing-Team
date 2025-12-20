@@ -479,7 +479,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
   isExpanded?: boolean;
   onToggleExpand?: () => void;
 }) {
-  const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('passports')
+  const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('matrix')
   const [passportSize, setPassportSize] = useState<'compact' | 'full'>('compact')
   
   const { data: lineupData, isLoading } = useQuery({

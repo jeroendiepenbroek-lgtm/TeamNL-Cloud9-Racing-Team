@@ -28,7 +28,7 @@ function Navigation() {
 
   return (
     <>
-      <nav className="bg-gradient-to-r from-red-900 via-green-900 to-red-900 shadow-lg border-b-4 border-yellow-400 relative z-50">
+      <nav className="bg-gradient-to-r from-red-900 via-green-900 to-red-900 shadow-lg border-b-4 border-yellow-400 relative z-[9999]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo + Brand with Christmas Trees */}
@@ -93,7 +93,7 @@ function Navigation() {
 
           {/* Dropdown Menu - Works for both mobile and desktop */}
           {menuOpen && (
-            <div className="absolute right-4 top-24 w-72 bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl shadow-2xl border-2 border-yellow-400 overflow-hidden z-[9999]">
+            <div className="fixed right-4 top-24 w-72 bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl shadow-2xl border-2 border-yellow-400 overflow-hidden z-[9999]">
               <div className="py-2">
                 {menuItems.map((item) => (
                   <button
