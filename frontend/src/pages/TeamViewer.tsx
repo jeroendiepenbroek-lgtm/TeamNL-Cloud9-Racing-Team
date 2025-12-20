@@ -459,7 +459,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       />
 
                       {/* Team Cards Grid */}
-                      <div className={`flex-1 p-6 transition-all duration-300`}>
+                      <div className={`flex-1 p-6 transition-all duration-300 ${expandedTeamId ? 'mr-[520px]' : ''}`}>
                         {teams.length === 0 ? (
                           <div className="text-center text-white py-20">
                             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-500/50 mb-4">
