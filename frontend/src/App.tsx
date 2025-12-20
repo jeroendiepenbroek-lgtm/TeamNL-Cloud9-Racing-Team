@@ -93,7 +93,7 @@ function Navigation() {
 
           {/* Dropdown Menu - Works for both mobile and desktop */}
           {menuOpen && (
-            <div className="absolute right-4 top-24 w-72 bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl shadow-2xl border-2 border-yellow-400 overflow-hidden z-[100]">
+            <div className="absolute right-4 top-24 w-72 bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl shadow-2xl border-2 border-yellow-400 overflow-hidden z-[9999]">
               <div className="py-2">
                 {menuItems.map((item) => (
                   <button
@@ -114,7 +114,7 @@ function Navigation() {
       {/* Backdrop overlay when menu is open */}
       {menuOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-[90]"
+          className="fixed inset-0 bg-black/50 z-[9998]"
           onClick={() => setMenuOpen(false)}
         />
       )}

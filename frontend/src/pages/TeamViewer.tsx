@@ -350,7 +350,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       onClick={() => setSidebarOpen(!sidebarOpen)}
                       className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/20 transition-all text-sm"
                     >
-                      {sidebarOpen ? '← Verberg Riders' : '→ Toon Riders'}
+                      {sidebarOpen ? '← Verberg Sidebar' : '→ Toon Sidebar'}
                     </button>
                     <button
                       onClick={() => setShowTeamBuilder(false)}
@@ -439,6 +439,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   team={team}
                   isFavorite={favoriteTeams.has(team.team_id)}
                   toggleFavorite={toggleFavorite}
+                  isExpanded={team.team_id === expandedTeamId}
+                  onToggleExpand={() => {
+                    setExpandedTeamId(expandedTeamId === team.team_id ? null : team.team_id)
+                  }}
                 />
               ))}
             </div>
@@ -468,8 +472,13 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
 }
 
 // Team Card with Riders - Collapsible (Modernized with Favorite)
-function TeamCard({ team, isFavorite, toggleFavorite }: { team: Team; isFavorite: boolean; toggleFavorite: (teamId: number) => void }) {
-  const [isExpanded, setIsExpanded] = useState(false)
+function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand }: { 
+  team: Team; 
+  isFavorite: boolean; 
+  toggleFavorite: (teamId: number) => void;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+}) {
   const [viewMode, setViewMode] = useState<'matrix' | 'passports'>('passports')
   const [passportSize, setPassportSize] = useState<'compact' | 'full'>('compact')
   
@@ -511,7 +520,7 @@ function TeamCard({ team, isFavorite, toggleFavorite }: { team: Team; isFavorite
       {/* Team Header - Clickable */}
       <div className="p-6 relative">
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => onToggleExpand?.()}
           className="w-full flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg p-2 -m-2"
         >
           <div className="text-left flex-1">

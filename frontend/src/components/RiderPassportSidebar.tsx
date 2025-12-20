@@ -174,19 +174,19 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
               <option value="D">D</option>
             </select>
 
-            {/* Tier Filter */}
+            {/* vELO Filter */}
             <select
               value={selectedTier}
               onChange={(e) => setSelectedTier(e.target.value)}
               className="flex-1 px-2 py-1 text-xs bg-slate-900/50 border border-slate-600 rounded text-white focus:outline-none focus:border-blue-500"
             >
-              <option value="">Tier</option>
+              <option value="">vELO</option>
               {VELO_TIERS.map(tier => (
                 <option key={tier.rank} value={tier.name}>{tier.rank}</option>
               ))}
             </select>
 
-            {/* Hide Assigned Toggle */}
+            {/* Verberg toegewezen riders */}
             <label className="flex items-center gap-1 text-xs text-white cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
@@ -194,7 +194,7 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
                 onChange={(e) => setHideAssigned(e.target.checked)}
                 className="w-3 h-3 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-0"
               />
-              <span className="text-[10px]">Verberg</span>
+              <span className="text-[10px]">Verberg toegewezen</span>
             </label>
           </div>
 
