@@ -46,6 +46,7 @@ const STATUS_ICONS = {
 
 export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
+  const [isTouchOver, setIsTouchOver] = useState(false)
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -62,15 +63,38 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
     onDrop(team.team_id)
   }
 
+  // Touch event handlers for mobile
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault()
+    const touch = e.touches[0]
+    const element = document.elementFromPoint(touch.clientX, touch.clientY)
+    const isOverThisCard = element?.closest(`[data-team-id="${team.team_id}"]`)
+    
+    if (isOverThisCard && isDragging) {
+      setIsTouchOver(true)
+    } else {
+      setIsTouchOver(false)
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (isTouchOver && isDragging) {
+      onDrop(team.team_id)
+    }
+    setIsTouchOver(false)
+  }
+
   const canAddMore = team.current_riders < team.max_riders
+  const showDropIndicator = (isDragOver || isTouchOver) && isDragging
 
   return (
     <div
+      data-team-id={team.team_id}
       className={`
         relative bg-slate-800/50 backdrop-blur-sm rounded-xl border-2 
         transition-all duration-300 overflow-hidden
-        ${isDragOver && canAddMore ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
-        ${isDragOver && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
+        ${showDropIndicator && canAddMore ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
+        ${showDropIndicator && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
         ${isDragging && canAddMore ? 'hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30' : ''}
         ${isSelectedForFiltering ? 'ring-4 ring-orange-500 border-orange-500' : ''}
         ${isExpanded ? 'ring-4 ring-orange-400 border-orange-400' : ''}
@@ -78,6 +102,8 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
       <div 
@@ -165,7 +191,7 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
       </div>
 
       {/* Drag Over Indicator */}
-      {isDragOver && (
+      {showDropIndicator && (
         <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
           canAddMore 
             ? 'bg-green-500/20 backdrop-blur-sm' 

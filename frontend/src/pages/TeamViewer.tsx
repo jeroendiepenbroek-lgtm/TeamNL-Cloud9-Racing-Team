@@ -48,6 +48,7 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
   onRemoveRider: (teamId: number, riderId: number) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false)
+  const [isTouchOver, setIsTouchOver] = useState(false)
   
   const { data: lineupData } = useQuery({
     queryKey: ['team', team.team_id],
@@ -76,16 +77,34 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
     onDrop(team.team_id)
   }
 
+  // Touch handlers for mobile drag & drop
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    const element = document.elementFromPoint(touch.clientX, touch.clientY)
+    const sidebar = element?.closest('[data-sidebar-team]')
+    setIsTouchOver(!!sidebar)
+  }
+
+  const handleTouchEnd = () => {
+    if (isTouchOver && canAddMore) {
+      onDrop(team.team_id)
+    }
+    setIsTouchOver(false)
+  }
+
   return (
     <div 
       className={`fixed right-0 top-0 bottom-0 w-full sm:w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
-        isDragOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
-        isDragOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
+        (isDragOver || isTouchOver) && canAddMore ? 'border-green-500 shadow-green-500/50' : 
+        (isDragOver || isTouchOver) && !canAddMore ? 'border-red-500 shadow-red-500/50' :
         'border-orange-500'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      data-sidebar-team={team.team_id}
     >
       {/* Header */}
       <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-3 sm:p-4 flex items-center justify-between shadow-lg z-10">
@@ -106,7 +125,7 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
       </div>
 
       {/* Drag & Drop Indicator */}
-      {isDragOver && (
+      {(isDragOver || isTouchOver) && (
         <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
           canAddMore 
             ? 'bg-green-500/20 backdrop-blur-sm' 
