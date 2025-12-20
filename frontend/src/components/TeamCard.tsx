@@ -93,7 +93,7 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
     <div
       className={`
         relative bg-slate-800/50 backdrop-blur-sm rounded-xl border-2 
-        transition-all duration-300 overflow-hidden
+        transition-all duration-300 ${isExpanded ? 'overflow-visible z-50' : 'overflow-hidden'}
         ${isDragOver && canAddMore ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
         ${isDragOver && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
         ${isDragging && canAddMore ? 'hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30' : ''}
@@ -188,16 +188,11 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
         </div>
       </div>
 
-      {/* Collapsible Content */}
-      <div 
-        className="overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ 
-          maxHeight: isExpanded ? '2000px' : '0px',
-          opacity: isExpanded ? 1 : 0
-        }}
-      >
-        {/* Passport Grid */}
-        <div className="p-4">
+      {/* Collapsible Content - Absolute Positioned Overlay */}
+      {isExpanded && (
+        <div className="absolute left-0 right-0 top-full mt-2 bg-slate-800/95 backdrop-blur-sm rounded-xl border-2 border-orange-400 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+          {/* Passport Grid */}
+          <div className="p-4">
         {lineup.length === 0 ? (
           <div className="h-48 flex items-center justify-center border-2 border-dashed border-slate-600 rounded-lg">
             <div className="text-center">
@@ -332,18 +327,19 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
             +{lineup.length - 12} meer riders
           </div>
         )}
-      </div>
+          </div>
 
-        {/* Footer Actions */}
-        <div className="p-3 border-t border-slate-700/50 bg-slate-900/30">
-          <button
-            onClick={(e) => { e.stopPropagation(); onOpenDetail(team.team_id) }}
-            className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
-            📋 Open Team LINE-UP
-          </button>
+          {/* Footer Actions */}
+          <div className="p-3 border-t border-slate-700/50 bg-slate-900/30">
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenDetail(team.team_id) }}
+              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              📋 Open Team LINE-UP
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Drag Over Indicator */}
       {isDragOver && (
