@@ -48,7 +48,6 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
   onRemoveRider: (teamId: number, riderId: number) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false)
-  const [isTouchOver, setIsTouchOver] = useState(false)
   
   const { data: lineupData } = useQuery({
     queryKey: ['team', team.team_id],
@@ -77,33 +76,16 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
     onDrop(team.team_id)
   }
 
-  // Touch handlers for mobile drag & drop
-  const handleTouchMove = (e: React.TouchEvent) => {
-    const touch = e.touches[0]
-    const element = document.elementFromPoint(touch.clientX, touch.clientY)
-    const sidebar = element?.closest('[data-sidebar-team]')
-    setIsTouchOver(!!sidebar)
-  }
-
-  const handleTouchEnd = () => {
-    if (isTouchOver && canAddMore) {
-      onDrop(team.team_id)
-    }
-    setIsTouchOver(false)
-  }
-
   return (
     <div 
       className={`fixed right-0 top-0 bottom-0 w-full sm:w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
-        (isDragOver || isTouchOver) && canAddMore ? 'border-green-500 shadow-green-500/50' : 
-        (isDragOver || isTouchOver) && !canAddMore ? 'border-red-500 shadow-red-500/50' :
+        isDragOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
+        isDragOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
         'border-orange-500'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       data-sidebar-team={team.team_id}
     >
       {/* Header */}
@@ -125,7 +107,7 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
       </div>
 
       {/* Drag & Drop Indicator */}
-      {(isDragOver || isTouchOver) && (
+      {isDragOver && (
         <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
           canAddMore 
             ? 'bg-green-500/20 backdrop-blur-sm' 
@@ -351,6 +333,8 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
   const [draggedRider, setDraggedRider] = useState<any>(null)
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
+  const [isTouchDragging, setIsTouchDragging] = useState(false)
+  const [touchPosition, setTouchPosition] = useState<{ x: number; y: number } | null>(null)
   const queryClient = useQueryClient()
 
   // Save favorites to localStorage whenever they change
@@ -490,16 +474,70 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   // Riders kan array zijn OF object met riders property
   const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
 
-  const handleDragStart = (rider: any) => {
+  const handleDragStart = (rider: any, isMobile: boolean = false) => {
     setDraggedRider(rider)
+    setIsTouchDragging(isMobile)
   }
 
   const handleDrop = (teamId: number) => {
     if (draggedRider) {
       addRiderMutation.mutate({ teamId, riderId: draggedRider.rider_id })
       setDraggedRider(null)
+      setIsTouchDragging(false)
+      setTouchPosition(null)
     }
   }
+
+  // Global touch handlers for mobile drag & drop
+  useEffect(() => {
+    if (!isTouchDragging) return
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      setTouchPosition({ x: touch.clientX, y: touch.clientY })
+      e.preventDefault()
+    }
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!draggedRider) return
+
+      const touch = e.changedTouches[0]
+      const element = document.elementFromPoint(touch.clientX, touch.clientY)
+      
+      // Check if dropped on a team card
+      const teamCard = element?.closest('[data-team-id]') as HTMLElement
+      if (teamCard) {
+        const teamId = parseInt(teamCard.dataset.teamId || '0')
+        if (teamId) {
+          handleDrop(teamId)
+          return
+        }
+      }
+
+      // Check if dropped on sidebar
+      const sidebar = element?.closest('[data-sidebar-team]') as HTMLElement
+      if (sidebar) {
+        const teamId = parseInt(sidebar.dataset.sidebarTeam || '0')
+        if (teamId) {
+          handleDrop(teamId)
+          return
+        }
+      }
+
+      // No valid drop target
+      setDraggedRider(null)
+      setIsTouchDragging(false)
+      setTouchPosition(null)
+    }
+
+    document.addEventListener('touchmove', handleTouchMove, { passive: false })
+    document.addEventListener('touchend', handleTouchEnd)
+
+    return () => {
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isTouchDragging, draggedRider])
 
   const handleOpenTeamDetail = (teamId: number) => {
     setSelectedTeamId(teamId)
@@ -752,6 +790,24 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           setShowTeamCreationModal(false)
         }}
       />
+
+      {/* Mobile Touch Drag Indicator */}
+      {isTouchDragging && draggedRider && touchPosition && (
+        <div 
+          className="fixed pointer-events-none z-[100001]"
+          style={{
+            left: touchPosition.x - 100,
+            top: touchPosition.y - 40,
+          }}
+        >
+          <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-2xl border-2 border-blue-400 animate-pulse">
+            <div className="font-bold text-sm">{draggedRider.racing_name || draggedRider.full_name}</div>
+            <div className="text-xs opacity-90">
+              {draggedRider.zwiftracing_category || draggedRider.zwift_official_category} • vELO {draggedRider.velo_live}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

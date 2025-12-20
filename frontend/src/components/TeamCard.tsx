@@ -46,7 +46,6 @@ const STATUS_ICONS = {
 
 export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
-  const [isTouchOver, setIsTouchOver] = useState(false)
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -63,29 +62,8 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
     onDrop(team.team_id)
   }
 
-  // Touch event handlers for mobile
-  const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault()
-    const touch = e.touches[0]
-    const element = document.elementFromPoint(touch.clientX, touch.clientY)
-    const isOverThisCard = element?.closest(`[data-team-id="${team.team_id}"]`)
-    
-    if (isOverThisCard && isDragging) {
-      setIsTouchOver(true)
-    } else {
-      setIsTouchOver(false)
-    }
-  }
-
-  const handleTouchEnd = () => {
-    if (isTouchOver && isDragging) {
-      onDrop(team.team_id)
-    }
-    setIsTouchOver(false)
-  }
-
   const canAddMore = team.current_riders < team.max_riders
-  const showDropIndicator = (isDragOver || isTouchOver) && isDragging
+  const showDropIndicator = isDragOver && isDragging
 
   return (
     <div
@@ -102,8 +80,6 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
       <div 

@@ -30,7 +30,7 @@ interface Team {
 interface RiderPassportSidebarProps {
   riders: Rider[]
   isOpen: boolean
-  onDragStart: (rider: Rider) => void
+  onDragStart: (rider: Rider, isMobile?: boolean) => void
   selectedTeam?: Team | null
   onClearTeamFilter?: () => void
 }
@@ -115,24 +115,15 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
 
   const handleDragStart = (e: React.DragEvent, rider: Rider) => {
     e.dataTransfer.effectAllowed = 'copy'
-    onDragStart(rider)
+    onDragStart(rider, false)
   }
 
   const handleTouchStart = (e: React.TouchEvent, rider: Rider) => {
     if (rider.team_id) return // Don't drag assigned riders
     
-    // Start drag on touch
-    onDragStart(rider)
-    
-    // Add visual feedback class
-    const target = e.currentTarget as HTMLElement
-    target.classList.add('opacity-70', 'scale-95')
-  }
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    // Remove visual feedback
-    const target = e.currentTarget as HTMLElement
-    target.classList.remove('opacity-70', 'scale-95')
+    // Start mobile drag
+    e.preventDefault()
+    onDragStart(rider, true)
   }
 
   if (!isOpen) return null
@@ -252,9 +243,8 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
                 draggable={!rider.team_id}
                 onDragStart={(e) => handleDragStart(e, rider)}
                 onTouchStart={(e) => handleTouchStart(e, rider)}
-                onTouchEnd={handleTouchEnd}
                 className={`
-                  p-2 rounded-lg border transition-all touch-none
+                  p-2 rounded-lg border transition-all
                   ${rider.team_id 
                     ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
                     : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-move active:scale-95 active:opacity-70'
