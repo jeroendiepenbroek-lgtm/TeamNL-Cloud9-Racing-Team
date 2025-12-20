@@ -409,7 +409,9 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     },
     onSuccess: (_, { teamId }) => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
       queryClient.invalidateQueries({ queryKey: ['team-lineup', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['riders'] })
       toast.success('Rider toegevoegd aan team!')
     },
     onError: (error: Error) => {
