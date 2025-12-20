@@ -1,7 +1,4 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-
-const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
 interface Team {
   team_id: number
@@ -18,16 +15,6 @@ interface Team {
   valid_riders: number
   invalid_riders: number
   team_status: 'incomplete' | 'ready' | 'warning' | 'overfilled'
-}
-
-interface TeamLineup {
-  rider_id: number
-  name: string
-  avatar_url?: string
-  category: string
-  current_velo_rank?: number
-  racing_ftp?: number
-  weight_kg?: number
 }
 
 interface TeamCardProps {
@@ -57,20 +44,8 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand, refetchTeams }: TeamCardProps) {
+export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
-
-  // Fetch team lineup
-  const { data: lineupData, refetch } = useQuery({
-    queryKey: ['team', team.team_id],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/teams/${team.team_id}`)
-      if (!res.ok) throw new Error('Failed to fetch team')
-      return res.json()
-    }
-  })
-
-  const lineup: TeamLineup[] = lineupData?.lineup || []
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -93,11 +68,12 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
     <div
       className={`
         relative bg-slate-800/50 backdrop-blur-sm rounded-xl border-2 
-        transition-all duration-300 ${isExpanded ? 'overflow-visible z-50' : 'overflow-hidden'}
+        transition-all duration-300 overflow-hidden
         ${isDragOver && canAddMore ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
         ${isDragOver && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
         ${isDragging && canAddMore ? 'hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30' : ''}
         ${isSelectedForFiltering ? 'ring-4 ring-orange-500 border-orange-500' : ''}
+        ${isExpanded ? 'ring-4 ring-orange-400 border-orange-400' : ''}
       `}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -187,174 +163,6 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
           </span>
         </div>
       </div>
-
-      {/* Collapsible Content - Fixed Right Sidebar Overlay */}
-      {isExpanded && (
-        <div className="fixed right-0 top-0 bottom-0 w-[500px] bg-slate-800/98 backdrop-blur-lg border-l-4 border-orange-500 shadow-2xl z-[100000] overflow-y-auto animate-in slide-in-from-right duration-300">
-          {/* Close Button */}
-          <div className="sticky top-0 bg-slate-900/95 border-b-2 border-orange-500 p-4 flex items-center justify-between">
-            <h3 className="text-xl font-bold text-white">{team.team_name}</h3>
-            <button
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                if (onToggleExpand) onToggleExpand(team.team_id);
-              }}
-              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-            >
-              <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          {/* Passport Grid */}
-          <div className="p-4">
-        {lineup.length === 0 ? (
-          <div className="h-48 flex items-center justify-center border-2 border-dashed border-slate-600 rounded-lg">
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">Sleep riders hierheen</p>
-              <p className="text-slate-500 text-xs mt-1">Minimaal {team.min_riders} riders</p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-1.5">
-            {lineup.slice(0, 12).map((rider) => {
-              const getCategoryColor = (cat: string) => {
-                if (cat === 'A+' || cat === 'A') return '#FF0000'
-                if (cat === 'B') return '#4CAF50'
-                if (cat === 'C') return '#0000FF'
-                if (cat === 'D') return '#FF1493'
-                if (cat === 'E') return '#808080'
-                return '#666666'
-              }
-              
-              const VELO_TIERS = [
-                { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE', border: '#3B82F6' },
-                { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444', border: '#EC4899' },
-                { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981', border: '#059669' },
-                { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6', border: '#2563EB' },
-                { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7', border: '#9333EA' },
-                { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8', border: '#64748B' },
-                { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308', border: '#CA8A04' },
-                { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A', border: '#52525B' },
-                { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316', border: '#EA580C' },
-                { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626', border: '#B91C1C' },
-              ]
-              
-              const getVeloTier = (rating: number | null) => {
-                if (!rating) return null
-                return VELO_TIERS.find(tier => 
-                  rating >= tier.min && (!tier.max || rating < tier.max)
-                )
-              }
-              
-              const tier = getVeloTier(rider.current_velo_rank || null)
-              const ftpWkg = rider.racing_ftp && rider.weight_kg 
-                ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
-                : '-'
-              
-              return (
-                <div
-                  key={rider.rider_id}
-                  className="p-2 rounded-lg border bg-slate-900/50 border-slate-600 hover:border-slate-500 transition-all group"
-                >
-                  <div className="flex items-center gap-2">
-                    {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
-                      {rider.avatar_url ? (
-                        <img src={rider.avatar_url} alt={rider.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-white truncate">{rider.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span 
-                          className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
-                          style={{ backgroundColor: getCategoryColor(rider.category) }}
-                        >
-                          {rider.category || 'N/A'}
-                        </span>
-                        {tier && (
-                          <span 
-                            className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
-                            style={{ 
-                              backgroundColor: tier.color,
-                            }}
-                            title={`${tier.name} Tier`}
-                          >
-                            {tier.rank}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
-                        <span>FTP: {rider.racing_ftp || '-'}W</span>
-                        <span>•</span>
-                        <span>{ftpWkg} W/kg</span>
-                      </div>
-                    </div>
-                    
-                    {/* Delete Button - US1: Geen confirm, blijf op pagina */}
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation()
-                        try {
-                          const res = await fetch(`${API_BASE}/api/teams/${team.team_id}/riders/${rider.rider_id}`, {
-                            method: 'DELETE'
-                          })
-                          if (res.ok) {
-                            // Refresh beide queries om data te updaten zonder reload
-                            await refetch()
-                            refetchTeams?.()
-                          }
-                        } catch (error) {
-                          console.error('Delete failed:', error)
-                        }
-                      }}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300"
-                      title="Verwijder rider uit team"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-
-            {/* Add more placeholder spots if needed */}
-            {Array.from({ length: Math.min(team.max_riders - lineup.length, 12 - lineup.length) }).map((_, i) => (
-              <div
-                key={`empty-${i}`}
-                className="p-2 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center h-14"
-              >
-                <span className="text-slate-600 text-xl">+</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {lineup.length > 12 && (
-          <div className="mt-2 text-center text-xs text-slate-400">
-            +{lineup.length - 12} meer riders
-          </div>
-        )}
-          </div>
-
-          {/* Footer Actions */}
-          <div className="p-3 border-t border-slate-700/50 bg-slate-900/30">
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenDetail(team.team_id) }}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
-            >
-              📋 Open Team LINE-UP
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Drag Over Indicator */}
       {isDragOver && (

@@ -6,6 +6,83 @@ import TeamLineupModal from '../components/TeamLineupModal.tsx'
 import TeamBuilderCard from '../components/TeamCard.tsx'
 import { TeamCreationModal } from '../components/TeamCreationModal.tsx'
 
+const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
+
+// Team Expanded Sidebar Component
+function TeamExpandedSidebar({ team, onClose }: { team: Team; onClose: () => void }) {
+  const { data: lineupData } = useQuery({
+    queryKey: ['team', team.team_id],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/teams/${team.team_id}`)
+      if (!res.ok) throw new Error('Failed to fetch team')
+      return res.json()
+    }
+  })
+
+  const lineup = lineupData?.lineup || []
+
+  return (
+    <div className="fixed right-0 top-0 bottom-0 w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 border-orange-500 shadow-2xl z-[100000] overflow-y-auto">
+      {/* Header */}
+      <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-4 flex items-center justify-between shadow-lg">
+        <h3 className="text-xl font-bold text-white">{team.team_name}</h3>
+        <button
+          onClick={onClose}
+          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+        >
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        {lineup.length === 0 ? (
+          <div className="h-48 flex items-center justify-center border-2 border-dashed border-slate-600 rounded-lg">
+            <div className="text-center">
+              <p className="text-slate-400 text-sm">Geen riders</p>
+              <p className="text-slate-500 text-xs mt-1">Minimaal {team.min_riders} riders</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {lineup.map((rider: any) => (
+              <div
+                key={rider.rider_id}
+                className="p-3 rounded-lg bg-slate-800/70 border border-slate-600 hover:border-slate-500 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  {rider.avatar_url && (
+                    <img 
+                      src={rider.avatar_url} 
+                      alt={rider.name}
+                      className="w-12 h-12 rounded-full border-2 border-orange-500"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-white truncate">{rider.name}</h4>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="px-2 py-0.5 bg-blue-600 text-white rounded">
+                        {rider.category}
+                      </span>
+                      {rider.racing_ftp && rider.weight_kg && (
+                        <span className="text-slate-400">
+                          {(rider.racing_ftp / rider.weight_kg).toFixed(1)} W/kg
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
 const CATEGORY_COLORS = {
   'A+': 'bg-red-500 text-white border-red-400',
@@ -302,7 +379,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </div>
         </div>
       </div>      )}      
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
+      <div className={`max-w-7xl mx-auto p-4 sm:p-6 transition-all duration-300 ${expandedTeamId ? 'pr-[470px]' : ''}`}>
         {teamsLoading ? (
           <div className="text-center text-gray-600 py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -449,6 +526,14 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </>
         )}
       </div>
+
+      {/* Fixed Right Sidebar for Expanded Team */}
+      {expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
+        <TeamExpandedSidebar
+          team={teams.find(t => t.team_id === expandedTeamId)!}
+          onClose={() => setExpandedTeamId(null)}
+        />
+      )}
 
       {/* Team Lineup Detail Modal */}
       {selectedTeamId && (
