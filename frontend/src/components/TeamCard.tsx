@@ -107,13 +107,16 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
         className="p-4 border-b border-slate-700/50 bg-slate-900/50 cursor-pointer hover:bg-slate-900/70 transition-colors"
         onClick={(e) => {
           e.stopPropagation()
+          // Altijd expand/collapse als de functie beschikbaar is
           if (onToggleExpand) {
             onToggleExpand(team.team_id)
-          } else if (onSelectForFiltering) {
+          }
+          // EN ook altijd filtering als de functie beschikbaar is
+          if (onSelectForFiltering) {
             onSelectForFiltering(team.team_id)
           }
         }}
-        title={onToggleExpand ? "Klik om uit/in te vouwen" : "Klik om riders te filteren voor dit team"}
+        title={onToggleExpand ? "Klik om uit/in te vouwen en riders te filteren" : "Klik om riders te filteren voor dit team"}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
