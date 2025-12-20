@@ -9,7 +9,14 @@ import { TeamCreationModal } from '../components/TeamCreationModal.tsx'
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
 // Team Expanded Sidebar Component
-function TeamExpandedSidebar({ team, onClose }: { team: Team; onClose: () => void }) {
+function TeamExpandedSidebar({ team, onClose, onDrop, isDragging }: { 
+  team: Team; 
+  onClose: () => void;
+  onDrop: (teamId: number) => void;
+  isDragging: boolean;
+}) {
+  const [isDragOver, setIsDragOver] = useState(false)
+  
   const { data: lineupData } = useQuery({
     queryKey: ['team', team.team_id],
     queryFn: async () => {
@@ -20,12 +27,42 @@ function TeamExpandedSidebar({ team, onClose }: { team: Team; onClose: () => voi
   })
 
   const lineup = lineupData?.lineup || []
+  const canAddMore = team.current_riders < team.max_riders
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    onDrop(team.team_id)
+  }
 
   return (
-    <div className="fixed right-0 top-0 bottom-0 w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 border-orange-500 shadow-2xl z-[100000] overflow-y-auto">
+    <div 
+      className={`fixed right-0 top-0 bottom-0 w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
+        isDragOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
+        isDragOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
+        'border-orange-500'
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Header */}
-      <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-4 flex items-center justify-between shadow-lg">
-        <h3 className="text-xl font-bold text-white">{team.team_name}</h3>
+      <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-4 flex items-center justify-between shadow-lg z-10">
+        <div>
+          <h3 className="text-xl font-bold text-white">{team.team_name}</h3>
+          <p className="text-xs text-orange-100 mt-0.5">
+            {team.current_riders}/{team.max_riders} riders
+          </p>
+        </div>
         <button
           onClick={onClose}
           className="p-2 hover:bg-white/20 rounded-lg transition-colors"
@@ -36,12 +73,51 @@ function TeamExpandedSidebar({ team, onClose }: { team: Team; onClose: () => voi
         </button>
       </div>
 
+      {/* Drag & Drop Indicator */}
+      {isDragOver && (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
+          canAddMore 
+            ? 'bg-green-500/20 backdrop-blur-sm' 
+            : 'bg-red-500/20 backdrop-blur-sm'
+        }`}>
+          <div className="text-center p-8 rounded-xl bg-slate-900/80 border-2 border-dashed backdrop-blur-md">
+            <p className={`text-3xl font-bold mb-2 ${canAddMore ? 'text-green-300' : 'text-red-300'}`}>
+              {canAddMore ? '✓ Drop hier' : '✗ Team vol'}
+            </p>
+            {canAddMore ? (
+              <p className="text-white text-lg">
+                Nog {team.max_riders - team.current_riders} plek{team.max_riders - team.current_riders !== 1 ? 'ken' : ''} vrij
+              </p>
+            ) : (
+              <p className="text-white text-lg">
+                Maximum van {team.max_riders} riders bereikt
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="p-4">
+        {/* Drop Zone Hint when dragging */}
+        {isDragging && canAddMore && (
+          <div className="mb-4 p-4 border-2 border-dashed border-green-500 bg-green-500/10 rounded-lg animate-pulse">
+            <p className="text-green-400 text-center font-semibold">
+              ⬇️ Sleep rider hierheen om toe te voegen
+            </p>
+          </div>
+        )}
+        
         {lineup.length === 0 ? (
-          <div className="h-48 flex items-center justify-center border-2 border-dashed border-slate-600 rounded-lg">
+          <div className={`h-48 flex items-center justify-center border-2 border-dashed rounded-lg transition-all ${
+            isDragging && canAddMore 
+              ? 'border-green-500 bg-green-500/10' 
+              : 'border-slate-600'
+          }`}>
             <div className="text-center">
-              <p className="text-slate-400 text-sm">Geen riders</p>
+              <p className="text-slate-400 text-sm">
+                {isDragging && canAddMore ? '⬇️ Drop hier om toe te voegen' : 'Geen riders'}
+              </p>
               <p className="text-slate-500 text-xs mt-1">Minimaal {team.min_riders} riders</p>
             </div>
           </div>
@@ -536,6 +612,8 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         <TeamExpandedSidebar
           team={teams.find(t => t.team_id === expandedTeamId)!}
           onClose={() => setExpandedTeamId(null)}
+          onDrop={handleDrop}
+          isDragging={draggedRider !== null}
         />
       )}
 
