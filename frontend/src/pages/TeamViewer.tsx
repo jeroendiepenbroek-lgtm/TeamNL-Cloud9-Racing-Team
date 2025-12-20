@@ -8,12 +8,44 @@ import { TeamCreationModal } from '../components/TeamCreationModal.tsx'
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
+// Category colors for rider badges
+const CATEGORY_COLORS_MAP: {[key: string]: string} = {
+  'A+': '#FF0000',
+  'A': '#FF0000',
+  'B': '#4CAF50',
+  'C': '#0000FF',
+  'D': '#FF1493',
+  'E': '#808080'
+}
+
+// vELO Tiers for sidebar
+const VELO_TIERS_SIDEBAR = [
+  { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE' },
+  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444' },
+  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981' },
+  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6' },
+  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7' },
+  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8' },
+  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308' },
+  { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A' },
+  { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316' },
+  { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626' },
+]
+
+const getVeloTierSidebar = (rating: number | null) => {
+  if (!rating) return null
+  return VELO_TIERS_SIDEBAR.find(tier => 
+    rating >= tier.min && (!tier.max || rating < tier.max)
+  )
+}
+
 // Team Expanded Sidebar Component
-function TeamExpandedSidebar({ team, onClose, onDrop, isDragging }: { 
+function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider }: { 
   team: Team; 
   onClose: () => void;
   onDrop: (teamId: number) => void;
   isDragging: boolean;
+  onRemoveRider: (teamId: number, riderId: number) => void;
 }) {
   const [isDragOver, setIsDragOver] = useState(false)
   
@@ -122,36 +154,76 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging }: {
             </div>
           </div>
         ) : (
-          <div className="space-y-2">
-            {lineup.map((rider: any) => (
-              <div
-                key={rider.rider_id}
-                className="p-3 rounded-lg bg-slate-800/70 border border-slate-600 hover:border-slate-500 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  {rider.avatar_url && (
-                    <img 
-                      src={rider.avatar_url} 
-                      alt={rider.name}
-                      className="w-12 h-12 rounded-full border-2 border-orange-500"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-white truncate">{rider.name}</h4>
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="px-2 py-0.5 bg-blue-600 text-white rounded">
-                        {rider.category}
-                      </span>
-                      {rider.racing_ftp && rider.weight_kg && (
-                        <span className="text-slate-400">
-                          {(rider.racing_ftp / rider.weight_kg).toFixed(1)} W/kg
-                        </span>
+          <div className="space-y-1.5">
+            {lineup.map((rider: any) => {
+              const tier = getVeloTierSidebar(rider.velo_live || rider.current_velo_rank)
+              const category = rider.category
+              const categoryColor = category ? (CATEGORY_COLORS_MAP[category] || '#666666') : '#666666'
+              const ftpWkg = rider.racing_ftp && rider.weight_kg 
+                ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
+                : '-'
+
+              return (
+                <div
+                  key={rider.rider_id}
+                  className="p-2 rounded-lg border bg-slate-900/50 border-slate-600 hover:border-slate-500 transition-all group"
+                >
+                  <div className="flex items-center gap-2">
+                    {/* Avatar */}
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+                      {rider.avatar_url ? (
+                        <img src={rider.avatar_url} alt={rider.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
                       )}
                     </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{rider.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {category && (
+                          <span 
+                            className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
+                            style={{ backgroundColor: categoryColor }}
+                          >
+                            {category}
+                          </span>
+                        )}
+                        {tier && (
+                          <span 
+                            className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
+                            style={{ backgroundColor: tier.color }}
+                            title={`${tier.name} Tier`}
+                          >
+                            {tier.rank}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
+                        <span>FTP: {rider.racing_ftp || rider.ftp_watts || '-'}W</span>
+                        <span>•</span>
+                        <span>{ftpWkg} W/kg</span>
+                      </div>
+                    </div>
+
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onRemoveRider(team.team_id, rider.rider_id)
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300 transition-all flex-shrink-0"
+                      title="Verwijder rider"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -339,6 +411,28 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       queryClient.invalidateQueries({ queryKey: ['team-lineup', teamId] })
       toast.success('Rider toegevoegd aan team!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
+    }
+  })
+
+  // Remove rider from team mutation
+  const removeRiderMutation = useMutation({
+    mutationFn: async ({ teamId, riderId }: { teamId: number; riderId: number }) => {
+      const res = await fetch(`/api/teams/${teamId}/riders/${riderId}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to remove rider')
+      }
+      return res.json()
+    },
+    onSuccess: (_, { teamId }) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
+      toast.success('Rider verwijderd uit team!')
     },
     onError: (error: Error) => {
       toast.error(error.message)
@@ -607,13 +701,16 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         )}
       </div>
 
-      {/* Fixed Right Sidebar for Expanded Team */}
-      {expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
+      {/* Fixed Right Sidebar for Expanded Team - Only in Team Builder */}
+      {showTeamBuilder && expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
         <TeamExpandedSidebar
           team={teams.find(t => t.team_id === expandedTeamId)!}
           onClose={() => setExpandedTeamId(null)}
           onDrop={handleDrop}
           isDragging={draggedRider !== null}
+          onRemoveRider={(teamId, riderId) => {
+            removeRiderMutation.mutate({ teamId, riderId })
+          }}
         />
       )}
 
