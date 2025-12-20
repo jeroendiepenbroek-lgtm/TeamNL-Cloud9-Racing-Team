@@ -58,7 +58,7 @@ export default function IntegratedTeamBuilder() {
   })
 
   // Fetch all teams
-  const { data: teamsData, isLoading: teamsLoading } = useQuery({
+  const { data: teamsData, isLoading: teamsLoading, refetch: refetchTeams } = useQuery({
     queryKey: ['teams'],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/teams`)
@@ -166,6 +166,7 @@ export default function IntegratedTeamBuilder() {
                   onDrop={handleDrop}
                   onOpenDetail={handleOpenTeamDetail}
                   isDragging={draggedRider !== null}
+                  refetchTeams={refetchTeams}
                 />
               ))}
             </div>

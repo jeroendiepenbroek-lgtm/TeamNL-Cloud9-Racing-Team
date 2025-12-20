@@ -115,7 +115,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   }, [favoriteTeams])
   
   // Fetch all teams
-  const { data: teamsData, isLoading: teamsLoading } = useQuery({
+  const { data: teamsData, isLoading: teamsLoading, refetch: refetchTeams } = useQuery({
     queryKey: ['teams'],
     queryFn: async () => {
       const res = await fetch('/api/teams')

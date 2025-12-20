@@ -64,7 +64,7 @@ export const TeamCreationModal: React.FC<TeamCreationModalProps> = ({ isOpen, on
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           team_name: teamName,
-          competition_type: competitionType,
+          competition_type: competitionType === 'velo-based' ? 'velo' : 'category', // US3: Fix constraint error
           competition_name: competitionName || null,
           velo_min_rank: competitionType === 'velo-based' ? veloMinRank : null,
           velo_max_rank: competitionType === 'velo-based' ? veloMaxRank : null,

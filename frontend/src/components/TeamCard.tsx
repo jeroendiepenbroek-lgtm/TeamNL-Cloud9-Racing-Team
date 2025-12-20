@@ -40,6 +40,7 @@ interface TeamCardProps {
   isDragging: boolean
   isExpanded?: boolean
   onToggleExpand?: (teamId: number) => void
+  refetchTeams?: () => void
 }
 
 const STATUS_COLORS = {
@@ -56,11 +57,11 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
+export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand, refetchTeams }: TeamCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
 
   // Fetch team lineup
-  const { data: lineupData } = useQuery({
+  const { data: lineupData, refetch } = useQuery({
     queryKey: ['team', team.team_id],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/teams/${team.team_id}`)
@@ -285,24 +286,25 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
                       </div>
                     </div>
                     
-                    {/* Delete Button - US2 */}
+                    {/* Delete Button - US1: Geen confirm, blijf op pagina */}
                     <button
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation()
-                        if (confirm(`Weet je zeker dat je ${rider.name} wilt verwijderen uit dit team?`)) {
-                          fetch(`${API_BASE}/api/teams/${team.team_id}/riders/${rider.rider_id}`, {
+                        try {
+                          const res = await fetch(`${API_BASE}/api/teams/${team.team_id}/riders/${rider.rider_id}`, {
                             method: 'DELETE'
                           })
-                          .then(res => {
-                            if (res.ok) {
-                              // Refresh team data
-                              window.location.reload()
-                            }
-                          })
+                          if (res.ok) {
+                            // Refresh beide queries om data te updaten zonder reload
+                            await refetch()
+                            refetchTeams?.()
+                          }
+                        } catch (error) {
+                          console.error('Delete failed:', error)
                         }
                       }}
                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300"
-                      title="Verwijder rider"
+                      title="Verwijder rider uit team"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
