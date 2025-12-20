@@ -121,7 +121,20 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
   if (!isOpen) return null
 
   return (
-    <aside className="w-80 border-r border-slate-700/50 bg-slate-800/30 h-[calc(100vh-73px)] sticky top-[73px] flex flex-col">
+    <aside className={`
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+      md:translate-x-0
+      fixed md:sticky 
+      left-0 top-0 md:top-[73px]
+      w-full sm:w-80
+      h-screen md:h-[calc(100vh-73px)]
+      border-r border-slate-700/50 
+      bg-slate-800/30 
+      backdrop-blur-xl
+      z-50 md:z-auto
+      transition-transform duration-300
+      flex flex-col
+    `}>
       {/* Sticky Filter Section */}
       <div className="sticky top-0 z-20 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50">
         <div className="p-2 space-y-1.5">

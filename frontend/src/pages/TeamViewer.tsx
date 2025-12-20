@@ -78,7 +78,7 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
 
   return (
     <div 
-      className={`fixed right-0 top-0 bottom-0 w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
+      className={`fixed right-0 top-0 bottom-0 w-full sm:w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
         isDragOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
         isDragOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
         'border-orange-500'
@@ -88,16 +88,16 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
       onDrop={handleDrop}
     >
       {/* Header */}
-      <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-4 flex items-center justify-between shadow-lg z-10">
-        <div>
-          <h3 className="text-xl font-bold text-white">{team.team_name}</h3>
+      <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-3 sm:p-4 flex items-center justify-between shadow-lg z-10">
+        <div className="flex-1 min-w-0 mr-2">
+          <h3 className="text-lg sm:text-xl font-bold text-white truncate">{team.team_name}</h3>
           <p className="text-xs text-orange-100 mt-0.5">
             {team.current_riders}/{team.max_riders} riders
           </p>
         </div>
         <button
           onClick={onClose}
-          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          className="p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-colors flex-shrink-0"
         >
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -652,10 +652,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                             </button>
                           </div>
                         ) : (
-                          <div className={`grid gap-6 items-start transition-all duration-300 ${
+                          <div className={`grid gap-4 sm:gap-6 items-start transition-all duration-300 ${
                             expandedTeamId 
-                              ? 'grid-cols-1 xl:grid-cols-2' 
-                              : 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3'
+                              ? 'grid-cols-1 lg:grid-cols-2' 
+                              : 'grid-cols-1 md:grid-cols-2 2xl:grid-cols-3'
                           }`}>
                             {teams.map(team => (
                               <TeamBuilderCard
