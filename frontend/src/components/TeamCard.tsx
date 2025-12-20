@@ -188,9 +188,24 @@ export default function TeamCard({ team, onDrop, onOpenDetail, onDelete, onSelec
         </div>
       </div>
 
-      {/* Collapsible Content - Absolute Positioned Overlay */}
+      {/* Collapsible Content - Fixed Right Sidebar Overlay */}
       {isExpanded && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-slate-800/95 backdrop-blur-sm rounded-xl border-2 border-orange-400 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="fixed right-0 top-0 bottom-0 w-[500px] bg-slate-800/98 backdrop-blur-lg border-l-4 border-orange-500 shadow-2xl z-[100000] overflow-y-auto animate-in slide-in-from-right duration-300">
+          {/* Close Button */}
+          <div className="sticky top-0 bg-slate-900/95 border-b-2 border-orange-500 p-4 flex items-center justify-between">
+            <h3 className="text-xl font-bold text-white">{team.team_name}</h3>
+            <button
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                if (onToggleExpand) onToggleExpand(team.team_id);
+              }}
+              className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
           {/* Passport Grid */}
           <div className="p-4">
         {lineup.length === 0 ? (
