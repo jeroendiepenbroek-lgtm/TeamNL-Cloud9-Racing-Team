@@ -110,12 +110,12 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
               </svg>
             )}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-white truncate">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-bold text-white break-words">
                   {team.team_name}
                 </h3>
                 {isSelectedForFiltering && (
-                  <span className="text-xs font-bold px-2 py-0.5 bg-orange-500 text-white rounded-full animate-pulse">
+                  <span className="text-xs font-bold px-2 py-0.5 bg-orange-500 text-white rounded-full animate-pulse whitespace-nowrap">
                     FILTERING
                   </span>
                 )}
