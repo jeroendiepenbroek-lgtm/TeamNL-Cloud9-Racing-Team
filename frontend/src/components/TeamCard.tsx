@@ -180,6 +180,21 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
           </div>
         </div>
       )}
+
+      {/* Mobile: Drop Button */}
+      {isDragging && canAddMore && (
+        <div className="md:hidden absolute inset-0 flex items-center justify-center bg-green-500/10 backdrop-blur-sm pointer-events-auto z-20">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDrop(team.team_id)
+            }}
+            className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-8 py-4 rounded-xl text-xl font-bold shadow-2xl border-2 border-green-400 animate-pulse"
+          >
+            ✓ VOEG TOE AAN {team.team_name}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

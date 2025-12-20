@@ -130,6 +130,18 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
         </div>
       )}
 
+      {/* Mobile: Drop Button at Bottom */}
+      {isDragging && canAddMore && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-900 via-slate-900 to-transparent z-[100001]">
+          <button
+            onClick={() => onDrop(team.team_id)}
+            className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-6 py-4 rounded-xl text-xl font-bold shadow-2xl border-2 border-green-400 animate-pulse"
+          >
+            ✓ VOEG TOE AAN {team.team_name}
+          </button>
+        </div>
+      )}
+
       {/* Content */}
       <div className="p-4">
         {/* Drop Zone Hint when dragging */}
@@ -334,7 +346,6 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [draggedRider, setDraggedRider] = useState<any>(null)
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
   const [isTouchDragging, setIsTouchDragging] = useState(false)
-  const [touchPosition, setTouchPosition] = useState<{ x: number; y: number } | null>(null)
   const queryClient = useQueryClient()
 
   // Save favorites to localStorage whenever they change
@@ -485,87 +496,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     if (draggedRider) {
       addRiderMutation.mutate({ teamId, riderId: draggedRider.rider_id })
       
-      // Reset visual feedback
-      document.querySelectorAll('[style*="opacity: 0.7"]').forEach(el => {
-        const element = el as HTMLElement
-        element.style.opacity = ''
-        element.style.transform = ''
-      })
-      
       setDraggedRider(null)
       setIsTouchDragging(false)
-      setTouchPosition(null)
     }
   }, [draggedRider, addRiderMutation])
-
-  // Global touch handlers for mobile drag & drop
-  useEffect(() => {
-    if (!isTouchDragging) {
-      console.log('Touch dragging not active')
-      return
-    }
-
-    console.log('Setting up touch handlers for rider:', draggedRider?.racing_name)
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const touch = e.touches[0]
-      setTouchPosition({ x: touch.clientX, y: touch.clientY })
-      e.preventDefault()
-    }
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      console.log('Touch end detected')
-      if (!draggedRider) {
-        console.log('No dragged rider')
-        return
-      }
-
-      const touch = e.changedTouches[0]
-      const element = document.elementFromPoint(touch.clientX, touch.clientY)
-      console.log('Element at drop point:', element)
-      
-      // Check if dropped on a team card
-      const teamCard = element?.closest('[data-team-id]') as HTMLElement
-      if (teamCard) {
-        const teamId = parseInt(teamCard.dataset.teamId || '0')
-        console.log('Dropped on team card:', teamId)
-        if (teamId) {
-          handleDrop(teamId)
-          return
-        }
-      }
-
-      // Check if dropped on sidebar
-      const sidebar = element?.closest('[data-sidebar-team]') as HTMLElement
-      if (sidebar) {
-        const teamId = parseInt(sidebar.dataset.sidebarTeam || '0')
-        console.log('Dropped on sidebar:', teamId)
-        if (teamId) {
-          handleDrop(teamId)
-          return
-        }
-      }
-
-      console.log('No valid drop target found')
-      // No valid drop target - reset visual feedback
-      document.querySelectorAll('[style*="opacity: 0.7"]').forEach(el => {
-        const element = el as HTMLElement
-        element.style.opacity = ''
-        element.style.transform = ''
-      })
-      setDraggedRider(null)
-      setIsTouchDragging(false)
-      setTouchPosition(null)
-    }
-
-    document.addEventListener('touchmove', handleTouchMove, { passive: false })
-    document.addEventListener('touchend', handleTouchEnd)
-
-    return () => {
-      document.removeEventListener('touchmove', handleTouchMove)
-      document.removeEventListener('touchend', handleTouchEnd)
-    }
-  }, [isTouchDragging, draggedRider, handleDrop])
 
   const handleOpenTeamDetail = (teamId: number) => {
     setSelectedTeamId(teamId)
@@ -819,20 +753,28 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         }}
       />
 
-      {/* Mobile Touch Drag Indicator */}
-      {isTouchDragging && draggedRider && touchPosition && (
-        <div 
-          className="fixed pointer-events-none z-[100001]"
-          style={{
-            left: touchPosition.x - 100,
-            top: touchPosition.y - 40,
-          }}
-        >
-          <div className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-2xl border-2 border-blue-400 animate-pulse">
-            <div className="font-bold text-sm">{draggedRider.racing_name || draggedRider.full_name}</div>
-            <div className="text-xs opacity-90">
-              {draggedRider.zwiftracing_category || draggedRider.zwift_official_category} • vELO {draggedRider.velo_live}
+      {/* Mobile: Selected Rider Banner */}
+      {isTouchDragging && draggedRider && (
+        <div className="md:hidden fixed top-0 left-0 right-0 bg-blue-600 text-white px-4 py-3 shadow-2xl z-[100002] border-b-4 border-blue-400">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <div className="font-bold text-lg">{draggedRider.racing_name || draggedRider.full_name}</div>
+              <div className="text-sm opacity-90">
+                {draggedRider.zwiftracing_category || draggedRider.zwift_official_category} • vELO {draggedRider.velo_live}
+              </div>
             </div>
+            <button
+              onClick={() => {
+                setDraggedRider(null)
+                setIsTouchDragging(false)
+              }}
+              className="bg-white/20 hover:bg-white/30 active:bg-white/40 px-4 py-2 rounded-lg font-bold"
+            >
+              ✕ Annuleer
+            </button>
+          </div>
+          <div className="text-center mt-2 text-sm font-semibold animate-pulse">
+            ⬇️ Klik op een team hieronder om toe te voegen
           </div>
         </div>
       )}

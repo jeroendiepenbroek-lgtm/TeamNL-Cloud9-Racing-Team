@@ -118,17 +118,11 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
     onDragStart(rider, false)
   }
 
-  const handleTouchStart = (e: React.TouchEvent, rider: Rider) => {
-    if (rider.team_id) return // Don't drag assigned riders
-    
-    // Start mobile drag
-    console.log('Touch start on rider:', rider.racing_name || rider.full_name)
+  // Mobile: Use button click instead of drag for iOS compatibility
+  const handleMobileSelect = (rider: Rider) => {
+    if (rider.team_id) return
+    console.log('Mobile select rider:', rider.racing_name || rider.full_name)
     onDragStart(rider, true)
-    
-    // Add visual feedback
-    const target = e.currentTarget as HTMLElement
-    target.style.opacity = '0.7'
-    target.style.transform = 'scale(0.95)'
   }
 
   if (!isOpen) return null
@@ -245,17 +239,25 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
             return (
               <div
                 key={rider.rider_id}
-                draggable={!rider.team_id}
-                onDragStart={(e) => handleDragStart(e, rider)}
-                onTouchStart={(e) => handleTouchStart(e, rider)}
                 className={`
-                  p-2 rounded-lg border transition-all
+                  p-2 rounded-lg border transition-all relative
                   ${rider.team_id 
                     ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
-                    : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-move active:scale-95 active:opacity-70'
+                    : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20'
                   }
                 `}
+                draggable={!rider.team_id}
+                onDragStart={(e) => handleDragStart(e, rider)}
               >
+                {/* Mobile: Touch button */}
+                {!rider.team_id && (
+                  <button
+                    onClick={() => handleMobileSelect(rider)}
+                    className="md:hidden absolute top-2 right-2 z-10 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg"
+                  >
+                    📋 Selecteer
+                  </button>
+                )}
                 <div className="flex items-center gap-2">
                   {/* Avatar */}
                   <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
