@@ -398,7 +398,7 @@ export default function RiderPassportGallery() {
   ) => (
     <div
       key={rider.rider_id}
-      className="perspective-1000 cursor-pointer snap-center flex-shrink-0 flex-shrink-0 snap-center"
+      className="perspective-1000 cursor-pointer snap-center flex-shrink-0 flex-shrink-0 snap-center relative z-10"
       onClick={() => toggleFlip(rider.rider_id)}
       style={{ perspective: '1000px', width: '300px' }}
     >

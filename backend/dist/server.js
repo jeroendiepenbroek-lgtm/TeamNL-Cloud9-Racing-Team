@@ -1,5 +1,6 @@
 // ULTRA CLEAN SERVER - ALLEEN RACING MATRIX DATA
 // Geen sync, geen teammanager, geen gedoe
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -632,6 +633,68 @@ app.get('/api/riders', async (req, res) => {
         });
     }
 });
+// Get single rider by ID (for Rider Passport)
+app.get('/api/rider/:riderId', async (req, res) => {
+    try {
+        const riderId = parseInt(req.params.riderId);
+        if (isNaN(riderId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid rider ID'
+            });
+        }
+        const { data, error } = await supabase
+            .from('v_rider_complete')
+            .select('*')
+            .eq('rider_id', riderId)
+            .single();
+        if (error || !data) {
+            return res.status(404).json({
+                success: false,
+                error: 'Rider not found'
+            });
+        }
+        // Return clean rider data
+        res.json({
+            rider_id: data.rider_id,
+            racing_name: data.racing_name,
+            full_name: data.full_name,
+            category: data.zwift_official_category || data.zwiftracing_category || 'D',
+            country_alpha3: data.country_alpha3,
+            avatar_url: data.avatar_url,
+            velo_live: data.velo_live,
+            velo_30day: data.velo_30day,
+            phenotype: data.phenotype,
+            zwift_official_racing_score: data.zwift_official_racing_score,
+            racing_ftp: data.racing_ftp || data.ftp_watts,
+            weight_kg: data.weight_kg,
+            height_cm: data.height_cm,
+            age: data.age,
+            // Power intervals - gebruik correcte veldnamen uit database
+            power_5s: data.power_5s,
+            power_15s: data.power_15s,
+            power_30s: data.power_30s,
+            power_60s: data.power_60s,
+            power_120s: data.power_120s,
+            power_300s: data.power_300s,
+            power_1200s: data.power_1200s,
+            power_5s_wkg: data.power_5s_wkg,
+            power_15s_wkg: data.power_15s_wkg,
+            power_30s_wkg: data.power_30s_wkg,
+            power_60s_wkg: data.power_60s_wkg,
+            power_120s_wkg: data.power_120s_wkg,
+            power_300s_wkg: data.power_300s_wkg,
+            power_1200s_wkg: data.power_1200s_wkg
+        });
+    }
+    catch (error) {
+        console.error('❌ Error fetching rider:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 // 📥 US1: CSV Export for Rider IDs
 app.get('/api/riders/export/csv', async (req, res) => {
     try {
@@ -768,6 +831,8 @@ app.post('/api/admin/riders', async (req, res) => {
             // 🔍 US2: Track fail codes voor gestructureerde error reporting
             let errorCode = null;
             let errorDetails = [];
+            // Store profile data for potential placeholder creation
+            let zwiftProfileData = null;
             // Process ZwiftRacing data (uit bulk fetch)
             const racingData = bulkRacingData.get(riderId);
             if (racingData) {
@@ -845,6 +910,7 @@ app.post('/api/admin/riders', async (req, res) => {
                     timeout: 10000
                 });
                 const data = profileResponse.data;
+                zwiftProfileData = data; // Store for later use
                 const profileData = {
                     rider_id: riderId,
                     id: data.id || riderId,
@@ -897,6 +963,37 @@ app.post('/api/admin/riders', async (req, res) => {
                 errorDetails.push(`Zwift Official API: ${err.message}`);
                 console.warn(`      ⚠️  Zwift Official API failed:`, err.message);
                 errorMsg += `Profile: ${err.message}. `;
+            }
+            // 🔧 FIX: Als alleen Official data beschikbaar is, maak placeholder in api_zwiftracing_riders
+            // Dit zorgt ervoor dat de FK constraint niet faalt bij team_roster insert
+            if (profileSynced && !racingSynced && zwiftProfileData) {
+                try {
+                    console.log(`      🔧 Creating placeholder in api_zwiftracing_riders for FK constraint...`);
+                    const firstName = zwiftProfileData.firstName || '';
+                    const lastName = zwiftProfileData.lastName || '';
+                    const fullName = firstName && lastName ? `${firstName} ${lastName}` : null;
+                    const { error: placeholderError } = await supabase
+                        .from('api_zwiftracing_riders')
+                        .upsert({
+                        rider_id: riderId,
+                        id: riderId,
+                        name: fullName,
+                        country: zwiftProfileData.countryCode || null,
+                        weight: zwiftProfileData.weight ? zwiftProfileData.weight / 1000.0 : null,
+                        height: zwiftProfileData.height || null,
+                        ftp: zwiftProfileData.ftp || null,
+                        fetched_at: new Date().toISOString()
+                    }, { onConflict: 'rider_id' });
+                    if (!placeholderError) {
+                        console.log(`      ✅ Placeholder created - FK constraint satisfied`);
+                    }
+                    else {
+                        console.warn(`      ⚠️  Placeholder creation failed:`, placeholderError.message);
+                    }
+                }
+                catch (err) {
+                    console.warn(`      ⚠️  Placeholder creation error:`, err.message);
+                }
             }
             // Update team_roster als minstens 1 API succesvol was EN data in source tables staat
             if (racingSynced || profileSynced) {

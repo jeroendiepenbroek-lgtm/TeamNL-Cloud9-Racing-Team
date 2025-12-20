@@ -1,5 +1,6 @@
 // ULTRA CLEAN SERVER - ALLEEN RACING MATRIX DATA
 // Geen sync, geen teammanager, geen gedoe
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -939,6 +940,9 @@ app.post('/api/admin/riders', async (req, res) => {
       // 🔍 US2: Track fail codes voor gestructureerde error reporting
       let errorCode: string | null = null;
       let errorDetails: string[] = [];
+      
+      // Store profile data for potential placeholder creation
+      let zwiftProfileData: any = null;
 
       // Process ZwiftRacing data (uit bulk fetch)
       const racingData = bulkRacingData.get(riderId);
@@ -1021,6 +1025,7 @@ app.post('/api/admin/riders', async (req, res) => {
         );
 
         const data = profileResponse.data;
+        zwiftProfileData = data; // Store for later use
         const profileData = {
           rider_id: riderId,
           id: data.id || riderId,
@@ -1071,6 +1076,39 @@ app.post('/api/admin/riders', async (req, res) => {
         errorDetails.push(`Zwift Official API: ${err.message}`);
         console.warn(`      ⚠️  Zwift Official API failed:`, err.message);
         errorMsg += `Profile: ${err.message}. `;
+      }
+
+      // 🔧 FIX: Als alleen Official data beschikbaar is, maak placeholder in api_zwiftracing_riders
+      // Dit zorgt ervoor dat de FK constraint niet faalt bij team_roster insert
+      if (profileSynced && !racingSynced && zwiftProfileData) {
+        try {
+          console.log(`      🔧 Creating placeholder in api_zwiftracing_riders for FK constraint...`);
+          
+          const firstName = zwiftProfileData.firstName || '';
+          const lastName = zwiftProfileData.lastName || '';
+          const fullName = firstName && lastName ? `${firstName} ${lastName}` : null;
+          
+          const { error: placeholderError } = await supabase
+            .from('api_zwiftracing_riders')
+            .upsert({
+              rider_id: riderId,
+              id: riderId,
+              name: fullName,
+              country: zwiftProfileData.countryCode || null,
+              weight: zwiftProfileData.weight ? zwiftProfileData.weight / 1000.0 : null,
+              height: zwiftProfileData.height || null,
+              ftp: zwiftProfileData.ftp || null,
+              fetched_at: new Date().toISOString()
+            }, { onConflict: 'rider_id' });
+          
+          if (!placeholderError) {
+            console.log(`      ✅ Placeholder created - FK constraint satisfied`);
+          } else {
+            console.warn(`      ⚠️  Placeholder creation failed:`, placeholderError.message);
+          }
+        } catch (err: any) {
+          console.warn(`      ⚠️  Placeholder creation error:`, err.message);
+        }
       }
 
       // Update team_roster als minstens 1 API succesvol was EN data in source tables staat
