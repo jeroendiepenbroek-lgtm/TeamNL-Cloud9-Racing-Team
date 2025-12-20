@@ -516,12 +516,18 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
   }[team.team_status]
   
   return (
-    <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl hover:shadow-2xl hover:border-orange-400/50 transition-all duration-300 overflow-hidden group">
+    <div className={`bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl shadow-xl transition-all duration-300 overflow-hidden ${
+      isExpanded 
+        ? 'border-2 border-orange-400 shadow-orange-500/30 shadow-2xl ring-2 ring-orange-500/20' 
+        : 'border border-orange-500/30 hover:border-orange-400/50 hover:shadow-2xl'
+    }`}>
       {/* Team Header - Clickable */}
       <div className="p-6 relative">
         <button
           onClick={() => onToggleExpand?.()}
-          className="w-full flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg p-2 -m-2"
+          className={`w-full flex items-center justify-between rounded-lg p-3 -m-3 transition-all duration-200 ${
+            isExpanded ? 'bg-orange-500/10' : 'hover:bg-white/5'
+          }`}
         >
           <div className="text-left flex-1">
             <div className="flex items-center gap-3 mb-1">
@@ -548,9 +554,11 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
             </div>
           </div>
           
-          {/* Expand/Collapse Icon */}
-          <div className="text-white text-2xl flex-shrink-0 ml-4">
-            {isExpanded ? '▼' : '▶'}
+          {/* Expand/Collapse Icon with Animation */}
+          <div className={`text-white text-2xl flex-shrink-0 ml-4 transition-all duration-300 ${
+            isExpanded ? 'rotate-90 text-orange-400' : 'text-gray-400 group-hover:text-white'
+          }`}>
+            ▶
           </div>
         </button>
 
@@ -610,11 +618,18 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
         )}
       </div>
       
-      {/* Riders Table - Collapsible */}
-      {isExpanded && (
-        <div className="px-6 pb-6 pt-2 border-t border-gray-700">
+      {/* Riders Table - Collapsible with smooth animation */}
+      <div 
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+          isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="px-6 pb-6 pt-2 border-t border-orange-500/20">
           {isLoading ? (
-            <div className="text-center text-gray-400 py-8">Riders laden...</div>
+            <div className="text-center text-gray-400 py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
+              <p className="mt-3">Riders laden...</p>
+            </div>
           ) : !lineup || !Array.isArray(lineup) || lineup.length === 0 ? (
             <div className="text-center text-gray-400 py-8">
               <p>Nog geen riders toegevoegd</p>
@@ -629,7 +644,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
             <RidersTable lineup={lineup} />
           )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
