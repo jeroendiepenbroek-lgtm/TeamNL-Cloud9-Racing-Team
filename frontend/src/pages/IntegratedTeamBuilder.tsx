@@ -92,6 +92,7 @@ export default function IntegratedTeamBuilder() {
     onSuccess: (_, { teamId }) => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       queryClient.invalidateQueries({ queryKey: ['team', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['riders'] }) // Update riders array met nieuwe teams
       toast.success('Rider toegevoegd aan team!')
     },
     onError: (error: Error) => {
