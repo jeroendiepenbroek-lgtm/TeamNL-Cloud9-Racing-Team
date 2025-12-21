@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { useDroppable } from '@dnd-kit/core'
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
 interface TeamLineupModalProps {
   teamId: number
   onClose: () => void
+  isDragging?: boolean
 }
 
 interface LineupRider {
@@ -58,7 +60,7 @@ const getVeloTier = (rating: number | null) => {
   )
 }
 
-export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProps) {
+export default function TeamLineupModal({ teamId, onClose, isDragging = false }: TeamLineupModalProps) {
   const queryClient = useQueryClient()
 
   const { data: teamData, isLoading } = useQuery({
@@ -68,6 +70,12 @@ export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProp
       if (!res.ok) throw new Error('Failed to fetch team')
       return res.json() as Promise<TeamDetail>
     }
+  })
+
+  // Maak sidebar droppable voor betere UX
+  const { setNodeRef, isOver } = useDroppable({
+    id: `lineup-sidebar-${teamId}`,
+    data: { teamId, type: 'lineup-sidebar' }
   })
 
   const removeRiderMutation = useMutation({
@@ -94,16 +102,45 @@ export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProp
 
   if (isLoading || !teamData) {
     return (
-      <aside className="fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-80 lg:w-96 h-screen md:h-[calc(100vh-73px)] border-l border-slate-700/50 bg-slate-800/95 backdrop-blur-xl z-40 shadow-2xl shadow-black/50 flex items-center justify-center">
+      <aside ref={setNodeRef} className="fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-80 lg:w-96 h-screen md:h-[calc(100vh-73px)] border-l border-slate-700/50 bg-slate-800/95 backdrop-blur-xl z-40 shadow-2xl shadow-black/50 flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </aside>
     )
   }
 
   const team = teamData
+  const canAddMore = team.lineup.length < team.max_riders
+  const showDropIndicator = isOver && isDragging
 
   return (
-    <aside className="fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-80 lg:w-[450px] xl:w-[550px] h-screen md:h-[calc(100vh-73px)] border-l border-slate-700/50 bg-slate-800/95 backdrop-blur-xl z-40 shadow-2xl shadow-black/50 flex flex-col transition-transform duration-300">
+    <aside 
+      ref={setNodeRef}
+      className={`fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-80 lg:w-[450px] xl:w-[550px] h-screen md:h-[calc(100vh-73px)] border-l-4 bg-slate-800/95 backdrop-blur-xl z-40 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 ${
+        showDropIndicator && canAddMore ? 'border-green-500 shadow-green-500/50' :
+        showDropIndicator && !canAddMore ? 'border-red-500 shadow-red-500/50' :
+        'border-slate-700/50'
+      }`}>
+      {/* Drop Indicator Overlay */}
+      {showDropIndicator && (
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
+          canAddMore ? 'bg-green-500/20 backdrop-blur-sm' : 'bg-red-500/20 backdrop-blur-sm'
+        }`}>
+          <div className={`text-center p-6 rounded-xl bg-slate-900/90 border-2 border-dashed ${
+            canAddMore ? 'border-green-400' : 'border-red-400'
+          }`}>
+            <p className={`text-2xl font-bold mb-2 ${
+              canAddMore ? 'text-green-300' : 'text-red-300'
+            }`}>
+              {canAddMore ? '✓ Drop hier' : '✗ Team vol'}
+            </p>
+            {canAddMore && (
+              <p className="text-white text-sm">
+                {team.max_riders - team.lineup.length} plekken vrij
+              </p>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-slate-700 bg-slate-900/50">

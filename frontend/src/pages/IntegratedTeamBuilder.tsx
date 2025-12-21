@@ -240,15 +240,23 @@ export default function IntegratedTeamBuilder() {
             />
           )}
 
-          {/* Drag Overlay - toont "Release to cancel" feedback */}
+          {/* Cancel Drop Zone - Duidelijke annuleer zone */}
           {draggedRider && (
-            <div className="fixed inset-0 z-30 pointer-events-none">
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/95 backdrop-blur-sm rounded-xl border border-slate-600 text-white text-sm shadow-2xl">
+            <>
+              <div className="fixed top-20 left-0 right-0 z-30 pointer-events-none">
+                <div className="max-w-7xl mx-auto px-4">
+                  <div className="bg-orange-500/20 backdrop-blur-sm border-2 border-dashed border-orange-400 rounded-xl p-6 text-center">
+                    <p className="text-orange-300 text-lg font-bold mb-1">✋ Annuleer Zone</p>
+                    <p className="text-orange-200 text-sm">Laat hier los om drag te annuleren</p>
+                  </div>
+                </div>
+              </div>
+              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/95 backdrop-blur-sm rounded-xl border-2 border-blue-500/50 text-white text-sm shadow-2xl z-30 pointer-events-none">
                 <span className="font-semibold">💡 Sleep naar team</span>
                 <span className="mx-2 text-slate-400">•</span>
-                <span className="text-slate-300">Laat los om te annuleren</span>
+                <span className="text-blue-300">of laat bovenaan los om te annuleren</span>
               </div>
-            </div>
+            </>
           )}
 
           {/* Center - Team Cards (compacte badges) */}
@@ -292,11 +300,12 @@ export default function IntegratedTeamBuilder() {
             )}
           </main>
 
-          {/* Right Sidebar - Selected Team Lineup */}
+          {/* Right Sidebar - Selected Team Lineup met droppable support */}
           {selectedTeamId && !expandedTeamId && (
             <TeamLineupModal
               teamId={selectedTeamId}
               onClose={handleCloseTeamDetail}
+              isDragging={draggedRider !== null}
             />
           )}
         </div>
