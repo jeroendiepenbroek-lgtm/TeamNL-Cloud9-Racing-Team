@@ -506,6 +506,10 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
 
   const handleDragCancel = () => {
     setDraggedRider(null)
+    toast('Drag geannuleerd', {
+      icon: '↩️',
+      duration: 1500,
+    })
   }
 
   const handleOpenTeamDetail = (teamId: number) => {
@@ -662,7 +666,22 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       />
 
                       {/* Team Cards Grid */}
-                      <div className={`flex-1 p-6 transition-all duration-300`}>
+                      <div className={`flex-1 p-6 transition-all duration-300 relative`}>
+                        {/* Cancel Zone Indicator - Zichtbaar tijdens drag op iPad/mobile */}
+                        {draggedRider && (
+                          <div className="md:hidden fixed top-16 left-4 right-4 z-50 pointer-events-none">
+                            <div className="bg-slate-800/95 backdrop-blur-sm border-2 border-blue-500 rounded-xl p-4 shadow-2xl">
+                              <div className="flex items-center gap-3">
+                                <div className="text-3xl">↩️</div>
+                                <div className="flex-1">
+                                  <p className="text-white font-bold text-sm">Sleep naar een team of...</p>
+                                  <p className="text-blue-300 text-xs">Laat los buiten een team om te annuleren</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
                         {teams.length === 0 ? (
                           <div className="text-center text-white py-20">
                             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-500/50 mb-4">
@@ -685,7 +704,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                         ) : (
                           <div className={`grid gap-4 sm:gap-6 items-start transition-all duration-300 ${
                             expandedTeamId 
-                              ? 'grid-cols-1 lg:grid-cols-2' 
+                              ? 'grid-cols-1 lg:grid-cols-2 pr-0 sm:pr-[460px]' 
                               : 'grid-cols-1 md:grid-cols-2 2xl:grid-cols-3'
                           }`}>
                             {teams.map(team => (
