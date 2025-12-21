@@ -116,13 +116,13 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
 
   return (
     <aside className={`
-      ${isOpen ? 'translate-x-0' : 'translate-x-full'}
+      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       md:translate-x-0
       fixed md:sticky 
-      right-0 top-0 md:top-[73px]
+      left-0 top-0 md:top-[73px]
       w-full sm:w-80 lg:w-96
       h-screen md:h-[calc(100vh-73px)]
-      border-l border-slate-700/50 
+      border-r border-slate-700/50 
       bg-slate-800/95
       backdrop-blur-xl
       z-40

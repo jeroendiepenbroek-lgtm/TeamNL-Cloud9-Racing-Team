@@ -194,7 +194,7 @@ export default function IntegratedTeamBuilder() {
                 <h1 className="text-2xl font-bold text-white">🏆 Team Builder</h1>
                 <p className="text-slate-400 text-sm">Drag & drop riders om teams samen te stellen</p>
               </div>
-              {!expandedTeamId && !selectedTeamId ? (
+              {!expandedTeamId ? (
                 <button
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
@@ -202,20 +202,20 @@ export default function IntegratedTeamBuilder() {
                   {sidebarOpen ? (
                     <>
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
                       </svg>
                       Verberg Riders
                     </>
                   ) : (
                     <>
-                      Toon Riders
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                       </svg>
+                      Toon Riders
                     </>
                   )}
                 </button>
-              ) : expandedTeamId ? (
+              ) : (
                 <button
                   onClick={() => handleToggleTeamExpand(expandedTeamId)}
                   className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center gap-2"
@@ -241,6 +241,14 @@ export default function IntegratedTeamBuilder() {
         </header>
 
         <div className="flex max-w-[1920px] mx-auto relative">
+          {/* Left Sidebar - Riders (altijd zichtbaar op desktop) */}
+          {!expandedTeamId && (
+            <RiderPassportSidebar
+              riders={riders}
+              isOpen={sidebarOpen}
+            />
+          )}
+
           {/* Drag Overlay - toont "Release to cancel" feedback */}
           {draggedRider && (
             <div className="fixed inset-0 z-30 pointer-events-none">
@@ -252,10 +260,8 @@ export default function IntegratedTeamBuilder() {
             </div>
           )}
 
-          {/* Teams Grid - altijd links, neemt flex-1 ruimte */}
-          <main className={`flex-1 p-6 transition-all duration-300 ${
-            selectedTeamId ? 'lg:mr-0' : ''
-          }`}>
+          {/* Center - Team Cards (compacte badges) */}
+          <main className={`flex-1 p-6 transition-all duration-300`}>
             {teams.length === 0 ? (
               <div className="text-center text-white py-20">
                 <p className="text-xl">Geen teams gevonden</p>
@@ -274,10 +280,12 @@ export default function IntegratedTeamBuilder() {
                 />
               </div>
             ) : (
-              <div className={`grid gap-6 ${
-                sidebarOpen || selectedTeamId
-                  ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-2' 
-                  : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              <div className={`grid gap-4 ${
+                sidebarOpen && !selectedTeamId
+                  ? 'grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' 
+                  : selectedTeamId
+                  ? 'grid-cols-2 xl:grid-cols-3'
+                  : 'grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
               }`}>
                 {teams.map(team => (
                   <TeamCard
@@ -293,21 +301,14 @@ export default function IntegratedTeamBuilder() {
             )}
           </main>
 
-          {/* Right Panel - Riders Sidebar (altijd zichtbaar op desktop) */}
-          {!expandedTeamId && !selectedTeamId && (
-            <RiderPassportSidebar
-              riders={riders}
-              isOpen={sidebarOpen}
+          {/* Right Sidebar - Selected Team Lineup */}
+          {selectedTeamId && !expandedTeamId && (
+            <TeamLineupModal
+              teamId={selectedTeamId}
+              onClose={handleCloseTeamDetail}
             />
           )}
         </div>
-
-        {selectedTeamId && (
-          <TeamLineupModal
-            teamId={selectedTeamId}
-            onClose={handleCloseTeamDetail}
-          />
-        )}
       </div>
     </DndContext>
   )
