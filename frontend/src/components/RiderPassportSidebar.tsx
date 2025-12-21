@@ -116,18 +116,19 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
 
   return (
     <aside className={`
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'} 
+      ${isOpen ? 'translate-x-0' : 'translate-x-full'}
       md:translate-x-0
       fixed md:sticky 
-      left-0 top-0 md:top-[73px]
-      w-full sm:w-80
+      right-0 top-0 md:top-[73px]
+      w-full sm:w-80 lg:w-96
       h-screen md:h-[calc(100vh-73px)]
-      border-r border-slate-700/50 
-      bg-slate-800/30 
+      border-l border-slate-700/50 
+      bg-slate-800/95
       backdrop-blur-xl
-      z-30 md:z-auto
+      z-40
       transition-transform duration-300
       flex flex-col
+      shadow-2xl shadow-black/50
     `}>
       {/* Sticky Filter Section */}
       <div className="sticky top-0 z-20 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50">
