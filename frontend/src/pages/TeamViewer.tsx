@@ -409,11 +409,13 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       }
       return res.json()
     },
-    onSuccess: (_, { teamId }) => {
-      queryClient.invalidateQueries({ queryKey: ['teams'] })
-      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
-      queryClient.invalidateQueries({ queryKey: ['team-lineup', teamId] })
-      queryClient.invalidateQueries({ queryKey: ['riders'] })
+    onSuccess: async (_, { teamId }) => {
+      // Refetch maar behoud cache/scroll positie
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['teams'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['team', teamId], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['riders'], type: 'active' })
+      ])
       toast.success('Rider toegevoegd aan team!')
     },
     onError: (error: Error) => {
@@ -433,10 +435,13 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       }
       return res.json()
     },
-    onSuccess: (_, { teamId }) => {
-      queryClient.invalidateQueries({ queryKey: ['teams'] })
-      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
-      queryClient.invalidateQueries({ queryKey: ['riders'] })
+    onSuccess: async (_, { teamId }) => {
+      // Refetch maar behoud cache/scroll positie
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['teams'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['team', teamId], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['riders'], type: 'active' })
+      ])
       toast.success('Rider verwijderd uit team!')
     },
     onError: (error: Error) => {
@@ -703,6 +708,18 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                           </div>
                         )}
                       </div>
+
+                      {/* Fixed Right Sidebar for Expanded Team - Binnen DndContext voor iPad drag support */}
+                      {expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
+                        <TeamExpandedSidebar
+                          team={teams.find(t => t.team_id === expandedTeamId)!}
+                          onClose={() => setExpandedTeamId(null)}
+                          isDragging={draggedRider !== null}
+                          onRemoveRider={(teamId, riderId) => {
+                            removeRiderMutation.mutate({ teamId, riderId })
+                          }}
+                        />
+                      )}
                     </DndContext>
                   )}
                 </div>

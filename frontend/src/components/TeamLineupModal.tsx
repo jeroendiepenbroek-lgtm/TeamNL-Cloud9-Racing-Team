@@ -78,10 +78,13 @@ export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProp
       if (!res.ok) throw new Error('Failed to remove rider')
       return res.json()
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teams'] })
-      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
-      queryClient.invalidateQueries({ queryKey: ['riders'] })
+    onSuccess: async () => {
+      // Refetch maar behoud cache/scroll positie
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['teams'], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['team', teamId], type: 'active' }),
+        queryClient.refetchQueries({ queryKey: ['riders'], type: 'active' })
+      ])
       toast.success('Rider verwijderd uit team')
     },
     onError: () => {
