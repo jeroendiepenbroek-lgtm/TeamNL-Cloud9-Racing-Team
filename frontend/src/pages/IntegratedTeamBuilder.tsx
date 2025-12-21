@@ -48,17 +48,19 @@ export default function IntegratedTeamBuilder() {
   const [draggedRider, setDraggedRider] = useState<Rider | null>(null)
   const queryClient = useQueryClient()
 
-  // Configure touch and pointer sensors for iPad/mobile support
+  // Optimized sensors for touch-first approach (iPhone/iPad + desktop)
   const sensors = useSensors(
+    // PointerSensor for desktop (mouse) - very responsive
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 8px movement required before drag starts
+        distance: 5, // Minimal distance before drag activates
       },
     }),
+    // TouchSensor for mobile/tablet - balanced responsiveness
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250, // 250ms hold before drag starts
-        tolerance: 5, // 5px tolerance for movement
+        delay: 100, // Shorter delay (100ms) for faster response
+        tolerance: 10, // Higher tolerance to prevent accidental drags during scrolling
       },
     })
   )

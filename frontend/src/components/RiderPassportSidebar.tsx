@@ -243,7 +243,13 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
 
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.85 : 1,
+    transition: isDragging ? 'none' : 'all 0.2s ease-out',
+    cursor: rider.team_id ? 'not-allowed' : 'grab',
+    // Force GPU acceleration for smoother touch dragging
+    willChange: isDragging ? 'transform' : 'auto',
+    // Touch-action to prevent conflicts
+    touchAction: 'none',
   }
 
   return (

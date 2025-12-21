@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, DragStartEvent, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragStartEvent, closestCenter, DragOverlay, useDroppable, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
 import TeamBuilderCard from '../components/TeamCard.tsx'
@@ -331,6 +331,23 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
   const queryClient = useQueryClient()
 
+  // Optimized sensors for touch-first approach (iPhone/iPad + desktop)
+  const sensors = useSensors(
+    // PointerSensor for desktop (mouse) - very responsive
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Minimal distance before drag activates
+      },
+    }),
+    // TouchSensor for mobile/tablet - balanced responsiveness
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 100, // Shorter delay (100ms) for faster response
+        tolerance: 10, // Higher tolerance to prevent accidental drags during scrolling
+      },
+    })
+  )
+
   // Save favorites to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('favoriteTeams', JSON.stringify(Array.from(favoriteTeams)))
@@ -516,6 +533,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDndDragStart}
       onDragEnd={handleDndDragEnd}
