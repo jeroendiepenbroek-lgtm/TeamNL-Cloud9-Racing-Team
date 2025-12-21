@@ -14,8 +14,7 @@ interface Rider {
   weight_kg: number
   avatar_url: string
   phenotype: string | null
-  team_id?: number | null
-  team_name?: string | null
+  teams?: Array<{ team_id: number; team_name: string }> // US2: Multiple teams
 }
 
 interface Team {
@@ -91,7 +90,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       
       // Hide assigned riders
       if (hideAssigned && rider.team_id) return false
-      
+      s && rider.teams.length > 0
       // Team-based filtering (US4)
       if (selectedTeam) {
         const category = rider.zwiftracing_category || rider.zwift_official_category
@@ -235,10 +234,10 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
     : '-'
 
   // Use @dnd-kit draggable for touch support
+  consS1: Always allow dragging (multiple teams)
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: rider.rider_id,
-    disabled: !!rider.team_id,
-    data: { rider, type: 'rider' }
+    disabled: false, // US1: Always enabled for multiple team assignmentsr' }
   })
 
   const style = {
@@ -246,11 +245,14 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
     opacity: isDragging ? 0.85 : 1,
     transition: isDragging ? 'none' : 'all 0.2s ease-out',
     cursor: rider.team_id ? 'not-allowed' : 'grab',
+    // Force'grab', // US1: Always draggable
     // Force GPU acceleration for smoother touch dragging
     willChange: isDragging ? 'transform' : 'auto',
     // Touch-action to prevent conflicts
     touchAction: 'none',
   }
+
+  const hasTeams = rider.teams && rider.teams.length > 0
 
   return (
     <div
@@ -258,12 +260,9 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
       style={style}
       className={`
         p-2 rounded-lg border transition-all relative
-        ${rider.team_id 
-          ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
-          : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-grab active:cursor-grabbing'
-        }
-        ${isDragging ? 'ring-2 ring-blue-500 shadow-2xl z-50' : ''}
-      `}
+        bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-grab active:cursor-grabbing
+        ${isDragging ? 'ring-4 ring-blue-500 shadow-2xl z-50' : ''}
+        ${hasTeams ? 'border-l-4 border-l-green-50
     >
       <div className="flex items-center gap-2" {...attributes} {...listeners}>
         {/* Avatar */}
@@ -305,19 +304,26 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
             <span>{ftpWkg} W/kg</span>
           </div>
           {rider.team_id && (
-            <div className="mt-1 text-xs text-green-400">
-              ✓ {rider.team_name}
+           /* US2: Show teams rider is assigned to */}
+          {hasTeams && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {rider.teams!.map((team, idx) => (
+                <span
+                  key={`${team.team_id}-${idx}`}
+                  className="text-[9px] px-1.5 py-0.5 bg-green-600/20 text-green-400 rounded border border-green-600/30"
+                  title={team.team_name}
+                >
+                  {team.team_name.length > 15 ? team.team_name.substring(0, 15) + '...' : team.team_name}
+                </span>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Drag Handle */}
-        {!rider.team_id && (
-          <div className="text-slate-500 text-xl">
-            ⋮⋮
-          </div>
-        )}
-      </div>
+        {/* Drag Handle - US1: Always visible */}
+        <div className="text-slate-500 text-xl">
+          ⋮⋮
+        </div>v>
     </div>
   )
 }

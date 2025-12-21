@@ -204,7 +204,8 @@ export default function IntegratedTeamBuilder() {
         </header>
 
         <div className="flex max-w-[1920px] mx-auto relative">
-          {!expandedTeamId && (
+          {/* US1: Sidebar alleen tonen als geen team expanded EN geen modal open */}
+          {!expandedTeamId && !selectedTeamId && (
             <RiderPassportSidebar
               riders={riders}
               isOpen={sidebarOpen}
@@ -212,8 +213,8 @@ export default function IntegratedTeamBuilder() {
           )}
 
           <main className={`flex-1 p-6 transition-all duration-300 ${
-            sidebarOpen && !expandedTeamId ? 'lg:ml-0' : 'mx-auto'
-          } ${expandedTeamId ? 'max-w-7xl' : ''}`}>
+            sidebarOpen && !expandedTeamId && !selectedTeamId ? 'lg:ml-0' : 'mx-auto'
+          } ${expandedTeamId || selectedTeamId ? 'max-w-7xl' : ''}`}>
             {teams.length === 0 ? (
               <div className="text-center text-white py-20">
                 <p className="text-xl">Geen teams gevonden</p>
@@ -229,6 +230,17 @@ export default function IntegratedTeamBuilder() {
                   refetchTeams={refetchTeams}
                   isExpanded={true}
                   onToggleExpand={handleToggleTeamExpand}
+                />
+              </div>
+            ) : selectedTeamId ? (
+              /* US1: Bij modal open alleen geselecteerde team centraal tonen */
+              <div className="max-w-4xl mx-auto">
+                <TeamCard
+                  key={selectedTeamId}
+                  team={teams.find(t => t.team_id === selectedTeamId)!}
+                  onOpenDetail={handleOpenTeamDetail}
+                  isDragging={draggedRider !== null}
+                  refetchTeams={refetchTeams}
                 />
               </div>
             ) : (
