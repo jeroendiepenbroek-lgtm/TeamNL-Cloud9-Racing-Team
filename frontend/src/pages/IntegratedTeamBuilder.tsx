@@ -110,6 +110,8 @@ export default function IntegratedTeamBuilder() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
+    
+    // Alleen droppen als er een valid drop target is
     if (over && active.data.current?.rider) {
       const rider = active.data.current.rider
       const teamIdMatch = over.id.toString().match(/team-(\d+)/)
@@ -118,6 +120,7 @@ export default function IntegratedTeamBuilder() {
         addRiderMutation.mutate({ teamId, riderId: rider.rider_id })
       }
     }
+    // Als geen over target: release zonder actie (cancel)
     setDraggedRider(null)
   }
 
@@ -214,6 +217,17 @@ export default function IntegratedTeamBuilder() {
         </header>
 
         <div className="flex max-w-[1920px] mx-auto relative">
+          {/* Drag Overlay - toont "Release to cancel" feedback */}
+          {draggedRider && (
+            <div className="fixed inset-0 z-30 pointer-events-none">
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/95 backdrop-blur-sm rounded-xl border border-slate-600 text-white text-sm shadow-2xl">
+                <span className="font-semibold">💡 Sleep naar team</span>
+                <span className="mx-2 text-slate-400">•</span>
+                <span className="text-slate-300">Laat los om te annuleren</span>
+              </div>
+            </div>
+          )}
+
           {/* Teams Grid - altijd links, neemt flex-1 ruimte */}
           <main className={`flex-1 p-6 transition-all duration-300 ${
             selectedTeamId ? 'lg:mr-0' : ''
