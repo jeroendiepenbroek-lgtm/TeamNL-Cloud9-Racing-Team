@@ -13,6 +13,19 @@ body {
   min-height: 100vh;
 }
 
+/* Touch and drag support for iOS/Safari */
+* {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Re-enable text selection for specific elements */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* 3D Card Flip Styles */
 .perspective-1000 {
   perspective: 1000px;

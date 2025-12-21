@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
 import TeamCard from '../components/TeamCard.tsx'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
@@ -46,6 +47,21 @@ export default function IntegratedTeamBuilder() {
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
   const [draggedRider, setDraggedRider] = useState<Rider | null>(null)
   const queryClient = useQueryClient()
+
+  // Configure touch and pointer sensors for iPad/mobile support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // 250ms hold before drag starts
+        tolerance: 5, // 5px tolerance for movement
+      },
+    })
+  )
 
   // Fetch all riders
   const { data: ridersData, isLoading: ridersLoading } = useQuery({
@@ -95,15 +111,31 @@ export default function IntegratedTeamBuilder() {
   const riders: Rider[] = ridersData || []
   const teams: Team[] = teamsData || []
 
-  const handleDragStart = (rider: Rider) => {
-    setDraggedRider(rider)
+  const handleDragStart = (event: any) => {
+    const rider = event.active.data.current?.rider
+    if (rider) {
+      setDraggedRider(rider)
+    }
   }
 
-  const handleDrop = (teamId: number) => {
-    if (draggedRider) {
-      addRiderMutation.mutate({ teamId, riderId: draggedRider.rider_id })
-      setDraggedRider(null)
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (over && active.data.current?.rider) {
+      const rider = active.data.current.rider
+      // Extract team ID from droppable ID (format: "team-123")
+      const teamIdMatch = over.id.toString().match(/team-(\d+)/)
+      if (teamIdMatch) {
+        const teamId = parseInt(teamIdMatch[1])
+        addRiderMutation.mutate({ teamId, riderId: rider.rider_id })
+      }
     }
+    
+    setDraggedRider(null)
+  }
+
+  const handleDragCancel = () => {
+    setDraggedRider(null)
   }
 
   const handleOpenTeamDetail = (teamId: number) => {
@@ -123,7 +155,14 @@ export default function IntegratedTeamBuilder() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       {/* Header */}
       <header className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-40">
         <div className="max-w-[1920px] mx-auto px-4 py-4">
@@ -147,7 +186,6 @@ export default function IntegratedTeamBuilder() {
         <RiderPassportSidebar
           riders={riders}
           isOpen={sidebarOpen}
-          onDragStart={handleDragStart}
         />
 
         {/* Main: Team Cards Grid */}
@@ -163,7 +201,6 @@ export default function IntegratedTeamBuilder() {
                 <TeamCard
                   key={team.team_id}
                   team={team}
-                  onDrop={handleDrop}
                   onOpenDetail={handleOpenTeamDetail}
                   isDragging={draggedRider !== null}
                   refetchTeams={refetchTeams}
@@ -182,5 +219,6 @@ export default function IntegratedTeamBuilder() {
         />
       )}
     </div>
+    </DndContext>
   )
 }
