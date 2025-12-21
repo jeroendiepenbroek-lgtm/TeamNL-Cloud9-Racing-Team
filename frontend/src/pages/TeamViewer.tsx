@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter, useDroppable } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragStartEvent, closestCenter, DragOverlay, useDroppable } from '@dnd-kit/core'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
 import TeamBuilderCard from '../components/TeamCard.tsx'
@@ -47,11 +47,6 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
   isDragging: boolean;
   onRemoveRider: (teamId: number, riderId: number) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({
-    id: `team-${team.team_id}-sidebar`,
-    data: { team },
-  })
-  
   const { data: lineupData } = useQuery({
     queryKey: ['team', team.team_id],
     queryFn: async () => {
@@ -63,6 +58,12 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
 
   const lineup = lineupData?.lineup || []
   const canAddMore = team.current_riders < team.max_riders
+
+  // Use @dnd-kit droppable for touch support
+  const { setNodeRef, isOver } = useDroppable({
+    id: `sidebar-team-${team.team_id}`,
+    data: { teamId: team.team_id, type: 'team-sidebar' }
+  })
 
   return (
     <div 
@@ -112,6 +113,15 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
                 Maximum van {team.max_riders} riders bereikt
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile: Touch indicator when dragging - no button needed with @dnd-kit */}
+      {isDragging && canAddMore && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-900 via-slate-900/90 to-transparent z-[100001] pointer-events-none">
+          <div className="w-full bg-green-600/90 text-white px-6 py-4 rounded-xl text-xl font-bold shadow-2xl border-2 border-green-400 animate-pulse text-center">
+            ⬇️ Sleep hier om toe te voegen
           </div>
         </div>
       )}
@@ -321,21 +331,6 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
   const queryClient = useQueryClient()
 
-  // Configure touch and pointer sensors for iPad/mobile support
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    })
-  )
-
   // Save favorites to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('favoriteTeams', JSON.stringify(Array.from(favoriteTeams)))
@@ -409,13 +404,11 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       }
       return res.json()
     },
-    onSuccess: async (_, { teamId }) => {
-      // Refetch maar behoud cache/scroll positie
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['teams'], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['team', teamId], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['riders'], type: 'active' })
-      ])
+    onSuccess: (_, { teamId }) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['team-lineup', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['riders'] })
       toast.success('Rider toegevoegd aan team!')
     },
     onError: (error: Error) => {
@@ -435,13 +428,9 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       }
       return res.json()
     },
-    onSuccess: async (_, { teamId }) => {
-      // Refetch maar behoud cache/scroll positie
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['teams'], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['team', teamId], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['riders'], type: 'active' })
-      ])
+    onSuccess: (_, { teamId }) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
       toast.success('Rider verwijderd uit team!')
     },
     onError: (error: Error) => {
@@ -479,38 +468,43 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   // Riders kan array zijn OF object met riders property
   const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
 
-  // Handle drag start
-  const handleDragStart = (event: any) => {
-    const rider = event.active.data.current?.rider
-    if (rider) {
-      setDraggedRider(rider)
-    }
-  }
+  // @dnd-kit handlers for touch support
+  const handleDndDragStart = useCallback((event: DragStartEvent) => {
+    const riderId = Number(event.active.id)
+    const rider = riders.find((r: any) => r.rider_id === riderId)
+    console.log('handleDndDragStart called', { riderId, rider: rider?.racing_name })
+    setDraggedRider(rider || null)
+  }, [riders])
 
-  // Handle drag end with @dnd-kit
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDndDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event
+    console.log('handleDndDragEnd called', { active: active.id, over: over?.id, draggedRider })
     
-    if (over && active.data.current?.rider) {
-      const rider = active.data.current.rider
-      // Match both team-123 and team-123-sidebar formats
-      const teamIdMatch = over.id.toString().match(/team-(\d+)/)
-      if (teamIdMatch) {
-        const teamId = parseInt(teamIdMatch[1])
-        addRiderMutation.mutate({ teamId, riderId: rider.rider_id })
+    if (!over || !draggedRider) {
+      setDraggedRider(null)
+      return
+    }
+
+    // Extract team ID from droppable ID
+    let targetTeamId: number | null = null
+    
+    if (typeof over.id === 'string') {
+      if (over.id.startsWith('team-')) {
+        targetTeamId = Number(over.id.replace('team-', ''))
+      } else if (over.id.startsWith('sidebar-team-')) {
+        targetTeamId = Number(over.id.replace('sidebar-team-', ''))
       }
+    } else {
+      targetTeamId = Number(over.id)
+    }
+
+    if (targetTeamId) {
+      console.log('Adding rider to team', { teamId: targetTeamId, riderId: draggedRider.rider_id })
+      addRiderMutation.mutate({ teamId: targetTeamId, riderId: draggedRider.rider_id })
     }
     
     setDraggedRider(null)
-  }
-
-  const handleDragCancel = () => {
-    setDraggedRider(null)
-    toast('Drag geannuleerd', {
-      icon: '↩️',
-      duration: 1500,
-    })
-  }
+  }, [draggedRider, addRiderMutation])
 
   const handleOpenTeamDetail = (teamId: number) => {
     setSelectedTeamId(teamId)
@@ -521,6 +515,11 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   }
   
   return (
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragStart={handleDndDragStart}
+      onDragEnd={handleDndDragEnd}
+    >
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
       {/* Header */}
       {!hideHeader && (
@@ -650,13 +649,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       <p>Riders laden...</p>
                     </div>
                   ) : (
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragStart={handleDragStart}
-                      onDragEnd={handleDragEnd}
-                      onDragCancel={handleDragCancel}
-                    >
+                    <>
                       {/* Sidebar met Riders */}
                       <RiderPassportSidebar
                         riders={riders}
@@ -666,22 +659,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       />
 
                       {/* Team Cards Grid */}
-                      <div className={`flex-1 p-6 transition-all duration-300 relative`}>
-                        {/* Cancel Zone Indicator - Zichtbaar tijdens drag op iPad/mobile */}
-                        {draggedRider && (
-                          <div className="md:hidden fixed top-16 left-4 right-4 z-50 pointer-events-none">
-                            <div className="bg-slate-800/95 backdrop-blur-sm border-2 border-blue-500 rounded-xl p-4 shadow-2xl">
-                              <div className="flex items-center gap-3">
-                                <div className="text-3xl">↩️</div>
-                                <div className="flex-1">
-                                  <p className="text-white font-bold text-sm">Sleep naar een team of...</p>
-                                  <p className="text-blue-300 text-xs">Laat los buiten een team om te annuleren</p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        
+                      <div className={`flex-1 p-6 transition-all duration-300`}>
                         {teams.length === 0 ? (
                           <div className="text-center text-white py-20">
                             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-500/50 mb-4">
@@ -704,7 +682,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                         ) : (
                           <div className={`grid gap-4 sm:gap-6 items-start transition-all duration-300 ${
                             expandedTeamId 
-                              ? 'grid-cols-1 lg:grid-cols-2 pr-0 sm:pr-[460px]' 
+                              ? 'grid-cols-1 lg:grid-cols-2' 
                               : 'grid-cols-1 md:grid-cols-2 2xl:grid-cols-3'
                           }`}>
                             {teams.map(team => (
@@ -727,19 +705,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                           </div>
                         )}
                       </div>
-
-                      {/* Fixed Right Sidebar for Expanded Team - Binnen DndContext voor iPad drag support */}
-                      {expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
-                        <TeamExpandedSidebar
-                          team={teams.find(t => t.team_id === expandedTeamId)!}
-                          onClose={() => setExpandedTeamId(null)}
-                          isDragging={draggedRider !== null}
-                          onRemoveRider={(teamId, riderId) => {
-                            removeRiderMutation.mutate({ teamId, riderId })
-                          }}
-                        />
-                      )}
-                    </DndContext>
+                    </>
                   )}
                 </div>
               </div>
@@ -793,7 +759,20 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           setShowTeamCreationModal(false)
         }}
       />
+
+      {/* DragOverlay for visual feedback */}
+      <DragOverlay>
+        {draggedRider ? (
+          <div className="bg-blue-600 text-white px-4 py-3 rounded-lg shadow-2xl border-2 border-blue-400 opacity-90">
+            <div className="font-bold">{draggedRider.racing_name || draggedRider.full_name}</div>
+            <div className="text-sm">
+              {draggedRider.zwiftracing_category || draggedRider.zwift_official_category} • vELO {draggedRider.velo_live}
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
     </div>
+    </DndContext>
   )
 }
 

@@ -44,14 +44,16 @@ const STATUS_ICONS = {
 }
 
 export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
-  // @dnd-kit droppable zone
+  const canAddMore = team.current_riders < team.max_riders
+
+  // Use @dnd-kit droppable for touch support
   const { setNodeRef, isOver } = useDroppable({
     id: `team-${team.team_id}`,
-    data: { team },
+    disabled: !canAddMore,
+    data: { teamId: team.team_id, type: 'team-card' }
   })
 
-  const canAddMore = team.current_riders < team.max_riders
-  const showDropIndicator = isOver && isDragging && canAddMore
+  const showDropIndicator = isOver && isDragging
 
   return (
     <div
@@ -60,8 +62,8 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
       className={`
         relative bg-slate-800/50 backdrop-blur-sm rounded-xl border-2 
         transition-all duration-300 overflow-hidden
-        ${showDropIndicator ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
-        ${isOver && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
+        ${showDropIndicator && canAddMore ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
+        ${showDropIndicator && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
         ${isDragging && canAddMore ? 'hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30' : ''}
         ${isSelectedForFiltering ? 'ring-4 ring-orange-500 border-orange-500' : ''}
         ${isExpanded ? 'ring-4 ring-orange-400 border-orange-400' : ''}
@@ -154,21 +156,14 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
 
       {/* Drag Over Indicator */}
       {showDropIndicator && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-green-500/20 backdrop-blur-sm">
+        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
+          canAddMore 
+            ? 'bg-green-500/20 backdrop-blur-sm' 
+            : 'bg-red-500/20 backdrop-blur-sm'
+        }`}>
           <div className="text-center">
-            <p className="text-2xl font-bold text-green-300">
-              ✓ Drop hier
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Drag Over maar vol */}
-      {isOver && !canAddMore && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-red-500/20 backdrop-blur-sm">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-red-300">
-              ✗ Team vol
+            <p className={`text-2xl font-bold ${canAddMore ? 'text-green-300' : 'text-red-300'}`}>
+              {canAddMore ? '✓ Drop hier' : '✗ Team vol'}
             </p>
           </div>
         </div>

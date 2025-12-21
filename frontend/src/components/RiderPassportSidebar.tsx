@@ -16,7 +16,6 @@ interface Rider {
   phenotype: string | null
   team_id?: number | null
   team_name?: string | null
-  teams?: Array<{ team_id: number; team_name: string }>
 }
 
 interface Team {
@@ -226,14 +225,8 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
   )
 }
 
-// Draggable Rider Card Component met @dnd-kit voor iPad support
+// Draggable Rider Card Component with @dnd-kit
 function DraggableRiderCard({ rider }: { rider: Rider }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: `rider-${rider.rider_id}`,
-    data: { rider },
-    disabled: false, // Altijd draggable, ook als rider in teams zit
-  })
-
   const tier = getVeloTier(rider.velo_live)
   const category = rider.zwiftracing_category || rider.zwift_official_category
   const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
@@ -241,31 +234,32 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
     ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
     : '-'
 
-  const style = transform ? {
-    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    zIndex: 50,
-  } : undefined
+  // Use @dnd-kit draggable for touch support
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: rider.rider_id,
+    disabled: !!rider.team_id,
+    data: { rider, type: 'rider' }
+  })
 
-  // Check of rider in teams zit (legacy team_id of nieuwe teams array)
-  const hasTeams = (rider.teams && rider.teams.length > 0) || rider.team_id
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
       className={`
         p-2 rounded-lg border transition-all relative
-        ${isDragging ? 'opacity-50 cursor-grabbing' : ''}
-        ${hasTeams
-          ? 'bg-slate-900/40 border-green-600/30 hover:border-green-500 hover:shadow-lg hover:shadow-green-500/20 cursor-grab active:cursor-grabbing' 
+        ${rider.team_id 
+          ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
           : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-grab active:cursor-grabbing'
         }
-        touch-none
+        ${isDragging ? 'ring-2 ring-blue-500 shadow-2xl z-50' : ''}
       `}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" {...attributes} {...listeners}>
         {/* Avatar */}
         <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
           {rider.avatar_url ? (
@@ -290,7 +284,9 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
             {tier && (
               <span 
                 className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
-                style={{ backgroundColor: tier.color }}
+                style={{ 
+                  backgroundColor: tier.color,
+                }}
                 title={`${tier.name} Tier`}
               >
                 {tier.rank}
@@ -302,26 +298,19 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
             <span>•</span>
             <span>{ftpWkg} W/kg</span>
           </div>
-          {/* Toon teams waarin rider zit */}
-          {rider.teams && rider.teams.length > 0 ? (
-            <div className="mt-1 space-y-0.5">
-              {rider.teams.map(team => (
-                <div key={team.team_id} className="text-[10px] text-green-400 truncate">
-                  ✓ {team.team_name}
-                </div>
-              ))}
-            </div>
-          ) : rider.team_id ? (
-            <div className="mt-1 text-[10px] text-green-400">
+          {rider.team_id && (
+            <div className="mt-1 text-xs text-green-400">
               ✓ {rider.team_name}
             </div>
-          ) : null}
+          )}
         </div>
 
-        {/* Drag Handle - altijd zichtbaar */}
-        <div className="text-slate-500 text-xl">
-          ⋮⋮
-        </div>
+        {/* Drag Handle */}
+        {!rider.team_id && (
+          <div className="text-slate-500 text-xl">
+            ⋮⋮
+          </div>
+        )}
       </div>
     </div>
   )

@@ -23,7 +23,6 @@ interface Rider {
   phenotype: string | null
   team_id?: number | null
   team_name?: string | null
-  teams?: Array<{ team_id: number; team_name: string }>
 }
 
 interface Team {
@@ -99,13 +98,9 @@ export default function IntegratedTeamBuilder() {
       }
       return res.json()
     },
-    onSuccess: async (_, { teamId }) => {
-      // Refetch maar behoud cache/scroll positie
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['teams'], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['team', teamId], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['riders'], type: 'active' })
-      ])
+    onSuccess: (_, { teamId }) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
       toast.success('Rider toegevoegd aan team!')
     },
     onError: (error: Error) => {
@@ -141,10 +136,6 @@ export default function IntegratedTeamBuilder() {
 
   const handleDragCancel = () => {
     setDraggedRider(null)
-    toast('Drag geannuleerd', {
-      icon: '↩️',
-      duration: 1500,
-    })
   }
 
   const handleOpenTeamDetail = (teamId: number) => {
@@ -198,22 +189,7 @@ export default function IntegratedTeamBuilder() {
         />
 
         {/* Main: Team Cards Grid */}
-        <main className={`flex-1 p-6 transition-all duration-300 relative ${sidebarOpen ? 'ml-0' : ''}`}>
-          {/* Cancel Zone Indicator - Zichtbaar tijdens drag op iPad/mobile */}
-          {draggedRider && (
-            <div className="md:hidden fixed top-20 left-4 right-4 z-50 pointer-events-none">
-              <div className="bg-slate-800/95 backdrop-blur-sm border-2 border-blue-500 rounded-xl p-4 shadow-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="text-3xl">↩️</div>
-                  <div className="flex-1">
-                    <p className="text-white font-bold text-sm">Sleep naar een team of...</p>
-                    <p className="text-blue-300 text-xs">Laat los buiten een team om te annuleren</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
+        <main className={`flex-1 p-6 transition-all duration-300 ${sidebarOpen ? 'ml-0' : ''}`}>
           {teams.length === 0 ? (
             <div className="text-center text-white py-20">
               <p className="text-xl">Geen teams gevonden</p>
