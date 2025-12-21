@@ -89,8 +89,8 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       }
       
       // Hide assigned riders
-      if (hideAssigned && rider.team_id) return false
-      s && rider.teams.length > 0
+      if (hideAssigned && rider.teams && rider.teams.length > 0) return false
+      
       // Team-based filtering (US4)
       if (selectedTeam) {
         const category = rider.zwiftracing_category || rider.zwift_official_category
