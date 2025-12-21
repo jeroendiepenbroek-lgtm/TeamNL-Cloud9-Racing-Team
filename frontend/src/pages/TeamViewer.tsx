@@ -542,7 +542,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       {/* Header */}
       {!hideHeader && (
       <div className="relative overflow-hidden mb-4 sm:mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-900 via-green-900 to-red-900 opacity-95"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 opacity-95"></div>
         <div className="relative px-3 py-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between gap-4">
@@ -1206,7 +1206,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
               >
                 {/* VOORKANT */}
                 <div 
-                  className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2"
+                  className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-orange-400 shadow-xl p-2"
                   style={{ backfaceVisibility: 'hidden' }}
                 >
                 {/* Header with tier badge and category */}
@@ -1247,7 +1247,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                 <img
                   src={rider.avatar_url || 'https://via.placeholder.com/100?text=No+Avatar'}
                   alt={rider.name}
-                  className="absolute top-12 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-yellow-400 object-cover bg-gray-700 shadow-xl"
+                  className="absolute top-12 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-orange-400 object-cover bg-gray-700 shadow-xl"
                   onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Avatar' }}
                 />
 
@@ -1331,7 +1331,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
 
               {/* BACK */}
               <div
-                className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col"
+                className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-orange-400 shadow-xl p-3 flex flex-col"
                 style={{
                   backfaceVisibility: 'hidden',
                   transform: 'rotateY(180deg)'
@@ -1427,7 +1427,7 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
           return (
             <div
               key={rider.rider_id}
-              className="flex-shrink-0 w-[220px] bg-gradient-to-br from-gray-900 to-blue-900 border-2 border-yellow-400 rounded-lg shadow-lg overflow-hidden relative"
+              className="flex-shrink-0 w-[220px] bg-gradient-to-br from-gray-900 to-blue-900 border-2 border-orange-400 rounded-lg shadow-lg overflow-hidden relative"
             >
               {/* Header with tier and category */}
               <div
@@ -1465,7 +1465,7 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
               <img
                 src={rider.avatar_url || 'https://via.placeholder.com/60?text=No+Avatar'}
                 alt={rider.name}
-                className="absolute top-9 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-2 border-yellow-400 object-cover bg-gray-700 shadow-xl z-10"
+                className="absolute top-9 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-2 border-orange-400 object-cover bg-gray-700 shadow-xl z-10"
                 onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Avatar' }}
               />
 

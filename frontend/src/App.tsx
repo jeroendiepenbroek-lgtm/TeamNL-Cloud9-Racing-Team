@@ -8,7 +8,6 @@ import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
 import RiderPassportGallery from './pages/RiderPassportGallery'
-import ChristmasSnow from './components/ChristmasSnow'
 
 function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -28,15 +27,14 @@ function Navigation() {
 
   return (
     <>
-      <nav className="bg-gradient-to-r from-red-900 via-green-900 to-red-900 shadow-lg border-b-4 border-yellow-400 relative z-[999999]">
+      <nav className="bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 shadow-lg border-b-4 border-orange-400 relative z-[999999]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            {/* Logo + Brand with Christmas Trees */}
+            {/* Logo + Brand */}
             <button 
               onClick={() => handleNavigation('/')}
               className="flex items-center space-x-2 sm:space-x-4 hover:opacity-90 transition"
             >
-              <span className="text-2xl sm:text-4xl">🎄</span>
               <div className="relative">
                 <div className="absolute inset-0 bg-orange-500 rounded-full blur-sm opacity-75"></div>
                 <div className="relative bg-white rounded-full p-1 ring-4 ring-orange-500">
@@ -51,11 +49,9 @@ function Navigation() {
               <div className="text-left">
                 <div className="text-white font-black text-lg sm:text-2xl flex items-center gap-1 sm:gap-2">
                   TeamNL
-                  <span className="text-red-500">🎅</span>
                 </div>
                 <div className="text-orange-400 font-bold text-sm sm:text-lg">Cloud9 Racing</div>
               </div>
-              <span className="hidden sm:inline text-4xl">🎄</span>
             </button>
 
             {/* Right Side - YouTube + Menu */}
@@ -93,7 +89,7 @@ function Navigation() {
 
           {/* Dropdown Menu - Works for both mobile and desktop */}
           {menuOpen && (
-            <div className="fixed right-4 top-24 w-72 bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl shadow-2xl border-2 border-yellow-400 overflow-hidden z-[999999]">
+            <div className="fixed right-4 top-24 w-72 bg-gradient-to-br from-gray-900 to-blue-900 rounded-xl shadow-2xl border-2 border-orange-400 overflow-hidden z-[999999]">
               <div className="py-2">
                 {menuItems.map((item) => (
                   <button
@@ -126,7 +122,6 @@ function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-gray-900">
-        <ChristmasSnow />
         <Navigation />
         <Routes>
           <Route path="/" element={<TeamViewer />} />
