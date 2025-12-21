@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* iPad en mobile touch optimalisaties voor drag & drop */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  touch-action: pan-y pan-x;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

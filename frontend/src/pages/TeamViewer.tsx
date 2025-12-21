@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter, useDroppable } from '@dnd-kit/core'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
 import TeamBuilderCard from '../components/TeamCard.tsx'
@@ -40,14 +41,16 @@ const getVeloTierSidebar = (rating: number | null) => {
 }
 
 // Team Expanded Sidebar Component
-function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider }: { 
+function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: { 
   team: Team; 
   onClose: () => void;
-  onDrop: (teamId: number) => void;
   isDragging: boolean;
   onRemoveRider: (teamId: number, riderId: number) => void;
 }) {
-  const [isDragOver, setIsDragOver] = useState(false)
+  const { setNodeRef, isOver } = useDroppable({
+    id: `team-${team.team_id}-sidebar`,
+    data: { team },
+  })
   
   const { data: lineupData } = useQuery({
     queryKey: ['team', team.team_id],
@@ -61,31 +64,14 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
   const lineup = lineupData?.lineup || []
   const canAddMore = team.current_riders < team.max_riders
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }
-
-  const handleDragLeave = () => {
-    setIsDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    onDrop(team.team_id)
-  }
-
   return (
     <div 
+      ref={setNodeRef}
       className={`fixed right-0 top-0 bottom-0 w-full sm:w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
-        isDragOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
-        isDragOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
+        isOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
+        isOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
         'border-orange-500'
       }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
       data-sidebar-team={team.team_id}
     >
       {/* Header */}
@@ -107,7 +93,7 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
       </div>
 
       {/* Drag & Drop Indicator */}
-      {isDragOver && (
+      {isOver && (
         <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
           canAddMore 
             ? 'bg-green-500/20 backdrop-blur-sm' 
@@ -127,18 +113,6 @@ function TeamExpandedSidebar({ team, onClose, onDrop, isDragging, onRemoveRider 
               </p>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Mobile: Drop Button at Bottom */}
-      {isDragging && canAddMore && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-900 via-slate-900 to-transparent z-[100001]">
-          <button
-            onClick={() => onDrop(team.team_id)}
-            className="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-6 py-4 rounded-xl text-xl font-bold shadow-2xl border-2 border-green-400 animate-pulse"
-          >
-            ✓ VOEG TOE AAN {team.team_name}
-          </button>
         </div>
       )}
 
@@ -345,8 +319,22 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
   const [draggedRider, setDraggedRider] = useState<any>(null)
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
-  const [isTouchDragging, setIsTouchDragging] = useState(false)
   const queryClient = useQueryClient()
+
+  // Configure touch and pointer sensors for iPad/mobile support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    })
+  )
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
@@ -485,21 +473,34 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   // Riders kan array zijn OF object met riders property
   const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
 
-  const handleDragStart = useCallback((rider: any, isMobile: boolean = false) => {
-    console.log('handleDragStart called', { rider: rider.racing_name, isMobile })
-    setDraggedRider(rider)
-    setIsTouchDragging(isMobile)
-  }, [])
-
-  const handleDrop = useCallback((teamId: number) => {
-    console.log('handleDrop called', { teamId, draggedRider })
-    if (draggedRider) {
-      addRiderMutation.mutate({ teamId, riderId: draggedRider.rider_id })
-      
-      setDraggedRider(null)
-      setIsTouchDragging(false)
+  // Handle drag start
+  const handleDragStart = (event: any) => {
+    const rider = event.active.data.current?.rider
+    if (rider) {
+      setDraggedRider(rider)
     }
-  }, [draggedRider, addRiderMutation])
+  }
+
+  // Handle drag end with @dnd-kit
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (over && active.data.current?.rider) {
+      const rider = active.data.current.rider
+      // Match both team-123 and team-123-sidebar formats
+      const teamIdMatch = over.id.toString().match(/team-(\d+)/)
+      if (teamIdMatch) {
+        const teamId = parseInt(teamIdMatch[1])
+        addRiderMutation.mutate({ teamId, riderId: rider.rider_id })
+      }
+    }
+    
+    setDraggedRider(null)
+  }
+
+  const handleDragCancel = () => {
+    setDraggedRider(null)
+  }
 
   const handleOpenTeamDetail = (teamId: number) => {
     setSelectedTeamId(teamId)
@@ -639,12 +640,17 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                       <p>Riders laden...</p>
                     </div>
                   ) : (
-                    <>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      onDragCancel={handleDragCancel}
+                    >
                       {/* Sidebar met Riders */}
                       <RiderPassportSidebar
                         riders={riders}
                         isOpen={sidebarOpen}
-                        onDragStart={handleDragStart}
                         selectedTeam={selectedTeamForFiltering ? teams.find(t => t.team_id === selectedTeamForFiltering) : null}
                         onClearTeamFilter={() => setSelectedTeamForFiltering(null)}
                       />
@@ -680,7 +686,6 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                               <TeamBuilderCard
                                 key={team.team_id}
                                 team={team}
-                                onDrop={handleDrop}
                                 onOpenDetail={handleOpenTeamDetail}
                                 onDelete={() => handleDeleteTeam(team.team_id, team.team_name)}
                                 onSelectForFiltering={(teamId) => {
@@ -697,7 +702,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                           </div>
                         )}
                       </div>
-                    </>
+                    </DndContext>
                   )}
                 </div>
               </div>
@@ -727,7 +732,6 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         <TeamExpandedSidebar
           team={teams.find(t => t.team_id === expandedTeamId)!}
           onClose={() => setExpandedTeamId(null)}
-          onDrop={handleDrop}
           isDragging={draggedRider !== null}
           onRemoveRider={(teamId, riderId) => {
             removeRiderMutation.mutate({ teamId, riderId })
@@ -752,32 +756,6 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           setShowTeamCreationModal(false)
         }}
       />
-
-      {/* Mobile: Selected Rider Banner */}
-      {isTouchDragging && draggedRider && (
-        <div className="md:hidden fixed top-0 left-0 right-0 bg-blue-600 text-white px-4 py-3 shadow-2xl z-[100002] border-b-4 border-blue-400">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <div className="font-bold text-lg">{draggedRider.racing_name || draggedRider.full_name}</div>
-              <div className="text-sm opacity-90">
-                {draggedRider.zwiftracing_category || draggedRider.zwift_official_category} • vELO {draggedRider.velo_live}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setDraggedRider(null)
-                setIsTouchDragging(false)
-              }}
-              className="bg-white/20 hover:bg-white/30 active:bg-white/40 px-4 py-2 rounded-lg font-bold"
-            >
-              ✕ Annuleer
-            </button>
-          </div>
-          <div className="text-center mt-2 text-sm font-semibold animate-pulse">
-            ⬇️ Klik op een team hieronder om toe te voegen
-          </div>
-        </div>
-      )}
     </div>
   )
 }

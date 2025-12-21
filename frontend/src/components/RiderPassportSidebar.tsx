@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useDraggable } from '@dnd-kit/core'
 
 interface Rider {
   rider_id: number
@@ -30,7 +31,6 @@ interface Team {
 interface RiderPassportSidebarProps {
   riders: Rider[]
   isOpen: boolean
-  onDragStart: (rider: Rider, isMobile?: boolean) => void
   selectedTeam?: Team | null
   onClearTeamFilter?: () => void
 }
@@ -64,7 +64,7 @@ const getVeloTier = (rating: number | null) => {
   )
 }
 
-export default function RiderPassportSidebar({ riders, isOpen, onDragStart, selectedTeam, onClearTeamFilter }: RiderPassportSidebarProps) {
+export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onClearTeamFilter }: RiderPassportSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedTier, setSelectedTier] = useState<string>('')
@@ -112,18 +112,6 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
       return true
     })
   }, [riders, searchQuery, selectedCategory, selectedTier, hideAssigned, selectedTeam])
-
-  const handleDragStart = (e: React.DragEvent, rider: Rider) => {
-    e.dataTransfer.effectAllowed = 'copy'
-    onDragStart(rider, false)
-  }
-
-  // Mobile: Use button click instead of drag for iOS compatibility
-  const handleMobileSelect = (rider: Rider) => {
-    if (rider.team_id) return
-    console.log('Mobile select rider:', rider.racing_name || rider.full_name)
-    onDragStart(rider, true)
-  }
 
   if (!isOpen) return null
 
@@ -228,92 +216,102 @@ export default function RiderPassportSidebar({ riders, isOpen, onDragStart, sele
       {/* Scrollable Rider Cards */}
       <div className="flex-1 overflow-y-auto p-3">
         <div className="space-y-1.5">
-          {filteredRiders.map(rider => {
-            const tier = getVeloTier(rider.velo_live)
-            const category = rider.zwiftracing_category || rider.zwift_official_category
-            const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
-            const ftpWkg = rider.racing_ftp && rider.weight_kg 
-              ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
-              : '-'
-
-            return (
-              <div
-                key={rider.rider_id}
-                className={`
-                  p-2 rounded-lg border transition-all relative
-                  ${rider.team_id 
-                    ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
-                    : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20'
-                  }
-                `}
-                draggable={!rider.team_id}
-                onDragStart={(e) => handleDragStart(e, rider)}
-              >
-                {/* Mobile: Touch button */}
-                {!rider.team_id && (
-                  <button
-                    onClick={() => handleMobileSelect(rider)}
-                    className="md:hidden absolute top-2 right-2 z-10 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg"
-                  >
-                    📋 Selecteer
-                  </button>
-                )}
-                <div className="flex items-center gap-2">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
-                    {rider.avatar_url ? (
-                      <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-white truncate">{rider.full_name}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      {category && (
-                        <span 
-                          className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
-                          style={{ backgroundColor: categoryColor }}
-                        >
-                          {category}
-                        </span>
-                      )}
-                      {tier && (
-                        <span 
-                          className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
-                          style={{ 
-                            backgroundColor: tier.color,
-                          }}
-                          title={`${tier.name} Tier`}
-                        >
-                          {tier.rank}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
-                      <span>FTP: {rider.racing_ftp || '-'}W</span>
-                      <span>•</span>
-                      <span>{ftpWkg} W/kg</span>
-                    </div>
-                    {rider.team_id && (
-                      <div className="mt-1 text-xs text-green-400">
-                        ✓ {rider.team_name}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Drag Handle */}
-                  <div className="text-slate-500 text-xl">
-                    ⋮⋮
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          {filteredRiders.map(rider => (
+            <DraggableRiderCard key={rider.rider_id} rider={rider} />
+          ))}
         </div>
       </div>
     </aside>
+  )
+}
+
+// Draggable Rider Card Component met @dnd-kit voor iPad support
+function DraggableRiderCard({ rider }: { rider: Rider }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `rider-${rider.rider_id}`,
+    data: { rider },
+    disabled: !!rider.team_id, // Disabled als rider al toegewezen is
+  })
+
+  const tier = getVeloTier(rider.velo_live)
+  const category = rider.zwiftracing_category || rider.zwift_official_category
+  const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
+  const ftpWkg = rider.racing_ftp && rider.weight_kg 
+    ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
+    : '-'
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    zIndex: 50,
+  } : undefined
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={`
+        p-2 rounded-lg border transition-all relative
+        ${isDragging ? 'opacity-50 cursor-grabbing' : ''}
+        ${rider.team_id 
+          ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
+          : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-grab active:cursor-grabbing'
+        }
+        ${!rider.team_id ? 'touch-none' : ''}
+      `}
+    >
+      <div className="flex items-center gap-2">
+        {/* Avatar */}
+        <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+          {rider.avatar_url ? (
+            <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-white truncate">{rider.full_name}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {category && (
+              <span 
+                className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
+                style={{ backgroundColor: categoryColor }}
+              >
+                {category}
+              </span>
+            )}
+            {tier && (
+              <span 
+                className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
+                style={{ backgroundColor: tier.color }}
+                title={`${tier.name} Tier`}
+              >
+                {tier.rank}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
+            <span>FTP: {rider.racing_ftp || '-'}W</span>
+            <span>•</span>
+            <span>{ftpWkg} W/kg</span>
+          </div>
+          {rider.team_id && (
+            <div className="mt-1 text-xs text-green-400">
+              ✓ {rider.team_name}
+            </div>
+          )}
+        </div>
+
+        {/* Drag Handle - alleen zichtbaar als niet toegewezen */}
+        {!rider.team_id && (
+          <div className="text-slate-500 text-xl">
+            ⋮⋮
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

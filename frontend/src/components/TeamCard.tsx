@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useDroppable } from '@dnd-kit/core'
 
 interface Team {
   team_id: number
@@ -19,7 +19,6 @@ interface Team {
 
 interface TeamCardProps {
   team: Team
-  onDrop: (teamId: number) => void
   onOpenDetail: (teamId: number) => void
   onDelete?: () => void
   onSelectForFiltering?: (teamId: number) => void
@@ -44,42 +43,29 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
-  const [isDragOver, setIsDragOver] = useState(false)
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }
-
-  const handleDragLeave = () => {
-    setIsDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    onDrop(team.team_id)
-  }
+export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand }: TeamCardProps) {
+  // @dnd-kit droppable zone
+  const { setNodeRef, isOver } = useDroppable({
+    id: `team-${team.team_id}`,
+    data: { team },
+  })
 
   const canAddMore = team.current_riders < team.max_riders
-  const showDropIndicator = isDragOver && isDragging
+  const showDropIndicator = isOver && isDragging && canAddMore
 
   return (
     <div
+      ref={setNodeRef}
       data-team-id={team.team_id}
       className={`
         relative bg-slate-800/50 backdrop-blur-sm rounded-xl border-2 
         transition-all duration-300 overflow-hidden
-        ${showDropIndicator && canAddMore ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
-        ${showDropIndicator && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
+        ${showDropIndicator ? 'border-green-400 shadow-lg shadow-green-500/50 scale-105' : STATUS_COLORS[team.team_status]}
+        ${isOver && !canAddMore ? 'border-red-400 shadow-lg shadow-red-500/50' : ''}
         ${isDragging && canAddMore ? 'hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30' : ''}
         ${isSelectedForFiltering ? 'ring-4 ring-orange-500 border-orange-500' : ''}
         ${isExpanded ? 'ring-4 ring-orange-400 border-orange-400' : ''}
       `}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
     >
       {/* Header */}
       <div 
@@ -168,31 +154,23 @@ export default function TeamCard({ team, onDrop, onDelete, onSelectForFiltering,
 
       {/* Drag Over Indicator */}
       {showDropIndicator && (
-        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none ${
-          canAddMore 
-            ? 'bg-green-500/20 backdrop-blur-sm' 
-            : 'bg-red-500/20 backdrop-blur-sm'
-        }`}>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-green-500/20 backdrop-blur-sm">
           <div className="text-center">
-            <p className={`text-2xl font-bold ${canAddMore ? 'text-green-300' : 'text-red-300'}`}>
-              {canAddMore ? '✓ Drop hier' : '✗ Team vol'}
+            <p className="text-2xl font-bold text-green-300">
+              ✓ Drop hier
             </p>
           </div>
         </div>
       )}
 
-      {/* Mobile: Drop Button */}
-      {isDragging && canAddMore && (
-        <div className="md:hidden absolute inset-0 flex items-center justify-center bg-green-500/10 backdrop-blur-sm pointer-events-auto z-20">
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDrop(team.team_id)
-            }}
-            className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white px-8 py-4 rounded-xl text-xl font-bold shadow-2xl border-2 border-green-400 animate-pulse"
-          >
-            ✓ VOEG TOE AAN {team.team_name}
-          </button>
+      {/* Drag Over maar vol */}
+      {isOver && !canAddMore && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-red-500/20 backdrop-blur-sm">
+          <div className="text-center">
+            <p className="text-2xl font-bold text-red-300">
+              ✗ Team vol
+            </p>
+          </div>
         </div>
       )}
     </div>
