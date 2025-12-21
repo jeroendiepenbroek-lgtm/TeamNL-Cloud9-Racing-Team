@@ -1,15 +1,25 @@
--- Fix: Verwijder unique constraint voor multi-team support
--- Riders moeten aan meerdere teams kunnen worden toegevoegd
+-- Fix: BEHOUD unique constraint voor multi-team support
+-- Dit zorgt ervoor dat:
+-- ✅ Een rider aan meerdere teams kan worden toegevoegd (verschillende team_id)
+-- ❌ Een rider NIET dubbel in hetzelfde team kan zitten (unieke combinatie team_id + rider_id)
 
--- Stap 1: Drop de unique constraint
+-- BELANGRIJK: Voer dit ALLEEN uit als de constraint is verwijderd!
+-- Check eerst of de constraint bestaat:
+SELECT constraint_name, constraint_type
+FROM information_schema.table_constraints
+WHERE table_name = 'team_lineups'
+  AND constraint_name = 'team_rider_unique';
+
+-- Als de constraint NIET bestaat, voeg hem toe:
 ALTER TABLE team_lineups 
-DROP CONSTRAINT IF EXISTS team_rider_unique;
+ADD CONSTRAINT team_rider_unique UNIQUE (team_id, rider_id);
 
--- Stap 2: Voeg nieuwe constraint toe (alleen primary key op id)
--- team_lineups.id blijft primary key
--- Meerdere combinaties van (team_id, rider_id) zijn nu toegestaan
+-- De constraint zorgt ervoor dat:
+-- (team_id=1, rider_id=100) ✅ OK
+-- (team_id=2, rider_id=100) ✅ OK - rider in ander team
+-- (team_id=1, rider_id=100) ❌ ERROR - rider al in team 1
 
--- Verificatie query:
+-- Verificatie query - riders in meerdere teams:
 SELECT 
   rider_id,
   COUNT(DISTINCT team_id) as team_count,
@@ -18,5 +28,3 @@ FROM team_lineups
 GROUP BY rider_id
 HAVING COUNT(DISTINCT team_id) > 1
 ORDER BY team_count DESC;
-
--- Deze query toont riders die aan meerdere teams zijn toegewezen

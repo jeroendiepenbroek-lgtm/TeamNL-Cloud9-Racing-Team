@@ -21,8 +21,7 @@ interface Rider {
   weight_kg: number
   avatar_url: string
   phenotype: string | null
-  team_id?: number | null
-  team_name?: string | null
+  teams?: Array<{ team_id: number; team_name: string }>
 }
 
 interface Team {
@@ -117,7 +116,19 @@ export default function IntegratedTeamBuilder() {
       const teamIdMatch = over.id.toString().match(/team-(\d+)/)
       if (teamIdMatch) {
         const teamId = parseInt(teamIdMatch[1])
-        addRiderMutation.mutate({ teamId, riderId: rider.rider_id })
+        
+        // Check of rider al in dit specifieke team zit
+        const riderTeams = rider.teams || []
+        const alreadyInTeam = riderTeams.some((t: any) => t.team_id === teamId)
+        
+        if (alreadyInTeam) {
+          toast.error(`${rider.full_name} zit al in dit team!`, {
+            duration: 3000,
+            icon: '⚠️'
+          })
+        } else {
+          addRiderMutation.mutate({ teamId, riderId: rider.rider_id })
+        }
       }
     } else if (active.data.current?.rider) {
       // Geen drop target: cancelled/released zonder actie
