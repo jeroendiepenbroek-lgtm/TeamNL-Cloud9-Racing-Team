@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter, DragCancelEvent } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter, DragCancelEvent, useDroppable } from '@dnd-kit/core'
 import TeamCard from '../components/TeamCard.tsx'
+import TeamCardExpanded from '../components/TeamCardExpanded.tsx'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
 
@@ -111,12 +112,27 @@ export default function IntegratedTeamBuilder() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     
-    // Alleen droppen als er een valid drop target is
     if (over && active.data.current?.rider) {
       const rider = active.data.current.rider
-      const teamIdMatch = over.id.toString().match(/team-(\d+)/)
-      if (teamIdMatch) {
-        const teamId = parseInt(teamIdMatch[1])
+      const overId = over.id.toString()
+      
+      // Check voor cancel zone
+      if (overId === 'cancel-drop-zone') {
+        toast.success(`${rider.full_name} niet toegevoegd - geannuleerd`, {
+          duration: 2000,
+          icon: '✋'
+        })
+        setDraggedRider(null)
+        return
+      }
+      
+      // Check voor team drop (normale card, sidebar of expanded)
+      const teamIdMatch = overId.match(/team-(\d+)/)
+      const sidebarMatch = overId.match(/lineup-sidebar-(\d+)/)
+      const expandedMatch = overId.match(/team-expanded-(\d+)/)
+      
+      if (teamIdMatch || sidebarMatch || expandedMatch) {
+        const teamId = parseInt((teamIdMatch || sidebarMatch || expandedMatch)![1])
         
         // Check of rider al in dit specifieke team zit
         const riderTeams = rider.teams || []
@@ -132,7 +148,7 @@ export default function IntegratedTeamBuilder() {
         }
       }
     } else if (active.data.current?.rider) {
-      // Geen drop target: cancelled/released zonder actie
+      // Geen drop target: vrijgegeven zonder actie
       const rider = active.data.current.rider
       toast.success(`${rider.full_name} niet toegevoegd - vrijgegeven`, {
         duration: 2000,
@@ -169,6 +185,43 @@ export default function IntegratedTeamBuilder() {
       setExpandedTeamId(teamId)
       setSidebarOpen(false)
     }
+  }
+
+  // Cancel Drop Zone Component
+  const CancelDropZone = () => {
+    const { setNodeRef, isOver } = useDroppable({
+      id: 'cancel-drop-zone'
+    })
+
+    if (!draggedRider) return null
+
+    return (
+      <div 
+        ref={setNodeRef}
+        className={`fixed top-20 left-0 right-0 z-40 pointer-events-auto transition-all ${
+          isOver ? 'scale-105' : 'scale-100'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4">
+          <div className={`backdrop-blur-sm border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+            isOver 
+              ? 'bg-red-500/30 border-red-400 shadow-lg shadow-red-500/50' 
+              : 'bg-orange-500/20 border-orange-400'
+          }`}>
+            <p className={`text-lg font-bold mb-1 transition-colors ${
+              isOver ? 'text-red-300' : 'text-orange-300'
+            }`}>
+              {isOver ? '🗑️ Drop om te annuleren' : '✋ Annuleer Zone'}
+            </p>
+            <p className={`text-sm transition-colors ${
+              isOver ? 'text-red-200' : 'text-orange-200'
+            }`}>
+              {isOver ? 'Laat los om drag te annuleren' : 'Sleep hierheen om te annuleren'}
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (ridersLoading || teamsLoading) {
@@ -240,23 +293,20 @@ export default function IntegratedTeamBuilder() {
             />
           )}
 
-          {/* Cancel Drop Zone - Duidelijke annuleer zone */}
+          {/* Cancel Drop Zone - Droppable voor annuleren */}
+          <CancelDropZone />
+
+          {/* Bottom Helper Text */}
           {draggedRider && (
-            <>
-              <div className="fixed top-20 left-0 right-0 z-30 pointer-events-none">
-                <div className="max-w-7xl mx-auto px-4">
-                  <div className="bg-orange-500/20 backdrop-blur-sm border-2 border-dashed border-orange-400 rounded-xl p-6 text-center">
-                    <p className="text-orange-300 text-lg font-bold mb-1">✋ Annuleer Zone</p>
-                    <p className="text-orange-200 text-sm">Laat hier los om drag te annuleren</p>
-                  </div>
-                </div>
-              </div>
-              <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/95 backdrop-blur-sm rounded-xl border-2 border-blue-500/50 text-white text-sm shadow-2xl z-30 pointer-events-none">
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-slate-800/95 backdrop-blur-sm rounded-xl border-2 border-blue-500/50 text-white text-sm shadow-2xl z-30 pointer-events-none">
+              <div className="flex items-center gap-2">
                 <span className="font-semibold">💡 Sleep naar team</span>
-                <span className="mx-2 text-slate-400">•</span>
-                <span className="text-blue-300">of laat bovenaan los om te annuleren</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-blue-300">naar cancel zone</span>
+                <span className="text-slate-400">•</span>
+                <span className="text-slate-300">of laat ergens anders los</span>
               </div>
-            </>
+            </div>
           )}
 
           {/* Center - Team Cards (compacte badges) */}
@@ -267,17 +317,12 @@ export default function IntegratedTeamBuilder() {
                 <p className="text-slate-400 mt-2">Maak eerst teams aan via Team Manager</p>
               </div>
             ) : expandedTeamId ? (
-              <div className="max-w-4xl mx-auto">
-                <TeamCard
-                  key={expandedTeamId}
-                  team={teams.find(t => t.team_id === expandedTeamId)!}
-                  onOpenDetail={handleOpenTeamDetail}
-                  isDragging={draggedRider !== null}
-                  refetchTeams={refetchTeams}
-                  isExpanded={true}
-                  onToggleExpand={handleToggleTeamExpand}
-                />
-              </div>
+              <TeamCardExpanded
+                key={expandedTeamId}
+                team={teams.find(t => t.team_id === expandedTeamId)!}
+                isDragging={draggedRider !== null}
+                onCollapse={() => handleToggleTeamExpand(expandedTeamId)}
+              />
             ) : (
               <div className={`grid gap-4 ${
                 sidebarOpen && !selectedTeamId
