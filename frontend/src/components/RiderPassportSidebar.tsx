@@ -233,19 +233,18 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
     ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
     : '-'
 
-  // Use @dnd-kit draggable for touch support
-  consS1: Always allow dragging (multiple teams)
+  // US1: Always allow dragging (multiple teams)
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: rider.rider_id,
-    disabled: false, // US1: Always enabled for multiple team assignmentsr' }
+    disabled: false, // US1: Always enabled for multiple team assignments
+    data: { rider, type: 'rider' }
   })
 
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.85 : 1,
     transition: isDragging ? 'none' : 'all 0.2s ease-out',
-    cursor: rider.team_id ? 'not-allowed' : 'grab',
-    // Force'grab', // US1: Always draggable
+    cursor: 'grab', // US1: Always draggable
     // Force GPU acceleration for smoother touch dragging
     willChange: isDragging ? 'transform' : 'auto',
     // Touch-action to prevent conflicts
@@ -262,7 +261,8 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
         p-2 rounded-lg border transition-all relative
         bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-grab active:cursor-grabbing
         ${isDragging ? 'ring-4 ring-blue-500 shadow-2xl z-50' : ''}
-        ${hasTeams ? 'border-l-4 border-l-green-50
+        ${hasTeams ? 'border-l-4 border-l-green-500' : ''}
+      `}
     >
       <div className="flex items-center gap-2" {...attributes} {...listeners}>
         {/* Avatar */}
@@ -303,8 +303,7 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
             <span>•</span>
             <span>{ftpWkg} W/kg</span>
           </div>
-          {rider.team_id && (
-           /* US2: Show teams rider is assigned to */}
+          {/* US2: Show teams rider is assigned to */}
           {hasTeams && (
             <div className="mt-1.5 flex flex-wrap gap-1">
               {rider.teams!.map((team, idx) => (
@@ -323,7 +322,8 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
         {/* Drag Handle - US1: Always visible */}
         <div className="text-slate-500 text-xl">
           ⋮⋮
-        </div>v>
+        </div>
+      </div>
     </div>
   )
 }
