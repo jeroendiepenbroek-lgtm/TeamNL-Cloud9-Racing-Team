@@ -125,7 +125,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       border-r border-slate-700/50 
       bg-slate-800/30 
       backdrop-blur-xl
-      z-50 md:z-auto
+      z-30 md:z-auto
       transition-transform duration-300
       flex flex-col
     `}>
