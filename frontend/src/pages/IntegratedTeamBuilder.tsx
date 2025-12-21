@@ -23,6 +23,7 @@ interface Rider {
   phenotype: string | null
   team_id?: number | null
   team_name?: string | null
+  teams?: Array<{ team_id: number; team_name: string }>
 }
 
 interface Team {

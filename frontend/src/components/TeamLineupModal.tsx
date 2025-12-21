@@ -81,6 +81,7 @@ export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       queryClient.invalidateQueries({ queryKey: ['team', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['riders'] })
       toast.success('Rider verwijderd uit team')
     },
     onError: () => {

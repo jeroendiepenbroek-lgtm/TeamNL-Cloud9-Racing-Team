@@ -701,10 +701,46 @@ app.get('/api/riders', async (req, res) => {
 
     if (error) throw error;
 
+    // Fetch all team assignments per rider
+    const { data: teamAssignments, error: teamsError } = await supabase
+      .from('team_lineups')
+      .select(`
+        rider_id,
+        team_id,
+        competition_teams!inner(
+          team_name
+        )
+      `)
+      .eq('is_valid', true);
+
+    if (teamsError) {
+      console.warn('⚠️ Could not fetch team assignments:', teamsError.message);
+    }
+
+    // Group teams by rider_id
+    const teamsByRider = new Map<number, Array<{ team_id: number; team_name: string }>>();
+    if (teamAssignments) {
+      for (const assignment of teamAssignments) {
+        if (!teamsByRider.has(assignment.rider_id)) {
+          teamsByRider.set(assignment.rider_id, []);
+        }
+        teamsByRider.get(assignment.rider_id)!.push({
+          team_id: assignment.team_id,
+          team_name: (assignment.competition_teams as any).team_name
+        });
+      }
+    }
+
+    // Merge team data with riders
+    const ridersWithTeams = (data || []).map(rider => ({
+      ...rider,
+      teams: teamsByRider.get(rider.rider_id) || []
+    }));
+
     res.json({
       success: true,
-      count: data?.length || 0,
-      riders: data || []
+      count: ridersWithTeams.length,
+      riders: ridersWithTeams
     });
   } catch (error: any) {
     console.error('❌ Error fetching riders:', error.message);

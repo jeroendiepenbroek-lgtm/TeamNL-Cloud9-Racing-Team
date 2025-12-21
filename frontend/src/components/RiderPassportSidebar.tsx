@@ -16,6 +16,7 @@ interface Rider {
   phenotype: string | null
   team_id?: number | null
   team_name?: string | null
+  teams?: Array<{ team_id: number; team_name: string }>
 }
 
 interface Team {
@@ -230,7 +231,7 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `rider-${rider.rider_id}`,
     data: { rider },
-    disabled: !!rider.team_id, // Disabled als rider al toegewezen is
+    disabled: false, // Altijd draggable, ook als rider in teams zit
   })
 
   const tier = getVeloTier(rider.velo_live)
@@ -245,6 +246,9 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
     zIndex: 50,
   } : undefined
 
+  // Check of rider in teams zit (legacy team_id of nieuwe teams array)
+  const hasTeams = (rider.teams && rider.teams.length > 0) || rider.team_id
+
   return (
     <div
       ref={setNodeRef}
@@ -254,11 +258,11 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
       className={`
         p-2 rounded-lg border transition-all relative
         ${isDragging ? 'opacity-50 cursor-grabbing' : ''}
-        ${rider.team_id 
-          ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
+        ${hasTeams
+          ? 'bg-slate-900/40 border-green-600/30 hover:border-green-500 hover:shadow-lg hover:shadow-green-500/20 cursor-grab active:cursor-grabbing' 
           : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-grab active:cursor-grabbing'
         }
-        ${!rider.team_id ? 'touch-none' : ''}
+        touch-none
       `}
     >
       <div className="flex items-center gap-2">
@@ -298,19 +302,26 @@ function DraggableRiderCard({ rider }: { rider: Rider }) {
             <span>•</span>
             <span>{ftpWkg} W/kg</span>
           </div>
-          {rider.team_id && (
-            <div className="mt-1 text-xs text-green-400">
+          {/* Toon teams waarin rider zit */}
+          {rider.teams && rider.teams.length > 0 ? (
+            <div className="mt-1 space-y-0.5">
+              {rider.teams.map(team => (
+                <div key={team.team_id} className="text-[10px] text-green-400 truncate">
+                  ✓ {team.team_name}
+                </div>
+              ))}
+            </div>
+          ) : rider.team_id ? (
+            <div className="mt-1 text-[10px] text-green-400">
               ✓ {rider.team_name}
             </div>
-          )}
+          ) : null}
         </div>
 
-        {/* Drag Handle - alleen zichtbaar als niet toegewezen */}
-        {!rider.team_id && (
-          <div className="text-slate-500 text-xl">
-            ⋮⋮
-          </div>
-        )}
+        {/* Drag Handle - altijd zichtbaar */}
+        <div className="text-slate-500 text-xl">
+          ⋮⋮
+        </div>
       </div>
     </div>
   )

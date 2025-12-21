@@ -436,6 +436,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     onSuccess: (_, { teamId }) => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       queryClient.invalidateQueries({ queryKey: ['team', teamId] })
+      queryClient.invalidateQueries({ queryKey: ['riders'] })
       toast.success('Rider verwijderd uit team!')
     },
     onError: (error: Error) => {
