@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter, DragCancelEvent } from '@dnd-kit/core'
 import TeamCard from '../components/TeamCard.tsx'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
@@ -119,12 +119,25 @@ export default function IntegratedTeamBuilder() {
         const teamId = parseInt(teamIdMatch[1])
         addRiderMutation.mutate({ teamId, riderId: rider.rider_id })
       }
+    } else if (active.data.current?.rider) {
+      // Geen drop target: cancelled/released zonder actie
+      const rider = active.data.current.rider
+      toast.success(`${rider.full_name} niet toegevoegd - vrijgegeven`, {
+        duration: 2000,
+        icon: '✋'
+      })
     }
-    // Als geen over target: release zonder actie (cancel)
     setDraggedRider(null)
   }
 
-  const handleDragCancel = () => {
+  const handleDragCancel = (event: DragCancelEvent) => {
+    if (event.active.data.current?.rider) {
+      const rider = event.active.data.current.rider
+      toast.success(`${rider.full_name} drag geannuleerd`, {
+        duration: 2000,
+        icon: '🚫'
+      })
+    }
     setDraggedRider(null)
   }
 
