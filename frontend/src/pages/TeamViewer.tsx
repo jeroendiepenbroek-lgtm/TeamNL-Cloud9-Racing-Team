@@ -345,6 +345,12 @@ interface TeamViewerProps {
 }
 
 export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
+  // 🔒 US1: Entry code protection (same as Team Manager)
+  const [isBuilderAuthenticated, setIsBuilderAuthenticated] = useState(false)
+  const [showBuilderLogin, setShowBuilderLogin] = useState(false)
+  const [builderEntryCode, setBuilderEntryCode] = useState('')
+  const BUILDER_CODE = 'CLOUD9RACING' // Same code as Team Manager
+  
   const [showTeamBuilder, setShowTeamBuilder] = useState(false)
   const [showTeamCreationModal, setShowTeamCreationModal] = useState(false)
   const [selectedTeamForFiltering, setSelectedTeamForFiltering] = useState<number | null>(null)
@@ -376,6 +382,14 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
       },
     })
   )
+
+  // 🔒 US1: Check builder authentication on mount
+  useEffect(() => {
+    const auth = sessionStorage.getItem('teamBuilderAuth')
+    if (auth === 'true') {
+      setIsBuilderAuthenticated(true)
+    }
+  }, [])
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
@@ -511,6 +525,31 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     }
   }
 
+  // 🔒 US1: Entry code handler for Team Builder access
+  const handleBuilderEntryCodeSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (builderEntryCode.toUpperCase() === BUILDER_CODE) {
+      setIsBuilderAuthenticated(true)
+      sessionStorage.setItem('teamBuilderAuth', 'true')
+      setShowBuilderLogin(false)
+      setBuilderEntryCode('')
+      setShowTeamBuilder(true)
+      toast.success('✅ Toegang verleend tot Team Builder!')
+    } else {
+      toast.error('❌ Onjuiste toegangscode')
+      setBuilderEntryCode('')
+    }
+  }
+
+  // 🔒 US1: Handle Team Builder toggle with authentication
+  const handleTeamBuilderToggle = () => {
+    if (!isBuilderAuthenticated) {
+      setShowBuilderLogin(true)
+    } else {
+      setShowTeamBuilder(!showTeamBuilder)
+    }
+  }
+
   // Riders kan array zijn OF object met riders property
   const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
 
@@ -619,9 +658,9 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   </select>
                 </div>
                 
-                {/* Team Builder Toggle */}
+                {/* Team Builder Toggle - Met entry code beveiliging */}
                 <button
-                  onClick={() => setShowTeamBuilder(!showTeamBuilder)}
+                  onClick={handleTeamBuilderToggle}
                   className={`flex items-center gap-2 px-4 py-2 backdrop-blur-lg rounded-lg border font-bold text-sm transition-all shadow-lg hover:shadow-xl ${
                     showTeamBuilder
                       ? 'bg-orange-500 border-orange-400 text-white'
@@ -633,12 +672,70 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   </svg>
                   <span className="hidden sm:inline">{showTeamBuilder ? 'Sluiten' : 'Team Builder'}</span>
                   <span className="sm:hidden">{showTeamBuilder ? '✖' : '🏗️'}</span>
+                  {!isBuilderAuthenticated && (
+                    <span className="text-xs">🔒</span>
+                  )}
                 </button>
               </div>
             </div>
           </div>
         </div>
-      </div>      )}      
+      </div>      )}
+      
+      {/* 🔒 US1: Entry Code Login Modal */}
+      {showBuilderLogin && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100000] px-4">
+          <div className="max-w-md w-full">
+            <div className="bg-gradient-to-br from-blue-600/40 via-cyan-500/30 to-blue-700/40 backdrop-blur-xl rounded-3xl p-8 border border-white/20 shadow-2xl">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              
+              <h2 className="text-2xl font-bold text-center text-white mb-2">
+                🔒 Team Builder
+              </h2>
+              <p className="text-center text-blue-100 mb-6">
+                Voer de toegangscode in
+              </p>
+              
+              <form onSubmit={handleBuilderEntryCodeSubmit} className="space-y-4">
+                <div>
+                  <input
+                    type="password"
+                    value={builderEntryCode}
+                    onChange={(e) => setBuilderEntryCode(e.target.value)}
+                    placeholder="Toegangscode"
+                    className="w-full px-4 py-3 bg-white/10 border-2 border-white/30 rounded-xl text-white placeholder-white/60 focus:outline-none focus:border-white/60 backdrop-blur-sm"
+                    autoFocus
+                  />
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowBuilderLogin(false)
+                      setBuilderEntryCode('')
+                    }}
+                    className="flex-1 px-4 py-3 bg-white/10 hover:bg-white/20 border-2 border-white/30 rounded-xl text-white font-semibold transition-all"
+                  >
+                    Annuleer
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 rounded-xl text-white font-bold shadow-lg transition-all"
+                  >
+                    Toegang
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 transition-all duration-300">
         {teamsLoading ? (
           <div className="text-center text-gray-600 py-12">
@@ -1698,7 +1795,7 @@ function RiderRow({ rider }: { rider: LineupRider }) {
           </div>
           {/* Score + Progressbar */}
           <div className="flex flex-col gap-0.5">
-            <span className={`font-bold text-sm leading-none ${veloLiveTier?.textColor || 'text-white'}`}>{veloLive?.toFixed(0) || 'N/A'}</span>
+            <span className={`font-bold text-sm leading-none ${veloLiveTier?.textColor || 'text-white'}`}>{veloLive ? Math.floor(veloLive) : 'N/A'}</span>
             {veloLiveTier && veloLiveTier.max && veloLive && (
               <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
                 <div 
@@ -1720,7 +1817,7 @@ function RiderRow({ rider }: { rider: LineupRider }) {
           </div>
           {/* Score + Progressbar */}
           <div className="flex flex-col gap-0.5">
-            <span className={`font-bold text-sm leading-none ${velo30dayTier?.textColor || 'text-white'}`}>{velo30day?.toFixed(0) || 'N/A'}</span>
+            <span className={`font-bold text-sm leading-none ${velo30dayTier?.textColor || 'text-white'}`}>{velo30day ? Math.floor(velo30day) : 'N/A'}</span>
             {velo30dayTier && velo30dayTier.max && velo30day && (
               <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
                 <div 

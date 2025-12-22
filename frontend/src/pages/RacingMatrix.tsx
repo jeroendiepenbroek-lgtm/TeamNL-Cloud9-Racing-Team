@@ -796,7 +796,7 @@ export default function RacingDataMatrixModern() {
                   <th rowSpan={2} className="px-1 sm:px-2 py-1 text-center text-[10px] sm:text-xs font-bold border-r border-slate-600" title="Favoriet">
                     ⭐
                   </th>
-                  <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('rider_id')}>
+                  <th rowSpan={2} className="px-2 sm:px-3 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600 min-w-[90px] sm:min-w-[110px]" onClick={() => handleSort('rider_id')}>
                     ID
                   </th>
                   <th rowSpan={2} className="px-1 sm:px-2 py-1 text-left text-[10px] sm:text-xs font-bold uppercase tracking-tight sm:tracking-wider border-r border-slate-600 cursor-pointer hover:bg-slate-600" onClick={() => handleSort('velo_live')}>
@@ -899,7 +899,7 @@ export default function RacingDataMatrixModern() {
                           {isFavorite(rider.rider_id) ? '⭐' : '☆'}
                         </button>
                       </td>
-                      <td className="px-1 sm:px-2 py-1 whitespace-nowrap">
+                      <td className="px-2 sm:px-3 py-1 whitespace-nowrap">
                         <div className="flex items-center gap-1.5">
                           <img 
                             src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=32`}

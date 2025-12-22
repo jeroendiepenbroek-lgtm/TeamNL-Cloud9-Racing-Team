@@ -3,15 +3,15 @@ import { useDraggable } from '@dnd-kit/core'
 
 interface Rider {
   rider_id: number
-  racing_name: string
+  racing_name: string | null
   full_name: string
   zwift_official_category: string | null
   zwiftracing_category: string | null
   country_alpha3: string
   velo_live: number
-  velo_30day: number
-  racing_ftp: number
-  weight_kg: number
+  velo_30day: number | null
+  racing_ftp: number | null
+  weight_kg: number | null
   avatar_url: string
   phenotype: string | null
   teams?: Array<{ team_id: number; team_name: string }> // US2: Multiple teams

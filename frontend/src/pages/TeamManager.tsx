@@ -865,7 +865,7 @@ export default function TeamManager() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="font-bold text-lg text-cyan-600">
-                            {rider.velo_live ? Math.round(rider.velo_live) : '-'}
+                            {rider.velo_live ? Math.floor(rider.velo_live) : '-'}
                           </span>
                         </td>
                         <td className="px-4 py-3">

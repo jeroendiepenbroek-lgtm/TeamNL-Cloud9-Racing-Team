@@ -170,11 +170,14 @@ export default function IntegratedTeamBuilder() {
   }
 
   const handleOpenTeamDetail = (teamId: number) => {
+    console.log('🔵 Opening team detail sidebar for team:', teamId)
     // Close expanded view als die open is
     if (expandedTeamId) {
+      console.log('  Closing expanded view:', expandedTeamId)
       setExpandedTeamId(null)
       setSidebarOpen(true)
     }
+    console.log('  Setting selectedTeamId to:', teamId)
     setSelectedTeamId(teamId)
   }
 
@@ -357,11 +360,14 @@ export default function IntegratedTeamBuilder() {
 
           {/* Right Sidebar - Selected Team Lineup met droppable support */}
           {selectedTeamId && (
-            <TeamLineupModal
-              teamId={selectedTeamId}
-              onClose={handleCloseTeamDetail}
-              isDragging={draggedRider !== null}
-            />
+            <>
+              {console.log('🟢 Rendering TeamLineupModal for team:', selectedTeamId)}
+              <TeamLineupModal
+                teamId={selectedTeamId}
+                onClose={handleCloseTeamDetail}
+                isDragging={draggedRider !== null}
+              />
+            </>
           )}
         </div>
       </div>

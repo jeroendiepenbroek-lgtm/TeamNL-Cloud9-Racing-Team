@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, useDroppable } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, useDroppable, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 
 // Category colors (STERKE ZICHTBARE KLEUREN - hoog contrast)
 const CATEGORY_COLORS = {
@@ -47,6 +48,9 @@ interface Rider {
   avatar_url: string
   phenotype: string | null
   zwift_official_racing_score: number | null
+  racing_name: string | null
+  racing_ftp: number | null
+  weight_kg: number | null
 }
 
 interface Team {
@@ -103,6 +107,24 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeRider, setActiveRider] = useState<Rider | null>(null)
+  
+  // 🎯 US2: Sidebar state for riders panel
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // Optimized sensors for touch-first approach (iPhone/iPad + desktop)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Minimal distance before drag activates
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 100, // Shorter delay for faster response
+        tolerance: 10, // Higher tolerance to prevent accidental drags
+      },
+    })
+  )
   
   // New team form
   const [newTeam, setNewTeam] = useState({
@@ -161,7 +183,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       if (!res.ok) throw new Error('Failed to create team')
       return res.json()
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success(`Team "${data.team.team_name}" created!`)
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       setShowCreateModal(false)
@@ -224,7 +246,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       if (!res.ok) throw new Error('Failed to update team')
       return res.json()
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success(`Team "${data.team.team_name}" updated!`)
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       setShowEditModal(false)
@@ -447,11 +469,24 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   
   return (
     <DndContext
+      sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex">
+        {/* 🎯 US2: Right Sidebar met Riders */}
+        {isAuthenticated && (
+          <RiderPassportSidebar
+            riders={allRiders}
+            isOpen={sidebarOpen}
+            selectedTeam={selectedTeam || undefined}
+            onClearTeamFilter={() => setSelectedTeam(null)}
+          />
+        )}
+        
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
         {/* Modern Hero Header with Glassmorphism (Racing Matrix Style) */}
         {!hideHeader && (
         <div className="relative overflow-hidden mb-4 sm:mb-6">
@@ -476,17 +511,30 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                     TeamNL Cloud9 Racing · Beheer je teams
                   </p>
                 </div>
-                <button
-                  onClick={() => window.location.pathname = '/'}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-lg rounded-xl border-2 border-blue-400/50 text-white font-bold text-sm transition-all shadow-lg hover:shadow-xl hover:scale-105"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <span className="hidden sm:inline">Team Viewer</span>
-                  <span className="sm:hidden">👁️</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* 🎯 US2: Sidebar Toggle Button */}
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white/20 hover:bg-white/30 backdrop-blur-lg rounded-xl border-2 border-white/30 text-white font-bold text-sm transition-all shadow-lg hover:shadow-xl"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span className="hidden sm:inline">{sidebarOpen ? 'Verberg Riders' : 'Toon Riders'}</span>
+                    <span className="sm:hidden">{sidebarOpen ? '←' : '→'}</span>
+                  </button>
+                  <button
+                    onClick={() => window.location.pathname = '/'}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/20 hover:bg-blue-500/30 backdrop-blur-lg rounded-xl border-2 border-blue-400/50 text-white font-bold text-sm transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    <span className="hidden sm:inline">Team Viewer</span>
+                    <span className="sm:hidden">👁️</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -527,7 +575,10 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                         }`}
                       >
                         <div 
-                          onClick={() => setSelectedTeam(team)}
+                          onClick={() => {
+                            setSelectedTeam(team)
+                            setSidebarOpen(true) // Open sidebar when team is selected
+                          }}
                           className="cursor-pointer"
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -727,6 +778,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             </div>
           )}
         </DragOverlay>
+      </div>
       </div>
     </DndContext>
   )
