@@ -45,7 +45,7 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
   team: Team; 
   onClose: () => void;
   isDragging: boolean;
-  onRemoveRider: (teamId: number, riderId: number) => void;
+  onRemoveRider?: (teamId: number, riderId: number) => void;
 }) {
   const { data: lineupData } = useQuery({
     queryKey: ['team', team.team_id],
@@ -211,19 +211,21 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
                       </div>
                     </div>
 
-                    {/* Delete Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onRemoveRider(team.team_id, rider.rider_id)
-                      }}
-                      className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300 transition-all flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                      title="Verwijder rider"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
+                    {/* Delete Button - Only show in Team Builder mode */}
+                    {onRemoveRider && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onRemoveRider(team.team_id, rider.rider_id)
+                        }}
+                        className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300 transition-all flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                        title="Verwijder rider"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -755,15 +757,15 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         )}
       </div>
 
-      {/* Fixed Right Sidebar for Expanded Team - Only in Team Builder */}
-      {showTeamBuilder && expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
+      {/* Fixed Right Sidebar for Expanded Team */}
+      {expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
         <TeamExpandedSidebar
           team={teams.find(t => t.team_id === expandedTeamId)!}
           onClose={() => setExpandedTeamId(null)}
-          isDragging={draggedRider !== null}
-          onRemoveRider={(teamId, riderId) => {
+          isDragging={showTeamBuilder && draggedRider !== null}
+          onRemoveRider={showTeamBuilder ? (teamId, riderId) => {
             removeRiderMutation.mutate({ teamId, riderId })
-          }}
+          } : undefined}
         />
       )}
 
