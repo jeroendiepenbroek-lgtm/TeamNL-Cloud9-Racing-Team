@@ -764,11 +764,12 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                 <TeamCard 
                   key={team.team_id} 
                   team={team}
+                  isFavorite={favoriteTeams.has(team.team_id)}
+                  toggleFavorite={toggleFavorite}
                   isExpanded={team.team_id === expandedTeamId}
                   onToggleExpand={() => {
                     setExpandedTeamId(expandedTeamId === team.team_id ? null : team.team_id)
                   }}
-                  onOpenDetail={handleOpenTeamDetail}
                 />
               ))}
             </div>
