@@ -87,9 +87,9 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
             isOver && !canAddMore ? 'border-t-4 border-red-500 shadow-red-500/50' :
             'border-t-4 border-orange-500'}
             
-          // Desktop: Right sidebar
+          // Desktop: Right sidebar - Breder voor betere overzicht
           lg:block lg:right-0 lg:top-0 lg:bottom-0 lg:left-auto
-          lg:w-[450px] lg:rounded-none lg:border-t-0 lg:border-l-4
+          lg:w-[550px] xl:w-[600px] lg:rounded-none lg:border-t-0 lg:border-l-4
           ${isOver && canAddMore ? 'lg:border-green-500 lg:shadow-green-500/50' : 
             isOver && !canAddMore ? 'lg:border-red-500 lg:shadow-red-500/50' :
             'lg:border-orange-500'}
@@ -627,7 +627,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </div>
         </div>
       </div>      )}      
-      <div className={`max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 transition-all duration-300 ${expandedTeamId ? 'lg:pr-[470px]' : ''}`}>
+      <div className={`max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 transition-all duration-300 ${expandedTeamId ? 'lg:pr-[570px] xl:pr-[620px]' : ''}`}>
         {teamsLoading ? (
           <div className="text-center text-gray-600 py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
