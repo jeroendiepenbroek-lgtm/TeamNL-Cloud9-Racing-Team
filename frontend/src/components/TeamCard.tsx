@@ -27,8 +27,6 @@ interface TeamCardProps {
   onToggleExpand?: (teamId: number) => void
   onOpenDetail?: (teamId: number) => void
   refetchTeams?: () => void
-  isFavorite?: boolean
-  toggleFavorite?: (teamId: number) => void
 }
 
 const STATUS_COLORS = {
@@ -45,7 +43,7 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand, onOpenDetail, isFavorite, toggleFavorite }: TeamCardProps) {
+export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand, onOpenDetail }: TeamCardProps) {
   const canAddMore = team.current_riders < team.max_riders
 
   // Use @dnd-kit droppable for touch support
