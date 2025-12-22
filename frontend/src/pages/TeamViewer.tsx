@@ -66,32 +66,39 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
   })
 
   return (
-    <div 
-      ref={setNodeRef}
-      className={`fixed right-0 top-0 bottom-0 w-full sm:w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
-        isOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
-        isOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
-        'border-orange-500'
-      }`}
-      data-sidebar-team={team.team_id}
-    >
-      {/* Header */}
-      <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-3 sm:p-4 flex items-center justify-between shadow-lg z-10">
-        <div className="flex-1 min-w-0 mr-2">
-          <h3 className="text-lg sm:text-xl font-bold text-white truncate">{team.team_name}</h3>
-          <p className="text-xs text-orange-100 mt-0.5">
-            {team.current_riders}/{team.max_riders} riders
-          </p>
+    <>
+      {/* Mobile Overlay */}
+      <div 
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[99999] lg:hidden"
+        onClick={onClose}
+      />
+      
+      <div 
+        ref={setNodeRef}
+        className={`fixed right-0 top-0 bottom-0 w-full sm:w-[400px] lg:w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
+          isOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
+          isOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
+          'border-orange-500'
+        }`}
+        data-sidebar-team={team.team_id}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-3 sm:p-4 flex items-center justify-between shadow-lg z-10">
+          <div className="flex-1 min-w-0 mr-2">
+            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">{team.team_name}</h3>
+            <p className="text-xs text-orange-100 mt-0.5">
+              {team.current_riders}/{team.max_riders} riders
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-colors flex-shrink-0"
-        >
-          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
 
       {/* Drag & Drop Indicator */}
       {isOver && (
@@ -163,11 +170,11 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
               return (
                 <div
                   key={rider.rider_id}
-                  className="p-2 rounded-lg border bg-slate-900/50 border-slate-600 hover:border-slate-500 transition-all group"
+                  className="p-2 sm:p-2 rounded-lg border bg-slate-900/50 border-slate-600 hover:border-slate-500 transition-all group"
                 >
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {/* Avatar */}
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
                       {rider.avatar_url ? (
                         <img src={rider.avatar_url} alt={rider.name} className="w-full h-full object-cover" />
                       ) : (
@@ -177,8 +184,8 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-white truncate">{rider.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
+                      <p className="text-[11px] sm:text-xs font-bold text-white truncate">{rider.name}</p>
+                      <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 flex-wrap">
                         {category && (
                           <span 
                             className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
@@ -210,7 +217,7 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
                         e.stopPropagation()
                         onRemoveRider(team.team_id, rider.rider_id)
                       }}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300 transition-all flex-shrink-0"
+                      className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300 transition-all flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
                       title="Verwijder rider"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -598,7 +605,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </div>
         </div>
       </div>      )}      
-      <div className={`max-w-7xl mx-auto p-4 sm:p-6 transition-all duration-300 ${expandedTeamId ? 'pr-[470px]' : ''}`}>
+      <div className={`max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 transition-all duration-300 ${expandedTeamId ? 'lg:pr-[470px]' : ''}`}>
         {teamsLoading ? (
           <div className="text-center text-gray-600 py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -845,40 +852,40 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
         : 'border border-orange-500/30 hover:border-orange-400/50 hover:shadow-2xl'
     }`}>
       {/* Team Header - Clickable */}
-      <div className="p-6 relative">
+      <div className="p-3 sm:p-4 lg:p-6 relative">
         <button
           onClick={() => onToggleExpand?.()}
-          className={`w-full flex items-center justify-between rounded-lg p-3 -m-3 transition-all duration-200 ${
+          className={`w-full flex items-center justify-between rounded-lg p-2 sm:p-3 -m-2 sm:-m-3 transition-all duration-200 ${
             isExpanded ? 'bg-orange-500/10' : 'hover:bg-white/5'
           }`}
         >
-          <div className="text-left flex-1">
-            <div className="flex items-center gap-3 mb-1">
+          <div className="text-left flex-1 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1">
               {/* Favorite Star Button - Links van teamnaam */}
               <button
                 onClick={(e) => { e.stopPropagation(); toggleFavorite(team.team_id) }}
-                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all hover:scale-110"
+                className="flex-shrink-0 w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all hover:scale-110 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
                 title={isFavorite ? 'Verwijder van favorieten' : 'Toevoegen aan favorieten'}
               >
-                <span className={`text-xl transition-transform ${isFavorite ? 'scale-110' : ''}`}>
+                <span className={`text-lg sm:text-xl transition-transform ${isFavorite ? 'scale-110' : ''}`}>
                   {isFavorite ? '⭐' : '☆'}
                 </span>
               </button>
-              <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
-              <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
-                {team.current_riders} riders
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate flex-1">{team.team_name}</h2>
+              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold border ${statusColor} whitespace-nowrap flex-shrink-0`}>
+                {team.current_riders}
               </span>
             </div>
-            <p className="text-gray-400 text-sm">{team.competition_name}</p>
-            <div className="flex items-center gap-3 mt-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase">
-                {team.competition_type === 'velo' ? '🎯 vELO-based' : '📊 Category-based'}
+            <p className="text-gray-400 text-xs sm:text-sm truncate">{team.competition_name}</p>
+            <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2">
+              <span className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase">
+                {team.competition_type === 'velo' ? '🎯 vELO' : '📊 Cat'}
               </span>
             </div>
           </div>
           
           {/* Expand/Collapse Icon with Animation */}
-          <div className={`text-white text-2xl flex-shrink-0 ml-4 transition-all duration-300 ${
+          <div className={`text-white text-xl sm:text-2xl flex-shrink-0 ml-2 sm:ml-4 transition-all duration-300 ${
             isExpanded ? 'rotate-90 text-orange-400' : 'text-gray-400 group-hover:text-white'
           }`}>
             ▶
@@ -887,12 +894,12 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
 
         {/* View Toggles - Only visible when expanded */}
         {isExpanded && (
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-700">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-700">
             {/* View Mode Toggle */}
             <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode('matrix') }}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
                   viewMode === 'matrix'
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -902,7 +909,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode('passports') }}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
                   viewMode === 'passports'
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -917,7 +924,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
               <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
                 <button
                   onClick={(e) => { e.stopPropagation(); setPassportSize('compact') }}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
                     passportSize === 'compact'
                       ? 'bg-blue-500 text-white shadow-md'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -927,7 +934,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setPassportSize('full') }}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
                     passportSize === 'full'
                       ? 'bg-blue-500 text-white shadow-md'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
