@@ -69,9 +69,9 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
         ${isExpanded ? 'ring-4 ring-orange-400 border-orange-400' : ''}
       `}
     >
-      {/* Compacte Header */}
+      {/* Compacte Header - Verbeterd voor touch */}
       <div 
-        className="p-3 bg-slate-900/50 cursor-pointer hover:bg-slate-900/70 transition-all"
+        className="p-4 bg-slate-900/50 active:bg-slate-900/80 cursor-pointer transition-all touch-manipulation"
         onClick={(e) => {
           e.stopPropagation()
           if (onToggleExpand) {
@@ -81,22 +81,23 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
             onSelectForFiltering(team.team_id)
           }
         }}
-        title={onToggleExpand ? "Klik om uit/in te vouwen en riders te filteren" : "Klik om riders te filteren voor dit team"}
+        title={onToggleExpand ? "Tik om team lineup te bekijken" : "Tik om riders te filteren"}
       >
         {/* Top Row: Expand arrow, naam, status icon, delete */}
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             {onToggleExpand && (
               <svg 
-                className={`w-4 h-4 text-slate-400 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+                className={`w-5 h-5 text-orange-400 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
+                strokeWidth="2.5"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             )}
-            <h3 className="text-base font-bold text-white truncate flex-1">
+            <h3 className="text-base sm:text-lg font-bold text-white truncate flex-1">
               {team.team_name}
             </h3>
           </div>

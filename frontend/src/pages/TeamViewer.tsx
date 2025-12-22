@@ -69,21 +69,40 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
     <>
       {/* Mobile Overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[99999] lg:hidden"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] lg:hidden"
         onClick={onClose}
       />
       
       <div 
         ref={setNodeRef}
-        className={`fixed right-0 top-0 bottom-0 w-full sm:w-[400px] lg:w-[450px] bg-slate-900/98 backdrop-blur-lg border-l-4 shadow-2xl z-[100000] overflow-y-auto transition-all ${
-          isOver && canAddMore ? 'border-green-500 shadow-green-500/50' : 
-          isOver && !canAddMore ? 'border-red-500 shadow-red-500/50' :
-          'border-orange-500'
-        }`}
+        className={`
+          fixed z-[100000] bg-slate-900/98 backdrop-blur-lg shadow-2xl transition-all duration-300
+          
+          // Mobile: Bottom sheet met rounded top en safe-area support
+          lg:hidden
+          bottom-0 left-0 right-0
+          max-h-[85vh] rounded-t-3xl
+          pb-safe
+          ${isOver && canAddMore ? 'border-t-4 border-green-500 shadow-green-500/50' : 
+            isOver && !canAddMore ? 'border-t-4 border-red-500 shadow-red-500/50' :
+            'border-t-4 border-orange-500'}
+            
+          // Desktop: Right sidebar
+          lg:block lg:right-0 lg:top-0 lg:bottom-0 lg:left-auto
+          lg:w-[450px] lg:rounded-none lg:border-t-0 lg:border-l-4
+          ${isOver && canAddMore ? 'lg:border-green-500 lg:shadow-green-500/50' : 
+            isOver && !canAddMore ? 'lg:border-red-500 lg:shadow-red-500/50' :
+            'lg:border-orange-500'}
+        `}
         data-sidebar-team={team.team_id}
       >
+        {/* Mobile: Drag handle */}
+        <div className="lg:hidden flex justify-center pt-2 pb-1">
+          <div className="w-12 h-1.5 bg-slate-600 rounded-full"></div>
+        </div>
+
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-3 sm:p-4 flex items-center justify-between shadow-lg z-10">
+        <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-3 sm:p-4 flex items-center justify-between shadow-lg z-10 lg:rounded-none rounded-t-3xl">
           <div className="flex-1 min-w-0 mr-2">
             <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">{team.team_name}</h3>
             <p className="text-xs text-orange-100 mt-0.5">
@@ -133,12 +152,12 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
         </div>
       )}
 
-      {/* Content */}
-      <div className="p-4">
+      {/* Content - Scrollable area */}
+      <div className="overflow-y-auto max-h-[calc(85vh-80px)] lg:max-h-none lg:h-[calc(100vh-80px)] p-4 pb-8">
         {/* Drop Zone Hint when dragging */}
         {isDragging && canAddMore && (
-          <div className="mb-4 p-4 border-2 border-dashed border-green-500 bg-green-500/10 rounded-lg animate-pulse">
-            <p className="text-green-400 text-center font-semibold">
+          <div className="mb-4 p-3 sm:p-4 border-2 border-dashed border-green-500 bg-green-500/10 rounded-lg animate-pulse">
+            <p className="text-green-400 text-center font-semibold text-sm sm:text-base">
               ⬇️ Sleep rider hierheen om toe te voegen
             </p>
           </div>
@@ -158,7 +177,7 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
             </div>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             {lineup.map((rider: any) => {
               const tier = getVeloTierSidebar(rider.velo_live || rider.current_velo_rank)
               const category = rider.category
@@ -170,25 +189,25 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
               return (
                 <div
                   key={rider.rider_id}
-                  className="p-2 sm:p-2 rounded-lg border bg-slate-900/50 border-slate-600 hover:border-slate-500 transition-all group"
+                  className="p-3 rounded-xl border-2 bg-slate-800/80 border-slate-700 active:bg-slate-700/80 transition-all group touch-manipulation"
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    {/* Avatar */}
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    {/* Avatar - Larger on mobile */}
+                    <div className="w-12 h-12 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden bg-slate-700 flex-shrink-0 ring-2 ring-slate-600">
                       {rider.avatar_url ? (
                         <img src={rider.avatar_url} alt={rider.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
+                        <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
                       )}
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-[11px] sm:text-xs font-bold text-white truncate">{rider.name}</p>
-                      <div className="flex items-center gap-1 sm:gap-1.5 mt-0.5 flex-wrap">
+                      <p className="text-sm sm:text-xs lg:text-sm font-bold text-white truncate">{rider.name}</p>
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         {category && (
                           <span 
-                            className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
+                            className="text-[11px] px-2 py-1 text-white rounded-md font-bold shadow-sm"
                             style={{ backgroundColor: categoryColor }}
                           >
                             {category}
@@ -196,18 +215,18 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
                         )}
                         {tier && (
                           <span 
-                            className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
+                            className="text-[11px] px-2 py-1 rounded-md font-bold text-white shadow-sm"
                             style={{ backgroundColor: tier.color }}
                             title={`${tier.name} Tier`}
                           >
-                            {tier.rank}
+                            vELO {tier.rank}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
-                        <span>FTP: {rider.racing_ftp || rider.ftp_watts || '-'}W</span>
+                      <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-300">
+                        <span className="font-medium">{rider.racing_ftp || rider.ftp_watts || '-'}W</span>
                         <span>•</span>
-                        <span>{ftpWkg} W/kg</span>
+                        <span className="font-medium">{ftpWkg} W/kg</span>
                       </div>
                     </div>
 
@@ -218,11 +237,11 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
                           e.stopPropagation()
                           onRemoveRider(team.team_id, rider.rider_id)
                         }}
-                        className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500 text-red-400 hover:text-red-300 transition-all flex-shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                        className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-3 rounded-xl bg-red-500/20 active:bg-red-500/40 border-2 border-red-500/50 active:border-red-500 text-red-400 active:text-red-300 transition-all flex-shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
                         title="Verwijder rider"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     )}
