@@ -115,7 +115,7 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
   return (
     <aside 
       ref={setNodeRef}
-      className={`fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-80 lg:w-[450px] xl:w-[550px] h-screen md:h-[calc(100vh-73px)] border-l-4 bg-slate-800/95 backdrop-blur-xl z-40 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 ${
+      className={`fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-96 lg:w-[450px] xl:w-[550px] h-screen md:h-[calc(100vh-73px)] border-l-4 bg-slate-800/95 backdrop-blur-xl z-40 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 ${
         showDropIndicator && canAddMore ? 'border-green-500 shadow-green-500/50' :
         showDropIndicator && !canAddMore ? 'border-red-500 shadow-red-500/50' :
         'border-slate-700/50'
@@ -143,30 +143,30 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
       )}
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-slate-700 bg-slate-900/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
-              <p className="text-slate-400 mt-1">{team.competition_name}</p>
-              <div className="flex items-center gap-3 mt-2 text-sm">
+        <div className="p-4 sm:p-6 border-b border-slate-700 bg-slate-900/50">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl font-bold text-white truncate">{team.team_name}</h2>
+              <p className="text-slate-400 mt-1 text-sm sm:text-base truncate">{team.competition_name}</p>
+              <div className="flex items-center gap-2 sm:gap-3 mt-2 text-xs sm:text-sm flex-wrap">
                 {team.competition_type === 'velo' && (
                   <>
-                    <span className="px-2 py-1 bg-blue-600/30 text-blue-300 rounded">
+                    <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-600/30 text-blue-300 rounded whitespace-nowrap">
                       vELO: {team.velo_min_rank}-{team.velo_max_rank}
                     </span>
-                    <span className="px-2 py-1 bg-purple-600/30 text-purple-300 rounded">
+                    <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-purple-600/30 text-purple-300 rounded whitespace-nowrap">
                       Spread: max {team.velo_max_spread}
                     </span>
                   </>
                 )}
-                <span className="px-2 py-1 bg-slate-600/50 text-slate-300 rounded">
+                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-600/50 text-slate-300 rounded">
                   {team.lineup.length}/{team.max_riders} riders
                 </span>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white text-3xl leading-none"
+              className="text-slate-400 hover:text-white text-3xl leading-none flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors"
             >
               ×
             </button>
@@ -192,15 +192,15 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
                   <div
                     key={rider.rider_id}
                     className={`
-                      relative bg-slate-900/50 rounded-lg p-3 border-l-4
+                      relative bg-slate-900/50 rounded-lg p-3 sm:p-3 border-l-4
                       ${rider.is_valid ? 'border-l-green-600' : 'border-l-orange-600'}
                       hover:bg-slate-900/70 transition-colors
                     `}
                   >
                     {/* Compact Rider Card */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       {/* Avatar */}
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-900 flex-shrink-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-slate-900 flex-shrink-0">
                         {rider.avatar_url ? (
                           <img 
                             src={rider.avatar_url} 
@@ -208,20 +208,20 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
+                          <div className="w-full h-full flex items-center justify-center text-xl sm:text-2xl">👤</div>
                         )}
                       </div>
                       
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-white truncate text-sm">{rider.full_name}</p>
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          <span className="px-1.5 py-0.5 bg-blue-600 rounded text-xs font-bold text-white">
+                        <p className="font-bold text-white truncate text-xs sm:text-sm">{rider.full_name}</p>
+                        <div className="flex items-center gap-1 sm:gap-1.5 mt-1 flex-wrap">
+                          <span className="px-1.5 py-0.5 bg-blue-600 rounded text-[10px] sm:text-xs font-bold text-white">
                             {rider.category}
                           </span>
                           {rider.current_velo_rank && tier && (
                             <span 
-                              className="px-1.5 py-0.5 rounded text-xs font-bold text-white"
+                              className="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-bold text-white"
                               style={{ backgroundColor: tier.color }}
                               title={`${tier.name} Tier`}
                             >
@@ -229,12 +229,12 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
                             </span>
                           )}
                           {rider.current_velo_rank && (
-                            <span className="text-xs text-cyan-400 font-bold">
+                            <span className="text-[10px] sm:text-xs text-cyan-400 font-bold">
                               {Math.floor(rider.current_velo_rank)}
                             </span>
                           )}
                           {rider.racing_ftp && (
-                            <span className="text-xs text-slate-400">
+                            <span className="text-[10px] sm:text-xs text-slate-400 hidden sm:inline">
                               {rider.racing_ftp}W {ftpWkg && `• ${ftpWkg} W/kg`}
                             </span>
                           )}
@@ -242,7 +242,7 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
                         
                         {/* Validation Warning */}
                         {!rider.is_valid && rider.validation_warning && (
-                          <div className="text-xs text-orange-400 mt-1">
+                          <div className="text-[10px] sm:text-xs text-orange-400 mt-1">
                             ⚠️ {rider.validation_warning}
                           </div>
                         )}
@@ -251,7 +251,7 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
                       {/* Remove Button */}
                       <button
                         onClick={() => removeRiderMutation.mutate(rider.rider_id)}
-                        className="px-3 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-sm rounded transition-colors flex-shrink-0"
+                        className="px-2 sm:px-3 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs sm:text-sm rounded transition-colors flex-shrink-0 min-h-[44px] sm:min-h-0 flex items-center justify-center"
                         title="Verwijder uit team"
                       >
                         🗑️

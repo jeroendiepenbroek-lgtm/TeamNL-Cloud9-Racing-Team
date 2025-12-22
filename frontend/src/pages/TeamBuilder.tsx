@@ -411,19 +411,20 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
         </div>
         )}
         
-        <div className="max-w-7xl mx-auto p-4 sm:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             
             {/* Left: Teams List */}
-            <div className="lg:col-span-1">
-              <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">Teams</h2>
+            <div className="xl:col-span-1">
+              <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4 gap-2">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">Teams</h2>
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg font-semibold shadow-lg"
+                    className="px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg font-semibold shadow-lg whitespace-nowrap"
                   >
-                    + New Team
+                    <span className="hidden sm:inline">+ New Team</span>
+                    <span className="sm:hidden">+ Team</span>
                   </button>
                 </div>
                 
@@ -437,7 +438,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                     teams.map(team => (
                       <div
                         key={team.team_id}
-                        className={`p-4 rounded-lg border-2 transition-all ${
+                        className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
                           selectedTeam?.team_id === team.team_id
                             ? 'bg-indigo-50 border-indigo-500 shadow-md'
                             : 'bg-gray-50 border-gray-200 hover:border-indigo-300'
@@ -447,35 +448,35 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                           onClick={() => setSelectedTeam(team)}
                           className="cursor-pointer"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <h3 className="font-bold text-lg">{team.team_name}</h3>
-                            <p className="text-sm text-gray-400">{team.competition_name}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className={`text-xs px-2 py-1 rounded-full ${
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-base sm:text-lg truncate">{team.team_name}</h3>
+                            <p className="text-xs sm:text-sm text-gray-400 truncate">{team.competition_name}</p>
+                            <div className="flex items-center gap-1.5 sm:gap-2 mt-2 flex-wrap">
+                              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
                                 team.competition_type === 'velo' 
                                   ? 'bg-purple-500/20 text-purple-300'
                                   : 'bg-blue-500/20 text-blue-300'
                               }`}>
-                                {team.competition_type === 'velo' ? '⚡ vELO' : '🏆 Category'}
+                                {team.competition_type === 'velo' ? '⚡ vELO' : '🏆 Cat'}
                               </span>
-                              <span className={`text-xs px-2 py-1 rounded-full border ${getTeamStatusColor(team.team_status)}`}>
+                              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border ${getTeamStatusColor(team.team_status)}`}>
                                 {team.team_status}
                               </span>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-bold">{team.current_riders}</div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-xl sm:text-2xl font-bold">{team.current_riders}</div>
                             <div className="text-xs text-gray-400">/{team.max_riders}</div>
                           </div>
                         </div>
                         
                         {team.competition_type === 'velo' && (
-                          <div className="mt-3 pt-3 border-t border-gray-600">
-                            <div className="text-xs text-gray-400">
-                              vELO Range: {team.velo_min_rank}-{team.velo_max_rank}
+                          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-600">
+                            <div className="text-[10px] sm:text-xs text-gray-400">
+                              vELO: {team.velo_min_rank}-{team.velo_max_rank}
                               {team.current_velo_spread !== null && (
-                                <span className="ml-2">
+                                <span className="ml-1 sm:ml-2">
                                   (Spread: {team.current_velo_spread})
                                 </span>
                               )}
@@ -484,32 +485,34 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                         )}
                         
                         {team.competition_type === 'category' && team.allowed_categories && (
-                          <div className="mt-3 pt-3 border-t border-gray-600">
-                            <div className="text-xs text-gray-400">
-                              Categories: {team.allowed_categories.join(', ')}
+                          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-600">
+                            <div className="text-[10px] sm:text-xs text-gray-400">
+                              Cat: {team.allowed_categories.join(', ')}
                             </div>
                           </div>
                         )}
                         </div>
-                        <div className="flex gap-2 mt-3 pt-3 border-t border-gray-600">
+                        <div className="flex gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-600">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingTeam(team);
                               setShowEditModal(true);
                             }}
-                            className="flex-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors"
+                            className="flex-1 px-3 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs sm:text-sm transition-colors min-h-[44px] sm:min-h-0 flex items-center justify-center"
                           >
-                            ✏️ Bewerk
+                            <span className="hidden sm:inline">✏️ Bewerk</span>
+                            <span className="sm:hidden">✏️</span>
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteTeam(team.team_id);
                             }}
-                            className="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                            className="flex-1 px-3 py-2 sm:py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs sm:text-sm transition-colors min-h-[44px] sm:min-h-0 flex items-center justify-center"
                           >
-                            🗑️ Verwijder
+                            <span className="hidden sm:inline">🗑️ Verwijder</span>
+                            <span className="sm:hidden">🗑️</span>
                           </button>
                         </div>
                       </div>
@@ -520,10 +523,10 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             </div>
             
             {/* Middle: Current Lineup */}
-            <div className="lg:col-span-1">
+            <div className="xl:col-span-1">
               {selectedTeam ? (
-                <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">
+                <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
                     {selectedTeam.team_name} Lineup
                   </h2>
                   
@@ -574,20 +577,20 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             </div>
             
             {/* Right: Available Riders */}
-            <div className="lg:col-span-1">
-              <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Available Riders</h2>
+            <div className="xl:col-span-1">
+              <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Riders</h2>
                 
                 {/* Search */}
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search riders..."
-                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-gray-900"
+                  placeholder="Zoek riders..."
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white border border-gray-300 rounded-lg mb-3 sm:mb-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-gray-900"
                 />
                 
-                <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                <div className="space-y-2 max-h-[400px] sm:max-h-[600px] overflow-y-auto">
                   {filteredRiders.map(rider => (
                     <DraggableRiderCard
                       key={rider.rider_id}
@@ -701,35 +704,35 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
       {...attributes}
       className={`group relative bg-gradient-to-br from-white to-gray-50/50 hover:from-indigo-50/30 hover:to-purple-50/30 rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-xl transition-all duration-200 shadow-sm ${isDragging ? 'scale-105 ring-2 ring-indigo-400/50 shadow-2xl' : ''}`}
     >
-      <div className="p-4">
+      <div className="p-3 sm:p-4">
         {/* Drag Handle Area - Top and Middle sections */}
         <div {...listeners} className="cursor-move">
           {/* Top: Rider Name - Prominent */}
-          <div className="mb-3">
-            <h3 className="text-lg font-bold text-gray-900 truncate">
+          <div className="mb-2 sm:mb-3">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 truncate">
               {rider.name || rider.full_name}
             </h3>
           </div>
           
           {/* Middle: Avatar + Phenotype - Visual Focus */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
             <div className="relative">
               <img 
                 src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`}
                 alt={rider.name}
-                className="w-16 h-16 rounded-full border-2 border-indigo-200 shadow-md"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-indigo-200 shadow-md"
                 onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=6366f1&color=fff&size=64`; }}
               />
               {/* Category Badge - Subtiel op avatar */}
-              <div className={`absolute -bottom-1 -right-1 px-2 py-0.5 text-xs font-bold rounded-md border ${categoryColor} shadow-md`}>
+              <div className={`absolute -bottom-1 -right-1 px-1.5 py-0.5 text-[10px] sm:text-xs font-bold rounded-md border ${categoryColor} shadow-md`}>
                 {category}
               </div>
             </div>
             
             {rider.phenotype && (
-              <div className="flex-1">
-                <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Phenotype</div>
-                <div className="text-lg font-bold text-purple-700">
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wider mb-1">Phenotype</div>
+                <div className="text-base sm:text-lg font-bold text-purple-700 truncate">
                   {rider.phenotype}
                 </div>
               </div>
@@ -738,19 +741,19 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
         </div>
         
         {/* Bottom: Stats - Subtiel en compact - NO DRAG HERE */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-200/60">
-          <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-200/60 gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm flex-wrap">
             {/* vELO Tier Badge met cirkel en progressbar */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} shadow-sm`}>
+            <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} shadow-sm`}>
               {/* Cirkel om tier nummer */}
-              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white/30 backdrop-blur-sm border-2 border-white/50">
-                <span className="font-black text-xs text-white">{veloTier?.rank || '?'}</span>
+              <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/30 backdrop-blur-sm border border-white/50 sm:border-2">
+                <span className="font-black text-[10px] sm:text-xs text-white">{veloTier?.rank || '?'}</span>
               </div>
               {/* Score + Progressbar */}
               <div className="flex flex-col gap-0.5">
-                <span className={`font-bold text-sm leading-none ${veloTier?.textColor || 'text-white'}`}>{Math.floor(velo30day)}</span>
+                <span className={`font-bold text-xs sm:text-sm leading-none ${veloTier?.textColor || 'text-white'}`}>{Math.floor(velo30day)}</span>
                 {veloTier && veloTier.max && (
-                  <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
+                  <div className="w-8 sm:w-12 h-0.5 sm:h-1 bg-black/20 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-white/60 rounded-full transition-all"
                       style={{ width: `${Math.min(100, ((velo30day - veloTier.min) / (veloTier.max - veloTier.min)) * 100)}%` }}
@@ -761,7 +764,7 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
             </div>
             
             {rider.zwift_official_racing_score && (
-              <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+              <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-50 text-blue-700 rounded text-[10px] sm:text-xs font-medium whitespace-nowrap">
                 ZRS {rider.zwift_official_racing_score}
               </span>
             )}
@@ -774,9 +777,10 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
               e.preventDefault()
               onAdd()
             }}
-            className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-all"
+            className="px-2 sm:px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-sm hover:shadow-md transition-all whitespace-nowrap min-h-[40px] sm:min-h-0 flex items-center justify-center"
           >
-            + Add
+            <span className="hidden sm:inline">+ Add</span>
+            <span className="sm:hidden">+</span>
           </button>
         </div>
       </div>
@@ -802,40 +806,40 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
         {rider.lineup_position}
       </div>
       
-      <div className="relative flex items-center gap-2.5">
+      <div className="relative flex items-center gap-2 sm:gap-2.5">
         {/* Avatar - Smaller */}
         <img 
           src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=36`}
           alt={rider.name}
-          className="w-9 h-9 rounded-full border-2 border-gray-600 shadow-sm flex-shrink-0"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-gray-600 shadow-sm flex-shrink-0"
           onError={(e) => { e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=36`; }}
         />
         
         {/* Name - Compact */}
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-white text-sm truncate">
+          <div className="font-bold text-white text-xs sm:text-sm truncate">
             {rider.name || rider.full_name}
           </div>
         </div>
         
-        {/* Stats - Single Row */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Stats - Wrap on mobile */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
           {/* Category Badge - Compact */}
-          <span className={`inline-flex items-center px-2 py-0.5 text-xs font-bold rounded border ${categoryColor}`}>
+          <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] sm:text-xs font-bold rounded border ${categoryColor}`}>
             {category}
           </span>
           
-          {/* vELO Tier Badge met cirkel en progressbar */}
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} shadow-sm`}>
+          {/* vELO Tier Badge met cirkel en progressbar - verberg progressbar op mobile */}
+          <div className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md bg-gradient-to-br ${veloTier?.color || 'from-gray-400 to-gray-600'} shadow-sm`}>
             {/* Cirkel om tier nummer */}
-            <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/30 backdrop-blur-sm border border-white/50">
-              <span className="font-black text-xs text-white">{veloTier?.rank || '?'}</span>
+            <div className="flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white/30 backdrop-blur-sm border border-white/50">
+              <span className="font-black text-[10px] sm:text-xs text-white">{veloTier?.rank || '?'}</span>
             </div>
             {/* Score + Progressbar */}
             <div className="flex flex-col gap-0.5">
-              <span className={`font-bold text-xs leading-none ${veloTier?.textColor || 'text-white'}`}>{Math.floor(velo30day)}</span>
+              <span className={`font-bold text-[10px] sm:text-xs leading-none ${veloTier?.textColor || 'text-white'}`}>{Math.floor(velo30day)}</span>
               {veloTier && veloTier.max && (
-                <div className="w-10 h-0.5 bg-black/20 rounded-full overflow-hidden">
+                <div className="hidden sm:block w-10 h-0.5 bg-black/20 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-white/60 rounded-full transition-all"
                     style={{ width: `${Math.min(100, ((velo30day - veloTier.min) / (veloTier.max - veloTier.min)) * 100)}%` }}
@@ -845,25 +849,25 @@ function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: ()
             </div>
           </div>
           
-          {/* Phenotype - Compact */}
+          {/* Phenotype - Hidden on mobile */}
           {rider.phenotype && (
-            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs font-semibold border border-purple-500/30">
+            <span className="hidden sm:inline px-1.5 py-0.5 bg-purple-500/20 text-purple-300 rounded text-xs font-semibold border border-purple-500/30">
               {rider.phenotype}
             </span>
           )}
           
           {/* Validation Icon - Compact */}
           {rider.is_valid ? (
-            <span className="text-green-400 text-lg" title="Valid">✓</span>
+            <span className="text-green-400 text-base sm:text-lg" title="Valid">✓</span>
           ) : (
-            <span className="text-red-400 text-lg" title={rider.validation_warning || 'Invalid'}>✗</span>
+            <span className="text-red-400 text-base sm:text-lg" title={rider.validation_warning || 'Invalid'}>✗</span>
           )}
         </div>
         
         {/* Remove Button - Compact */}
         <button
           onClick={onRemove}
-          className="flex-shrink-0 px-2 py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-xs font-bold shadow-sm hover:shadow-md transition-all"
+          className="flex-shrink-0 px-2 py-1.5 sm:py-1 bg-red-500/80 hover:bg-red-600 text-white rounded text-xs font-bold shadow-sm hover:shadow-md transition-all min-h-[40px] sm:min-h-0 flex items-center justify-center"
           title="Remove rider"
         >
           ✕
@@ -897,49 +901,49 @@ function EditTeamModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
       <div className="bg-gray-800 rounded-xl border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-4">✏️ Bewerk Team</h2>
+        <div className="p-4 sm:p-6">
+          <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">✏️ Bewerk Team</h2>
           
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Team Naam</label>
+              <label className="block text-xs sm:text-sm font-medium mb-1">Team Naam</label>
               <input
                 type="text"
                 value={editedTeam.team_name}
                 onChange={(e) => setEditedTeam({...editedTeam, team_name: e.target.value})}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                className="w-full px-3 py-2.5 sm:py-2 text-sm sm:text-base bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
                 placeholder="Team naam..."
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Competitie Type</label>
-              <div className="grid grid-cols-2 gap-3">
+              <label className="block text-xs sm:text-sm font-medium mb-1">Competitie Type</label>
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setEditedTeam({...editedTeam, competition_type: 'velo'})}
-                  className={`p-3 rounded-lg border-2 transition-all ${
+                  className={`p-2.5 sm:p-3 rounded-lg border-2 transition-all min-h-[60px] sm:min-h-0 ${
                     editedTeam.competition_type === 'velo'
                       ? 'border-purple-500 bg-purple-500/20'
                       : 'border-gray-600 hover:border-gray-500'
                   }`}
                 >
-                  <div className="font-bold">⚡ vELO</div>
-                  <div className="text-xs text-gray-400">bijvoorbeeld: Club Ladder</div>
+                  <div className="font-bold text-sm sm:text-base">⚡ vELO</div>
+                  <div className="text-[10px] sm:text-xs text-gray-400">bijv: Club Ladder</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditedTeam({...editedTeam, competition_type: 'category'})}
-                  className={`p-3 rounded-lg border-2 transition-all ${
+                  className={`p-2.5 sm:p-3 rounded-lg border-2 transition-all min-h-[60px] sm:min-h-0 ${
                     editedTeam.competition_type === 'category'
                       ? 'border-blue-500 bg-blue-500/20'
                       : 'border-gray-600 hover:border-gray-500'
                   }`}
                 >
-                  <div className="font-bold">🏆 Category</div>
-                  <div className="text-xs text-gray-400">bijvoorbeeld: WTRL ZRL</div>
+                  <div className="font-bold text-sm sm:text-base">🏆 Category</div>
+                  <div className="text-[10px] sm:text-xs text-gray-400">bijv: WTRL ZRL</div>
                 </button>
               </div>
             </div>
@@ -1010,44 +1014,44 @@ function EditTeamModal({
               </div>
             )}
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Min Rijders</label>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Min Riders</label>
                 <input
                   type="number"
                   value={editedTeam.min_riders}
                   onChange={(e) => setEditedTeam({...editedTeam, min_riders: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2.5 sm:py-2 text-sm sm:text-base bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
                   min="1"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Max Rijders</label>
+                <label className="block text-xs sm:text-sm font-medium mb-1">Max Riders</label>
                 <input
                   type="number"
                   value={editedTeam.max_riders}
                   onChange={(e) => setEditedTeam({...editedTeam, max_riders: parseInt(e.target.value)})}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-3 py-2.5 sm:py-2 text-sm sm:text-base bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
                   min="1"
                 />
               </div>
             </div>
           </div>
           
-          <div className="flex gap-3 mt-6">
+          <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-6">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              className="flex-1 px-4 py-3 sm:py-2 text-sm sm:text-base bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors min-h-[48px] sm:min-h-0 flex items-center justify-center"
               disabled={isLoading}
             >
               Annuleer
             </button>
             <button
               onClick={() => onSave(editedTeam)}
-              className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-lg font-semibold shadow-lg transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-3 sm:py-2 text-sm sm:text-base bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-lg font-semibold shadow-lg transition-colors disabled:opacity-50 min-h-[48px] sm:min-h-0 flex items-center justify-center"
               disabled={isLoading || !editedTeam.team_name.trim() || !editedTeam.competition_name.trim()}
             >
-              {isLoading ? 'Opslaan...' : '💾 Wijzigingen Opslaan'}
+              {isLoading ? 'Opslaan...' : '💾 Opslaan'}
             </button>
           </div>
         </div>
@@ -1071,99 +1075,99 @@ function CreateTeamModal({
   isLoading: boolean
 }) {
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-white to-blue-50 rounded-xl border-2 border-orange-500/50 shadow-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">Create New Team</h2>
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+      <div className="bg-gradient-to-br from-white to-blue-50 rounded-xl border-2 border-orange-500/50 shadow-2xl p-4 sm:p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-900">Nieuw Team</h2>
         
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Team Name */}
           <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-900">Team Name *</label>
+            <label className="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-gray-900">Team Naam *</label>
             <input
               type="text"
               value={newTeam.team_name}
               onChange={(e) => setNewTeam({ ...newTeam, team_name: e.target.value })}
-              placeholder="e.g. TeamNL ZRL A/B"
-              className="w-full px-4 py-2 bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+              placeholder="bijv. TeamNL ZRL A/B"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
             />
           </div>
           
           {/* Competition Type */}
           <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-900">Competition Type *</label>
-            <div className="grid grid-cols-2 gap-4">
+            <label className="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-gray-900">Competitie Type *</label>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
               <button
                 onClick={() => setNewTeam({ ...newTeam, competition_type: 'category' })}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[80px] sm:min-h-0 ${
                   newTeam.competition_type === 'category'
                     ? 'bg-blue-500 border-blue-600 text-white shadow-lg'
                     : 'bg-white border-gray-300 text-gray-900 hover:border-blue-400'
                 }`}
               >
-                <div className="text-2xl mb-2">🏆</div>
-                <div className="font-bold">Category</div>
-                <div className={`text-xs ${
+                <div className="text-xl sm:text-2xl mb-1 sm:mb-2">🏆</div>
+                <div className="font-bold text-sm sm:text-base">Category</div>
+                <div className={`text-[10px] sm:text-xs ${
                   newTeam.competition_type === 'category' ? 'text-blue-100' : 'text-gray-500'
-                }`}>bijvoorbeeld: WTRL ZRL</div>
+                }`}>bijv: WTRL ZRL</div>
               </button>
               <button
                 onClick={() => setNewTeam({ ...newTeam, competition_type: 'velo' })}
-                className={`p-4 rounded-lg border-2 transition-all ${
+                className={`p-3 sm:p-4 rounded-lg border-2 transition-all min-h-[80px] sm:min-h-0 ${
                   newTeam.competition_type === 'velo'
                     ? 'bg-orange-500 border-orange-600 text-white shadow-lg'
                     : 'bg-white border-gray-300 text-gray-900 hover:border-orange-400'
                 }`}
               >
-                <div className="text-2xl mb-2">⚡</div>
-                <div className="font-bold">vELO</div>
-                <div className={`text-xs ${
+                <div className="text-xl sm:text-2xl mb-1 sm:mb-2">⚡</div>
+                <div className="font-bold text-sm sm:text-base">vELO</div>
+                <div className={`text-[10px] sm:text-xs ${
                   newTeam.competition_type === 'velo' ? 'text-orange-100' : 'text-gray-500'
-                }`}>bijvoorbeeld: Club Ladder</div>
+                }`}>bijv: Club Ladder</div>
               </button>
             </div>
           </div>
           
           {/* Competition Name */}
           <div>
-            <label className="block text-sm font-semibold mb-2 text-gray-900">Competition Name</label>
+            <label className="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-gray-900">Competitie Naam</label>
             <input
               type="text"
               value={newTeam.competition_name}
               onChange={(e) => setNewTeam({ ...newTeam, competition_name: e.target.value })}
-              placeholder="e.g. WTRL ZRL Season 5"
-              className="w-full px-4 py-2 bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+              placeholder="bijv. WTRL ZRL Season 5"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
             />
           </div>
           
           {/* vELO Settings */}
           {newTeam.competition_type === 'velo' && (
-            <div className="space-y-4 p-4 bg-orange-50 rounded-lg border-2 border-orange-300">
-              <h3 className="font-bold text-orange-700">vELO Settings</h3>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-orange-50 rounded-lg border-2 border-orange-300">
+              <h3 className="font-bold text-orange-700 text-sm sm:text-base">vELO Instellingen</h3>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm mb-2 text-gray-900 font-semibold">Min Rank</label>
+                  <label className="block text-xs sm:text-sm mb-1 sm:mb-2 text-gray-900 font-semibold">Min Rank</label>
                   <input
                     type="number"
                     min="1"
                     max="10"
                     value={newTeam.velo_min_rank}
                     onChange={(e) => setNewTeam({ ...newTeam, velo_min_rank: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm mb-2 text-gray-900 font-semibold">Max Rank</label>
+                  <label className="block text-xs sm:text-sm mb-1 sm:mb-2 text-gray-900 font-semibold">Max Rank</label>
                   <input
                     type="number"
                     min="1"
                     max="10"
                     value={newTeam.velo_max_rank}
                     onChange={(e) => setNewTeam({ ...newTeam, velo_max_rank: parseInt(e.target.value) })}
-                    className="w-full px-4 py-2 bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
                   />
                 </div>
               </div>
-              <div className="text-xs text-orange-700 font-semibold">
+              <div className="text-[10px] sm:text-xs text-orange-700 font-semibold">
                 Max spread: {newTeam.velo_max_rank - newTeam.velo_min_rank + 1} ranks
               </div>
             </div>
@@ -1171,11 +1175,11 @@ function CreateTeamModal({
           
           {/* Category Settings */}
           {newTeam.competition_type === 'category' && (
-            <div className="space-y-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
-              <h3 className="font-bold text-blue-700">Category Settings</h3>
+            <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-blue-50 rounded-lg border-2 border-blue-300">
+              <h3 className="font-bold text-blue-700 text-sm sm:text-base">Category Instellingen</h3>
               <div>
-                <label className="block text-sm mb-2 text-gray-900 font-semibold">Allowed Categories</label>
-                <div className="flex gap-2">
+                <label className="block text-xs sm:text-sm mb-1 sm:mb-2 text-gray-900 font-semibold">Toegestane Categories</label>
+                <div className="flex gap-1.5 sm:gap-2 flex-wrap">
                   {['A+', 'A', 'B', 'C', 'D'].map(cat => (
                     <button
                       key={cat}
@@ -1186,7 +1190,7 @@ function CreateTeamModal({
                           : [...current, cat]
                         setNewTeam({ ...newTeam, allowed_categories: updated })
                       }}
-                      className={`px-4 py-2 rounded-lg border-2 transition-all font-bold ${
+                      className={`px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base rounded-lg border-2 transition-all font-bold min-h-[44px] sm:min-h-0 flex items-center justify-center ${
                         newTeam.allowed_categories.includes(cat)
                           ? 'bg-blue-500 border-blue-600 text-white shadow-lg'
                           : 'bg-white border-gray-300 text-gray-900 hover:border-blue-400'
@@ -1201,45 +1205,45 @@ function CreateTeamModal({
           )}
           
           {/* Rider Limits */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-900">Min Riders</label>
+              <label className="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-gray-900">Min Riders</label>
               <input
                 type="number"
                 min="1"
                 value={newTeam.min_riders}
                 onChange={(e) => setNewTeam({ ...newTeam, min_riders: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-900">Max Riders</label>
+              <label className="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-gray-900">Max Riders</label>
               <input
                 type="number"
                 min="1"
                 value={newTeam.max_riders}
                 onChange={(e) => setNewTeam({ ...newTeam, max_riders: parseInt(e.target.value) })}
-                className="w-full px-4 py-2 bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white text-gray-900 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
               />
             </div>
           </div>
         </div>
         
         {/* Actions */}
-        <div className="flex gap-4 mt-6">
+        <div className="flex gap-2 sm:gap-4 mt-4 sm:mt-6">
           <button
             onClick={onClose}
-            className="flex-1 px-6 py-3 bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg font-bold border-2 border-gray-300 transition-all"
+            className="flex-1 px-4 sm:px-6 py-3 text-sm sm:text-base bg-gray-200 text-gray-900 hover:bg-gray-300 rounded-lg font-bold border-2 border-gray-300 transition-all min-h-[48px] sm:min-h-0 flex items-center justify-center"
             disabled={isLoading}
           >
-            Cancel
+            Annuleer
           </button>
           <button
             onClick={onCreate}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-bold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="flex-1 px-4 sm:px-6 py-3 text-sm sm:text-base bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-bold shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all min-h-[48px] sm:min-h-0 flex items-center justify-center"
             disabled={isLoading || !newTeam.team_name}
           >
-            {isLoading ? 'Creating...' : 'Create Team'}
+            {isLoading ? 'Maken...' : 'Maak Team'}
           </button>
         </div>
       </div>

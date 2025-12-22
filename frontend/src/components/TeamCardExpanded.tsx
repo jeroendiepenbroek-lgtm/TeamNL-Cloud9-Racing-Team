@@ -109,29 +109,29 @@ export default function TeamCardExpanded({ team, isDragging, onCollapse }: TeamC
       }`}
     >
       {/* Header */}
-      <div className="p-4 bg-slate-900/50 border-b border-slate-700/50">
-        <div className="flex items-center justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-white">{team.team_name}</h2>
-              <span className={`text-xs font-bold px-2 py-1 rounded ${
+      <div className="p-3 sm:p-4 bg-slate-900/50 border-b border-slate-700/50">
+        <div className="flex items-center justify-between gap-2 sm:gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <h2 className="text-lg sm:text-xl font-bold text-white truncate">{team.team_name}</h2>
+              <span className={`text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ${
                 lineup.length >= team.min_riders 
                   ? 'bg-green-600/30 text-green-300' 
                   : 'bg-yellow-600/30 text-yellow-300'
               }`}>
-                {lineup.length}/{team.max_riders} riders
+                {lineup.length}/{team.max_riders}
               </span>
             </div>
-            <p className="text-sm text-slate-400 mt-1">{team.competition_name}</p>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1 truncate">{team.competition_name}</p>
           </div>
           <button
             onClick={onCollapse}
-            className="px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-white rounded-lg transition-colors flex items-center gap-2"
+            className="px-3 py-2 sm:px-4 sm:py-2 bg-slate-700/50 hover:bg-slate-700 text-white rounded-lg transition-colors flex items-center gap-2 flex-shrink-0 min-h-[44px] sm:min-h-0"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Sluiten
+            <span className="hidden sm:inline">Sluiten</span>
           </button>
         </div>
       </div>
@@ -171,7 +171,7 @@ export default function TeamCardExpanded({ team, isDragging, onCollapse }: TeamC
             <p className="text-sm mt-2">Sleep riders hierheen</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
             {lineup.map(rider => {
               const tier = getVeloTier(rider.current_velo_rank || null)
               const wkg = rider.racing_ftp && rider.weight_kg 
@@ -181,25 +181,25 @@ export default function TeamCardExpanded({ team, isDragging, onCollapse }: TeamC
               return (
                 <div
                   key={rider.rider_id}
-                  className={`relative p-3 rounded-lg border transition-all ${
+                  className={`relative p-2.5 sm:p-3 rounded-lg border transition-all ${
                     rider.is_valid 
                       ? 'bg-slate-700/50 border-slate-600 hover:border-slate-500' 
                       : 'bg-red-900/20 border-red-500/50'
                   }`}
                 >
                   {/* Avatar + Name */}
-                  <div className="flex items-start gap-3 mb-2">
+                  <div className="flex items-start gap-2 sm:gap-3 mb-2">
                     <img
                       src={rider.avatar_url || `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=40`}
                       alt={rider.name}
-                      className="w-12 h-12 rounded-full border-2 border-slate-600 flex-shrink-0"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-slate-600 flex-shrink-0"
                       onError={(e) => {
                         e.currentTarget.src = `https://ui-avatars.com/api/?name=${rider.rider_id}&background=3b82f6&color=fff&size=40`
                       }}
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-white text-sm truncate">{rider.name}</h4>
-                      <div className="flex items-center gap-1.5 mt-1">
+                      <h4 className="font-bold text-white text-xs sm:text-sm truncate">{rider.name}</h4>
+                      <div className="flex items-center gap-1 sm:gap-1.5 mt-1 flex-wrap">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
                           rider.category === 'A+' || rider.category === 'A' ? 'bg-red-500/30 text-red-300' :
                           rider.category === 'B' ? 'bg-green-500/30 text-green-300' :
@@ -223,23 +223,23 @@ export default function TeamCardExpanded({ team, isDragging, onCollapse }: TeamC
                   {/* Stats */}
                   <div className="grid grid-cols-3 gap-1 text-xs mb-2">
                     <div className="text-center">
-                      <div className="text-slate-400">FTP</div>
-                      <div className="text-white font-bold">{rider.racing_ftp || '-'}</div>
+                      <div className="text-slate-400 text-[10px] sm:text-xs">FTP</div>
+                      <div className="text-white font-bold text-xs sm:text-sm">{rider.racing_ftp || '-'}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-slate-400">W/kg</div>
-                      <div className="text-white font-bold">{wkg}</div>
+                      <div className="text-slate-400 text-[10px] sm:text-xs">W/kg</div>
+                      <div className="text-white font-bold text-xs sm:text-sm">{wkg}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-slate-400">ZRS</div>
-                      <div className="text-white font-bold">{rider.zwift_official_racing_score || '-'}</div>
+                      <div className="text-slate-400 text-[10px] sm:text-xs">ZRS</div>
+                      <div className="text-white font-bold text-xs sm:text-sm">{rider.zwift_official_racing_score || '-'}</div>
                     </div>
                   </div>
 
                   {/* Remove button */}
                   <button
                     onClick={() => removeRiderMutation.mutate(rider.rider_id)}
-                    className="w-full px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded text-xs font-semibold transition-all"
+                    className="w-full px-2 py-2 sm:py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 rounded text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center"
                   >
                     ✕ Verwijder
                   </button>
