@@ -233,6 +233,7 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
           </div>
         )}
       </div>
+      </div>
     </>
   )
 }
