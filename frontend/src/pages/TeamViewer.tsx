@@ -627,7 +627,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </div>
         </div>
       </div>      )}      
-      <div className={`max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 transition-all duration-300 ${expandedTeamId ? 'lg:pr-[570px] xl:pr-[620px]' : ''}`}>
+      <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 transition-all duration-300">
         {teamsLoading ? (
           <div className="text-center text-gray-600 py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

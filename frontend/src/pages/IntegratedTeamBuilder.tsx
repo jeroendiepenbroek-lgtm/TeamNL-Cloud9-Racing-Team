@@ -346,7 +346,7 @@ export default function IntegratedTeamBuilder() {
           </main>
 
           {/* Right Sidebar - Selected Team Lineup met droppable support */}
-          {selectedTeamId && !expandedTeamId && (
+          {selectedTeamId && (
             <TeamLineupModal
               teamId={selectedTeamId}
               onClose={handleCloseTeamDetail}
