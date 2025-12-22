@@ -170,6 +170,11 @@ export default function IntegratedTeamBuilder() {
   }
 
   const handleOpenTeamDetail = (teamId: number) => {
+    // Close expanded view als die open is
+    if (expandedTeamId) {
+      setExpandedTeamId(null)
+      setSidebarOpen(true)
+    }
     setSelectedTeamId(teamId)
   }
 
@@ -178,6 +183,11 @@ export default function IntegratedTeamBuilder() {
   }
 
   const handleToggleTeamExpand = (teamId: number) => {
+    // Close sidebar als die open is
+    if (selectedTeamId) {
+      setSelectedTeamId(null)
+    }
+    
     if (expandedTeamId === teamId) {
       setExpandedTeamId(null)
       setSidebarOpen(true)

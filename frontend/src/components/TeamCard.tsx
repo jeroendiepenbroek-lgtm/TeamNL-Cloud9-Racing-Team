@@ -71,24 +71,23 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
     >
       {/* Compacte Header - Verbeterd voor touch */}
       <div 
-        className="p-4 bg-slate-900/50 active:bg-slate-900/80 cursor-pointer transition-all touch-manipulation"
-        onClick={(e) => {
-          e.stopPropagation()
-          if (onToggleExpand) {
-            onToggleExpand(team.team_id)
-          }
-          if (onOpenDetail) {
-            onOpenDetail(team.team_id)
-          }
-          if (onSelectForFiltering) {
-            onSelectForFiltering(team.team_id)
-          }
-        }}
-        title={onToggleExpand ? "Tik om team lineup te bekijken" : "Tik om riders te filteren"}
+        className="p-4 bg-slate-900/50 transition-all"
       >
-        {/* Top Row: Expand arrow, naam, status icon, delete */}
+        {/* Top Row: Expand arrow, naam, status icon, sidebar button, delete */}
         <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div 
+            className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer active:bg-slate-900/80 -mx-2 px-2 py-1 rounded touch-manipulation"
+            onClick={(e) => {
+              e.stopPropagation()
+              if (onToggleExpand) {
+                onToggleExpand(team.team_id)
+              }
+              if (onSelectForFiltering) {
+                onSelectForFiltering(team.team_id)
+              }
+            }}
+            title={onToggleExpand ? "Tik om team lineup uit te vouwen" : "Tik om riders te filteren"}
+          >
             {onToggleExpand && (
               <svg 
                 className={`w-5 h-5 text-orange-400 transition-transform duration-300 flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
@@ -106,6 +105,17 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xl">{STATUS_ICONS[team.team_status]}</span>
+            {onOpenDetail && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onOpenDetail(team.team_id) }}
+                className="p-1.5 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all"
+                title="Open in sidebar"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </button>
+            )}
             {onDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
