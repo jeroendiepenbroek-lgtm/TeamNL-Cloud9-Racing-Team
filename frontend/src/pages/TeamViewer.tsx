@@ -526,7 +526,19 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     const { active, over } = event
     console.log('handleDndDragEnd called', { active: active.id, over: over?.id, draggedRider })
     
-    if (!over || !draggedRider) {
+    // 🎯 US3: Verbeterde cancel functionaliteit - als geen drop target, vriendelijk bericht
+    if (!over) {
+      if (draggedRider) {
+        toast.success(`${draggedRider.racing_name || draggedRider.full_name} - drag geannuleerd`, {
+          duration: 2000,
+          icon: '✋'
+        })
+      }
+      setDraggedRider(null)
+      return
+    }
+    
+    if (!draggedRider) {
       setDraggedRider(null)
       return
     }
