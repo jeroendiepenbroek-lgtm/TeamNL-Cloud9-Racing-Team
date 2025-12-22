@@ -770,6 +770,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                   onToggleExpand={() => {
                     setExpandedTeamId(expandedTeamId === team.team_id ? null : team.team_id)
                   }}
+                  onOpenDetail={handleOpenTeamDetail}
                 />
               ))}
             </div>
