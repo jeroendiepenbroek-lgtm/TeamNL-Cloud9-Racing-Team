@@ -102,7 +102,7 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
 
   if (isLoading || !teamData) {
     return (
-      <aside ref={setNodeRef} className="fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen md:h-[calc(100vh-73px)] border-l border-slate-700/50 bg-slate-800/95 backdrop-blur-xl z-50 shadow-2xl shadow-black/50 flex items-center justify-center">
+      <aside ref={setNodeRef} className="w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </aside>
     )
@@ -115,7 +115,7 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
   return (
     <aside 
       ref={setNodeRef}
-      className={`fixed md:sticky right-0 top-0 md:top-[73px] w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen md:h-[calc(100vh-73px)] border-l-4 bg-slate-800/95 backdrop-blur-xl z-50 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 ${
+      className={`w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l-4 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 ${
         showDropIndicator && canAddMore ? 'border-green-500 shadow-green-500/50' :
         showDropIndicator && !canAddMore ? 'border-red-500 shadow-red-500/50' :
         'border-slate-700/50'

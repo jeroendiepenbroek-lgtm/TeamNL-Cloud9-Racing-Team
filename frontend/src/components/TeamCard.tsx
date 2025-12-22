@@ -107,8 +107,12 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
             <span className="text-xl">{STATUS_ICONS[team.team_status]}</span>
             {onOpenDetail && (
               <button
-                onClick={(e) => { e.stopPropagation(); onOpenDetail(team.team_id) }}
-                className="p-1.5 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all"
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  console.log('📋 Clipboard button clicked for team:', team.team_id)
+                  onOpenDetail(team.team_id) 
+                }}
+                className="p-1.5 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all hover:scale-110"
                 title="Open in sidebar"
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>

@@ -297,7 +297,7 @@ export default function IntegratedTeamBuilder() {
           </div>
         </header>
 
-        <div className="flex max-w-[1920px] mx-auto relative">
+        <div className="flex max-w-[1920px] mx-auto relative overflow-visible">
           {/* Left Sidebar - Riders (altijd zichtbaar op desktop) */}
           {!expandedTeamId && (
             <RiderPassportSidebar
@@ -359,16 +359,16 @@ export default function IntegratedTeamBuilder() {
           </main>
 
           {/* Right Sidebar - Selected Team Lineup met droppable support */}
-          {selectedTeamId && (
-            <>
+          {selectedTeamId ? (
+            <div className="fixed md:relative md:flex-shrink-0 right-0 top-0 md:top-auto h-screen md:h-auto z-50">
               {console.log('🟢 Rendering TeamLineupModal for team:', selectedTeamId)}
               <TeamLineupModal
                 teamId={selectedTeamId}
                 onClose={handleCloseTeamDetail}
                 isDragging={draggedRider !== null}
               />
-            </>
-          )}
+            </div>
+          ) : null}
         </div>
       </div>
     </DndContext>
