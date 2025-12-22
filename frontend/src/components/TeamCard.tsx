@@ -19,13 +19,13 @@ interface Team {
 
 interface TeamCardProps {
   team: Team
-  onOpenDetail?: (teamId: number) => void
   onDelete?: () => void
   onSelectForFiltering?: (teamId: number) => void
   isSelectedForFiltering?: boolean
   isDragging: boolean
   isExpanded?: boolean
   onToggleExpand?: (teamId: number) => void
+  onOpenDetail?: (teamId: number) => void
   refetchTeams?: () => void
   isFavorite?: boolean
   toggleFavorite?: (teamId: number) => void
@@ -45,7 +45,7 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onOpenDetail, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand, isFavorite, toggleFavorite }: TeamCardProps) {
+export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand, onOpenDetail, isFavorite, toggleFavorite }: TeamCardProps) {
   const canAddMore = team.current_riders < team.max_riders
 
   // Use @dnd-kit droppable for touch support
