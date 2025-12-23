@@ -979,7 +979,11 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
     enabled: isExpanded // Only fetch when expanded
   })
   
-  const lineup: LineupRider[] = lineupData?.lineup || []
+  // Fix missing lineup_position by assigning sequential numbers
+  const lineup: LineupRider[] = (lineupData?.lineup || []).map((rider, index) => ({
+    ...rider,
+    lineup_position: rider.lineup_position || index + 1
+  }))
   
   const statusColor = {
     'ready': 'bg-green-500/20 text-green-300 border-green-500/50',
