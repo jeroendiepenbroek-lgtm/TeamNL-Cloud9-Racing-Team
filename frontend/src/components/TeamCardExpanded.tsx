@@ -70,7 +70,12 @@ export default function TeamCardExpanded({ team, isDragging, onCollapse }: TeamC
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/teams/${team.team_id}`)
       if (!res.ok) throw new Error('Failed to fetch team')
-      return res.json()
+      const data = await res.json()
+      // Backend returns { success, team, lineup }, transform to expected format
+      return {
+        ...data.team,
+        lineup: data.lineup || []
+      }
     }
   })
 

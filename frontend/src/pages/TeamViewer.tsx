@@ -52,7 +52,9 @@ function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: {
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/teams/${team.team_id}`)
       if (!res.ok) throw new Error('Failed to fetch team')
-      return res.json()
+      const data = await res.json()
+      // Backend returns { success, team, lineup }
+      return data
     }
   })
 

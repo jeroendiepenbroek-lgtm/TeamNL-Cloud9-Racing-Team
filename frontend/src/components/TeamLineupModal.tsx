@@ -68,7 +68,12 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/teams/${teamId}`)
       if (!res.ok) throw new Error('Failed to fetch team')
-      return res.json() as Promise<TeamDetail>
+      const data = await res.json()
+      // Backend returns { success, team, lineup }, transform to TeamDetail
+      return {
+        ...data.team,
+        lineup: data.lineup || []
+      } as TeamDetail
     }
   })
 
