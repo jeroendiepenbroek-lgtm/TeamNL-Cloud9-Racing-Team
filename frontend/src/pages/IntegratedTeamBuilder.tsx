@@ -175,8 +175,9 @@ export default function IntegratedTeamBuilder() {
     if (expandedTeamId) {
       console.log('  Closing expanded view:', expandedTeamId)
       setExpandedTeamId(null)
-      setSidebarOpen(true)
     }
+    // Ensure sidebar is open when opening team detail
+    setSidebarOpen(true)
     console.log('  Setting selectedTeamId to:', teamId)
     setSelectedTeamId(teamId)
   }
@@ -362,7 +363,7 @@ export default function IntegratedTeamBuilder() {
           {selectedTeamId && (() => {
             console.log('🟢 Rendering TeamLineupModal for team:', selectedTeamId)
             return (
-              <div className="fixed md:relative md:flex-shrink-0 right-0 top-0 md:top-auto h-screen md:h-auto z-50">
+              <div className="fixed md:static inset-y-0 right-0 md:flex-shrink-0 h-screen z-50">
                 <TeamLineupModal
                   teamId={selectedTeamId}
                   onClose={handleCloseTeamDetail}
