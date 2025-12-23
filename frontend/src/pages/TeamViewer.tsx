@@ -980,7 +980,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
   })
   
   // Fix missing lineup_position by assigning sequential numbers
-  const lineup: LineupRider[] = (lineupData?.lineup || []).map((rider, index) => ({
+  const lineup: LineupRider[] = (lineupData?.lineup || []).map((rider: any, index: number) => ({
     ...rider,
     lineup_position: rider.lineup_position || index + 1
   }))
