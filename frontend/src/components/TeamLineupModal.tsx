@@ -107,9 +107,16 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
 
   if (isLoading || !teamData) {
     return (
-      <aside ref={setNodeRef} className="w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </aside>
+      <>
+        {/* Mobile Overlay */}
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] lg:hidden"
+          onClick={onClose}
+        />
+        <aside ref={setNodeRef} className="relative lg:sticky lg:top-0 w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex items-center justify-center z-[100]">
+          <div className="text-white text-xl">Loading...</div>
+        </aside>
+      </>
     )
   }
 
@@ -118,13 +125,20 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
   const showDropIndicator = isOver && isDragging
 
   return (
-    <aside 
-      ref={setNodeRef}
-      className={`w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l-4 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 ${
-        showDropIndicator && canAddMore ? 'border-green-500 shadow-green-500/50' :
-        showDropIndicator && !canAddMore ? 'border-red-500 shadow-red-500/50' :
-        'border-slate-700/50'
-      }`}>
+    <>
+      {/* Mobile Overlay - Close on tap outside */}
+      <div 
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] lg:hidden"
+        onClick={onClose}
+      />
+      
+      <aside 
+        ref={setNodeRef}
+        className={`relative lg:sticky lg:top-0 w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l-4 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 z-[100] ${
+          showDropIndicator && canAddMore ? 'border-green-500 shadow-green-500/50' :
+          showDropIndicator && !canAddMore ? 'border-red-500 shadow-red-500/50' :
+          'border-slate-700/50'
+        }`}>
       {/* Drop Indicator Overlay */}
       {showDropIndicator && (
         <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
@@ -270,5 +284,6 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
         </div>
       </div>
     </aside>
+    </>
   )
 }

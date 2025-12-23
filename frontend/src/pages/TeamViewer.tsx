@@ -606,10 +606,18 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
   }, [draggedRider, addRiderMutation])
 
   const handleOpenTeamDetail = (teamId: number) => {
+    console.log('🔵 TeamViewer: Opening team detail sidebar for team:', teamId)
+    // Close expanded view if open
+    if (expandedTeamId) {
+      console.log('  Closing expanded team view:', expandedTeamId)
+      setExpandedTeamId(null)
+    }
+    console.log('  Setting selectedTeamId to:', teamId)
     setSelectedTeamId(teamId)
   }
 
   const handleCloseTeamDetail = () => {
+    console.log('🔴 TeamViewer: Closing team detail sidebar')
     setSelectedTeamId(null)
   }
   
@@ -900,12 +908,14 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         />
       )}
 
-      {/* Team Lineup Detail Modal */}
+      {/* Team Lineup Detail Modal - Fixed Right Sidebar */}
       {selectedTeamId && (
-        <TeamLineupModal
-          teamId={selectedTeamId}
-          onClose={handleCloseTeamDetail}
-        />
+        <div className="fixed right-0 top-0 bottom-0 z-[100]">
+          <TeamLineupModal
+            teamId={selectedTeamId}
+            onClose={handleCloseTeamDetail}
+          />
+        </div>
       )}
 
       {/* Team Creation Modal */}
