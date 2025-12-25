@@ -222,7 +222,8 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
               key={rider.rider_id} 
               rider={rider}
               onAdd={onAddRider ? () => onAddRider(rider.rider_id) : undefined}
-              showAddButton={!!onAddRider && !!selectedTeam}
+              showAddButton={true}
+              isDisabled={!onAddRider || !selectedTeam}
             />
           ))}
         </div>
@@ -232,7 +233,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
 }
 
 // Draggable Rider Card Component with @dnd-kit
-function DraggableRiderCard({ rider, onAdd, showAddButton }: { rider: Rider; onAdd?: () => void; showAddButton?: boolean }) {
+function DraggableRiderCard({ rider, onAdd, showAddButton, isDisabled }: { rider: Rider; onAdd?: () => void; showAddButton?: boolean; isDisabled?: boolean }) {
   const tier = getVeloTier(rider.velo_live)
   const category = rider.zwiftracing_category || rider.zwift_official_category
   const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
@@ -334,16 +335,23 @@ function DraggableRiderCard({ rider, onAdd, showAddButton }: { rider: Rider; onA
           </div>
         </div>
 
-        {/* US3: Add Button - rechts naast drag handle */}
-        {showAddButton && onAdd && (
+        {/* US3: Add Button - altijd zichtbaar, disabled als geen team */}
+        {showAddButton && (
           <button
             onClick={(e) => {
               e.stopPropagation()
               e.preventDefault()
-              onAdd()
+              if (!isDisabled && onAdd) {
+                onAdd()
+              }
             }}
-            className="flex-shrink-0 px-2 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-sm hover:shadow-md transition-all whitespace-nowrap"
-            title="Voeg rider toe aan team"
+            disabled={isDisabled}
+            className={`flex-shrink-0 px-2 py-1.5 rounded text-xs font-semibold shadow-sm transition-all whitespace-nowrap ${
+              isDisabled 
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md cursor-pointer'
+            }`}
+            title={isDisabled ? "Selecteer eerst een team" : "Voeg rider toe aan team"}
           >
             <span className="hidden sm:inline">+ Add</span>
             <span className="sm:hidden">+</span>
