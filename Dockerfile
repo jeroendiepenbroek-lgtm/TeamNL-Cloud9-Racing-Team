@@ -3,7 +3,7 @@
 # ------------------------------------------
 FROM node:22-alpine AS frontend-builder
 
-# Force rebuild - 2025-12-12-08:10
+# Force rebuild - 2025-12-25-US1-US2-US3
 WORKDIR /app/frontend
 
 # Copy frontend package files
