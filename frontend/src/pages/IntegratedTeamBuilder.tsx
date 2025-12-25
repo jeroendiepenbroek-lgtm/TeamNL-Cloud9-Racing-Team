@@ -6,6 +6,7 @@ import TeamCard from '../components/TeamCard.tsx'
 import TeamCardExpanded from '../components/TeamCardExpanded.tsx'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
+import EditTeamModal from '../components/EditTeamModal.tsx'
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
@@ -47,6 +48,7 @@ export default function IntegratedTeamBuilder() {
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
   const [draggedRider, setDraggedRider] = useState<Rider | null>(null)
+  const [editingTeamId, setEditingTeamId] = useState<number | null>(null)
   const queryClient = useQueryClient()
 
   const sensors = useSensors(
@@ -100,6 +102,34 @@ export default function IntegratedTeamBuilder() {
       toast.error(error.message)
     }
   })
+
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ teamId, updates }: { teamId: number; updates: any }) => {
+      const res = await fetch(`${API_BASE}/api/teams/${teamId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+      if (!res.ok) throw new Error('Failed to update team')
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      toast.success('Team bijgewerkt!')
+      setEditingTeamId(null)
+    },
+    onError: () => {
+      toast.error('Kon team niet bijwerken')
+    }
+  })
+
+  const handleEditTeam = (updates: any) => {
+    if (!editingTeamId) return
+    updateTeamMutation.mutate({
+      teamId: editingTeamId,
+      updates
+    })
+  }
 
   const riders: Rider[] = ridersData || []
   const teams: Team[] = teamsData || []
@@ -354,6 +384,7 @@ export default function IntegratedTeamBuilder() {
                     key={team.team_id}
                     team={team}
                     onOpenDetail={handleOpenTeamDetail}
+                    onEdit={() => setEditingTeamId(team.team_id)}
                     isDragging={draggedRider !== null}
                     refetchTeams={refetchTeams}
                     onToggleExpand={handleToggleTeamExpand}
@@ -374,6 +405,20 @@ export default function IntegratedTeamBuilder() {
                   isDragging={draggedRider !== null}
                 />
               </div>
+            )
+          })()}
+
+          {/* Edit Team Modal */}
+          {editingTeamId && (() => {
+            const editingTeam = teams.find(t => t.team_id === editingTeamId)
+            if (!editingTeam) return null
+            return (
+              <EditTeamModal
+                team={editingTeam}
+                onClose={() => setEditingTeamId(null)}
+                onSave={handleEditTeam}
+                isLoading={updateTeamMutation.isPending}
+              />
             )
           })()}
         </div>

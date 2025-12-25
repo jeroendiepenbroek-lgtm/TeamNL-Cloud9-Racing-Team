@@ -20,6 +20,7 @@ interface Team {
 interface TeamCardProps {
   team: Team
   onDelete?: () => void
+  onEdit?: () => void
   onSelectForFiltering?: (teamId: number) => void
   isSelectedForFiltering?: boolean
   isDragging: boolean
@@ -43,7 +44,18 @@ const STATUS_ICONS = {
   overfilled: '🚫',
 }
 
-export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelectedForFiltering, isDragging, isExpanded = false, onToggleExpand, onOpenDetail }: TeamCardProps) {
+export default function TeamCard({ 
+  team, 
+  onDelete,
+  onEdit,
+  onSelectForFiltering,
+  isSelectedForFiltering = false,
+  isDragging,
+  isExpanded = false,
+  onToggleExpand,
+  onOpenDetail,
+  refetchTeams: _refetchTeams
+}: TeamCardProps) {
   const canAddMore = team.current_riders < team.max_riders
 
   // Use @dnd-kit droppable for touch support
@@ -105,6 +117,17 @@ export default function TeamCard({ team, onDelete, onSelectForFiltering, isSelec
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xl">{STATUS_ICONS[team.team_status]}</span>
+            {onEdit && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit() }}
+                className="p-1.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/50 hover:border-yellow-500 text-yellow-400 hover:text-yellow-300 transition-all hover:scale-110"
+                title="Bewerk team"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
             {onOpenDetail && (
               <button
                 onClick={(e) => { 

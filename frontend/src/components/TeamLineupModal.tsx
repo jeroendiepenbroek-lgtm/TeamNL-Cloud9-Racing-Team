@@ -194,10 +194,43 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
+          {/* Prominente Drop Zone - Altijd zichtbaar wanneer ruimte beschikbaar */}
+          {team.lineup.length < team.max_riders && !isDragging && (
+            <div className="mb-4 p-6 border-2 border-dashed border-blue-500/50 rounded-xl bg-blue-500/10 text-center">
+              <div className="text-4xl mb-2">📥</div>
+              <p className="text-blue-300 font-semibold text-sm">Sleep riders hierheen</p>
+              <p className="text-slate-400 text-xs mt-1">
+                {team.max_riders - team.lineup.length} {team.max_riders - team.lineup.length === 1 ? 'plek' : 'plekken'} beschikbaar
+              </p>
+            </div>
+          )}
+
+          {/* Enhanced Drop Zone tijdens drag */}
+          {team.lineup.length < team.max_riders && isDragging && (
+            <div className="mb-4 p-8 border-2 border-dashed border-green-400 rounded-xl bg-green-500/20 text-center animate-pulse">
+              <div className="text-5xl mb-3">✨</div>
+              <p className="text-green-300 font-bold text-lg">Drop hier om toe te voegen!</p>
+              <p className="text-green-200 text-sm mt-2">
+                {team.max_riders - team.lineup.length} {team.max_riders - team.lineup.length === 1 ? 'plek' : 'plekken'} over
+              </p>
+            </div>
+          )}
+
+          {/* Team vol indicator tijdens drag */}
+          {team.lineup.length >= team.max_riders && isDragging && (
+            <div className="mb-4 p-8 border-2 border-dashed border-red-400 rounded-xl bg-red-500/20 text-center">
+              <div className="text-5xl mb-3">🚫</div>
+              <p className="text-red-300 font-bold text-lg">Team is vol!</p>
+              <p className="text-red-200 text-sm mt-2">
+                Maximum {team.max_riders} riders bereikt
+              </p>
+            </div>
+          )}
+
           {team.lineup.length === 0 ? (
-            <div className="text-center py-20 text-slate-400">
+            <div className="text-center py-12 text-slate-400">
               <p className="text-lg">Nog geen riders in dit team</p>
-              <p className="mt-2 text-sm">Drag & drop riders om toe te voegen</p>
+              <p className="mt-2 text-sm">Gebruik [+ Add] knop of drag & drop</p>
             </div>
           ) : (
             <div className="space-y-3">
