@@ -527,6 +527,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             isOpen={sidebarOpen}
             selectedTeam={selectedTeam || undefined}
             onClearTeamFilter={() => setSelectedTeam(null)}
+            onAddRider={selectedTeam ? (riderId) => handleAddRider(riderId) : undefined}
           />
         )}
         

@@ -304,6 +304,10 @@ export default function IntegratedTeamBuilder() {
             <RiderPassportSidebar
               riders={riders}
               isOpen={sidebarOpen}
+              selectedTeam={selectedTeamId ? teams.find(t => t.team_id === selectedTeamId) : undefined}
+              onAddRider={selectedTeamId ? (riderId) => {
+                addRiderMutation.mutate({ teamId: selectedTeamId, riderId })
+              } : undefined}
             />
           )}
 
