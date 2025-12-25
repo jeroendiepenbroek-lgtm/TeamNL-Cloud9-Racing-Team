@@ -1906,6 +1906,39 @@ app.put('/api/teams/:teamId/lineup', async (req, res) => {
   }
 });
 
+// US2: Reorder riders in lineup (simplified version)
+app.put('/api/teams/:teamId/lineup/reorder', async (req, res) => {
+  try {
+    const teamId = parseInt(req.params.teamId);
+    const { rider_ids } = req.body; // Array of rider_ids in new order
+    
+    if (!Array.isArray(rider_ids)) {
+      return res.status(400).json({
+        success: false,
+        error: 'rider_ids must be an array'
+      });
+    }
+    
+    // Update positions based on array order (1-indexed)
+    const updates = rider_ids.map((riderId, index) =>
+      supabase
+        .from('team_lineups')
+        .update({ lineup_position: index + 1 })
+        .eq('team_id', teamId)
+        .eq('rider_id', riderId)
+    );
+    
+    await Promise.all(updates);
+    
+    console.log(`✅ Lineup reordered for team ${teamId} with rider order:`, rider_ids);
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('❌ Reorder lineup failed:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Validate team lineup
 app.get('/api/teams/:teamId/validate', async (req, res) => {
   try {

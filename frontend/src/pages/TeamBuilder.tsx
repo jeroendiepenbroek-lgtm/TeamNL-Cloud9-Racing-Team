@@ -276,6 +276,26 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     }
   })
   
+  // US2: Reorder riders mutation
+  const reorderRidersMutation = useMutation({
+    mutationFn: async ({ teamId, riderIds }: { teamId: number, riderIds: number[] }) => {
+      const res = await fetch(`/api/teams/${teamId}/lineup/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rider_ids: riderIds })
+      })
+      if (!res.ok) throw new Error('Failed to reorder riders')
+      return res.json()
+    },
+    onSuccess: () => {
+      toast.success('Lineup reordered!')
+      queryClient.invalidateQueries({ queryKey: ['lineup', selectedTeam?.team_id] })
+    },
+    onError: (error: any) => {
+      toast.error(error.message)
+    }
+  })
+  
   const teams: Team[] = teamsData?.teams || []
   const allRiders: Rider[] = ridersData?.riders || []
   const lineup: LineupRider[] = lineupData?.lineup || []
@@ -388,7 +408,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     setActiveRider(rider || null)
   }
   
-  // 🎯 US3: Verbeterde drag-and-drop met cancel functionaliteit
+  // 🎯 US2 & US3: Verbeterde drag-and-drop met reorder en cancel functionaliteit
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     const riderId = Number(active.id)
@@ -403,7 +423,32 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       return
     }
     
-    // Dropped on lineup area
+    // US2: Check if reordering within lineup (both active and over are in lineup)
+    const activeInLineup = lineup.find(r => r.rider_id === riderId)
+    const overRiderId = Number(over.id)
+    const overInLineup = lineup.find(r => r.rider_id === overRiderId)
+    
+    if (activeInLineup && overInLineup && riderId !== overRiderId) {
+      // Reorder within lineup
+      const oldIndex = lineup.findIndex(r => r.rider_id === riderId)
+      const newIndex = lineup.findIndex(r => r.rider_id === overRiderId)
+      
+      // Create reordered array
+      const reordered = [...lineup]
+      const [movedItem] = reordered.splice(oldIndex, 1)
+      reordered.splice(newIndex, 0, movedItem)
+      
+      // Update positions on backend
+      reorderRidersMutation.mutate({
+        teamId: selectedTeam!.team_id,
+        riderIds: reordered.map(r => r.rider_id)
+      })
+      
+      setActiveRider(null)
+      return
+    }
+    
+    // Dropped on lineup area (adding new rider)
     if (over.id === 'lineup-drop-zone' && selectedTeam) {
       handleAddRider(riderId)
     }
@@ -659,9 +704,20 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             <div className="xl:col-span-1">
               {selectedTeam ? (
                 <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">
-                    {selectedTeam.team_name} Lineup
-                  </h2>
+                  <div className="flex items-center justify-between mb-3 sm:mb-4">
+                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                      {selectedTeam.team_name} Lineup
+                    </h2>
+                    <button
+                      onClick={() => {
+                        setEditingTeam(selectedTeam)
+                        setShowEditModal(true)
+                      }}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2"
+                    >
+                      ✏️ <span className="hidden sm:inline">Bewerk Team</span>
+                    </button>
+                  </div>
                   
                   {/* Drag Drop Zone */}
                   <LineupDropZone lineup={lineup}>
@@ -922,19 +978,34 @@ function DraggableRiderCard({ rider, onAdd }: { rider: Rider, onAdd: () => void 
   )
 }
 
-// Lineup Rider Card Component - Compact Design
+// Lineup Rider Card Component - Compact Design with Drag & Drop
 function LineupRiderCard({ rider, onRemove }: { rider: LineupRider, onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: rider.rider_id
+  })
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1
+  }
+  
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
   const category = rider.category || 'D'
   const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-500 text-white border-gray-400'
   
   return (
-    <div className={`relative bg-gradient-to-br p-2.5 rounded-lg border transition-all shadow-md ${
-      rider.is_valid 
-        ? 'from-blue-900/80 to-indigo-950/80 border-orange-500/40'
-        : 'from-red-900/40 to-gray-900 border-red-500'
-    }`}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`relative bg-gradient-to-br p-2.5 rounded-lg border transition-all shadow-md cursor-move ${
+        rider.is_valid 
+          ? 'from-blue-900/80 to-indigo-950/80 border-orange-500/40'
+          : 'from-red-900/40 to-gray-900 border-red-500'
+      } ${isDragging ? 'scale-105 ring-2 ring-indigo-400/50 shadow-2xl z-50' : ''}`}>
       {/* Position Badge - Smaller */}
       <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs shadow-md border-2 border-gray-900">
         {rider.lineup_position}
@@ -1029,6 +1100,7 @@ function EditTeamModal({
     competition_type: team.competition_type,
     velo_min_rank: team.velo_min_rank || 1,
     velo_max_rank: team.velo_max_rank || 10,
+    velo_max_spread: team.velo_max_spread || 3,
     allowed_categories: team.allowed_categories || [],
     min_riders: team.min_riders || 1,
     max_riders: team.max_riders || 10
@@ -1094,26 +1166,44 @@ function EditTeamModal({
             </div>
             
             {editedTeam.competition_type === 'velo' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Min vELO Rank</label>
-                  <input
-                    type="number"
-                    value={editedTeam.velo_min_rank}
-                    onChange={(e) => setEditedTeam({...editedTeam, velo_min_rank: parseInt(e.target.value)})}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
-                    min="1"
-                  />
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Min vELO Rank</label>
+                    <input
+                      type="number"
+                      value={editedTeam.velo_min_rank}
+                      onChange={(e) => setEditedTeam({...editedTeam, velo_min_rank: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                      min="1"
+                      max="10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Max vELO Rank</label>
+                    <input
+                      type="number"
+                      value={editedTeam.velo_max_rank}
+                      onChange={(e) => setEditedTeam({...editedTeam, velo_max_rank: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
+                      min="1"
+                      max="10"
+                    />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Max vELO Rank</label>
+                  <label className="block text-sm font-medium mb-1">Max vELO Spread</label>
                   <input
                     type="number"
-                    value={editedTeam.velo_max_rank}
-                    onChange={(e) => setEditedTeam({...editedTeam, velo_max_rank: parseInt(e.target.value)})}
+                    value={editedTeam.velo_max_spread}
+                    onChange={(e) => setEditedTeam({...editedTeam, velo_max_spread: parseInt(e.target.value)})}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:border-blue-500"
                     min="1"
+                    max="10"
                   />
+                  <div className="text-xs text-gray-400 mt-1">
+                    Huidige spread: {editedTeam.velo_max_rank - editedTeam.velo_min_rank + 1} ranks
+                  </div>
                 </div>
               </div>
             )}
