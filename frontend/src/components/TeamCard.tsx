@@ -117,9 +117,13 @@ export default function TeamCard({
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-xl">{STATUS_ICONS[team.team_status]}</span>
-            {onEdit && (
+            {onEdit ? (
               <button
-                onClick={(e) => { e.stopPropagation(); onEdit() }}
+                onClick={(e) => { 
+                  e.stopPropagation()
+                  console.log('🔴 Edit button clicked!', team.team_id)
+                  onEdit()
+                }}
                 className="p-1.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/50 hover:border-yellow-500 text-yellow-400 hover:text-yellow-300 transition-all hover:scale-110"
                 title="Bewerk team"
               >
@@ -127,7 +131,7 @@ export default function TeamCard({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </button>
-            )}
+            ) : null}
             {onOpenDetail && (
               <button
                 onClick={(e) => { 

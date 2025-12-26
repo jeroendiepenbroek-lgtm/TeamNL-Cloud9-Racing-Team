@@ -391,7 +391,10 @@ export default function IntegratedTeamBuilder() {
                     key={team.team_id}
                     team={team}
                     onOpenDetail={handleOpenTeamDetail}
-                    onEdit={() => setEditingTeamId(team.team_id)}
+                    onEdit={() => {
+                      console.log('✏️ Edit clicked for team:', team.team_id)
+                      setEditingTeamId(team.team_id)
+                    }}
                     isDragging={draggedRider !== null}
                     refetchTeams={refetchTeams}
                     onToggleExpand={handleToggleTeamExpand}

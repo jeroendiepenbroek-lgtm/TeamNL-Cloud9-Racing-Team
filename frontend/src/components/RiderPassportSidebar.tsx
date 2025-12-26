@@ -253,6 +253,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
                 key={rider.rider_id} 
                 rider={rider}
                 onAdd={onAddRider ? () => {
+                  console.log('➕ Add button clicked:', rider.full_name, 'Team:', selectedTeam?.team_name)
                   if (!selectedTeam) {
                     toast.error('Selecteer eerst een team')
                     return
