@@ -675,8 +675,10 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
+                              console.log('🟡 EDIT BUTTON CLICKED:', team.team_name, team.team_id);
                               setEditingTeam(team);
                               setShowEditModal(true);
+                              console.log('🟡 Modal should open now');
                             }}
                             className="flex-1 px-3 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs sm:text-sm transition-colors min-h-[44px] sm:min-h-0 flex items-center justify-center"
                           >
@@ -711,6 +713,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                     </h2>
                     <button
                       onClick={() => {
+                        console.log('🟡 BEWERK TEAM BUTTON (lineup area):', selectedTeam?.team_name);
                         setEditingTeam(selectedTeam)
                         setShowEditModal(true)
                       }}
