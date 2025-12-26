@@ -5,6 +5,7 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, u
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
+import TeamCard from '../components/TeamCard.tsx'
 
 // Category colors (STERKE ZICHTBARE KLEUREN - hoog contrast)
 const CATEGORY_COLORS = {
@@ -448,22 +449,20 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       return
     }
     
+    // Check if dropped on a TeamCard
+    if (typeof over.id === 'string' && over.id.startsWith('team-')) {
+      const teamId = Number(over.id.replace('team-', ''))
+      addRiderMutation.mutate({ teamId, riderId })
+      setActiveRider(null)
+      return
+    }
+    
     // Dropped on lineup area (adding new rider)
     if (over.id === 'lineup-drop-zone' && selectedTeam) {
       handleAddRider(riderId)
     }
     
     setActiveRider(null)
-  }
-  
-  const getTeamStatusColor = (status: string) => {
-    switch (status) {
-      case 'ready': return 'bg-green-500/20 text-green-400 border-green-500'
-      case 'warning': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500'
-      case 'incomplete': return 'bg-blue-500/20 text-blue-400 border-blue-500'
-      case 'overfilled': return 'bg-red-500/20 text-red-400 border-red-500'
-      default: return 'bg-gray-500/20 text-gray-400 border-gray-500'
-    }
   }
   
   // 🔒 US1: Show entry code screen if not authenticated
@@ -590,21 +589,21 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
         <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             
-            {/* Left: Teams List */}
+            {/* Left: Teams List with Drag & Drop */}
             <div className="xl:col-span-1">
               <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4 gap-2">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900">Teams</h2>
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg font-semibold shadow-lg whitespace-nowrap"
+                    className="px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-semibold shadow-lg whitespace-nowrap"
                   >
                     <span className="hidden sm:inline">+ New Team</span>
                     <span className="sm:hidden">+ Team</span>
                   </button>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-[600px] overflow-y-auto">
                   {teams.length === 0 ? (
                     <div className="text-center text-gray-400 py-8">
                       <p>No teams yet</p>
@@ -612,91 +611,20 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                     </div>
                   ) : (
                     teams.map(team => (
-                      <div
+                      <TeamCard
                         key={team.team_id}
-                        className={`p-3 sm:p-4 rounded-lg border-2 transition-all ${
-                          selectedTeam?.team_id === team.team_id
-                            ? 'bg-indigo-50 border-indigo-500 shadow-md'
-                            : 'bg-gray-50 border-gray-200 hover:border-indigo-300'
-                        }`}
-                      >
-                        <div 
-                          onClick={() => {
-                            setSelectedTeam(team)
-                            setSidebarOpen(true) // Open sidebar when team is selected
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-base sm:text-lg truncate">{team.team_name}</h3>
-                            <p className="text-xs sm:text-sm text-gray-400 truncate">{team.competition_name}</p>
-                            <div className="flex items-center gap-1.5 sm:gap-2 mt-2 flex-wrap">
-                              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ${
-                                team.competition_type === 'velo' 
-                                  ? 'bg-purple-500/20 text-purple-300'
-                                  : 'bg-blue-500/20 text-blue-300'
-                              }`}>
-                                {team.competition_type === 'velo' ? '⚡ vELO' : '🏆 Cat'}
-                              </span>
-                              <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full border ${getTeamStatusColor(team.team_status)}`}>
-                                {team.team_status}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-xl sm:text-2xl font-bold">{team.current_riders}</div>
-                            <div className="text-xs text-gray-400">/{team.max_riders}</div>
-                          </div>
-                        </div>
-                        
-                        {team.competition_type === 'velo' && (
-                          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-600">
-                            <div className="text-[10px] sm:text-xs text-gray-400">
-                              vELO: {team.velo_min_rank}-{team.velo_max_rank}
-                              {team.current_velo_spread !== null && (
-                                <span className="ml-1 sm:ml-2">
-                                  (Spread: {team.current_velo_spread})
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {team.competition_type === 'category' && team.allowed_categories && (
-                          <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-600">
-                            <div className="text-[10px] sm:text-xs text-gray-400">
-                              Cat: {team.allowed_categories.join(', ')}
-                            </div>
-                          </div>
-                        )}
-                        </div>
-                        <div className="flex gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-600">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('🟡 EDIT BUTTON CLICKED:', team.team_name, team.team_id);
-                              setEditingTeam(team);
-                              setShowEditModal(true);
-                              console.log('🟡 Modal should open now');
-                            }}
-                            className="flex-1 px-3 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs sm:text-sm transition-colors min-h-[44px] sm:min-h-0 flex items-center justify-center"
-                          >
-                            <span className="hidden sm:inline">✏️ Bewerk</span>
-                            <span className="sm:hidden">✏️</span>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteTeam(team.team_id);
-                            }}
-                            className="flex-1 px-3 py-2 sm:py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs sm:text-sm transition-colors min-h-[44px] sm:min-h-0 flex items-center justify-center"
-                          >
-                            <span className="hidden sm:inline">🗑️ Verwijder</span>
-                            <span className="sm:hidden">🗑️</span>
-                          </button>
-                        </div>
-                      </div>
+                        team={team}
+                        isDragging={activeRider !== null}
+                        onEdit={() => {
+                          setEditingTeam(team)
+                          setShowEditModal(true)
+                        }}
+                        onDelete={() => handleDeleteTeam(team.team_id)}
+                        onOpenDetail={() => {
+                          setSelectedTeam(team)
+                          setSidebarOpen(true)
+                        }}
+                      />
                     ))
                   )}
                 </div>
