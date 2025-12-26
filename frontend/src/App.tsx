@@ -15,6 +15,7 @@ function Navigation() {
 
   const menuItems = [
     { path: '/', label: 'Team Lineup', icon: '👥' },
+    { path: '/team-builder', label: 'Team Builder', icon: '🏗️' },
     { path: '/racing-matrix', label: 'Performance Matrix', icon: '📊' },
     { path: '/rider-passports', label: 'Rider Passports', icon: '🎴' },
     { path: '/team-manager', label: 'Rider Manager', icon: '⚙️' },
