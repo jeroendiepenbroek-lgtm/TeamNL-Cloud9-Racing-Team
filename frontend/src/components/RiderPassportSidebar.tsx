@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useDraggable } from '@dnd-kit/core'
+import toast from 'react-hot-toast'
 
 interface Rider {
   rider_id: number
@@ -67,6 +68,32 @@ const getVeloTier = (rating: number | null) => {
 export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onClearTeamFilter, onAddRider }: RiderPassportSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+
+  // US2: Helper functie om te checken of rider aan team criteria voldoet
+  const riderMeetsTeamCriteria = (rider: Rider, team: Team | null | undefined): boolean => {
+    if (!team) return true // Geen team geselecteerd = alles tonen
+    
+    const category = rider.zwiftracing_category || rider.zwift_official_category
+    const veloRating = rider.velo_live
+    const riderTier = getVeloTier(veloRating)
+    
+    if (team.competition_type === 'velo' || team.competition_type === 'velo-based') {
+      // Check vELO tier range
+      if (!riderTier) return false
+      const minTier = team.velo_min_rank || 1
+      const maxTier = team.velo_max_rank || 10
+      return riderTier.rank >= minTier && riderTier.rank <= maxTier
+    }
+    
+    if (team.competition_type === 'category' || team.competition_type === 'category-based') {
+      // Check category
+      if (!category) return false
+      const allowed = team.allowed_categories || []
+      return allowed.includes(category)
+    }
+    
+    return true
+  }
   const [selectedTier, setSelectedTier] = useState<string>('')
   const [hideAssigned, setHideAssigned] = useState(false)
 
@@ -217,15 +244,30 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       {/* Scrollable Rider Cards */}
       <div className="flex-1 overflow-y-auto p-3">
         <div className="space-y-1.5">
-          {filteredRiders.map(rider => (
-            <DraggableRiderCard 
-              key={rider.rider_id} 
-              rider={rider}
-              onAdd={onAddRider ? () => onAddRider(rider.rider_id) : undefined}
-              showAddButton={true}
-              isDisabled={!onAddRider || !selectedTeam}
-            />
-          ))}
+          {filteredRiders.map(rider => {
+            const meetsTeamCriteria = riderMeetsTeamCriteria(rider, selectedTeam)
+            const isDisabled = !selectedTeam || !meetsTeamCriteria
+            
+            return (
+              <DraggableRiderCard 
+                key={rider.rider_id} 
+                rider={rider}
+                onAdd={onAddRider ? () => {
+                  if (!selectedTeam) {
+                    toast.error('Selecteer eerst een team')
+                    return
+                  }
+                  if (!meetsTeamCriteria) {
+                    toast.error('Rider voldoet niet aan team criteria')
+                    return
+                  }
+                  onAddRider(rider.rider_id)
+                } : undefined}
+                showAddButton={true}
+                isDisabled={isDisabled}
+              />
+            )
+          })}
         </div>
       </div>
     </aside>

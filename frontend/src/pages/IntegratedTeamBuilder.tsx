@@ -142,9 +142,12 @@ export default function IntegratedTeamBuilder() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     
+    console.log('🎯 DragEnd:', { activeId: active.id, overId: over?.id, overData: over?.data })
+    
     if (over && active.data.current?.rider) {
       const rider = active.data.current.rider
       const overId = over.id.toString()
+      console.log('✅ Rider dropped:', rider.full_name, 'on:', overId)
       
       // Check voor cancel zone
       if (overId === 'cancel-drop-zone') {
@@ -334,10 +337,14 @@ export default function IntegratedTeamBuilder() {
             <RiderPassportSidebar
               riders={riders}
               isOpen={sidebarOpen}
-              selectedTeam={selectedTeamId ? teams.find(t => t.team_id === selectedTeamId) : undefined}
-              onAddRider={selectedTeamId ? (riderId) => {
+              selectedTeam={selectedTeamId ? teams.find(t => t.team_id === selectedTeamId) : null}
+              onAddRider={(riderId) => {
+                if (!selectedTeamId) {
+                  toast.error('Selecteer eerst een team')
+                  return
+                }
                 addRiderMutation.mutate({ teamId: selectedTeamId, riderId })
-              } : undefined}
+              }}
             />
           )}
 
