@@ -116,8 +116,19 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
         if (!tier || tier.name !== selectedTier) return false
       }
       
-      // Hide assigned riders
-      if (hideAssigned && rider.teams && rider.teams.length > 0) return false
+      // Auto-hide assigned riders when a team is expanded (selected)
+      // Manual hide can override this when no team is selected
+      const shouldHideAssigned = selectedTeam ? true : hideAssigned
+      if (shouldHideAssigned && rider.teams && rider.teams.length > 0) {
+        // When a team is selected, hide riders already in that specific team
+        if (selectedTeam && rider.teams.some(t => t.team_id === selectedTeam.team_id)) {
+          return false
+        }
+        // When no team selected but hideAssigned is true, hide all assigned
+        if (!selectedTeam && hideAssigned) {
+          return false
+        }
+      }
       
       // Team-based filtering (US4)
       if (selectedTeam) {
@@ -148,7 +159,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       md:translate-x-0
       fixed md:sticky 
       left-0 top-0 md:top-[73px]
-      w-full sm:w-80 lg:w-96
+      w-full sm:w-72 lg:w-80
       h-screen md:h-[calc(100vh-73px)]
       border-r border-slate-700/50 
       bg-slate-800/95
@@ -179,6 +190,12 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
                   ? `vELO Tier ${selectedTeam.velo_min_rank}-${selectedTeam.velo_max_rank}` 
                   : `Categorieën: ${selectedTeam.allowed_categories?.join(', ')}`
                 }
+              </div>
+              <div className="text-xs text-green-300 mt-2 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                </svg>
+                <span>Riders in dit team verborgen</span>
               </div>
             </div>
           )}
@@ -223,12 +240,14 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
             </select>
 
             {/* Verberg toegewezen riders */}
-            <label className="flex items-center gap-1 text-xs text-white cursor-pointer whitespace-nowrap">
+            <label className={`flex items-center gap-1 text-xs text-white cursor-pointer whitespace-nowrap ${selectedTeam ? 'opacity-50' : ''}`}>
               <input
                 type="checkbox"
-                checked={hideAssigned}
+                checked={selectedTeam ? true : hideAssigned}
                 onChange={(e) => setHideAssigned(e.target.checked)}
-                className="w-3 h-3 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-0"
+                disabled={!!selectedTeam}
+                className="w-3 h-3 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-0 disabled:opacity-50"
+                title={selectedTeam ? "Automatisch actief bij team selectie" : "Verberg riders die al aan een team zijn toegewezen"}
               />
               <span className="text-[10px]">Verberg toegewezen</span>
             </label>
