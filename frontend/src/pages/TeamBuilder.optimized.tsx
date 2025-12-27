@@ -468,18 +468,22 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex">
-        {isAuthenticated && (
-          <RiderPassportSidebar
-            riders={allRiders}
-            isOpen={sidebarOpen}
-            selectedTeam={expandedTeamId ? teams.find(t => t.team_id === expandedTeamId) : undefined}
-            onClearTeamFilter={() => setExpandedTeamId(null)}
-            onAddRider={expandedTeamId ? (riderId) => handleAddRider(expandedTeamId, riderId) : undefined}
-          />
-        )}
-        
-        <div className="flex-1 min-w-0">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        {/* Modern 3-koloms layout */}
+        <div className="flex h-screen">
+          {/* Rechter Sidebar: Rider Pool (beschikbare riders) */}
+          {isAuthenticated && (
+            <RiderPassportSidebar
+              riders={allRiders}
+              isOpen={sidebarOpen}
+              selectedTeam={expandedTeamId ? teams.find(t => t.team_id === expandedTeamId) : undefined}
+              onClearTeamFilter={() => setExpandedTeamId(null)}
+              onAddRider={expandedTeamId ? (riderId) => handleAddRider(expandedTeamId, riderId) : undefined}
+            />
+          )}
+          
+          {/* Main Content Area */}
+          <div className="flex-1 min-w-0 flex flex-col">
           {!hideHeader && (
             <div className="relative overflow-hidden mb-4 sm:mb-6">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 opacity-95"></div>
@@ -577,31 +581,35 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Verbeterde instructie card */}
-                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white shadow-lg">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              <div className="space-y-4">
+                {/* Moderne instructie banner - Duidelijk uitleggen */}
+                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl p-4 text-white shadow-xl border-2 border-white/20">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-bold text-lg mb-2">💡 Zo gebruik je de TeamBuilder:</h3>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-start gap-2">
-                          <span className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                          <span><strong>Klik op een team</strong> om de lineup te zien en te bewerken</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                          <span><strong>Sleep riders</strong> vanuit de linkersidebar direct naar een team</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <span className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                          <span><strong>Bewerk teams</strong> met de ✏️ knop of verwijder met de 🗑️ knop</span>
-                        </li>
-                      </ul>
+                      <h3 className="font-bold text-base mb-2 flex items-center gap-2">
+                        💡 Twee secties, één doel
+                      </h3>
+                      <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur">
+                          <div className="font-bold mb-1 flex items-center gap-1.5">
+                            <span className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center text-xs">←</span>
+                            Rider Pool (links)
+                          </div>
+                          <p className="text-xs text-blue-100">Alle beschikbare riders. Sleep ze naar je team!</p>
+                        </div>
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur">
+                          <div className="font-bold mb-1 flex items-center gap-1.5">
+                            <span className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-xs">↓</span>
+                            Team Lineup (hier)
+                          </div>
+                          <p className="text-xs text-blue-100">Riders in je team. Klik op team om te zien.</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -632,31 +640,48 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                         
                         {/* Expanded Lineup Section */}
                         {isExpanded && (
-                          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 border-t-2 border-gray-200">
-                            <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                Team Lineup
-                              </h3>
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold shadow-sm">
-                                  {teamLineup.length}/{team.max_riders} riders
-                                </span>
-                                <span className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow-sm">
-                                  {teamLineup.filter((r: LineupRider) => r.is_valid).length} valid
-                                </span>
+                          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 border-t-2 border-blue-300">
+                            {/* Duidelijke header met uitleg */}
+                            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg p-3 mb-4 shadow-md">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  </div>
+                                  <div>
+                                    <h3 className="text-base font-bold">Team Lineup - Riders in dit team</h3>
+                                    <p className="text-xs text-green-100">Sleep riders uit de linker sidebar om toe te voegen</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="px-3 py-1.5 bg-white/20 backdrop-blur rounded-lg font-bold">
+                                    {teamLineup.length}/{team.max_riders}
+                                  </span>
+                                  <span className="px-3 py-1.5 bg-white/20 backdrop-blur rounded-lg font-bold">
+                                    ✓ {teamLineup.filter((r: LineupRider) => r.is_valid).length} valid
+                                  </span>
+                                </div>
                               </div>
                             </div>
                             
                             {teamLineup.length === 0 ? (
-                              <div className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
+                              <div className="bg-white border-2 border-dashed border-blue-300 rounded-xl p-8 text-center">
                                 <div className="inline-block p-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mb-4">
                                   <div className="text-5xl">👥</div>
                                 </div>
                                 <p className="text-gray-700 font-semibold text-lg mb-2">Nog geen riders in dit team</p>
-                                <p className="text-sm text-gray-500">Sleep riders vanuit de sidebar naar dit team om te beginnen</p>
+                                <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mt-3">
+                                  <div className="flex items-center gap-1.5 bg-orange-100 px-3 py-2 rounded-lg">
+                                    <span className="w-5 h-5 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">←</span>
+                                    <span><strong>Sleep riders</strong> vanuit de linker sidebar</span>
+                                  </div>
+                                  <span className="text-gray-400">of</span>
+                                  <div className="flex items-center gap-1.5 bg-blue-100 px-3 py-2 rounded-lg">
+                                    <span><strong>Gebruik de + Add knop</strong> in de sidebar</span>
+                                  </div>
+                                </div>
                               </div>
                             ) : (
                               <LineupDropZone lineup={teamLineup}>
@@ -739,6 +764,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
               </div>
             )}
           </DragOverlay>
+          </div>
         </div>
       </div>
     </DndContext>
