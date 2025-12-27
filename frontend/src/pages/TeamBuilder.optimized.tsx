@@ -536,12 +536,20 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             {/* Header met Create Team Button */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Jouw Teams</h2>
-                <p className="text-sm text-gray-600 mt-1">Sleep riders vanuit de sidebar naar je teams</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
+                  <span className="text-3xl">🏆</span>
+                  Jouw Teams
+                </h2>
+                <p className="text-sm text-gray-600 mt-2 flex items-center gap-2">
+                  <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span>Sleep riders vanuit de sidebar naar je teams</span>
+                </p>
               </div>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="px-4 py-3 sm:px-6 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                className="px-4 py-3 sm:px-6 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 flex items-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -552,30 +560,47 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             </div>
 
             {teams.length === 0 ? (
-              <div className="bg-white/90 backdrop-blur rounded-2xl border-2 border-dashed border-gray-300 shadow-lg p-12 text-center">
-                <div className="text-8xl mb-6">🏆</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Nog geen teams</h3>
-                <p className="text-gray-600 mb-6">Maak je eerste team aan om te beginnen</p>
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl border-2 border-dashed border-gray-300 shadow-lg p-12 text-center">
+                <div className="inline-block p-6 bg-gradient-to-br from-orange-100 to-blue-100 rounded-full mb-6">
+                  <div className="text-7xl">🏆</div>
+                </div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-3">Nog geen teams</h3>
+                <p className="text-gray-600 mb-8 text-lg">Maak je eerste team aan om te beginnen met riders selecteren</p>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+                  className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all transform hover:scale-105 inline-flex items-center gap-3"
                 >
-                  + Nieuw Team Aanmaken
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Nieuw Team Aanmaken
                 </button>
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <h3 className="font-bold text-blue-900 mb-1">Zo gebruik je de TeamBuilder:</h3>
-                      <ul className="text-sm text-blue-800 space-y-1">
-                        <li>• <strong>Klik op een team</strong> om de lineup te zien en te bewerken</li>
-                        <li>• <strong>Sleep riders</strong> vanuit de linkersidebar naar een team</li>
-                        <li>• <strong>Bewerk teams</strong> met de ✏️ knop of verwijder met de 🗑️ knop</li>
+                {/* Verbeterde instructie card */}
+                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl p-4 sm:p-6 text-white shadow-lg">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-lg mb-2">💡 Zo gebruik je de TeamBuilder:</h3>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start gap-2">
+                          <span className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                          <span><strong>Klik op een team</strong> om de lineup te zien en te bewerken</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                          <span><strong>Sleep riders</strong> vanuit de linkersidebar direct naar een team</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                          <span><strong>Bewerk teams</strong> met de ✏️ knop of verwijder met de 🗑️ knop</span>
+                        </li>
                       </ul>
                     </div>
                   </div>
@@ -609,12 +634,17 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                         {isExpanded && (
                           <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 border-t-2 border-gray-200">
                             <div className="flex items-center justify-between mb-4">
-                              <h3 className="text-xl font-bold text-gray-900">Team Lineup</h3>
+                              <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Team Lineup
+                              </h3>
                               <div className="flex items-center gap-2 text-sm">
-                                <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg font-semibold">
+                                <span className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-semibold shadow-sm">
                                   {teamLineup.length}/{team.max_riders} riders
                                 </span>
-                                <span className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg font-semibold">
+                                <span className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold shadow-sm">
                                   {teamLineup.filter((r: LineupRider) => r.is_valid).length} valid
                                 </span>
                               </div>
@@ -622,9 +652,11 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                             
                             {teamLineup.length === 0 ? (
                               <div className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-                                <div className="text-4xl mb-3">👥</div>
-                                <p className="text-gray-600 font-semibold">Nog geen riders in dit team</p>
-                                <p className="text-sm text-gray-500 mt-1">Sleep riders vanuit de sidebar naar dit team</p>
+                                <div className="inline-block p-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full mb-4">
+                                  <div className="text-5xl">👥</div>
+                                </div>
+                                <p className="text-gray-700 font-semibold text-lg mb-2">Nog geen riders in dit team</p>
+                                <p className="text-sm text-gray-500">Sleep riders vanuit de sidebar naar dit team om te beginnen</p>
                               </div>
                             ) : (
                               <LineupDropZone lineup={teamLineup}>
@@ -688,8 +720,22 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
           
           <DragOverlay>
             {activeRider && (
-              <div className="bg-blue-500 text-white p-3 rounded-lg shadow-2xl opacity-90">
-                {activeRider.name || activeRider.full_name}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-xl shadow-2xl border-2 border-white/50 transform rotate-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-white/20 flex-shrink-0">
+                    {activeRider.avatar_url ? (
+                      <img src={activeRider.avatar_url} alt={activeRider.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-bold text-lg">{activeRider.racing_name || activeRider.full_name}</p>
+                    <p className="text-xs text-blue-100">
+                      {activeRider.zwiftracing_category || activeRider.zwift_official_category} · vELO {activeRider.velo_live}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </DragOverlay>
