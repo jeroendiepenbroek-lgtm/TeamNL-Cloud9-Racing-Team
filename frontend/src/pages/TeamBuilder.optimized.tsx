@@ -3,11 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { getVeloTier } from '../constants/racing'
 import RiderPassportSidebar from '../components/RiderPassportSidebar'
 import TeamCard from '../components/TeamCard'
 import EditTeamModal from '../components/EditTeamModal'
-import DraggableRiderCard from '../components/DraggableRiderCard'
 import LineupRiderCard from '../components/LineupRiderCard'
 import LineupDropZone from '../components/LineupDropZone'
 import EntryCodeLogin from '../components/EntryCodeLogin'
@@ -100,12 +98,23 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   
   // UI state
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
+  const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
   const [activeRider, setActiveRider] = useState<Rider | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // US4: Bulk assignment state
+  const [showBulkPanel, setShowBulkPanel] = useState(false)
+  const [selectedRiderIds, setSelectedRiderIds] = useState<Set<number>>(new Set())
+  const [bulkTargetTeamId, setBulkTargetTeamId] = useState<number | null>(null)
+  const [bulkFilters, setBulkFilters] = useState({
+    categories: [] as string[],
+    veloMin: 0,
+    veloMax: 1000,
+    phenotypes: [] as string[]
+  })
   
   // Form state
   const [newTeam, setNewTeam] = useState<NewTeam>({
@@ -160,14 +169,14 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   })
   
   const { data: lineupData } = useQuery({
-    queryKey: ['team-lineup', selectedTeam?.team_id],
+    queryKey: ['team-lineup', expandedTeamId],
     queryFn: async () => {
-      if (!selectedTeam) return null
-      const res = await fetch(`/api/teams/${selectedTeam.team_id}`)
+      if (!expandedTeamId) return null
+      const res = await fetch(`/api/teams/${expandedTeamId}`)
       if (!res.ok) throw new Error('Failed to fetch lineup')
       return res.json()
     },
-    enabled: !!selectedTeam
+    enabled: !!expandedTeamId
   })
   
   // ============================================================================
@@ -211,7 +220,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
-      queryClient.invalidateQueries({ queryKey: ['team-lineup', selectedTeam?.team_id] })
+      queryClient.invalidateQueries({ queryKey: ['team-lineup', expandedTeamId] })
       toast.success('Rider added to team!')
     },
     onError: (error: any) => {
@@ -229,7 +238,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
-      queryClient.invalidateQueries({ queryKey: ['team-lineup', selectedTeam?.team_id] })
+      queryClient.invalidateQueries({ queryKey: ['team-lineup', expandedTeamId] })
       toast.success('Rider removed from team')
     }
   })
@@ -292,35 +301,58 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     }
   })
   
+  // US4: Bulk add riders mutation
+  const bulkAddRidersMutation = useMutation({
+    mutationFn: async ({ teamId, riderIds }: { teamId: number, riderIds: number[] }) => {
+      const results = []
+      for (const riderId of riderIds) {
+        try {
+          const res = await fetch(`/api/teams/${teamId}/riders`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rider_id: riderId })
+          })
+          if (res.ok) {
+            results.push({ riderId, success: true })
+          } else {
+            const error = await res.json()
+            results.push({ riderId, success: false, error: error.error })
+          }
+        } catch (err) {
+          results.push({ riderId, success: false, error: 'Network error' })
+        }
+      }
+      return results
+    },
+    onSuccess: (results) => {
+      const successCount = results.filter(r => r.success).length
+      const failCount = results.length - successCount
+      
+      if (successCount > 0) {
+        toast.success(`${successCount} rider(s) toegevoegd aan team!`)
+      }
+      if (failCount > 0) {
+        toast.error(`${failCount} rider(s) konden niet worden toegevoegd`)
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team-lineup', bulkTargetTeamId] })
+      
+      // Reset selection
+      setSelectedRiderIds(new Set())
+      setBulkTargetTeamId(null)
+    },
+    onError: (error: any) => {
+      toast.error('Bulk add failed: ' + error.message)
+    }
+  })
+  
   // ============================================================================
   // 🧮 DATA PROCESSING
   // ============================================================================
   
   const teams: Team[] = teamsData?.teams || []
   const allRiders: Rider[] = ridersData?.riders || []
-  const lineup: LineupRider[] = lineupData?.lineup || []
-  
-  const filteredRiders = allRiders.filter(rider => {
-    const matchesSearch = !searchTerm || 
-      rider.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rider.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rider.rider_id.toString().includes(searchTerm)
-    
-    if (!matchesSearch) return false
-    if (lineup.some(l => l.rider_id === rider.rider_id)) return false
-    if (!selectedTeam) return true
-    
-    if (selectedTeam.competition_type === 'velo') {
-      const velo30day = rider.velo_30day || rider.velo_live
-      const veloTier = getVeloTier(velo30day)
-      const riderTierRank = veloTier?.rank || 10
-      return riderTierRank >= (selectedTeam.velo_min_rank || 1) && 
-             riderTierRank <= (selectedTeam.velo_max_rank || 10)
-    } else {
-      const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
-      return selectedTeam.allowed_categories?.includes(category)
-    }
-  })
   
   // ============================================================================
   // 🎬 HANDLERS
@@ -370,21 +402,91 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     }
   }
   
-  const handleAddRider = (riderId: number) => {
-    if (!selectedTeam) return
-    const nextPosition = lineup.length + 1
+  const handleAddRider = (teamId: number, riderId: number) => {
+    const team = teams.find(t => t.team_id === teamId)
+    if (!team) return
+    
+    // Get current lineup voor dit team
+    const currentLineup = teamId === expandedTeamId ? (lineupData?.lineup || []) : []
+    const nextPosition = currentLineup.length + 1
+    
     addRiderMutation.mutate({
-      teamId: selectedTeam.team_id,
+      teamId,
       riderId,
       position: nextPosition
     })
   }
   
-  const handleRemoveRider = (riderId: number) => {
-    if (!selectedTeam) return
+  const handleRemoveRider = (teamId: number, riderId: number) => {
     removeRiderMutation.mutate({
-      teamId: selectedTeam.team_id,
+      teamId,
       riderId
+    })
+  }
+  
+  const handleToggleExpand = (teamId: number) => {
+    if (expandedTeamId === teamId) {
+      setExpandedTeamId(null)
+    } else {
+      setExpandedTeamId(teamId)
+    }
+  }
+  
+  // US4: Bulk assignment handlers
+  /* Future enhancement: Individual rider selection
+  const handleToggleRiderSelection = (riderId: number) => {
+    const newSelection = new Set(selectedRiderIds)
+    if (newSelection.has(riderId)) {
+      newSelection.delete(riderId)
+    } else {
+      newSelection.add(riderId)
+    }
+    setSelectedRiderIds(newSelection)
+  }
+  */
+  
+  const handleSelectAllFiltered = () => {
+    const filtered = getFilteredRidersForBulk()
+    const newSelection = new Set(filtered.map(r => r.rider_id))
+    setSelectedRiderIds(newSelection)
+    toast.success(`${filtered.length} riders geselecteerd`)
+  }
+  
+  const handleClearSelection = () => {
+    setSelectedRiderIds(new Set())
+    toast.success('Selectie gewist')
+  }
+  
+  const handleBulkAddToTeam = () => {
+    if (!bulkTargetTeamId || selectedRiderIds.size === 0) {
+      toast.error('Selecteer een team en riders')
+      return
+    }
+    
+    bulkAddRidersMutation.mutate({
+      teamId: bulkTargetTeamId,
+      riderIds: Array.from(selectedRiderIds)
+    })
+  }
+  
+  const getFilteredRidersForBulk = () => {
+    return allRiders.filter(rider => {
+      // Category filter
+      if (bulkFilters.categories.length > 0) {
+        const cat = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+        if (!bulkFilters.categories.includes(cat)) return false
+      }
+      
+      // vELO filter
+      const velo = rider.velo_30day || rider.velo_live
+      if (velo < bulkFilters.veloMin || velo > bulkFilters.veloMax) return false
+      
+      // Phenotype filter
+      if (bulkFilters.phenotypes.length > 0 && rider.phenotype) {
+        if (!bulkFilters.phenotypes.includes(rider.phenotype)) return false
+      }
+      
+      return true
     })
   }
   
@@ -406,39 +508,40 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       return
     }
     
-    // Reorder within lineup
-    const activeInLineup = lineup.find(r => r.rider_id === riderId)
-    const overRiderId = Number(over.id)
-    const overInLineup = lineup.find(r => r.rider_id === overRiderId)
+    // Check if dropped on a team card
+    const teamMatch = over.id.toString().match(/^team-(\\d+)$/)
+    if (teamMatch) {
+      const teamId = parseInt(teamMatch[1])
+      handleAddRider(teamId, riderId)
+      setActiveRider(null)
+      return
+    }
     
-    if (activeInLineup && overInLineup && riderId !== overRiderId) {
-      const oldIndex = lineup.findIndex(r => r.rider_id === riderId)
-      const newIndex = lineup.findIndex(r => r.rider_id === overRiderId)
+    // Check if dropped on lineup drop zone
+    if (over.id === 'lineup-drop-zone' && expandedTeamId) {
+      handleAddRider(expandedTeamId, riderId)
+      setActiveRider(null)
+      return
+    }
+    
+    // Reorder within lineup
+    const lineup = lineupData?.lineup || []
+    const activeInLineup = lineup.find((r: LineupRider) => r.rider_id === riderId)
+    const overRiderId = Number(over.id)
+    const overInLineup = lineup.find((r: LineupRider) => r.rider_id === overRiderId)
+    
+    if (activeInLineup && overInLineup && riderId !== overRiderId && expandedTeamId) {
+      const oldIndex = lineup.findIndex((r: LineupRider) => r.rider_id === riderId)
+      const newIndex = lineup.findIndex((r: LineupRider) => r.rider_id === overRiderId)
       
       const reordered = [...lineup]
       const [movedItem] = reordered.splice(oldIndex, 1)
       reordered.splice(newIndex, 0, movedItem)
       
       reorderRidersMutation.mutate({
-        teamId: selectedTeam!.team_id,
-        riderIds: reordered.map(r => r.rider_id)
+        teamId: expandedTeamId,
+        riderIds: reordered.map((r: LineupRider) => r.rider_id)
       })
-      
-      setActiveRider(null)
-      return
-    }
-    
-    // Add to team from TeamCard
-    if (typeof over.id === 'string' && over.id.startsWith('team-')) {
-      const teamId = Number(over.id.replace('team-', ''))
-      addRiderMutation.mutate({ teamId, riderId })
-      setActiveRider(null)
-      return
-    }
-    
-    // Add to lineup
-    if (over.id === 'lineup-drop-zone' && selectedTeam) {
-      handleAddRider(riderId)
     }
     
     setActiveRider(null)
@@ -481,9 +584,9 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
           <RiderPassportSidebar
             riders={allRiders}
             isOpen={sidebarOpen}
-            selectedTeam={selectedTeam || undefined}
-            onClearTeamFilter={() => setSelectedTeam(null)}
-            onAddRider={selectedTeam ? (riderId) => handleAddRider(riderId) : undefined}
+            selectedTeam={expandedTeamId ? teams.find(t => t.team_id === expandedTeamId) : undefined}
+            onClearTeamFilter={() => setExpandedTeamId(null)}
+            onAddRider={expandedTeamId ? (riderId) => handleAddRider(expandedTeamId, riderId) : undefined}
           />
         )}
         
@@ -540,145 +643,228 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
             </div>
           )}
           
-          <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              
-              {/* Left: Teams List */}
-              <div className="xl:col-span-1">
-                <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                  <div className="flex items-center justify-between mb-4 gap-2">
-                    <h2 className="text-lg sm:text-xl font-bold text-gray-900">Teams</h2>
-                    <button
-                      onClick={() => setShowCreateModal(true)}
-                      className="px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg font-semibold shadow-lg whitespace-nowrap"
-                    >
-                      <span className="hidden sm:inline">+ New Team</span>
-                      <span className="sm:hidden">+ Team</span>
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                    {teams.length === 0 ? (
-                      <div className="text-center text-gray-400 py-8">
-                        <p>No teams yet</p>
-                        <p className="text-sm">Create your first team!</p>
-                      </div>
-                    ) : (
-                      teams.map(team => (
-                        <TeamCard
-                          key={team.team_id}
-                          team={team}
-                          isDragging={activeRider !== null}
-                          onEdit={() => {
-                            setEditingTeam(team)
-                            setShowEditModal(true)
-                          }}
-                          onDelete={() => handleDeleteTeam(team.team_id)}
-                          onOpenDetail={() => {
-                            setSelectedTeam(team)
-                            setSidebarOpen(true)
-                          }}
-                        />
-                      ))
-                    )}
-                  </div>
-                </div>
+          <div className="max-w-[2000px] mx-auto p-3 sm:p-4 lg:p-6">
+            {/* Header met Create Team + Bulk Assignment Buttons */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Your Teams</h2>
+                <p className="text-sm text-gray-600 mt-1">Sleep riders naar teams of klik [+Add] button</p>
               </div>
-              
-              {/* Middle: Current Lineup */}
-              <div className="xl:col-span-1">
-                {selectedTeam ? (
-                  <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                    <div className="flex items-center justify-between mb-3 sm:mb-4">
-                      <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                        {selectedTeam.team_name} Lineup
-                      </h2>
-                      <button
-                        onClick={() => {
-                          setEditingTeam(selectedTeam)
-                          setShowEditModal(true)
-                        }}
-                        className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm hover:shadow-md transition-all flex items-center gap-2"
-                      >
-                        ✏️ <span className="hidden sm:inline">Bewerk Team</span>
-                      </button>
-                    </div>
-                    
-                    <LineupDropZone lineup={lineup}>
-                      <SortableContext
-                        items={lineup.map(r => r.rider_id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        <div className="space-y-3">
-                          {lineup.map(rider => (
-                            <LineupRiderCard
-                              key={rider.rider_id}
-                              rider={rider}
-                              onRemove={() => handleRemoveRider(rider.rider_id)}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </LineupDropZone>
-                    
-                    <div className="mt-4 p-4 bg-gray-700/30 rounded-lg">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <div className="text-gray-400">Riders</div>
-                          <div className="text-2xl font-bold">
-                            {lineup.length} / {selectedTeam.max_riders}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-gray-400">Valid</div>
-                          <div className="text-2xl font-bold text-green-400">
-                            {lineup.filter(r => r.is_valid).length}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-6 flex items-center justify-center h-full">
-                    <div className="text-center text-gray-400">
-                      <div className="text-6xl mb-4">🏆</div>
-                      <p className="text-lg">Select a team to start building</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Right: Available Riders */}
-              <div className="xl:col-span-1">
-                <div className="bg-white/90 backdrop-blur rounded-xl border border-gray-200 shadow-lg p-4 sm:p-6">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Riders</h2>
-                  
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Zoek riders..."
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-sm sm:text-base bg-white border border-gray-300 rounded-lg mb-3 sm:mb-4 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-gray-900"
-                  />
-                  
-                  <div className="space-y-2 max-h-[400px] sm:max-h-[600px] overflow-y-auto">
-                    {filteredRiders.map(rider => (
-                      <DraggableRiderCard
-                        key={rider.rider_id}
-                        rider={rider}
-                        onAdd={() => handleAddRider(rider.rider_id)}
-                      />
-                    ))}
-                    
-                    {filteredRiders.length === 0 && (
-                      <div className="text-center text-gray-400 py-8">
-                        <p>No eligible riders found</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowBulkPanel(!showBulkPanel)}
+                  className={`px-4 py-3 text-sm sm:text-base rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2 ${
+                    showBulkPanel 
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                      : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                  </svg>
+                  <span className="hidden sm:inline">Bulk Toewijzen</span>
+                  <span className="sm:hidden">Bulk</span>
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-4 py-3 sm:px-6 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="hidden sm:inline">Nieuw Team</span>
+                  <span className="sm:hidden">+</span>
+                </button>
               </div>
             </div>
+
+            {/* US4: Bulk Assignment Panel */}
+            {showBulkPanel && (
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-300 rounded-xl p-6 mb-6 shadow-lg">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-purple-900">Bulk Rider Toewijzing</h3>
+                  <button
+                    onClick={() => setShowBulkPanel(false)}
+                    className="text-purple-600 hover:text-purple-800"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                  {/* Filters */}
+                  <div className="lg:col-span-3 space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Categories</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {['A+', 'A', 'B', 'C', 'D'].map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              const newCats = bulkFilters.categories.includes(cat)
+                                ? bulkFilters.categories.filter(c => c !== cat)
+                                : [...bulkFilters.categories, cat]
+                              setBulkFilters({ ...bulkFilters, categories: newCats })
+                            }}
+                            className={`px-3 py-2 rounded-lg font-bold transition-all ${
+                              bulkFilters.categories.includes(cat)
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-white text-gray-700 border-2 border-gray-300'
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">vELO Min</label>
+                        <input
+                          type="number"
+                          value={bulkFilters.veloMin}
+                          onChange={(e) => setBulkFilters({ ...bulkFilters, veloMin: parseInt(e.target.value) || 0 })}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">vELO Max</label>
+                        <input
+                          type="number"
+                          value={bulkFilters.veloMax}
+                          onChange={(e) => setBulkFilters({ ...bulkFilters, veloMax: parseInt(e.target.value) || 1000 })}
+                          className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleSelectAllFiltered}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
+                      >
+                        Selecteer Gefilterde ({getFilteredRidersForBulk().length})
+                      </button>
+                      <button
+                        onClick={handleClearSelection}
+                        className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold"
+                      >
+                        Wis Selectie
+                      </button>
+                      <span className="text-sm font-semibold text-purple-700">
+                        {selectedRiderIds.size} rider(s) geselecteerd
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Target Team Selection & Action */}
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Doel Team</label>
+                      <select
+                        value={bulkTargetTeamId || ''}
+                        onChange={(e) => setBulkTargetTeamId(e.target.value ? parseInt(e.target.value) : null)}
+                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg font-semibold"
+                      >
+                        <option value="">Selecteer team...</option>
+                        {teams.map(team => (
+                          <option key={team.team_id} value={team.team_id}>
+                            {team.team_name} ({team.current_riders}/{team.max_riders})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <button
+                      onClick={handleBulkAddToTeam}
+                      disabled={!bulkTargetTeamId || selectedRiderIds.size === 0 || bulkAddRidersMutation.isPending}
+                      className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      {bulkAddRidersMutation.isPending ? 'Bezig...' : `Voeg ${selectedRiderIds.size} rider(s) toe`}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {teams.length === 0 ? (
+              <div className="bg-white/90 backdrop-blur rounded-2xl border-2 border-dashed border-gray-300 shadow-lg p-12 text-center">
+                <div className="text-8xl mb-6">🏆</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Nog geen teams</h3>
+                <p className="text-gray-600 mb-6">Maak je eerste team aan om te beginnen</p>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
+                >
+                  + Nieuw Team Aanmaken
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
+                {teams.map(team => {
+                  const isExpanded = expandedTeamId === team.team_id
+                  const teamLineup = isExpanded ? (lineupData?.lineup || []) : []
+                  
+                  return (
+                    <div key={team.team_id} className="bg-white/95 backdrop-blur rounded-xl border-2 border-gray-200 shadow-lg overflow-hidden transition-all hover:shadow-xl">
+                      {/* Team Card Header - Altijd zichtbaar */}
+                      <TeamCard
+                        team={team}
+                        isDragging={activeRider !== null}
+                        isExpanded={isExpanded}
+                        onToggleExpand={handleToggleExpand}
+                        onEdit={() => {
+                          setEditingTeam(team)
+                          setShowEditModal(true)
+                        }}
+                        onDelete={() => handleDeleteTeam(team.team_id)}
+                        onOpenDetail={() => {
+                          setSelectedTeam(team)
+                          setSidebarOpen(true)
+                        }}
+                      />
+                      
+                      {/* Expanded Lineup Section */}
+                      {isExpanded && (
+                        <div className="p-4 bg-gradient-to-br from-slate-50 to-blue-50 border-t-2 border-gray-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-lg font-bold text-gray-900">Team Lineup</h3>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-semibold">
+                                {teamLineup.length}/{team.max_riders}
+                              </span>
+                              <span className="px-2 py-1 bg-green-100 text-green-700 rounded font-semibold">
+                                {teamLineup.filter((r: LineupRider) => r.is_valid).length} valid
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <LineupDropZone lineup={teamLineup}>
+                            <SortableContext
+                              items={teamLineup.map((r: LineupRider) => r.rider_id)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              <div className="space-y-2">
+                                {teamLineup.map((rider: LineupRider) => (
+                                  <LineupRiderCard
+                                    key={rider.rider_id}
+                                    rider={rider}
+                                    onRemove={() => handleRemoveRider(team.team_id, rider.rider_id)}
+                                  />
+                                ))}
+                              </div>
+                            </SortableContext>
+                          </LineupDropZone>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
           
           {/* Modals */}
