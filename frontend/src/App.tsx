@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import RacingMatrix from './pages/RacingMatrix'
 import EventsDashboard from './pages/EventsDashboard'
@@ -8,6 +8,18 @@ import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
 import RiderPassportGallery from './pages/RiderPassportGallery'
+import ErrorBoundary from './components/ErrorBoundary'
+
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange-500 mb-4"></div>
+        <p className="text-white text-lg">Laden...</p>
+      </div>
+    </div>
+  )
+}
 
 function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -122,30 +134,34 @@ function Navigation() {
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-gray-900">
-        <Navigation />
-        <Routes>
-          <Route path="/" element={<TeamViewer />} />
-          <Route path="/racing-matrix" element={<RacingMatrix />} />
-          <Route path="/rider-passports" element={<RiderPassportGallery />} />
-          <Route path="/events" element={<EventsDashboard />} />
-          <Route path="/results" element={<ResultsDashboard />} />
-          <Route path="/team-manager" element={<TeamManager />} />
-          <Route path="/team-builder" element={<TeamBuilder />} />
-          <Route path="*" element={
-            <div className="flex items-center justify-center min-h-screen">
-              <div className="text-center">
-                <h1 className="text-4xl font-bold text-white mb-4">404</h1>
-                <p className="text-gray-400 mb-8">Page not found</p>
-                <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg inline-block">
-                  Back to Team Viewer
-                </Link>
-              </div>
-            </div>
-          } />
-        </Routes>
-        <Toaster position="top-right" />
-      </div>
+      <ErrorBoundary>
+        <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-gray-900">
+          <Navigation />
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route path="/" element={<TeamViewer />} />
+              <Route path="/racing-matrix" element={<RacingMatrix />} />
+              <Route path="/rider-passports" element={<RiderPassportGallery />} />
+              <Route path="/events" element={<EventsDashboard />} />
+              <Route path="/results" element={<ResultsDashboard />} />
+              <Route path="/team-manager" element={<TeamManager />} />
+              <Route path="/team-builder" element={<TeamBuilder />} />
+              <Route path="*" element={
+                <div className="flex items-center justify-center min-h-screen">
+                  <div className="text-center">
+                    <h1 className="text-4xl font-bold text-white mb-4">404</h1>
+                    <p className="text-gray-400 mb-8">Page not found</p>
+                    <Link to="/" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg inline-block">
+                      Back to Team Viewer
+                    </Link>
+                  </div>
+                </div>
+              } />
+            </Routes>
+          </Suspense>
+          <Toaster position="top-right" />
+        </div>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
