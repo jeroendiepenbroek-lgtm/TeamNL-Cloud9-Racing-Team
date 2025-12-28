@@ -156,8 +156,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       return res.json()
     },
     refetchInterval: 30000, // Auto-refresh elke 30 seconden
-    refetchOnMount: true, // ✅ Refresh bij navigatie naar deze pagina
-    staleTime: 5000, // 5 seconden - snelle refresh bij pagina switch
+    refetchOnMount: 'always', // ✅ Forceer ALTIJD refresh bij mount (actuele categorie data)
+    staleTime: 0, // Direct als stale markeren - altijd verse data tonen
   })
   
   const { data: lineupData } = useQuery({
@@ -579,9 +579,6 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                             setShowEditModal(true)
                           }}
                           onDelete={() => handleDeleteTeam(team.team_id)}
-                          onOpenDetail={() => {
-                            setSelectedTeam(team)
-                          }}
                         />
                         
                         {/* Expanded Section: Integrated Lineup + Rider Selector */}

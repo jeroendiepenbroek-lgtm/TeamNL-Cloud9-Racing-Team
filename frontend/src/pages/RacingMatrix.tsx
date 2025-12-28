@@ -350,8 +350,8 @@ export default function RacingDataMatrixModern() {
       return data.riders || []
     },
     refetchInterval: 30000, // Auto-refresh elke 30 seconden
-    refetchOnMount: true, // ✅ Refresh bij navigatie naar deze pagina
-    staleTime: 5000, // 5 seconden - snelle refresh bij pagina switch
+    refetchOnMount: 'always', // ✅ Forceer ALTIJD refresh bij mount (actuele categorie data)
+    staleTime: 0, // Direct als stale markeren - altijd verse data tonen
     retry: 3,
   })
 

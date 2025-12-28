@@ -202,19 +202,6 @@ export default function IntegratedTeamBuilder() {
     setDraggedRider(null)
   }
 
-  const handleOpenTeamDetail = (teamId: number) => {
-    console.log('🔵 Opening team detail sidebar for team:', teamId)
-    // Close expanded view als die open is
-    if (expandedTeamId) {
-      console.log('  Closing expanded view:', expandedTeamId)
-      setExpandedTeamId(null)
-    }
-    // Ensure sidebar is open when opening team detail
-    setSidebarOpen(true)
-    console.log('  Setting selectedTeamId to:', teamId)
-    setSelectedTeamId(teamId)
-  }
-
   const handleCloseTeamDetail = () => {
     setSelectedTeamId(null)
   }
@@ -390,7 +377,6 @@ export default function IntegratedTeamBuilder() {
                   <TeamCard
                     key={team.team_id}
                     team={team}
-                    onOpenDetail={handleOpenTeamDetail}
                     onEdit={() => {
                       console.log('✏️ Edit clicked for team:', team.team_id)
                       setEditingTeamId(team.team_id)

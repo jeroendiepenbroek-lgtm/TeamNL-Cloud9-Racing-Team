@@ -26,7 +26,6 @@ interface TeamCardProps {
   isDragging: boolean
   isExpanded?: boolean
   onToggleExpand?: (teamId: number) => void
-  onOpenDetail?: (teamId: number) => void
   refetchTeams?: () => void
 }
 
@@ -53,7 +52,6 @@ export default function TeamCard({
   isDragging,
   isExpanded = false,
   onToggleExpand,
-  onOpenDetail,
   refetchTeams: _refetchTeams
 }: TeamCardProps) {
   const canAddMore = team.current_riders < team.max_riders
@@ -132,21 +130,6 @@ export default function TeamCard({
                 </svg>
               </button>
             ) : null}
-            {onOpenDetail && (
-              <button
-                onClick={(e) => { 
-                  e.stopPropagation(); 
-                  console.log('📋 Clipboard button clicked for team:', team.team_id)
-                  onOpenDetail(team.team_id) 
-                }}
-                className="p-1.5 rounded bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 hover:border-blue-500 text-blue-400 hover:text-blue-300 transition-all hover:scale-110"
-                title="Open in sidebar"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-              </button>
-            )}
             {onDelete && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete() }}
