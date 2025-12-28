@@ -125,12 +125,12 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
+      activationConstraint: { distance: 8 },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 100,
-        tolerance: 10,
+        delay: 250,
+        tolerance: 5,
       },
     })
   )
@@ -1038,22 +1038,22 @@ function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps)
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-2.5 rounded-lg border-2 transition-all relative group ${
+      className={`p-3 rounded-lg border-2 transition-all relative group touch-manipulation ${
         isDragging 
           ? 'bg-blue-500/30 border-blue-400 ring-4 ring-blue-300 shadow-2xl z-50 scale-105' 
-          : 'bg-slate-800/70 border-slate-600 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02]'
+          : 'bg-slate-800/70 border-slate-600 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02] active:scale-[0.98]'
       }`}
     >
       <div className="flex items-center gap-2.5">
         {/* US2: Better drag handle with visual feedback */}
         <div className="flex items-center gap-2.5 flex-1 min-w-0" {...attributes} {...listeners}>
-          {/* Drag Handle Icon - more visible */}
-          <div className={`flex-shrink-0 transition-all ${
+          {/* Drag Handle Icon - more visible and touch-friendly */}
+          <div className={`flex-shrink-0 transition-all touch-manipulation ${
             isDragging 
               ? 'text-blue-300 scale-125' 
               : 'text-slate-500 group-hover:text-blue-400 group-hover:scale-110'
           }`}>
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M9 3h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm4-16h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2z"/>
             </svg>
           </div>

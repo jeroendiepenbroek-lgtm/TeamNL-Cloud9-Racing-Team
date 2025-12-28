@@ -43,11 +43,11 @@ export default function LineupRiderCard({ rider, onRemove }: LineupRiderCardProp
       style={style}
       {...attributes}
       {...listeners}
-      className={`relative bg-gradient-to-br p-2.5 rounded-lg border transition-all shadow-md cursor-move ${
+      className={`relative bg-gradient-to-br p-3 rounded-lg border-2 transition-all shadow-md cursor-move touch-manipulation ${
         rider.is_valid 
-          ? 'from-blue-900/80 to-indigo-950/80 border-orange-500/40'
-          : 'from-red-900/40 to-gray-900 border-red-500'
-      } ${isDragging ? 'scale-105 ring-2 ring-indigo-400/50 shadow-2xl z-50' : ''}`}>
+          ? 'from-blue-900/80 to-indigo-950/80 border-orange-500/40 hover:border-orange-400'
+          : 'from-red-900/40 to-gray-900 border-red-500 hover:border-red-400'
+      } ${isDragging ? 'scale-105 ring-4 ring-indigo-400/50 shadow-2xl z-50' : 'active:scale-95'}`}>
       <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white text-xs shadow-md border-2 border-gray-900">
         {rider.lineup_position}
       </div>
