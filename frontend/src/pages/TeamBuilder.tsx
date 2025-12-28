@@ -154,7 +154,9 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       const res = await fetch('/api/riders')
       if (!res.ok) throw new Error('Failed to fetch riders')
       return res.json()
-    }
+    },
+    refetchInterval: 30000, // Auto-refresh elke 30 seconden (zoals Performance Matrix)
+    staleTime: 15000, // Data is max 15 seconden oud
   })
   
   const { data: lineupData } = useQuery({
