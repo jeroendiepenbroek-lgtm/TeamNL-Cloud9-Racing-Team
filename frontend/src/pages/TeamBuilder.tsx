@@ -669,7 +669,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                         if (alreadyInTeam) return false
                                         
                                         const category = r.zwiftracing_category || r.zwift_official_category
-                                        const tier = getVeloTier(r.velo_live)
+                                        const velo30day = r.velo_30day || r.velo_live
+                                        const tier = getVeloTier(velo30day)
                                         
                                         if (team.competition_type === 'velo' && team.velo_min_rank && team.velo_max_rank) {
                                           if (!tier) return false
@@ -733,7 +734,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                         
                                         // US1: Filter based on team criteria (vELO or Category)
                                         const category = r.zwiftracing_category || r.zwift_official_category
-                                        const tier = getVeloTier(r.velo_live)
+                                        const velo30day = r.velo_30day || r.velo_live
+                                        const tier = getVeloTier(velo30day)
                                         
                                         if (team.competition_type === 'velo' && team.velo_min_rank && team.velo_max_rank) {
                                           if (!tier) return false
