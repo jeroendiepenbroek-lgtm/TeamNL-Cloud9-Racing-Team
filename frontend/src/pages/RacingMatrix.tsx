@@ -360,12 +360,13 @@ export default function RacingDataMatrixModern() {
     if (!riders) return []
     
     return riders.filter(rider => {
-      // Search filter - zoek op naam (gebruik full_name of racing_name)
+      // Search filter - zoek op naam of Zwift ID
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase()
         const fullName = rider.full_name?.toLowerCase() || ''
         const racingName = rider.racing_name?.toLowerCase() || ''
-        if (!fullName.includes(searchLower) && !racingName.includes(searchLower)) {
+        const riderId = rider.rider_id?.toString() || ''
+        if (!fullName.includes(searchLower) && !racingName.includes(searchLower) && !riderId.includes(searchLower)) {
           return false
         }
       }
@@ -537,7 +538,7 @@ export default function RacingDataMatrixModern() {
           <div className="relative flex-1 sm:flex-initial">
             <input
               type="text"
-              placeholder="🔍 Zoek..."
+              placeholder="🔍 Zoek op naam of ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full sm:w-auto px-2 sm:px-3 py-1.5 sm:py-2 pl-7 sm:pl-8 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white sm:min-w-[200px]"
