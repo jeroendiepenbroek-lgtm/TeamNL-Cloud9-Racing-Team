@@ -1,13 +1,14 @@
-import { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useMemo } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tantml:function_calls>
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, useDraggable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import TeamCard from '../components/TeamCard'
 import EditTeamModal from '../components/EditTeamModal'
 import LineupRiderCard from '../components/LineupRiderCard'
 import LineupDropZone from '../components/LineupDropZone'
 import EntryCodeLogin from '../components/EntryCodeLogin'
+import { getVeloTier, CATEGORY_COLORS_MAP, VELO_TIERS } from '../constants/racing'
 
 // ============================================================================
 // 🎯 TYPES
@@ -634,66 +635,78 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                               
                               {/* Right: Available Riders */}
                               <div>
-                                <div className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg p-3 mb-4 shadow-md">
+                                <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white rounded-lg p-3 mb-4 shadow-md border border-slate-600">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                                      <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                         </svg>
                                       </div>
                                       <div>
                                         <h3 className="text-sm font-bold">Beschikbare Riders</h3>
-                                        <p className="text-xs text-blue-100">Klik op + om toe te voegen</p>
+                                        <p className="text-xs text-slate-300">
+                                          {team.competition_type === 'velo' 
+                                            ? `vELO Tier ${team.velo_min_rank}-${team.velo_max_rank}` 
+                                            : `Cat: ${team.allowed_categories?.join(', ')}`
+                                          }
+                                        </p>
                                       </div>
+                                    </div>
+                                    <div className="text-xs text-slate-300 font-semibold">
+                                      {allRiders.filter(r => {
+                                        const alreadyInTeam = teamLineup.some((lr: LineupRider) => lr.rider_id === r.rider_id)
+                                        if (alreadyInTeam) return false
+                                        
+                                        const category = r.zwiftracing_category || r.zwift_official_category
+                                        const tier = getVeloTier(r.velo_live)
+                                        
+                                        if (team.competition_type === 'velo' && team.velo_min_rank && team.velo_max_rank) {
+                                          if (!tier) return false
+                                          return tier.rank >= team.velo_min_rank && tier.rank <= team.velo_max_rank
+                                        }
+                                        
+                                        if (team.competition_type === 'category' && team.allowed_categories) {
+                                          return team.allowed_categories.includes(category || '')
+                                        }
+                                        
+                                        return true
+                                      }).length} riders
                                     </div>
                                   </div>
                                 </div>
                                 
                                 {/* Available riders list */}
-                                <div className="bg-white rounded-xl border-2 border-blue-200 shadow-md max-h-[600px] overflow-y-auto">
+                                <div className="bg-slate-900/50 rounded-xl border-2 border-slate-700 shadow-md max-h-[600px] overflow-y-auto">
                                   <div className="p-3 space-y-2">
                                     {allRiders
                                       .filter(r => {
-                                        // Filter out riders already in this team
+                                        // US1: Filter out riders already in this team
                                         const alreadyInTeam = teamLineup.some((lr: LineupRider) => lr.rider_id === r.rider_id)
                                         if (alreadyInTeam) return false
                                         
-                                        // Filter based on team criteria
+                                        // US1: Filter based on team criteria (vELO or Category)
                                         const category = r.zwiftracing_category || r.zwift_official_category
+                                        const tier = getVeloTier(r.velo_live)
+                                        
+                                        if (team.competition_type === 'velo' && team.velo_min_rank && team.velo_max_rank) {
+                                          if (!tier) return false
+                                          return tier.rank >= team.velo_min_rank && tier.rank <= team.velo_max_rank
+                                        }
+                                        
                                         if (team.competition_type === 'category' && team.allowed_categories) {
                                           return team.allowed_categories.includes(category || '')
                                         }
+                                        
                                         return true
                                       })
-                                      .slice(0, 50) // Limit to 50 for performance
+                                      .slice(0, 100)
                                       .map(rider => (
-                                        <div key={rider.rider_id} className="flex items-center gap-2 p-2 bg-slate-50 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200">
-                                          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 flex-shrink-0">
-                                            {rider.avatar_url ? (
-                                              <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
-                                            ) : (
-                                              <div className="w-full h-full flex items-center justify-center text-lg">👤</div>
-                                            )}
-                                          </div>
-                                          <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-bold text-gray-900 truncate">{rider.full_name}</p>
-                                            <div className="flex items-center gap-1 mt-0.5">
-                                              {(rider.zwiftracing_category || rider.zwift_official_category) && (
-                                                <span className="text-[10px] px-1.5 py-0.5 bg-blue-500 text-white rounded font-bold">
-                                                  {rider.zwiftracing_category || rider.zwift_official_category}
-                                                </span>
-                                              )}
-                                              <span className="text-[10px] text-gray-500">vELO {rider.velo_live}</span>
-                                            </div>
-                                          </div>
-                                          <button
-                                            onClick={() => handleAddRider(team.team_id, rider.rider_id)}
-                                            className="flex-shrink-0 px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-lg text-xs font-bold shadow-sm transition-all"
-                                          >
-                                            + Add
-                                          </button>
-                                        </div>
+                                        <DraggableAvailableRider
+                                          key={rider.rider_id}
+                                          rider={rider}
+                                          onAdd={() => handleAddRider(team.team_id, rider.rider_id)}
+                                        />
                                       ))
                                     }
                                   </div>
@@ -945,3 +958,100 @@ function CreateTeamModal({ newTeam, setNewTeam, onClose, onCreate, isLoading }: 
     </div>
   )
 }
+
+// ============================================================================
+// 🎴 DRAGGABLE AVAILABLE RIDER COMPONENT
+// ============================================================================
+
+interface DraggableAvailableRiderProps {
+  rider: Rider
+  onAdd: () => void
+}
+
+function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps) {
+  const tier = getVeloTier(rider.velo_live)
+  const category = rider.zwiftracing_category || rider.zwift_official_category
+  const categoryColor = category ? (CATEGORY_COLORS_MAP[category] || '#666666') : '#666666'
+  const ftpWkg = rider.racing_ftp && rider.weight_kg 
+    ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
+    : '-'
+
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: rider.rider_id,
+    data: { rider, type: 'rider' }
+  })
+
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.5 : 1,
+    cursor: 'grab',
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`p-2 rounded-lg border transition-all relative bg-slate-800/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 ${
+        isDragging ? 'ring-2 ring-blue-500 shadow-xl z-50' : ''
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {/* Drag Handle + Avatar */}
+        <div className="flex items-center gap-2 flex-1 min-w-0" {...attributes} {...listeners}>
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
+            {rider.avatar_url ? (
+              <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-white truncate">{rider.full_name}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {category && (
+                <span 
+                  className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
+                  style={{ backgroundColor: categoryColor }}
+                >
+                  {category}
+                </span>
+              )}
+              {tier && (
+                <span 
+                  className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white bg-slate-700"
+                  title={`${tier.name} Tier - vELO ${rider.velo_live}`}
+                >
+                  T{tier.rank}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
+              <span>FTP: {rider.racing_ftp || '-'}W</span>
+              <span>•</span>
+              <span>{ftpWkg} W/kg</span>
+            </div>
+          </div>
+
+          {/* Drag Icon */}
+          <div className="text-slate-500 text-xl">
+            ⋮⋮
+          </div>
+        </div>
+
+        {/* Add Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            e.preventDefault()
+            onAdd()
+          }}
+          className="flex-shrink-0 px-2 py-1.5 rounded text-xs font-semibold shadow-sm transition-all whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md cursor-pointer"
+        >
+          + Add
+        </button>
+      </div>
+    </div>
+  )
+}
+
