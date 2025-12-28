@@ -629,18 +629,12 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                       strategy={verticalListSortingStrategy}
                                     >
                                       <div className="space-y-2">
-                                        {teamLineup.map((rider: LineupRider, index: number) => (
-                                          <div key={rider.rider_id} className="flex items-start gap-2">
-                                            <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-orange-500 to-blue-500 text-white rounded-lg flex items-center justify-center font-bold text-xs shadow-md">
-                                              {index + 1}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                              <LineupRiderCard
-                                                rider={rider}
-                                                onRemove={() => handleRemoveRider(team.team_id, rider.rider_id)}
-                                              />
-                                            </div>
-                                          </div>
+                                        {teamLineup.map((rider: LineupRider) => (
+                                          <LineupRiderCard
+                                            key={rider.rider_id}
+                                            rider={rider}
+                                            onRemove={() => handleRemoveRider(team.team_id, rider.rider_id)}
+                                          />
                                         ))}
                                       </div>
                                     </SortableContext>
