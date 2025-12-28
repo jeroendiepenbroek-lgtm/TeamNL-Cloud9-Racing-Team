@@ -145,7 +145,10 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       const res = await fetch('/api/teams')
       if (!res.ok) throw new Error('Failed to fetch teams')
       return res.json()
-    }
+    },
+    refetchOnMount: 'always', // ✅ Forceer refresh bij mount
+    staleTime: 0, // Direct als stale markeren
+    refetchInterval: 30000, // Auto-refresh elke 30 seconden
   })
   
   const { data: ridersData } = useQuery({
@@ -168,7 +171,10 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       if (!res.ok) throw new Error('Failed to fetch lineup')
       return res.json()
     },
-    enabled: !!expandedTeamId
+    enabled: !!expandedTeamId,
+    refetchOnMount: 'always', // ✅ Forceer refresh bij mount voor actuele rider data
+    staleTime: 0, // Direct als stale markeren
+    refetchInterval: 30000, // Auto-refresh elke 30 seconden
   })
   
   // ============================================================================
@@ -213,6 +219,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       queryClient.invalidateQueries({ queryKey: ['team-lineup', expandedTeamId] })
+      queryClient.invalidateQueries({ queryKey: ['riders'] }) // ✅ Refresh riders voor actuele categories
       toast.success('Rider added to team!')
     },
     onError: (error: any) => {
@@ -231,6 +238,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
       queryClient.invalidateQueries({ queryKey: ['team-lineup', expandedTeamId] })
+      queryClient.invalidateQueries({ queryKey: ['riders'] }) // ✅ Refresh riders voor actuele categories
       toast.success('Rider removed from team')
     }
   })

@@ -33,7 +33,7 @@ export default function DraggableRiderCard({ rider, onAdd }: DraggableRiderCardP
 
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
-  const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+  const category = rider.zwiftracing_category || rider.zwift_official_category || 'D'
   const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-600 text-white border-gray-700'
   
   return (

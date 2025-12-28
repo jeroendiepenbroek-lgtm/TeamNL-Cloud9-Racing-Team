@@ -899,7 +899,7 @@ export default function RiderPassportGallery() {
             <div className="md:hidden overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
               <div className="flex gap-4 snap-x snap-mandatory px-4 justify-center" style={{ minWidth: 'min-content' }}>
                 {filteredRiders.map(rider => {
-                  const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+                  const category = rider.zwiftracing_category || rider.zwift_official_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
                   const categoryColor = getCategoryColor(category)
                   const veloLive = Math.floor(rider.velo_live || 0)
@@ -925,7 +925,7 @@ export default function RiderPassportGallery() {
               >
                 <div className="flex gap-6 px-4 justify-center" style={{ minWidth: 'min-content' }}>
                   {filteredRiders.map((rider) => {
-                    const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
+                    const category = rider.zwiftracing_category || rider.zwift_official_category || 'D'
                     const flagUrl = getFlagUrl(rider.country_alpha3)
                     const categoryColor = getCategoryColor(category)
                     const veloLive = Math.floor(rider.velo_live || 0)
