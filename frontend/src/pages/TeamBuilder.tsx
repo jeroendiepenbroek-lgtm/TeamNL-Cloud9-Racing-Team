@@ -630,10 +630,10 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                       strategy={verticalListSortingStrategy}
                                     >
                                       <div className="space-y-2">
-                                        {teamLineup.map((rider: LineupRider) => (
+                                        {teamLineup.map((rider: LineupRider, index: number) => (
                                           <LineupRiderCard
                                             key={rider.rider_id}
-                                            rider={rider}
+                                            rider={{ ...rider, lineup_position: index + 1 }}
                                             onRemove={() => handleRemoveRider(team.team_id, rider.rider_id)}
                                           />
                                         ))}
