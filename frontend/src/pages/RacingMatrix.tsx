@@ -341,9 +341,9 @@ export default function RacingDataMatrixModern() {
   })
 
   const { data: riders, isLoading, error, refetch } = useQuery<MatrixRider[]>({
-    queryKey: ['matrixRiders'],
+    queryKey: ['riders'], // ✅ SYNC: Zelfde queryKey als TeamBuilder voor gedeelde cache
     queryFn: async () => {
-      // Use backend API endpoint - same source as Team Manager for consistency
+      // Use backend API endpoint - v_rider_complete view (same source as TeamBuilder)
       const response = await fetch('/api/riders')
       if (!response.ok) throw new Error('Failed to fetch riders')
       const data = await response.json()
