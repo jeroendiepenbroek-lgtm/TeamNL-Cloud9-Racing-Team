@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors, useDraggable } from '@dnd-kit/core'
@@ -8,7 +8,7 @@ import EditTeamModal from '../components/EditTeamModal'
 import LineupRiderCard from '../components/LineupRiderCard'
 import LineupDropZone from '../components/LineupDropZone'
 import EntryCodeLogin from '../components/EntryCodeLogin'
-import { getVeloTier, CATEGORY_COLORS_MAP, VELO_TIERS } from '../constants/racing'
+import { getVeloTier, CATEGORY_COLORS_MAP } from '../constants/racing'
 
 // ============================================================================
 // 🎯 TYPES
