@@ -561,7 +561,9 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                     const teamLineup = isExpanded ? (lineupData?.lineup || []) : []
                     
                     return (
-                      <div key={team.team_id} className="bg-white/95 backdrop-blur rounded-xl border-2 border-gray-200 shadow-lg overflow-hidden transition-all hover:shadow-xl">
+                      <div key={team.team_id} className={`bg-white/95 backdrop-blur rounded-xl border-2 border-gray-200 shadow-lg overflow-hidden transition-all hover:shadow-xl ${
+                        isExpanded ? 'col-span-full' : ''
+                      }`}>
                         {/* Team Card Header - Altijd zichtbaar */}
                         <TeamCard
                           team={team}
