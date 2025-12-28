@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import toast from 'react-hot-toast'
+import { getRiderCategory } from '../utils/categoryHelper'
 
 interface Rider {
   rider_id: number
@@ -73,7 +74,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
   const riderMeetsTeamCriteria = (rider: Rider, team: Team | null | undefined): boolean => {
     if (!team) return true // Geen team geselecteerd = alles tonen
     
-    const category = rider.zwiftracing_category || rider.zwift_official_category
+    const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
     const veloRating = rider.velo_live
     const riderTier = getVeloTier(veloRating)
     
@@ -106,7 +107,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       
       // Category filter
       if (selectedCategory) {
-        const category = rider.zwiftracing_category || rider.zwift_official_category
+        const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
         if (category !== selectedCategory) return false
       }
       
@@ -132,7 +133,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       
       // Team-based filtering (US4)
       if (selectedTeam) {
-        const category = rider.zwiftracing_category || rider.zwift_official_category
+        const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
         const veloRank = getVeloTier(rider.velo_live)?.rank
         
         if (selectedTeam.competition_type === 'velo' || selectedTeam.competition_type === 'velo-based') {
@@ -297,7 +298,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
 // Draggable Rider Card Component with @dnd-kit
 function DraggableRiderCard({ rider, onAdd, showAddButton, isDisabled }: { rider: Rider; onAdd?: () => void; showAddButton?: boolean; isDisabled?: boolean }) {
   const tier = getVeloTier(rider.velo_live)
-  const category = rider.zwiftracing_category || rider.zwift_official_category
+  const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
   const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
   const ftpWkg = rider.racing_ftp && rider.weight_kg 
     ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 

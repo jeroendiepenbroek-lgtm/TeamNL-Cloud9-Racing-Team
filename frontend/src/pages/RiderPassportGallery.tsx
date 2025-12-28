@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useFavorites } from '../hooks/useFavorites'
 import toast from 'react-hot-toast'
+import { getRiderCategory } from '../utils/categoryHelper'
 
 interface Rider {
   rider_id: number
@@ -302,10 +303,10 @@ export default function RiderPassportGallery() {
       filtered = filtered.filter((r: Rider) => favorites.includes(r.rider_id))
     }
 
-    // Category filter - multiselect (use zwiftracing_category for A+ support)
+    // Category filter - multiselect (use zwift_official_category with A+ upgrade detection)
     if (filterCategories.length > 0) {
       filtered = filtered.filter((r: Rider) => {
-        const category = r.zwiftracing_category || r.zwift_official_category || 'D'
+        const category = getRiderCategory(r.zwift_official_category, r.zwiftracing_category)
         return filterCategories.includes(category)
       })
     }
@@ -902,7 +903,7 @@ export default function RiderPassportGallery() {
             <div className="md:hidden overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
               <div className="flex gap-4 snap-x snap-mandatory px-4 justify-center" style={{ minWidth: 'min-content' }}>
                 {filteredRiders.map(rider => {
-                  const category = rider.zwiftracing_category || rider.zwift_official_category || 'D'
+                  const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
                   const flagUrl = getFlagUrl(rider.country_alpha3)
                   const categoryColor = getCategoryColor(category)
                   const veloLive = Math.floor(rider.velo_live || 0)
@@ -928,7 +929,7 @@ export default function RiderPassportGallery() {
               >
                 <div className="flex gap-6 px-4 justify-center" style={{ minWidth: 'min-content' }}>
                   {filteredRiders.map((rider) => {
-                    const category = rider.zwiftracing_category || rider.zwift_official_category || 'D'
+                    const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
                     const flagUrl = getFlagUrl(rider.country_alpha3)
                     const categoryColor = getCategoryColor(category)
                     const veloLive = Math.floor(rider.velo_live || 0)

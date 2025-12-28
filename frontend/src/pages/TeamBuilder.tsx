@@ -9,6 +9,7 @@ import LineupRiderCard from '../components/LineupRiderCard'
 import LineupDropZone from '../components/LineupDropZone'
 import EntryCodeLogin from '../components/EntryCodeLogin'
 import { getVeloTier, CATEGORY_COLORS_MAP } from '../constants/racing'
+import { getRiderCategory } from '../utils/categoryHelper'
 
 // ============================================================================
 // 🎯 TYPES
@@ -676,7 +677,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                         const alreadyInTeam = teamLineup.some((lr: LineupRider) => lr.rider_id === r.rider_id)
                                         if (alreadyInTeam) return false
                                         
-                                        const category = r.zwiftracing_category || r.zwift_official_category
+                                        const category = getRiderCategory(r.zwift_official_category, r.zwiftracing_category)
                                         const velo30day = r.velo_30day || r.velo_live
                                         const tier = getVeloTier(velo30day)
                                         
@@ -741,7 +742,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                         }
                                         
                                         // US1: Filter based on team criteria (vELO or Category)
-                                        const category = r.zwiftracing_category || r.zwift_official_category
+                                        const category = getRiderCategory(r.zwift_official_category, r.zwiftracing_category)
                                         const velo30day = r.velo_30day || r.velo_live
                                         const tier = getVeloTier(velo30day)
                                         
@@ -819,7 +820,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                   <div>
                     <p className="font-bold text-lg">{activeRider.racing_name || activeRider.full_name}</p>
                     <p className="text-xs text-blue-100">
-                      {activeRider.zwiftracing_category || activeRider.zwift_official_category} · vELO {activeRider.velo_live}
+                      {getRiderCategory(activeRider.zwift_official_category, activeRider.zwiftracing_category)} · vELO {activeRider.velo_live}
                     </p>
                   </div>
                 </div>
@@ -1028,7 +1029,7 @@ function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps)
   // US1: Use vELO 30-day (fallback to live) - same as LineupRiderCard
   const velo30day = rider.velo_30day || rider.velo_live
   const tier = getVeloTier(velo30day)
-  const category = rider.zwiftracing_category || rider.zwift_official_category
+  const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
   const categoryColor = category ? (CATEGORY_COLORS_MAP[category] || '#666666') : '#666666'
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({

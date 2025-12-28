@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { DndContext, DragEndEvent, DragStartEvent, closestCenter, DragOverlay, useDroppable, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
 import { TeamCreationModal } from '../components/TeamCreationModal.tsx'
+import { getRiderCategory } from '../utils/categoryHelper'
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
@@ -646,7 +647,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           <div className="bg-blue-600 text-white px-4 py-3 rounded-lg shadow-2xl border-2 border-blue-400 opacity-90">
             <div className="font-bold">{draggedRider.racing_name || draggedRider.full_name}</div>
             <div className="text-sm">
-              {draggedRider.zwiftracing_category || draggedRider.zwift_official_category} • vELO {draggedRider.velo_live}
+              {getRiderCategory(draggedRider.zwift_official_category, draggedRider.zwiftracing_category)} • vELO {draggedRider.velo_live}
             </div>
           </div>
         ) : null}

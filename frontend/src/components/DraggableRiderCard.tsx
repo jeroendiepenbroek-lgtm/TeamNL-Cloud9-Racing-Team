@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { CATEGORY_COLORS, getVeloTier } from '../constants/racing'
+import { getRiderCategory } from '../utils/categoryHelper'
 
 interface Rider {
   rider_id: number
@@ -33,7 +34,7 @@ export default function DraggableRiderCard({ rider, onAdd }: DraggableRiderCardP
 
   const velo30day = rider.velo_30day || rider.velo_live
   const veloTier = getVeloTier(velo30day)
-  const category = rider.zwiftracing_category || rider.zwift_official_category || 'D'
+  const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
   const categoryColor = CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] || 'bg-gray-600 text-white border-gray-700'
   
   return (
