@@ -103,6 +103,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
   const [activeRider, setActiveRider] = useState<Rider | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   
   // Form state
   const [newTeam, setNewTeam] = useState<NewTeam>({
@@ -685,6 +686,32 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                   </div>
                                 </div>
                                 
+                                {/* US2: Search bar for available riders */}
+                                <div className="mb-3 sm:mb-4">
+                                  <div className="relative">
+                                    <input
+                                      type="text"
+                                      value={searchQuery}
+                                      onChange={(e) => setSearchQuery(e.target.value)}
+                                      placeholder="Zoek rider op naam..."
+                                      className="w-full px-4 py-2.5 pl-10 bg-slate-800/70 text-white border-2 border-slate-600 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-400/50 placeholder-slate-400 text-sm transition-all"
+                                    />
+                                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                    {searchQuery && (
+                                      <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                                      >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                
                                 {/* Available riders list */}
                                 <div className="bg-slate-900/50 rounded-xl border-2 border-slate-700 shadow-md max-h-[600px] overflow-y-auto">
                                   <div className="p-3 space-y-2">
@@ -693,6 +720,16 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                         // US1: Filter out riders already in this team
                                         const alreadyInTeam = teamLineup.some((lr: LineupRider) => lr.rider_id === r.rider_id)
                                         if (alreadyInTeam) return false
+                                        
+                                        // US2: Search filter
+                                        if (searchQuery) {
+                                          const query = searchQuery.toLowerCase()
+                                          const fullName = r.full_name.toLowerCase()
+                                          const racingName = (r.racing_name || '').toLowerCase()
+                                          if (!fullName.includes(query) && !racingName.includes(query)) {
+                                            return false
+                                          }
+                                        }
                                         
                                         // US1: Filter based on team criteria (vELO or Category)
                                         const category = r.zwiftracing_category || r.zwift_official_category
