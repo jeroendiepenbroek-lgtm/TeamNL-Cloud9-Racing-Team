@@ -554,7 +554,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-6">
+                {/* US4: Grid layout voor teams - compacter en naast elkaar */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                   {teams.map(team => {
                     const isExpanded = expandedTeamId === team.team_id
                     const teamLineup = isExpanded ? (lineupData?.lineup || []) : []
@@ -579,22 +580,21 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                         
                         {/* Expanded Section: Integrated Lineup + Rider Selector */}
                         {isExpanded && (
-                          <div className="p-6 bg-gradient-to-br from-slate-50 to-blue-50 border-t-2 border-blue-300">
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="p-4 sm:p-6 bg-gradient-to-br from-slate-50 to-blue-50 border-t-2 border-blue-300">
+                            {/* US3: Better aligned grid with equal column widths */}
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
                               {/* Left: Current Lineup */}
-                              <div>
-                                <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg p-3 mb-4 shadow-md">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                      </div>
-                                      <div>
-                                        <h3 className="text-sm font-bold">Team Lineup</h3>
-                                        <p className="text-xs text-green-100">{teamLineup.length}/{team.max_riders} riders · {teamLineup.filter((r: LineupRider) => r.is_valid).length} valid</p>
-                                      </div>
+                              <div className="flex flex-col h-full">
+                                <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 shadow-md">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    </div>
+                                    <div className="flex-1">
+                                      <h3 className="text-sm sm:text-base font-bold">Team Lineup</h3>
+                                      <p className="text-xs text-green-100">{teamLineup.length}/{team.max_riders} riders · {teamLineup.filter((r: LineupRider) => r.is_valid).length} valid</p>
                                     </div>
                                   </div>
                                 </div>
@@ -634,18 +634,18 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                               </div>
                               
                               {/* Right: Available Riders */}
-                              <div>
-                                <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white rounded-lg p-3 mb-4 shadow-md border border-slate-600">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <div className="flex flex-col h-full">
+                                <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 shadow-md border border-slate-600">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                      <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                         </svg>
                                       </div>
-                                      <div>
-                                        <h3 className="text-sm font-bold">Beschikbare Riders</h3>
-                                        <p className="text-xs text-slate-300">
+                                      <div className="flex-1 min-w-0">
+                                        <h3 className="text-sm sm:text-base font-bold">Beschikbare Riders</h3>
+                                        <p className="text-xs text-slate-300 truncate">
                                           {team.competition_type === 'velo' 
                                             ? `vELO Tier ${team.velo_min_rank}-${team.velo_max_rank}` 
                                             : `Cat: ${team.allowed_categories?.join(', ')}`
@@ -653,7 +653,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                         </p>
                                       </div>
                                     </div>
-                                    <div className="text-xs text-slate-300 font-semibold">
+                                    <div className="text-xs text-slate-300 font-semibold flex-shrink-0">
                                       {allRiders.filter(r => {
                                         const alreadyInTeam = teamLineup.some((lr: LineupRider) => lr.rider_id === r.rider_id)
                                         if (alreadyInTeam) return false
@@ -969,12 +969,11 @@ interface DraggableAvailableRiderProps {
 }
 
 function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps) {
-  const tier = getVeloTier(rider.velo_live)
+  // US1: Use vELO 30-day (fallback to live) - same as LineupRiderCard
+  const velo30day = rider.velo_30day || rider.velo_live
+  const tier = getVeloTier(velo30day)
   const category = rider.zwiftracing_category || rider.zwift_official_category
   const categoryColor = category ? (CATEGORY_COLORS_MAP[category] || '#666666') : '#666666'
-  const ftpWkg = rider.racing_ftp && rider.weight_kg 
-    ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
-    : '-'
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: rider.rider_id,
@@ -984,21 +983,34 @@ function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps)
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.5 : 1,
-    cursor: 'grab',
+    cursor: isDragging ? 'grabbing' : 'grab',
   }
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-2 rounded-lg border transition-all relative bg-slate-800/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 ${
-        isDragging ? 'ring-2 ring-blue-500 shadow-xl z-50' : ''
+      className={`p-2.5 rounded-lg border-2 transition-all relative group ${
+        isDragging 
+          ? 'bg-blue-500/30 border-blue-400 ring-4 ring-blue-300 shadow-2xl z-50 scale-105' 
+          : 'bg-slate-800/70 border-slate-600 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.02]'
       }`}
     >
-      <div className="flex items-center gap-2">
-        {/* Drag Handle + Avatar */}
-        <div className="flex items-center gap-2 flex-1 min-w-0" {...attributes} {...listeners}>
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
+      <div className="flex items-center gap-2.5">
+        {/* US2: Better drag handle with visual feedback */}
+        <div className="flex items-center gap-2.5 flex-1 min-w-0" {...attributes} {...listeners}>
+          {/* Drag Handle Icon - more visible */}
+          <div className={`flex-shrink-0 transition-all ${
+            isDragging 
+              ? 'text-blue-300 scale-125' 
+              : 'text-slate-500 group-hover:text-blue-400 group-hover:scale-110'
+          }`}>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M9 3h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm4-16h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2z"/>
+            </svg>
+          </div>
+
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-700 flex-shrink-0 ring-2 ring-slate-600 group-hover:ring-blue-400 transition-all">
             {rider.avatar_url ? (
               <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
             ) : (
@@ -1007,7 +1019,7 @@ function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps)
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white truncate">{rider.full_name}</p>
+            <p className="text-xs sm:text-sm font-bold text-white truncate">{rider.full_name}</p>
             <div className="flex items-center gap-1.5 mt-0.5">
               {category && (
                 <span 
@@ -1017,26 +1029,28 @@ function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps)
                   {category}
                 </span>
               )}
-              {tier && (
-                <span 
-                  className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white bg-slate-700"
-                  title={`${tier.name} Tier - vELO ${rider.velo_live}`}
-                >
-                  T{tier.rank}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
-              <span>FTP: {rider.racing_ftp || '-'}W</span>
-              <span>•</span>
-              <span>{ftpWkg} W/kg</span>
             </div>
           </div>
 
-          {/* Drag Icon */}
-          <div className="text-slate-500 text-xl">
-            ⋮⋮
-          </div>
+          {/* US1: Same vELO badge as LineupRiderCard */}
+          {tier && (
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md bg-gradient-to-br ${tier.color} shadow-sm flex-shrink-0`}>
+              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/30 backdrop-blur-sm border border-white/50">
+                <span className="font-black text-xs text-white">{tier.rank}</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className={`font-bold text-xs leading-none ${tier.textColor || 'text-white'}`}>{Math.floor(velo30day)}</span>
+                {tier.max && (
+                  <div className="w-10 h-0.5 bg-black/20 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-white/60 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, ((velo30day - tier.min) / (tier.max - tier.min)) * 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Add Button */}
@@ -1046,7 +1060,7 @@ function DraggableAvailableRider({ rider, onAdd }: DraggableAvailableRiderProps)
             e.preventDefault()
             onAdd()
           }}
-          className="flex-shrink-0 px-2 py-1.5 rounded text-xs font-semibold shadow-sm transition-all whitespace-nowrap bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md cursor-pointer"
+          className="flex-shrink-0 px-3 py-2 rounded-lg text-xs font-bold shadow-md transition-all whitespace-nowrap bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white hover:shadow-lg hover:scale-105 active:scale-95"
         >
           + Add
         </button>
