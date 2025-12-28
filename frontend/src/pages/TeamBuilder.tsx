@@ -468,7 +468,7 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       onDragEnd={handleDragEnd}
     >
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-        <div className="flex flex-col h-screen">
+        <div className="flex flex-col min-h-screen">
           {!hideHeader && (
             <div className="relative overflow-hidden mb-4 sm:mb-6">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 opacity-95"></div>
@@ -602,12 +602,25 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                                 </div>
                                 
                                 {teamLineup.length === 0 ? (
-                                  <div className="bg-white border-2 border-dashed border-green-300 rounded-xl p-6 text-center">
-                                    <div className="inline-block p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full mb-3">
-                                      <div className="text-4xl">👥</div>
+                                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-3 border-dashed border-green-400 rounded-xl p-8 text-center shadow-inner">
+                                    <div className="inline-block p-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full mb-4 shadow-lg">
+                                      <div className="text-5xl">👥</div>
                                     </div>
-                                    <p className="text-gray-700 font-semibold mb-1">Nog geen riders</p>
-                                    <p className="text-xs text-gray-500">Voeg riders toe via de lijst rechts →</p>
+                                    <p className="text-gray-800 font-bold text-lg mb-2">Nog geen riders</p>
+                                    <p className="text-sm text-gray-600 mb-3">Voeg riders toe door:</p>
+                                    <div className="flex flex-col sm:flex-row gap-2 justify-center items-center text-xs">
+                                      <div className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg font-semibold">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                          <path d="M9 3h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm0 4h2v2H9zm4-16h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2zm0 4h2v2h-2z"/>
+                                        </svg>
+                                        <span>Sleep vanaf rechts</span>
+                                      </div>
+                                      <span className="text-gray-400 font-bold">of</span>
+                                      <div className="flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-2 rounded-lg font-semibold">
+                                        <span>Klik op</span>
+                                        <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs">+ Add</span>
+                                      </div>
+                                    </div>
                                   </div>
                                 ) : (
                                   <LineupDropZone lineup={teamLineup}>
