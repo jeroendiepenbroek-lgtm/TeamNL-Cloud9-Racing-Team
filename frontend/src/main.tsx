@@ -7,9 +7,11 @@ import './index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true, // ✅ Refresh data bij focus (bijv. terug naar tab)
+      refetchOnMount: true, // ✅ Refresh data bij mount (bijv. tussen pagina's navigeren)
       retry: 1,
-      staleTime: 30000, // 30 seconden
+      staleTime: 10000, // 10 seconden - data wordt sneller als "stale" beschouwd
+      gcTime: 300000, // 5 minuten - cache blijft in geheugen (garbage collection time)
     },
   },
 })

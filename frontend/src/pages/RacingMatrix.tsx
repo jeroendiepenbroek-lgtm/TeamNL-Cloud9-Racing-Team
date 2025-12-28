@@ -349,7 +349,9 @@ export default function RacingDataMatrixModern() {
       const data = await response.json()
       return data.riders || []
     },
-    refetchInterval: 30000, // 30 seconds for faster team updates
+    refetchInterval: 30000, // Auto-refresh elke 30 seconden
+    refetchOnMount: true, // ✅ Refresh bij navigatie naar deze pagina
+    staleTime: 5000, // 5 seconden - snelle refresh bij pagina switch
     retry: 3,
   })
 
