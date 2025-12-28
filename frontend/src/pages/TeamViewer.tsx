@@ -1525,11 +1525,15 @@ function RiderRow({ rider }: { rider: LineupRider }) {
           {/* Score + Progressbar */}
           <div className="flex flex-col gap-0.5">
             <span className={`font-bold text-sm leading-none ${veloLiveTier?.textColor || 'text-white'}`}>{veloLive ? Math.floor(veloLive) : 'N/A'}</span>
-            {veloLiveTier && veloLiveTier.max && veloLive && (
+            {veloLiveTier && veloLive && (
               <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-white/60 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, ((veloLive - veloLiveTier.min) / (veloLiveTier.max - veloLiveTier.min)) * 100)}%` }}
+                  style={{ 
+                    width: veloLiveTier.max 
+                      ? `${Math.min(100, ((veloLive - veloLiveTier.min) / (veloLiveTier.max - veloLiveTier.min)) * 100)}%`
+                      : `${Math.min(100, ((veloLive - veloLiveTier.min) / (3000 - veloLiveTier.min)) * 100)}%`
+                  }}
                 />
               </div>
             )}
@@ -1547,11 +1551,15 @@ function RiderRow({ rider }: { rider: LineupRider }) {
           {/* Score + Progressbar */}
           <div className="flex flex-col gap-0.5">
             <span className={`font-bold text-sm leading-none ${velo30dayTier?.textColor || 'text-white'}`}>{velo30day ? Math.floor(velo30day) : 'N/A'}</span>
-            {velo30dayTier && velo30dayTier.max && velo30day && (
+            {velo30dayTier && velo30day && (
               <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-white/60 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, ((velo30day - velo30dayTier.min) / (velo30dayTier.max - velo30dayTier.min)) * 100)}%` }}
+                  style={{ 
+                    width: velo30dayTier.max 
+                      ? `${Math.min(100, ((velo30day - velo30dayTier.min) / (velo30dayTier.max - velo30dayTier.min)) * 100)}%`
+                      : `${Math.min(100, ((velo30day - velo30dayTier.min) / (3000 - velo30dayTier.min)) * 100)}%`
+                  }}
                 />
               </div>
             )}
