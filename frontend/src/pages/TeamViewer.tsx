@@ -1410,8 +1410,9 @@ function RidersTable({ lineup }: { lineup: LineupRider[] }) {
       const bVal = b.velo_live || b.current_velo_rank || 0
       comparison = bVal - aVal
     } else if (sortKey === 'velo30day') {
-      const aVal = a.velo_30day || 0
-      const bVal = b.velo_30day || 0
+      // Apply same fallback as in display: velo_30day || veloLive
+      const aVal = a.velo_30day || a.velo_live || a.current_velo_rank || 0
+      const bVal = b.velo_30day || b.velo_live || b.current_velo_rank || 0
       comparison = bVal - aVal
     } else if (sortKey === 'ftp') {
       const aVal = a.racing_ftp || a.ftp_watts || 0
