@@ -449,28 +449,6 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     }
   })
 
-  // Remove rider from team mutation
-  const removeRiderMutation = useMutation({
-    mutationFn: async ({ teamId, riderId }: { teamId: number; riderId: number }) => {
-      const res = await fetch(`/api/teams/${teamId}/riders/${riderId}`, {
-        method: 'DELETE'
-      })
-      if (!res.ok) {
-        const error = await res.json()
-        throw new Error(error.error || 'Failed to remove rider')
-      }
-      return res.json()
-    },
-    onSuccess: (_, { teamId }) => {
-      queryClient.invalidateQueries({ queryKey: ['teams'] })
-      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
-      toast.success('Rider verwijderd uit team!')
-    },
-    onError: (error: Error) => {
-      toast.error(error.message)
-    }
-  })
-
   // @dnd-kit handlers for touch support
   const handleDndDragStart = useCallback((event: DragStartEvent) => {
     // Note: draggedRider wordt nu alleen gebruikt voor visual feedback in DragOverlay
@@ -615,9 +593,6 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           team={teams.find(t => t.team_id === expandedTeamId)!}
           onClose={() => setExpandedTeamId(null)}
           isDragging={draggedRider !== null}
-          onRemoveRider={(teamId, riderId) => {
-            removeRiderMutation.mutate({ teamId, riderId })
-          }}
         />
       )}
 
