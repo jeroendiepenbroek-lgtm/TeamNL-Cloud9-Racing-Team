@@ -151,6 +151,8 @@ SELECT
   rc.full_name,
   rc.avatar_url,
   rc.country_alpha3,
+  rc.zwift_official_category,
+  rc.zwiftracing_category,
   RANK() OVER (PARTITION BY rr.rider_id ORDER BY rr.event_date DESC) AS race_rank
 FROM race_results rr
 LEFT JOIN v_rider_complete rc ON rr.rider_id = rc.rider_id
