@@ -31,7 +31,22 @@ console.log('🚀 Environment loaded (v5.0 - Smart Sync):', {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// ============================================// ZWIFT LOGIN (Get Session Cookie)
+// ============================================
+// FRONTEND SERVING (Must be before API routes)
+// ============================================
+
+// Railway (Dockerfile): frontend at /app/frontend/dist
+// Development: frontend at ../../frontend/dist
+const frontendPath = process.env.RAILWAY_ENVIRONMENT
+  ? '/app/frontend/dist'  // Railway/Docker: absolute path
+  : path.join(__dirname, '..', '..', 'frontend', 'dist'); // Dev
+
+console.log('📂 Frontend path:', frontendPath);
+
+app.use(express.static(frontendPath));
+
+// ============================================
+// ZWIFT LOGIN (Get Session Cookie)
 // ============================================
 
 let zwiftCookie: string = process.env.ZWIFT_COOKIE || '';
@@ -3469,20 +3484,15 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 });
 
 // ============================================
-// FRONTEND SERVING
+// FRONTEND ROUTES (After static middleware)
 // ============================================
 
-// Railway (Dockerfile): frontend at /app/frontend/dist
-// Development: frontend at ../../frontend/dist
-const frontendPath = process.env.RAILWAY_ENVIRONMENT
-  ? '/app/frontend/dist'  // Railway/Docker: absolute path
-  : path.join(__dirname, '..', '..', 'frontend', 'dist'); // Dev
+// Redirect /results to race results dashboard
+app.get('/results', (req, res) => {
+  res.redirect('/race-results-index.html');
+});
 
-console.log('📂 Frontend path:', frontendPath);
-
-app.use(express.static(frontendPath));
-
-// Serve React app for root and unknown routes (but not static files)
+// Serve React app for root only
 app.get('/', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
