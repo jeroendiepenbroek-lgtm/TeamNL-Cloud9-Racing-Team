@@ -3,11 +3,13 @@ import { useState, Suspense } from 'react'
 import { Toaster } from 'react-hot-toast'
 import RacingMatrix from './pages/RacingMatrix'
 import EventsDashboard from './pages/EventsDashboard'
-import ResultsDashboard from './pages/ResultsDashboard'
 import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
 import RiderPassportGallery from './pages/RiderPassportGallery'
+import TeamResultsDashboard from './pages/TeamResultsDashboard'
+import RiderResultsPage from './pages/RiderResultsPage'
+import EventResultsPage from './pages/EventResultsPage'
 import ErrorBoundary from './components/ErrorBoundary'
 
 function LoadingSpinner() {
@@ -30,6 +32,7 @@ function Navigation() {
     { path: '/team-builder', label: 'Team Builder', icon: '🏗️' },
     { path: '/racing-matrix', label: 'Performance Matrix', icon: '📊' },
     { path: '/rider-passports', label: 'Rider Passports', icon: '🎴' },
+    { path: '/results', label: 'Race Results', icon: '🏆' },
     { path: '/team-manager', label: 'Rider Manager', icon: '⚙️' },
   ]
 
@@ -143,7 +146,9 @@ function App() {
               <Route path="/racing-matrix" element={<RacingMatrix />} />
               <Route path="/rider-passports" element={<RiderPassportGallery />} />
               <Route path="/events" element={<EventsDashboard />} />
-              <Route path="/results" element={<ResultsDashboard />} />
+              <Route path="/results" element={<TeamResultsDashboard />} />
+              <Route path="/results/rider/:riderId" element={<RiderResultsPage />} />
+              <Route path="/results/event/:eventId" element={<EventResultsPage />} />
               <Route path="/team-manager" element={<TeamManager />} />
               <Route path="/team-builder" element={<TeamBuilder />} />
               <Route path="*" element={

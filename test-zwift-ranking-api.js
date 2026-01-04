@@ -2,7 +2,7 @@
 
 /**
  * Test Zwift Ranking API voor rider wins data
- * API: https://zwift-ranking.herokuapp.com/public/riders/{rider_id}
+ * API: https://api.zwiftracing.app/api/public/riders/{rider_id}
  * 
  * Deze API heeft mogelijk betere race results data dan ZwiftRacing.app
  */
@@ -12,8 +12,8 @@ const https = require('https');
 async function fetchZwiftRankingRider(riderId) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: 'zwift-ranking.herokuapp.com',
-      path: `/public/riders/${riderId}`,
+      hostname: 'api.zwiftracing.app',
+      path: `/api/public/riders/${riderId}`,
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -89,7 +89,7 @@ async function main() {
 
   console.log('\n' + '━'.repeat(60));
   console.log('\n💡 Notes:');
-  console.log('   - API endpoint: https://zwift-ranking.herokuapp.com/public/riders/{id}');
+  console.log('   - API endpoint: https://api.zwiftracing.app/api/public/riders/{id}');
   console.log('   - May require API key or authentication');
   console.log('   - Alternative to ZwiftRacing.app for race wins data');
   console.log('   - Could be integrated if auth is available\n');

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POC Results Pagina's - TeamNL Cloud9</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 50px;
+    }
+
+    h1 {
+      font-size: 36px;
+      color: #2d3748;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      font-size: 18px;
+      margin-bottom: 40px;
+    }
+
+    .poc-grid {
+      display: grid;
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .poc-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      padding: 30px;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .poc-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .poc-card h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .poc-card p {
+      font-size: 16px;
+      opacity: 0.95;
+      line-height: 1.6;
+    }
+
+    .poc-card .icon {
+      font-size: 32px;
+    }
+
+    .info-box {
+      background: #f7fafc;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+
+    .info-box h3 {
+      color: #2d3748;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .info-box ul {
+      margin-left: 20px;
+      color: #4a5568;
+      line-height: 1.8;
+    }
+
+    .test-data {
+      background: #edf2f7;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: #2d3748;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏁 Results POC Demo</h1>
+    <p class="subtitle">Proof of Concept - ZwiftRacing Integration</p>
+
+    <div class="poc-grid">
+      <a href="/rider-results-live.html" class="poc-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+        <h2><span class="icon">🚀</span> LIVE: Rider 150437 Results</h2>
+        <p><strong>Realtime data!</strong> Race geschiedenis van rider 150437 uit de afgelopen 90 dagen met echte data uit v_rider_complete en ZwiftRacing API.</p>
+      </a>
+
+      <a href="/rider-history-poc.html" class="poc-card">
+        <h2><span class="icon">👤</span> US1: Rider History (Mock)</h2>
+        <p>POC versie met mock data - Bekijk de race geschiedenis van een individuele renner met vELO trends en power data.</p>
+      </a>
+
+      <a href="/event-detail-poc.html?eventId=mock-1" class="poc-card">
+        <h2><span class="icon">🏆</span> US2: Event Results (Mock)</h2>
+        <p>POC versie met mock data - Detailpagina van een specifieke race met volledige uitslag en power intervals.</p>
+      </a>
+    </div>
+
+    <div class="info-box">
+      <h3>📋 Test Data</h3>
+      <ul>
+        <li><strong>Test Rider:</strong> 150437 (JRøne | CloudRacer-9 @YouTube)</li>
+        <li><strong>vELO:</strong> 1436 (Category B)</li>
+        <li><strong>Races:</strong> 3 mock races uit December 2025</li>
+        <li><strong>Power Profile:</strong> 943W 5s → 260W 20m</li>
+      </ul>
+
+      <div class="test-data">
+        <strong>Implementatie:</strong><br>
+        • Standalone HTML met mock data<br>
+        • Styling matching screenshots<br>
+        • vELO badges met trend indicators (▲▼)<br>
+        • Power intervals (5s/15s/30s/1m/2m/5m/20m)<br>
+        • Team badges en medals<br>
+        • Navigatie tussen pagina's
+      </div>
+    </div>
+  </div>
+</body>
+</html>

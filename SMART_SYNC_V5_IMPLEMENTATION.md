@@ -49,7 +49,7 @@ const MAX_BULK_SIZE = 1000; // ZwiftRacing API limiet
 async function fetchSingleZwiftRacingRider(riderId: number): Promise<any | null> {
   try {
     const response = await axios.get(
-      `https://zwift-ranking.herokuapp.com/public/riders/${riderId}`,
+      `https://api.zwiftracing.app/api/public/riders/${riderId}`,
       {
         headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
         timeout: 10000

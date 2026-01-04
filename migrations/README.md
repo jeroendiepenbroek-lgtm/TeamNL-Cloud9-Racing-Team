@@ -110,7 +110,7 @@ SELECT * FROM sync_strategy ORDER BY sync_priority;
 ### ZwiftRacing.app (PRIMARY)
 
 ```
-API: https://zwift-ranking.herokuapp.com
+API: https://api.zwiftracing.app/api
 Auth: API Key (650c6d2fc4ef6858d74cbef1)
 Sync: Every 24 hours
 Priority: 1 (highest)

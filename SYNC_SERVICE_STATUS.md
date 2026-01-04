@@ -10,7 +10,7 @@
 ### API Status
 
 #### ✅ ZwiftRacing API - WERKEND
-- **Endpoint**: `https://zwift-ranking.herokuapp.com/public/riders/{riderId}`
+- **Endpoint**: `https://api.zwiftracing.app/api/public/riders/{riderId}`
 - **Authentication**: Bearer token via ZWIFTRACING_API_TOKEN env var
 - **Data**: vELO scores, power curve, race stats, phenotype
 - **Status**: ✅ 100% success rate

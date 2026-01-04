@@ -37,8 +37,8 @@ async function checkRiders() {
   
   // Check ZwiftRacing API
   console.log('\n\n2️⃣ Checking ZwiftRacing API (correct source)...');
-  const zr5610202 = await fetch('https://zwift-ranking.herokuapp.com/api/riders/5610202').then(r => r.json());
-  const zr4876589 = await fetch('https://zwift-ranking.herokuapp.com/api/riders/4876589').then(r => r.json());
+  const zr5610202 = await fetch('https://api.zwiftracing.app/api/public/riders/5610202').then(r => r.json());
+  const zr4876589 = await fetch('https://api.zwiftracing.app/api/public/riders/4876589').then(r => r.json());
   
   console.log('\n✅ ZwiftRacing API (CORRECT):');
   console.log(`Rider 5610202:

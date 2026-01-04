@@ -16,7 +16,7 @@ console.log('');
 
 try {
   const response = await axios.post(
-    'https://zwift-ranking.herokuapp.com/public/riders',
+    'https://api.zwiftracing.app/api/public/riders',
     testRiderIds,
     {
       headers: { 
