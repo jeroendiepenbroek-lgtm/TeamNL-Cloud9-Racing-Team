@@ -3472,11 +3472,14 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 // FRONTEND SERVING
 // ============================================
 
-// In production (Railway/Docker): frontend is at ../frontend/dist
-// In development: frontend is at ../../frontend/dist
-const frontendPath = process.env.NODE_ENV === 'production'
-  ? path.join(__dirname, '..', '..', 'frontend', 'dist')
-  : path.join(__dirname, '..', '..', 'frontend', 'dist');
+// Railway (nixpacks): frontend built to backend/dist/frontend
+// Docker: frontend at ../frontend/dist
+// Development: frontend at ../../frontend/dist
+const frontendPath = process.env.RAILWAY_ENVIRONMENT
+  ? path.join(__dirname, 'frontend')  // Railway: dist/frontend/
+  : process.env.NODE_ENV === 'production'
+  ? path.join(__dirname, '..', '..', 'frontend', 'dist')  // Docker
+  : path.join(__dirname, '..', '..', 'frontend', 'dist'); // Dev
 
 console.log('📂 Frontend path:', frontendPath);
 
