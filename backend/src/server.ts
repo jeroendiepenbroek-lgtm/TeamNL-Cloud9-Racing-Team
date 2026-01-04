@@ -3482,13 +3482,9 @@ console.log('📂 Frontend path:', frontendPath);
 
 app.use(express.static(frontendPath));
 
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    const indexPath = path.join(frontendPath, 'index.html');
-    res.sendFile(indexPath);
-  } else {
-    res.status(404).json({ error: 'API endpoint not found' });
-  }
+// Serve React app for root and unknown routes (but not static files)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // ============================================
