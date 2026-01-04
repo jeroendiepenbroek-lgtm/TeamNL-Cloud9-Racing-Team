@@ -3473,10 +3473,11 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 // ============================================
 
 // Railway (nixpacks): frontend built to backend/dist/frontend
+// When running with tsx, __dirname = /app/backend/src, but files are at /app/backend/dist/frontend
 // Docker: frontend at ../frontend/dist
 // Development: frontend at ../../frontend/dist
 const frontendPath = process.env.RAILWAY_ENVIRONMENT
-  ? path.join(__dirname, 'frontend')  // Railway: dist/frontend/
+  ? '/app/backend/dist/frontend'  // Railway: absolute path to dist/frontend/
   : process.env.NODE_ENV === 'production'
   ? path.join(__dirname, '..', '..', 'frontend', 'dist')  // Docker
   : path.join(__dirname, '..', '..', 'frontend', 'dist'); // Dev
