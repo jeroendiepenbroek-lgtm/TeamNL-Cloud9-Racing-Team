@@ -2992,7 +2992,7 @@ app.get('/api/results/team', async (req, res) => {
     // Get all Cloud9 riders from database
     const { data: riders, error } = await supabase
       .from('v_rider_complete')
-      .select('rider_id, racing_name, full_name, category, race_finishes, race_wins, race_podiums, win_rate_pct')
+      .select('rider_id, racing_name, full_name, zwift_official_category, race_finishes, race_wins, race_podiums, win_rate_pct')
       .gt('race_finishes', 0)
       .order('race_wins', { ascending: false });
     
@@ -3016,7 +3016,7 @@ app.get('/api/results/team', async (req, res) => {
         podiumRate: r.race_finishes > 0 ? (r.race_podiums || 0) / r.race_finishes : 0,
         avgPosition: 0, // TODO: Calculate from history
         bestPosition: 1, // TODO: Get from history
-        currentVelo: r.category === 'A' ? 1600 : r.category === 'B' ? 1400 : r.category === 'C' ? 1200 : 1000,
+        currentVelo: r.zwift_official_category === 'A' ? 1600 : r.zwift_official_category === 'B' ? 1400 : r.zwift_official_category === 'C' ? 1200 : 1000,
         avgWkg: 0 // TODO: Get from rider data
       })) || [],
       totalRiders: riders?.length || 0,
