@@ -3056,6 +3056,34 @@ app.get('/api/results/team', async (req, res) => {
 // RACE RESULTS PUBLIC API ENDPOINTS
 // ============================================
 
+// Get ALL team race results (flat list for dashboard)
+app.get('/api/results/recent', async (req, res) => {
+  try {
+    const { data: results, error } = await supabase
+      .from('v_race_results_recent')
+      .select('*')
+      .order('event_date', { ascending: false });
+    
+    if (error) throw error;
+    
+    // Calculate totals
+    const totalRaces = results?.length || 0;
+    const totalWins = results?.filter(r => r.position === 1).length || 0;
+    const totalPodiums = results?.filter(r => r.position <= 3).length || 0;
+    
+    res.json({
+      success: true,
+      results: results || [],
+      total_races: totalRaces,
+      total_wins: totalWins,
+      total_podiums: totalPodiums
+    });
+  } catch (error: any) {
+    console.error('Recent results error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Get team riders results overview
 app.get('/api/results/team-riders', async (req, res) => {
   try {

@@ -414,7 +414,7 @@
 
         async function loadResults() {
             try {
-                const response = await fetch(`${API_BASE}/api/results/team-riders`);
+                const response = await fetch(`${API_BASE}/api/results/recent`);
                 const data = await response.json();
 
                 if (!data.success) {
