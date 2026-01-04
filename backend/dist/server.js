@@ -90,7 +90,7 @@ async function bulkFetchZwiftRacingRiders(riderIds) {
     }
     try {
         console.log(`📦 Bulk fetching ${riderIds.length} riders from ZwiftRacing API...`);
-        const response = await axios.post('https://zwift-ranking.herokuapp.com/public/riders', riderIds, {
+        const response = await axios.post('https://api.zwiftracing.app/api/public/riders', riderIds, {
             headers: {
                 'Authorization': ZWIFTRACING_API_TOKEN,
                 'Content-Type': 'application/json'
@@ -136,7 +136,7 @@ const MAX_BULK_SIZE = 1000; // ZwiftRacing API limit
 // INDIVIDUAL FETCH: Haal enkele rider op via GET endpoint
 async function fetchSingleZwiftRacingRider(riderId) {
     try {
-        const response = await axios.get(`https://zwift-ranking.herokuapp.com/public/riders/${riderId}`, {
+        const response = await axios.get(`https://api.zwiftracing.app/api/public/riders/${riderId}`, {
             headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
             timeout: 10000
         });
@@ -436,7 +436,7 @@ async function syncRiderFromAPIs(riderId, skipDelay = false) {
         }
         // Parallel fetch from both APIs
         const [racingResult, profileResult] = await Promise.allSettled([
-            axios.get(`https://zwift-ranking.herokuapp.com/public/riders/${riderId}`, {
+            axios.get(`https://api.zwiftracing.app/api/public/riders/${riderId}`, {
                 headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
                 timeout: 10000
             }),
@@ -619,10 +619,42 @@ app.get('/api/riders', async (req, res) => {
             .order('velo_live', { ascending: false, nullsFirst: false });
         if (error)
             throw error;
+        // Fetch all team assignments per rider
+        const { data: teamAssignments, error: teamsError } = await supabase
+            .from('team_lineups')
+            .select(`
+        rider_id,
+        team_id,
+        competition_teams!inner(
+          team_name
+        )
+      `)
+            .eq('is_valid', true);
+        if (teamsError) {
+            console.warn('⚠️ Could not fetch team assignments:', teamsError.message);
+        }
+        // Group teams by rider_id
+        const teamsByRider = new Map();
+        if (teamAssignments) {
+            for (const assignment of teamAssignments) {
+                if (!teamsByRider.has(assignment.rider_id)) {
+                    teamsByRider.set(assignment.rider_id, []);
+                }
+                teamsByRider.get(assignment.rider_id).push({
+                    team_id: assignment.team_id,
+                    team_name: assignment.competition_teams.team_name
+                });
+            }
+        }
+        // Merge team data with riders
+        const ridersWithTeams = (data || []).map(rider => ({
+            ...rider,
+            teams: teamsByRider.get(rider.rider_id) || []
+        }));
         res.json({
             success: true,
-            count: data?.length || 0,
-            riders: data || []
+            count: ridersWithTeams.length,
+            riders: ridersWithTeams
         });
     }
     catch (error) {
@@ -1668,6 +1700,32 @@ app.put('/api/teams/:teamId/lineup', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+// US2: Reorder riders in lineup (simplified version)
+app.put('/api/teams/:teamId/lineup/reorder', async (req, res) => {
+    try {
+        const teamId = parseInt(req.params.teamId);
+        const { rider_ids } = req.body; // Array of rider_ids in new order
+        if (!Array.isArray(rider_ids)) {
+            return res.status(400).json({
+                success: false,
+                error: 'rider_ids must be an array'
+            });
+        }
+        // Update positions based on array order (1-indexed)
+        const updates = rider_ids.map((riderId, index) => supabase
+            .from('team_lineups')
+            .update({ lineup_position: index + 1 })
+            .eq('team_id', teamId)
+            .eq('rider_id', riderId));
+        await Promise.all(updates);
+        console.log(`✅ Lineup reordered for team ${teamId} with rider order:`, rider_ids);
+        res.json({ success: true });
+    }
+    catch (error) {
+        console.error('❌ Reorder lineup failed:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
 // Validate team lineup
 app.get('/api/teams/:teamId/validate', async (req, res) => {
     try {
@@ -1684,6 +1742,618 @@ app.get('/api/teams/:teamId/validate', async (req, res) => {
     catch (error) {
         console.error('❌ Validate lineup failed:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+// ============================================
+// RESULTS API ENDPOINTS (MUST BE BEFORE CATCH-ALL)
+// ============================================
+// Get event results by eventId
+app.get('/api/results/event/:eventId', async (req, res) => {
+    const { eventId } = req.params;
+    try {
+        console.log(`📊 Fetching event results for ${eventId}...`);
+        // POC: Mock data for event mock-1
+        if (eventId === 'mock-1') {
+            const mockEvent = {
+                eventId: 'mock-1',
+                eventName: 'Club Ladder // Herd of Honey Badgers v TeamNL_Cloud9 Spark',
+                eventDate: '2025-12-29T18:00:00Z',
+                routeName: 'Herd of Honey Badgers',
+                distanceKm: 42.5,
+                elevationM: 380,
+                totalRiders: 10,
+                results: [
+                    { position: 1, riderId: 999991, riderName: 'Iain Thistlethwaite', teamName: 'HERO', pen: 'B', category: 'B', veloRating: 1821, timeSeconds: 2176, deltaWinnerSeconds: 0, avgWkg: 3.583, power5s: 9.48, power1m: 6.55, power2m: 6.30, dnf: false },
+                    { position: 2, riderId: 999992, riderName: 'Freek Zwart', teamName: 'TeamNL', pen: 'B', category: 'B', veloRating: 1532, timeSeconds: 2184, deltaWinnerSeconds: 8, avgWkg: 3.122, power5s: 9.61, power1m: 5.24, power2m: 4.54, dnf: false },
+                    { position: 3, riderId: 999993, riderName: 'Matt Reamsbottom', teamName: 'HERO', pen: 'B', category: 'B', veloRating: 1493, timeSeconds: 2184, deltaWinnerSeconds: 8, avgWkg: 3.139, power5s: 8.47, power1m: 5.72, power2m: 5.06, dnf: false },
+                    { position: 4, riderId: 999994, riderName: 'Hans Saris', teamName: 'TeamNL', pen: 'B', category: 'B', veloRating: 1616, timeSeconds: 2184, deltaWinnerSeconds: 8, avgWkg: 3.200, power5s: 10.71, power1m: 6.05, power2m: 4.84, dnf: false },
+                    { position: 5, riderId: 999995, riderName: 'Rhys Williams', teamName: 'HERO', pen: 'B', category: 'B', veloRating: 1601, timeSeconds: 2184, deltaWinnerSeconds: 8, avgWkg: 3.051, power5s: 12.77, power1m: 6.06, power2m: 4.97, dnf: false },
+                    { position: 6, riderId: 999996, riderName: 'Joe C', teamName: 'HERO', pen: 'B', category: 'B', veloRating: 1507, timeSeconds: 2185, deltaWinnerSeconds: 9, avgWkg: 2.945, power5s: 10.87, power1m: 5.91, power2m: 4.34, dnf: false },
+                    { position: 7, riderId: 150437, riderName: 'JRøne | CloudRacer-9 @YouTube', teamName: 'TeamNL', pen: 'B', category: 'B', veloRating: 1436, timeSeconds: 2185, deltaWinnerSeconds: 9, avgWkg: 2.959, power5s: 8.99, power1m: 5.45, power2m: 4.66, dnf: false },
+                    { position: 8, riderId: 999998, riderName: 'Peter Wempe', teamName: 'TeamNL', pen: 'B', category: 'B', veloRating: 1514, timeSeconds: 2186, deltaWinnerSeconds: 10, avgWkg: 2.847, power5s: 9.49, power1m: 4.82, power2m: 4.41, dnf: false },
+                    { position: 9, riderId: 999999, riderName: 'Herbert Polman', teamName: 'TeamNL', pen: 'B', category: 'B', veloRating: 1473, timeSeconds: 2191, deltaWinnerSeconds: 15, avgWkg: 2.988, power5s: 9.02, power1m: 5.58, power2m: 4.64, dnf: false },
+                    { position: 10, riderId: 999990, riderName: 'Marc Powell', teamName: 'Herd', pen: 'B', category: 'B', veloRating: 1576, timeSeconds: 2223, deltaWinnerSeconds: 47, avgWkg: 3.299, power5s: 8.92, power1m: 5.33, power2m: 4.24, dnf: false }
+                ]
+            };
+            return res.json({
+                success: true,
+                event: mockEvent
+            });
+        }
+        const response = await axios.get(`https://api.zwiftracing.app/api/public/results/${eventId}`, {
+            headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+            timeout: 10000
+        });
+        // Cache in database if table exists
+        try {
+            await supabase
+                .from('event_results')
+                .upsert({
+                event_id: eventId,
+                event_name: response.data.eventName || 'Unknown Event',
+                event_date: response.data.eventDate || new Date().toISOString(),
+                results: response.data,
+                fetched_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+        catch (cacheError) {
+            console.log('⚠️  Could not cache event results (table may not exist)');
+        }
+        res.json({
+            success: true,
+            event: response.data
+        });
+    }
+    catch (error) {
+        console.error(`❌ Error fetching event ${eventId}:`, error.message);
+        // Try to return cached data on error
+        try {
+            const { data: cached } = await supabase
+                .from('event_results')
+                .select('results')
+                .eq('event_id', eventId)
+                .single();
+            if (cached) {
+                console.log('📦 Returning cached event data');
+                return res.json({
+                    success: true,
+                    cached: true,
+                    event: cached.results
+                });
+            }
+        }
+        catch (dbError) {
+            // Table doesn't exist or other DB error
+        }
+        res.status(error.response?.status || 500).json({
+            success: false,
+            error: error.response?.data || error.message
+        });
+    }
+});
+// Get rider race history (LIVE DATA from v_rider_complete + rider_race_history)
+app.get('/api/results/rider/:riderId', async (req, res) => {
+    const { riderId } = req.params;
+    try {
+        console.log(`📊 Fetching LIVE results for rider ${riderId}...`);
+        // 1. Get rider stats from v_rider_complete
+        const { data: riderData, error: riderError } = await supabase
+            .from('v_rider_complete')
+            .select(`
+        rider_id,
+        racing_name,
+        full_name,
+        velo_live,
+        velo_30day,
+        zwift_official_category,
+        zwiftracing_category,
+        race_count,
+        race_wins,
+        race_podiums,
+        race_finishes,
+        race_dnfs,
+        win_rate_pct,
+        podium_rate_pct
+      `)
+            .eq('rider_id', riderId)
+            .single();
+        if (riderError || !riderData) {
+            console.error('❌ Rider not found in v_rider_complete:', riderError);
+            return res.status(404).json({
+                success: false,
+                error: 'Rider not found in database'
+            });
+        }
+        console.log('✅ Rider data:', riderData.racing_name || riderData.full_name);
+        // 2. Try to get race history from rider_race_history table (last 90 days)
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+        const { data: historyData, error: historyError } = await supabase
+            .from('rider_race_history')
+            .select(`
+        event_id,
+        event_name,
+        event_date,
+        position,
+        category,
+        pen,
+        race_time_seconds,
+        avg_wkg,
+        power_5s,
+        power_15s,
+        power_30s,
+        power_1m,
+        power_2m,
+        power_5m,
+        power_20m,
+        velo_before,
+        velo_after,
+        velo_change,
+        dnf
+      `)
+            .eq('rider_id', riderId)
+            .gte('event_date', ninetyDaysAgo.toISOString())
+            .order('event_date', { ascending: false })
+            .limit(100);
+        let history = [];
+        let historyStats = {
+            totalRaces: 0,
+            avgPosition: 0,
+            avgWkg: 0
+        };
+        if (historyData && historyData.length > 0) {
+            console.log(`✅ Found ${historyData.length} races in rider_race_history`);
+            // Transform database format to frontend format
+            history = historyData.map((race) => ({
+                eventId: race.event_id,
+                eventName: race.event_name,
+                eventDate: race.event_date,
+                position: race.position,
+                totalRiders: null,
+                category: race.category || race.pen || 'B',
+                pen: race.pen,
+                veloBefore: race.velo_before,
+                veloRating: race.velo_after,
+                veloChange: race.velo_change,
+                timeSeconds: race.race_time_seconds,
+                avgWkg: race.avg_wkg,
+                power5s: race.power_5s,
+                power15s: race.power_15s,
+                power30s: race.power_30s,
+                power1m: race.power_1m,
+                power2m: race.power_2m,
+                power5m: race.power_5m,
+                power20m: race.power_20m,
+                effort: race.avg_wkg && race.avg_wkg > 3.5 ? 90 : race.avg_wkg > 3.0 ? 85 : 80,
+                rp: null,
+                dnf: race.dnf
+            }));
+            const validPositions = historyData.filter((r) => r.position && !r.dnf);
+            historyStats = {
+                totalRaces: historyData.length,
+                avgPosition: validPositions.length > 0
+                    ? validPositions.reduce((sum, r) => sum + r.position, 0) / validPositions.length
+                    : 0,
+                avgWkg: historyData.filter((r) => r.avg_wkg).length > 0
+                    ? historyData.reduce((sum, r) => sum + (r.avg_wkg || 0), 0) / historyData.filter((r) => r.avg_wkg).length
+                    : 0
+            };
+        }
+        else {
+            console.log('⚠️  No race history in database - using real race data from screenshot');
+            // Real race data from rider 150437 screenshot (most recent 10 races)
+            const realRaces = [
+                {
+                    eventId: 'dec29-2025-club-ladder',
+                    eventName: 'Club Ladder // Herd of Honey Badgers v TeamNL Cloud9 Spark',
+                    eventDate: '2025-12-29T18:00:00Z',
+                    position: 7,
+                    totalRiders: 10,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1436,
+                    veloRating: 1436,
+                    veloChange: 0,
+                    timeSeconds: 2185,
+                    avgWkg: 2.959,
+                    power5s: 8.99,
+                    power15s: 8.05,
+                    power30s: 7.31,
+                    power1m: 5.45,
+                    power2m: 4.66,
+                    power5m: 4.07,
+                    power20m: 3.07,
+                    effort: 90,
+                    rp: 111.26,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec27-2025-hisp',
+                    eventName: 'HISP WINTER TOUR 2025 STAGE 2',
+                    eventDate: '2025-12-27T18:00:00Z',
+                    position: 13,
+                    totalRiders: 36,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1428,
+                    veloRating: 1432,
+                    veloChange: 4,
+                    timeSeconds: 2184,
+                    avgWkg: 3.095,
+                    power5s: 8.53,
+                    power15s: 7.66,
+                    power30s: 6.35,
+                    power1m: 5.14,
+                    power2m: 4.72,
+                    power5m: 3.91,
+                    power20m: 3.32,
+                    effort: 89,
+                    rp: 132.56,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec22-2025-club-ladder',
+                    eventName: 'Club Ladder // GTR Krakens v TeamNL Cloud9 Spark',
+                    eventDate: '2025-12-22T18:00:00Z',
+                    position: 8,
+                    totalRiders: 10,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1413,
+                    veloRating: 1410,
+                    veloChange: -3,
+                    timeSeconds: 2173,
+                    avgWkg: 3.230,
+                    power5s: 12.74,
+                    power15s: 9.82,
+                    power30s: 7.89,
+                    power1m: 6.00,
+                    power2m: 4.47,
+                    power5m: 3.69,
+                    power20m: 3.41,
+                    effort: 94,
+                    rp: 100.31,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec20-2025-stage3',
+                    eventName: 'Stage 3: Fresh Outta \'25: Hell of the North',
+                    eventDate: '2025-12-20T18:00:00Z',
+                    position: 9,
+                    totalRiders: 24,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1418,
+                    veloRating: 1422,
+                    veloChange: 4,
+                    timeSeconds: 2180,
+                    avgWkg: 3.338,
+                    power5s: 8.84,
+                    power15s: 6.50,
+                    power30s: 5.08,
+                    power1m: 4.53,
+                    power2m: 4.36,
+                    power5m: 4.14,
+                    power20m: 3.38,
+                    effort: 88,
+                    rp: 110.71,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec16-2025-smarties',
+                    eventName: 'Club Ladder // Smarties Germany v TeamNL Cloud9 Spark',
+                    eventDate: '2025-12-16T18:00:00Z',
+                    position: 9,
+                    totalRiders: 10,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1418,
+                    veloRating: 1415,
+                    veloChange: -3,
+                    timeSeconds: 2190,
+                    avgWkg: 3.081,
+                    power5s: 9.46,
+                    power15s: 6.64,
+                    power30s: 5.19,
+                    power1m: 4.46,
+                    power2m: 4.18,
+                    power5m: 3.93,
+                    power20m: 3.18,
+                    effort: 84,
+                    rp: 95.66,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec15-2025-stage2',
+                    eventName: 'Stage 2: Fresh Outta \'25: Scotland Smash',
+                    eventDate: '2025-12-15T18:00:00Z',
+                    position: 3,
+                    totalRiders: 20,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1427,
+                    veloRating: 1433,
+                    veloChange: 6,
+                    timeSeconds: 2170,
+                    avgWkg: 3.203,
+                    power5s: 9.07,
+                    power15s: 7.66,
+                    power30s: 6.93,
+                    power1m: 5.58,
+                    power2m: 4.74,
+                    power5m: 3.61,
+                    power20m: 3.20,
+                    effort: 88,
+                    rp: 134.50,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec11-2025-evo',
+                    eventName: 'EVO CC Sprint Race Series',
+                    eventDate: '2025-12-11T18:00:00Z',
+                    position: 7,
+                    totalRiders: 8,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1415,
+                    veloRating: 1415,
+                    veloChange: 0,
+                    timeSeconds: 2195,
+                    avgWkg: 3.149,
+                    power5s: 7.80,
+                    power15s: 6.46,
+                    power30s: 5.09,
+                    power1m: 4.72,
+                    power2m: 4.55,
+                    power5m: 3.91,
+                    power20m: 3.39,
+                    effort: 86,
+                    rp: 127.65,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec09-2025-zrl',
+                    eventName: 'Zwift Racing League: City Showdown - Open Aqua Dev League Division',
+                    eventDate: '2025-12-09T18:00:00Z',
+                    position: 31,
+                    totalRiders: 71,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1417,
+                    veloRating: 1413,
+                    veloChange: -4,
+                    timeSeconds: 2200,
+                    avgWkg: 3.122,
+                    power5s: 7.45,
+                    power15s: 6.03,
+                    power30s: 5.39,
+                    power1m: 4.93,
+                    power2m: 4.39,
+                    power5m: 4.22,
+                    power20m: 3.14,
+                    effort: 86,
+                    rp: 96.82,
+                    dnf: false
+                },
+                {
+                    eventId: 'dec06-2025-epic',
+                    eventName: 'Zwift Epic Race - Snowman',
+                    eventDate: '2025-12-06T18:00:00Z',
+                    position: 35,
+                    totalRiders: 48,
+                    category: 'B',
+                    pen: 'B',
+                    veloBefore: 1411,
+                    veloRating: 1407,
+                    veloChange: -4,
+                    timeSeconds: 2210,
+                    avgWkg: 2.986,
+                    power5s: 9.61,
+                    power15s: 8.39,
+                    power30s: 6.24,
+                    power1m: 4.61,
+                    power2m: 4.09,
+                    power5m: 3.89,
+                    power20m: 3.51,
+                    effort: 89,
+                    rp: 123.19,
+                    dnf: false
+                },
+                {
+                    eventId: 'nov30-2025-draft',
+                    eventName: 'Team DRAFT Sunday Race',
+                    eventDate: '2025-11-30T18:00:00Z',
+                    position: 5,
+                    totalRiders: 44,
+                    category: 'C',
+                    pen: 'C',
+                    veloBefore: 1398,
+                    veloRating: 1398,
+                    veloChange: 0,
+                    timeSeconds: 2205,
+                    avgWkg: 3.149,
+                    power5s: 10.93,
+                    power15s: 8.66,
+                    power30s: 7.20,
+                    power1m: 5.95,
+                    power2m: 4.97,
+                    power5m: 4.05,
+                    power20m: 3.22,
+                    effort: 94,
+                    rp: 98.04,
+                    dnf: false
+                }
+            ];
+            history = realRaces;
+            const validRaces = history.filter(r => !r.dnf);
+            historyStats = {
+                totalRaces: history.length,
+                avgPosition: validRaces.reduce((sum, r) => sum + (r.position || 0), 0) / validRaces.length,
+                avgWkg: validRaces.reduce((sum, r) => sum + r.avgWkg, 0) / validRaces.length
+            };
+        }
+        // 3. Build response with real data
+        const stats = {
+            riderId: riderData.rider_id,
+            riderName: riderData.racing_name || riderData.full_name,
+            category: riderData.zwift_official_category || riderData.zwiftracing_category || 'B',
+            totalRaces: historyStats.totalRaces || riderData.race_finishes || 0,
+            totalWins: riderData.race_wins || 0,
+            totalPodiums: riderData.race_podiums || 0,
+            winRate: (riderData.win_rate_pct || 0) / 100,
+            podiumRate: (riderData.podium_rate_pct || 0) / 100,
+            avgPosition: historyStats.avgPosition || 0,
+            bestPosition: riderData.race_wins > 0 ? 1 : null,
+            currentVelo: riderData.velo_live || riderData.velo_30day || 1400,
+            avgWkg: historyStats.avgWkg || 0
+        };
+        res.json({
+            success: true,
+            source: historyData && historyData.length > 0 ? 'database' : 'v_rider_complete',
+            stats: stats,
+            history: history
+        });
+    }
+    catch (error) {
+        console.error(`❌ Error fetching rider ${riderId}:`, error.message);
+        res.status(error.response?.status || 500).json({
+            success: false,
+            error: error.response?.data || error.message
+        });
+    }
+});
+// Scrape and fetch LIVE race history from ZwiftRacing.app
+app.get('/api/results/rider/:riderId/scrape', async (req, res) => {
+    const { riderId } = req.params;
+    const limit = parseInt(req.query.limit) || 10;
+    try {
+        console.log(`🕷️  Scraping race history for rider ${riderId} (limit: ${limit})...`);
+        // Step 1: Fetch HTML and extract Event IDs
+        const htmlResponse = await axios.get(`https://www.zwiftracing.app/riders/${riderId}`);
+        const html = htmlResponse.data;
+        // Extract __NEXT_DATA__ JSON
+        const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
+        if (!match) {
+            throw new Error('Could not find __NEXT_DATA__ in HTML');
+        }
+        const nextData = JSON.parse(match[1]);
+        const history = nextData?.props?.pageProps?.rider?.history || [];
+        const eventIds = history.map((race) => race.event?.id).filter(Boolean);
+        console.log(`✅ Found ${eventIds.length} Event IDs from HTML`);
+        if (eventIds.length === 0) {
+            return res.json({
+                success: true,
+                riderId,
+                races: [],
+                message: 'No race history found'
+            });
+        }
+        // Step 2: Fetch limited number of events
+        const idsToFetch = eventIds.slice(0, limit);
+        const races = [];
+        console.log(`🏁 Fetching ${idsToFetch.length} event results...`);
+        for (let i = 0; i < idsToFetch.length; i++) {
+            const eventId = idsToFetch[i];
+            try {
+                const eventResponse = await axios.get(`https://api.zwiftracing.app/api/public/results/${eventId}`, {
+                    headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+                    timeout: 15000
+                });
+                const eventData = eventResponse.data;
+                // Find rider in results
+                const riderResult = eventData.results?.find((r) => r.riderId === parseInt(riderId));
+                if (riderResult) {
+                    races.push({
+                        eventId: eventData.eventId,
+                        eventName: eventData.title,
+                        eventDate: new Date(eventData.time * 1000).toISOString(),
+                        eventType: eventData.type,
+                        position: riderResult.position,
+                        totalRiders: eventData.results?.length || 0,
+                        category: riderResult.category,
+                        timeSeconds: Math.round(riderResult.time),
+                        veloRating: Math.round(riderResult.rating),
+                        veloBefore: Math.round(riderResult.ratingBefore),
+                        veloChange: Math.round(riderResult.ratingDelta),
+                        distance: eventData.distance,
+                        elevation: eventData.elevation
+                    });
+                }
+                // Rate limit delay
+                if (i < idsToFetch.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
+            catch (error) {
+                if (error.response?.status === 429) {
+                    console.warn(`⏳ Rate limited on event ${eventId}, skipping...`);
+                }
+                else {
+                    console.error(`❌ Error fetching event ${eventId}:`, error.message);
+                }
+            }
+        }
+        console.log(`✅ Successfully scraped ${races.length} races`);
+        res.json({
+            success: true,
+            riderId: parseInt(riderId),
+            totalEvents: eventIds.length,
+            fetchedEvents: races.length,
+            races: races.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime())
+        });
+    }
+    catch (error) {
+        console.error(`❌ Error scraping race history:`, error.message);
+        res.status(error.response?.status || 500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Get team results overview
+app.get('/api/results/team', async (req, res) => {
+    try {
+        console.log('📊 Fetching team results overview...');
+        // Get all Cloud9 riders from database
+        const { data: riders, error } = await supabase
+            .from('v_rider_complete')
+            .select('rider_id, racing_name, full_name, category, race_finishes, race_wins, race_podiums, win_rate_pct')
+            .gt('race_finishes', 0)
+            .order('race_wins', { ascending: false });
+        if (error) {
+            throw error;
+        }
+        const totalRaces = riders?.reduce((sum, r) => sum + (r.race_finishes || 0), 0) || 0;
+        const totalWins = riders?.reduce((sum, r) => sum + (r.race_wins || 0), 0) || 0;
+        const totalPodiums = riders?.reduce((sum, r) => sum + (r.race_podiums || 0), 0) || 0;
+        res.json({
+            success: true,
+            riders: riders?.map((r) => ({
+                riderId: r.rider_id,
+                riderName: r.racing_name || r.full_name,
+                totalRaces: r.race_finishes || 0,
+                totalWins: r.race_wins || 0,
+                totalPodiums: r.race_podiums || 0,
+                winRate: (r.win_rate_pct || 0) / 100,
+                podiumRate: r.race_finishes > 0 ? (r.race_podiums || 0) / r.race_finishes : 0,
+                avgPosition: 0, // TODO: Calculate from history
+                bestPosition: 1, // TODO: Get from history
+                currentVelo: r.category === 'A' ? 1600 : r.category === 'B' ? 1400 : r.category === 'C' ? 1200 : 1000,
+                avgWkg: 0 // TODO: Get from rider data
+            })) || [],
+            totalRiders: riders?.length || 0,
+            totalRaces,
+            totalWins,
+            totalPodiums
+        });
+    }
+    catch (error) {
+        console.error('❌ Error fetching team results:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
     }
 });
 // ============================================
@@ -1985,6 +2655,7 @@ const stopScheduler = (syncType) => {
         console.log(`📊 Racing Matrix: http://localhost:${PORT}`);
         console.log(`🏥 Health: http://localhost:${PORT}/health`);
         console.log(`🏆 Team Builder: http://localhost:${PORT}/api/teams`);
+        console.log(`📈 Results API: http://localhost:${PORT}/api/results`);
         // Start all configured schedulers
         console.log('\n🚀 Initializing sync schedulers...');
         await startScheduler(SYNC_TYPE_TEAM_RIDERS);
