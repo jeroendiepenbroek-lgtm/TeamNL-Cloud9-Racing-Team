@@ -3472,13 +3472,10 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 // FRONTEND SERVING
 // ============================================
 
-// Railway (nixpacks): frontend at /app/frontend-dist
-// Docker: frontend at ../frontend/dist
+// Railway (Dockerfile): frontend at /app/frontend/dist
 // Development: frontend at ../../frontend/dist
 const frontendPath = process.env.RAILWAY_ENVIRONMENT
-  ? '/app/frontend-dist'  // Railway: absolute path
-  : process.env.NODE_ENV === 'production'
-  ? path.join(__dirname, '..', '..', 'frontend', 'dist')  // Docker
+  ? '/app/frontend/dist'  // Railway/Docker: absolute path
   : path.join(__dirname, '..', '..', 'frontend', 'dist'); // Dev
 
 console.log('📂 Frontend path:', frontendPath);
