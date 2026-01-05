@@ -3519,19 +3519,9 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 // FRONTEND ROUTES (After static middleware)
 // ============================================
 
-// US1: Team Results Dashboard
+// Race Results Dashboard (CLEAN VERSION)
 app.get('/results', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'team-results-dashboard.html'));
-});
-
-// US3: Race Result Detail Page
-app.get('/race-result/:eventId', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'race-result-detail.html'));
-});
-
-// US2: Rider Results Detail Page
-app.get('/rider-results/:riderId', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'rider-results-detail.html'));
+  res.sendFile(path.join(frontendPath, 'race-results.html'));
 });
 
 // Serve React app for root only
