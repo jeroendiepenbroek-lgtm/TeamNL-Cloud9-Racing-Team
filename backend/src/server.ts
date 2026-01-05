@@ -4019,7 +4019,7 @@ const scanRaceResults = async (): Promise<void> => {
             headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
             params: {
               page,
-              per_page: perPage,
+              pageSize: perPage,
               sort: 'time',
               order: 'desc'
             },
@@ -4027,7 +4027,8 @@ const scanRaceResults = async (): Promise<void> => {
           }
         );
         
-        const events = eventsResponse.data?.events || [];
+        // API returns array directly with meta object
+        const events = Array.isArray(eventsResponse.data) ? eventsResponse.data : [];
         
         if (events.length === 0) {
           hasMoreEvents = false;
@@ -4037,8 +4038,10 @@ const scanRaceResults = async (): Promise<void> => {
         let addedFromPage = 0;
         for (const event of events) {
           // Check if event is within our lookback period
-          if (event.time >= cutoffTime) {
-            allEventIds.add(event.id);
+          // event._id is MongoDB ID, eventId is the actual event ID
+          const eventTime = event.time; // Unix timestamp in seconds
+          if (eventTime >= cutoffTime) {
+            allEventIds.add(event.eventId);
             addedFromPage++;
           } else {
             // Events are sorted by time DESC, so if we hit an old one, we're done
