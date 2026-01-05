@@ -3517,7 +3517,7 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 
 // Redirect /results to race results dashboard
 app.get('/results', (req, res) => {
-  res.redirect('/race-results-index.html');
+  res.redirect('/results-dashboard-v2.html');
 });
 
 // Serve React app for root only
