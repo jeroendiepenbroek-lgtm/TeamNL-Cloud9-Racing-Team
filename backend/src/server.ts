@@ -4014,7 +4014,7 @@ const scanRaceResults = async (): Promise<void> => {
     while (hasMoreEvents && allEventIds.size < maxEvents) {
       try {
         const eventsResponse = await axios.get(
-          `https://api.zwiftracing.app/api/public/events`,
+          `https://api.zwiftracing.app/api/events`,
           {
             headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
             params: {
