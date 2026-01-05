@@ -3056,124 +3056,128 @@ app.get('/api/results/team', async (req, res) => {
 // RACE RESULTS PUBLIC API ENDPOINTS
 // ============================================
 
-// Get ALL team race results (flat list for dashboard)
-app.get('/api/results/recent', async (req, res) => {
+// US1: Get team race results grouped by event
+app.get('/api/results/team-races', async (req, res) => {
   try {
     const { data: results, error } = await supabase
-      .from('v_race_results_recent')
+      .from('v_team_race_results')
       .select('*')
       .order('event_date', { ascending: false });
     
     if (error) throw error;
     
-    // Calculate totals
-    const totalRaces = results?.length || 0;
+    // Calculate stats
+    const totalRaces = new Set(results?.map(r => r.event_id)).size;
     const totalWins = results?.filter(r => r.position === 1).length || 0;
     const totalPodiums = results?.filter(r => r.position <= 3).length || 0;
+    const totalTop5 = results?.filter(r => r.position <= 5).length || 0;
     
     res.json({
       success: true,
       results: results || [],
-      total_races: totalRaces,
-      total_wins: totalWins,
-      total_podiums: totalPodiums
+      stats: {
+        total_races: totalRaces,
+        total_wins: totalWins,
+        total_podiums: totalPodiums,
+        total_top5: totalTop5
+      }
     });
   } catch (error: any) {
-    console.error('Recent results error:', error);
+    console.error('Team races error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Get team riders results overview
-app.get('/api/results/team-riders', async (req, res) => {
+// US2: Get results summary per rider (90 days)
+app.get('/api/results/riders-summary', async (req, res) => {
   try {
-    const { data: teamResults, error } = await supabase
-      .from('v_race_results_recent')
+    const { data: riders, error } = await supabase
+      .from('v_rider_results_summary')
       .select('*')
+      .order('total_races', { ascending: false });
+    
+    if (error) throw error;
+    
+    res.json({
+      success: true,
+      riders: riders || []
+    });
+  } catch (error: any) {
+    console.error('Riders summary error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// US3: Get event details with all riders
+app.get('/api/results/event/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    
+    const { data: results, error } = await supabase
+      .from('v_event_results_detail')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('position', { ascending: true });
+    
+    if (error) throw error;
+    
+    if (!results || results.length === 0) {
+      return res.status(404).json({ success: false, error: 'Event not found' });
+    }
+    
+    // Event info from first result
+    const eventInfo = {
+      event_id: results[0].event_id,
+      event_name: results[0].event_name,
+      event_date: results[0].event_date,
+      zwift_event_id: results[0].zwift_event_id,
+      total_riders: results.length,
+      team_riders: results.filter(r => r.is_team_rider).length
+    };
+    
+    res.json({
+      success: true,
+      event: eventInfo,
+      results: results
+    });
+  } catch (error: any) {
+    console.error('Event details error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get individual rider results (90 days)
+app.get('/api/results/rider/:riderId', async (req, res) => {
+  try {
+    const { riderId } = req.params;
+    
+    const { data: results, error } = await supabase
+      .from('v_team_race_results')
+      .select('*')
+      .eq('rider_id', riderId)
       .order('event_date', { ascending: false });
     
     if (error) throw error;
     
-    // Group by rider
-    const riderMap = new Map();
-    teamResults?.forEach(result => {
-      if (!riderMap.has(result.rider_id)) {
-        riderMap.set(result.rider_id, {
-          rider_id: result.rider_id,
-          racing_name: result.racing_name,
-          full_name: result.full_name,
-          avatar_url: result.avatar_url,
-          country: result.country_alpha3,
-          races: [],
-          stats: {
-            total_races: 0,
-            wins: 0,
-            podiums: 0,
-            top5: 0,
-            avg_position: 0,
-            avg_velo: 0,
-            max_velo: 0,
-            last_race: null
-          }
-        });
-      }
-      
-      const rider = riderMap.get(result.rider_id);
-      rider.races.push({
-        event_id: result.event_id,
-        event_name: result.event_name,
-        event_date: result.event_date,
-        position: result.position,
-        total_riders: result.total_riders,
-        category: result.category,
-        velo_rating: result.velo_rating,
-        velo_change: result.velo_change
-      });
-      
-      // Update stats
-      rider.stats.total_races++;
-      if (result.position === 1) rider.stats.wins++;
-      if (result.position <= 3) rider.stats.podiums++;
-      if (result.position <= 5) rider.stats.top5++;
-      rider.stats.max_velo = Math.max(rider.stats.max_velo, result.velo_rating || 0);
-      if (!rider.stats.last_race || new Date(result.event_date) > new Date(rider.stats.last_race)) {
-        rider.stats.last_race = result.event_date;
-      }
-    });
-    
-    // Calculate averages
-    riderMap.forEach(rider => {
-      if (rider.stats.total_races > 0) {
-        const positions = rider.races.map((r: any) => r.position);
-        rider.stats.avg_position = Math.round(
-          positions.reduce((a: number, b: number) => a + b, 0) / positions.length * 10
-        ) / 10;
-        
-        const velos = rider.races.map((r: any) => r.velo_rating).filter((v: number) => v > 0);
-        if (velos.length > 0) {
-          rider.stats.avg_velo = Math.round(
-            velos.reduce((a: number, b: number) => a + b, 0) / velos.length
-          );
-        }
-      }
-      
-      // Keep only last 10 races
-      rider.races = rider.races.slice(0, 10);
-    });
-    
-    const riders = Array.from(riderMap.values())
-      .sort((a, b) => b.stats.total_races - a.stats.total_races);
-    
     res.json({
       success: true,
-      riders,
-      total_riders: riders.length,
-      total_races: teamResults?.length || 0
+      results: results || []
     });
   } catch (error: any) {
-    console.error('Team riders results error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Rider results error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// OLD ENDPOINTS - Keep for backward compatibility but deprecated
+app.get('/api/results/recent', async (req, res) => {
+  // Redirect to new endpoint
+  res.redirect('/api/results/team-races');
+});
+
+app.get('/api/results/team-riders', async (req, res) => {
+  // Redirect to new endpoint
+  res.redirect('/api/results/riders-summary');
 });
 
 // Get individual rider results
@@ -3515,9 +3519,19 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 // FRONTEND ROUTES (After static middleware)
 // ============================================
 
-// Redirect /results to race results dashboard
+// US1: Team Results Dashboard
 app.get('/results', (req, res) => {
-  res.redirect('/results-dashboard-v2.html');
+  res.sendFile(path.join(frontendPath, 'team-results-dashboard.html'));
+});
+
+// US3: Race Result Detail Page
+app.get('/race-result/:eventId', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'race-result-detail.html'));
+});
+
+// US2: Rider Results Detail Page
+app.get('/rider-results/:riderId', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'rider-results-detail.html'));
 });
 
 // Serve React app for root only
