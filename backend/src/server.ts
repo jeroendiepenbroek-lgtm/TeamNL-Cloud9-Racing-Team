@@ -3999,90 +3999,93 @@ const scanRaceResults = async (): Promise<void> => {
     let resultsSaved = 0;
     let resultsUpdated = 0;
     
-    // Get event IDs from rider histories (HTML scraping)
-    const allEventIds = new Set<string>();
-    const newRiderEventIds = new Set<string>();
+    // Calculate time range for events API
+    const cutoffTime = Math.floor(Date.now() / 1000) - (lookbackHours * 60 * 60);
+    console.log(`📅 Scanning events from ${new Date(cutoffTime * 1000).toISOString()}`);
     
-    for (const rider of myRiders) {
+    // Get recent events from Events API (paginated)
+    const allEventIds = new Set<string>();
+    let page = 1;
+    const perPage = 100;
+    let hasMoreEvents = true;
+    
+    console.log('🔎 Fetching recent events from Events API...');
+    
+    while (hasMoreEvents && allEventIds.size < maxEvents) {
       try {
-        const isNewRider = newRiders.some(nr => nr.rider_id === rider.rider_id);
-        
-        // Fetch HTML page (contains __NEXT_DATA__ with history)
-        const riderResponse = await axios.get(
-          `https://www.zwiftracing.app/riders/${rider.rider_id}`,
-          { timeout: 10000 }
-        );
-        
-        // Extract __NEXT_DATA__ JSON from HTML
-        const nextDataMatch = riderResponse.data.match(
-          /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/
-        );
-        
-        if (nextDataMatch) {
-          const pageData = JSON.parse(nextDataMatch[1]);
-          const riderHistory = pageData.props?.pageProps?.rider?.history || [];
-          
-          // For new riders: get ALL events (up to 90 days)
-          // For existing riders: only recent events based on lookback
-          const cutoffTime = Math.floor(Date.now() / 1000) - (lookbackHours * 60 * 60);
-          const cutoffTimeNew = Math.floor(Date.now() / 1000) - (90 * 24 * 60 * 60); // 90 days
-          
-          let eventsAdded = 0;
-          for (const historyItem of riderHistory) {
-            if (historyItem?.event?.id && historyItem?.event?.time) {
-              const eventTime = historyItem.event.time;
-              
-              if (isNewRider) {
-                // New rider: take all events from last 90 days
-                if (eventTime >= cutoffTimeNew) {
-                  allEventIds.add(historyItem.event.id);
-                  newRiderEventIds.add(historyItem.event.id);
-                  eventsAdded++;
-                }
-              } else {
-                // Existing rider: only events within lookback period
-                if (eventTime >= cutoffTime) {
-                  allEventIds.add(historyItem.event.id);
-                  eventsAdded++;
-                }
-              }
-            }
+        const eventsResponse = await axios.get(
+          `https://api.zwiftracing.app/api/public/events`,
+          {
+            headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+            params: {
+              page,
+              per_page: perPage,
+              sort: 'time',
+              order: 'desc'
+            },
+            timeout: 15000
           }
-          
-          console.log(`  📊 ${rider.racing_name}: ${eventsAdded} events ${isNewRider ? '(NEW RIDER - 90 days)' : '(incremental)'}`);
-        } else {
-          console.log(`  ⚠️  ${rider.racing_name}: No history data found`);
+        );
+        
+        const events = eventsResponse.data?.events || [];
+        
+        if (events.length === 0) {
+          hasMoreEvents = false;
+          break;
         }
+        
+        let addedFromPage = 0;
+        for (const event of events) {
+          // Check if event is within our lookback period
+          if (event.time >= cutoffTime) {
+            allEventIds.add(event.id);
+            addedFromPage++;
+          } else {
+            // Events are sorted by time DESC, so if we hit an old one, we're done
+            hasMoreEvents = false;
+            break;
+          }
+        }
+        
+        console.log(`  📄 Page ${page}: ${addedFromPage} events added (total: ${allEventIds.size})`);
+        
+        // If we got fewer events than requested, we've reached the end
+        if (events.length < perPage) {
+          hasMoreEvents = false;
+        }
+        
+        page++;
+        
+        // Rate limit: wait between pages
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
       } catch (error: any) {
         if (error.response?.status === 429) {
           console.warn('⚠️  Rate limit hit - waiting 60 seconds...');
           await new Promise(resolve => setTimeout(resolve, 60000));
         } else {
-          console.warn(`  ⚠️  Could not fetch history for rider ${rider.rider_id}: ${error.message}`);
+          console.error(`❌ Error fetching events page ${page}:`, error.message);
+          hasMoreEvents = false;
         }
       }
-      
-      // Rate limit: API limit is 5 per minute = wait 12+ seconds between calls
-      await new Promise(resolve => setTimeout(resolve, 13000));
     }
     
-    console.log(`📥 Found ${allEventIds.size} unique events to check`);
+    console.log(`📥 Found ${allEventIds.size} events in time range`);
     
-    // Check which events are already in database (deduplication)
+    // Check which events are already in database
     const { data: existingEvents } = await supabase
       .from('race_results')
       .select('event_id')
       .in('event_id', Array.from(allEventIds));
     
     const existingEventIds = new Set(existingEvents?.map(e => e.event_id) || []);
-    const newEventIds = Array.from(allEventIds).filter(id => !existingEventIds.has(id));
-    
-    // For new riders, always check their events even if they exist (to add the new rider's results)
-    const eventsToCheck = [...new Set([...newEventIds, ...Array.from(newRiderEventIds)])].slice(0, maxEvents);
+    const eventsToCheck = Array.from(allEventIds)
+      .filter(id => !existingEventIds.has(id))
+      .slice(0, maxEvents);
     
     console.log(`✅ ${existingEventIds.size} events already in database (skipping)`);
-    console.log(`🆕 ${eventsToCheck.length} new events to check via Results API`);
-    console.log(`🎯 Filtering for ${myRiderIds.length} team rider IDs`);
+    console.log(`🆕 ${eventsToCheck.length} new events to check`);
+    console.log(`🎯 Will filter for ${myRiderIds.length} team rider IDs`);
     
     if (eventsToCheck.length === 0) {
       console.log('✨ No new events to process - database is up to date!');
