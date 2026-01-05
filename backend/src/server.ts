@@ -3999,81 +3999,93 @@ const scanRaceResults = async (): Promise<void> => {
     let resultsSaved = 0;
     let resultsUpdated = 0;
     
-    // Calculate time range for events API
+    // Calculate cutoff time
     const cutoffTime = Math.floor(Date.now() / 1000) - (lookbackHours * 60 * 60);
     console.log(`📅 Scanning events from ${new Date(cutoffTime * 1000).toISOString()}`);
     
-    // Get recent events from Events API (paginated)
+    // NEW APPROACH: Extract event IDs from rider history pages
+    // ============================================================
+    // NOTE: This extracts __NEXT_DATA__ JSON from ZwiftRacing.app rider pages.
+    // This is NOT traditional HTML scraping - we're reading the official Next.js
+    // data payload that the website itself uses.
+    //
+    // Why this approach?
+    // - ZwiftRacing API has NO endpoint for rider race history
+    // - ZwiftRacing API has NO reliable Events endpoint  
+    // - This is the ONLY way to discover which events a rider participated in
+    //
+    // The __NEXT_DATA__ structure is stable because:
+    // - It's generated server-side by Next.js (official React framework)
+    // - Breaking changes would break the entire ZwiftRacing.app website
+    // - The data structure matches their internal API responses
+    //
+    // Alternative approaches attempted (all failed):
+    // ❌ /api/events - Returns 0 events or 404
+    // ❌ /api/public/events - 404 Not Found
+    // ❌ /api/public/riders/{id} - No history field in response
+    // ❌ Club results API - Not documented, unreliable
+    // ============================================================
     const allEventIds = new Set<string>();
-    let page = 1;
-    const perPage = 100;
-    let hasMoreEvents = true;
     
-    console.log('🔎 Fetching recent events from Events API...');
+    console.log('🔎 Extracting event IDs from rider history pages...');
     
-    while (hasMoreEvents && allEventIds.size < maxEvents) {
+    for (const rider of myRiders) {
       try {
-        const eventsResponse = await axios.get(
-          `https://api.zwiftracing.app/api/events`,
+        // Fetch rider page HTML
+        const pageResponse = await axios.get(
+          `https://www.zwiftracing.app/riders/${rider.rider_id}`,
           {
-            headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
-            params: {
-              page,
-              pageSize: perPage,
-              sort: 'time',
-              order: 'desc'
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Accept': 'text/html'
             },
             timeout: 15000
           }
         );
         
-        // API returns array directly with meta object
-        const events = Array.isArray(eventsResponse.data) ? eventsResponse.data : [];
-        
-        if (events.length === 0) {
-          hasMoreEvents = false;
-          break;
+        // Extract __NEXT_DATA__ JSON from HTML
+        const match = pageResponse.data.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/);
+        if (!match) {
+          console.log(`  ⚠️  Rider ${rider.rider_id} (${rider.racing_name}): No __NEXT_DATA__ found`);
+          continue;
         }
         
-        let addedFromPage = 0;
-        for (const event of events) {
-          // Check if event is within our lookback period
-          // event._id is MongoDB ID, eventId is the actual event ID
-          const eventTime = event.time; // Unix timestamp in seconds
-          if (eventTime >= cutoffTime) {
-            allEventIds.add(event.eventId);
-            addedFromPage++;
-          } else {
-            // Events are sorted by time DESC, so if we hit an old one, we're done
-            hasMoreEvents = false;
-            break;
+        const nextData = JSON.parse(match[1]);
+        const history = nextData?.props?.pageProps?.rider?.history || [];
+        
+        if (history.length === 0) {
+          console.log(`  📭 Rider ${rider.rider_id} (${rider.racing_name}): No race history`);
+          continue;
+        }
+        
+        // Extract event IDs from history (within time range)
+        let addedCount = 0;
+        for (const race of history) {
+          const eventId = race?.event?.id;
+          const eventTime = race?.event?.time;
+          
+          if (eventId && eventTime >= cutoffTime) {
+            allEventIds.add(eventId);
+            addedCount++;
           }
         }
         
-        console.log(`  📄 Page ${page}: ${addedFromPage} events added (total: ${allEventIds.size})`);
+        console.log(`  ✅ Rider ${rider.rider_id} (${rider.racing_name}): ${addedCount} events found (total ${history.length} races)`);
         
-        // If we got fewer events than requested, we've reached the end
-        if (events.length < perPage) {
-          hasMoreEvents = false;
-        }
-        
-        page++;
-        
-        // Rate limit: wait between pages
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Rate limit: 13 seconds between rider pages (to stay under 5 requests/minute)
+        await new Promise(resolve => setTimeout(resolve, 13000));
         
       } catch (error: any) {
         if (error.response?.status === 429) {
-          console.warn('⚠️  Rate limit hit - waiting 60 seconds...');
+          console.warn(`  ⚠️  Rate limit hit for rider ${rider.rider_id} - waiting 60 seconds...`);
           await new Promise(resolve => setTimeout(resolve, 60000));
         } else {
-          console.error(`❌ Error fetching events page ${page}:`, error.message);
-          hasMoreEvents = false;
+          console.error(`  ❌ Error fetching rider ${rider.rider_id}:`, error.message);
         }
       }
     }
     
-    console.log(`📥 Found ${allEventIds.size} events in time range`);
+    console.log(`📥 Found ${allEventIds.size} unique events from ${myRiders.length} riders`);
     
     // Check which events are already in database
     const { data: existingEvents } = await supabase
@@ -4087,7 +4099,7 @@ const scanRaceResults = async (): Promise<void> => {
       .slice(0, maxEvents);
     
     console.log(`✅ ${existingEventIds.size} events already in database (skipping)`);
-    console.log(`🆕 ${eventsToCheck.length} new events to check`);
+    console.log(`🆕 ${eventsToCheck.length} new events to fetch`);
     console.log(`🎯 Will filter for ${myRiderIds.length} team rider IDs`);
     
     if (eventsToCheck.length === 0) {
