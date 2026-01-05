@@ -3945,21 +3945,6 @@ const scanRaceResults = async (): Promise<void> => {
     const lastScanAt = configData.last_scan_at;
     const isFirstRun = !lastScanAt;
     
-    // Smart lookback: first run = 90 days, normal = since last scan + overlap buffer
-    const OVERLAP_HOURS = 6; // 6 hours overlap to catch late uploads
-    let lookbackHours;
-    if (isFirstRun) {
-      lookbackHours = 90 * 24; // 90 days for first run
-      console.log('🆕 First run detected - scanning last 90 days');
-    } else {
-      const hoursSinceLastScan = Math.ceil(
-        (Date.now() - new Date(lastScanAt).getTime()) / (1000 * 60 * 60)
-      );
-      // Add overlap buffer to catch late uploads/updates
-      lookbackHours = hoursSinceLastScan + OVERLAP_HOURS;
-      console.log(`♻️  Incremental scan - looking back ${lookbackHours} hours (${hoursSinceLastScan}h since last scan + ${OVERLAP_HOURS}h overlap buffer)`);
-    }
-    
     // Log scan start
     await supabase.from('race_scan_log').insert({
       started_at: new Date().toISOString(),
@@ -3989,9 +3974,26 @@ const scanRaceResults = async (): Promise<void> => {
     const ridersWithResultsIds = new Set(ridersWithResults?.map(r => r.rider_id) || []);
     const newRiders = myRiders.filter(r => !ridersWithResultsIds.has(r.rider_id));
     
-    if (newRiders.length > 0) {
-      console.log(`🆕 Detected ${newRiders.length} new rider(s): ${newRiders.map(r => r.racing_name).join(', ')}`);
-      console.log('   These riders will get full 90-day history scan');
+    // Smart lookback: 90 days if first run OR new riders detected, else incremental
+    const OVERLAP_HOURS = 6; // 6 hours overlap to catch late uploads
+    let lookbackHours;
+    const hasNewRiders = newRiders.length > 0;
+    
+    if (isFirstRun || hasNewRiders) {
+      lookbackHours = 90 * 24; // 90 days
+      if (isFirstRun) {
+        console.log('🆕 First run detected - scanning last 90 days');
+      } else {
+        console.log(`🆕 Detected ${newRiders.length} new rider(s): ${newRiders.map(r => r.racing_name).slice(0, 5).join(', ')}${newRiders.length > 5 ? ` +${newRiders.length - 5} more` : ''}`);
+        console.log('   → Full 90-day history scan for ALL riders (to capture new rider races)');
+      }
+    } else {
+      const hoursSinceLastScan = Math.ceil(
+        (Date.now() - new Date(lastScanAt).getTime()) / (1000 * 60 * 60)
+      );
+      // Add overlap buffer to catch late uploads/updates
+      lookbackHours = hoursSinceLastScan + OVERLAP_HOURS;
+      console.log(`♻️  Incremental scan - looking back ${lookbackHours} hours (${hoursSinceLastScan}h since last scan + ${OVERLAP_HOURS}h overlap buffer)`);
     }
     
     let eventsChecked = 0;
