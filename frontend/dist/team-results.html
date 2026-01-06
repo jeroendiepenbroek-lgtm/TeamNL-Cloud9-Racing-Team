@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Race Results - TeamNL Cloud9 Racing</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+      border-radius: 16px;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .header h1 {
+      font-size: 3rem;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #94a3b8;
+      font-size: 1.1rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .stat-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-top: 8px;
+    }
+
+    .race-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+      transition: all 0.3s;
+    }
+
+    .race-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 8px 16px rgba(59, 130, 246, 0.2);
+    }
+
+    .race-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .race-title {
+      flex: 1;
+    }
+
+    .race-title h3 {
+      font-size: 1.4rem;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .race-date {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
+    .race-meta {
+      text-align: right;
+      color: #94a3b8;
+      font-size: 0.85rem;
+    }
+
+    .team-riders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .team-rider {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .team-rider:hover {
+      background: rgba(59, 130, 246, 0.2);
+      transform: translateX(4px);
+    }
+
+    .rider-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .position-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .position-1 { background: #fbbf24; color: #000; }
+    .position-2 { background: #d1d5db; color: #000; }
+    .position-3 { background: #f59e0b; color: #000; }
+    .position-other { background: rgba(148, 163, 184, 0.2); color: #94a3b8; }
+
+    .rider-name {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .rider-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #94a3b8;
+      font-size: 1.2rem;
+    }
+
+    .spinner {
+      border: 4px solid rgba(59, 130, 246, 0.3);
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      color: #fca5a5;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🏆 Race Results</h1>
+      <p>TeamNL Cloud9 Racing - Laatste races met team deelname</p>
+    </div>
+
+    <div id="stats-section" class="stats-grid" style="display: none;">
+      <div class="stat-card">
+        <div class="stat-value" id="total-races">0</div>
+        <div class="stat-label">Total Races</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-wins">0</div>
+        <div class="stat-label">Team Wins</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-podiums">0</div>
+        <div class="stat-label">Team Podiums</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="total-top5">0</div>
+        <div class="stat-label">Team Top 5</div>
+      </div>
+    </div>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Laden van race results...</p>
+    </div>
+
+    <div id="error" class="error" style="display: none;">
+      <p>❌ Fout bij laden van results</p>
+      <p id="error-message" style="margin-top: 10px; font-size: 0.9rem;"></p>
+    </div>
+
+    <div id="races-container"></div>
+
+    <div id="empty" class="empty" style="display: none;">
+      <div class="empty-icon">📭</div>
+      <h2 style="color: #94a3b8;">Nog geen race results</h2>
+      <p style="color: #64748b; margin-top: 10px;">De scanner moet nog draaien om race data op te halen.</p>
+    </div>
+  </div>
+
+  <script>
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('nl-NL', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function formatTime(seconds) {
+      if (!seconds) return '-';
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      if (hours > 0) {
+        return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    async function loadRaceResults() {
+      try {
+        const response = await fetch('/api/results/team-races');
+        const data = await response.json();
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to load results');
+        }
+
+        const results = data.results || [];
+        const stats = data.stats || {};
+
+        if (results.length === 0) {
+          document.getElementById('empty').style.display = 'block';
+          return;
+        }
+
+        // Show stats
+        document.getElementById('stats-section').style.display = 'grid';
+        document.getElementById('total-races').textContent = stats.total_races || 0;
+        document.getElementById('total-wins').textContent = stats.total_wins || 0;
+        document.getElementById('total-podiums').textContent = stats.total_podiums || 0;
+        document.getElementById('total-top5').textContent = stats.total_top5 || 0;
+
+        // Group results by event_id
+        const racesByEvent = {};
+        results.forEach(result => {
+          if (!racesByEvent[result.event_id]) {
+            racesByEvent[result.event_id] = {
+              event_id: result.event_id,
+              event_name: result.event_name,
+              event_date: result.event_date,
+              event_type: result.event_type,
+              total_riders: result.total_riders,
+              riders: []
+            };
+          }
+          racesByEvent[result.event_id].riders.push(result);
+        });
+
+        // Convert to array and sort by date DESC
+        const races = Object.values(racesByEvent);
+        races.sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+
+        // Render race cards
+        const container = document.getElementById('races-container');
+        container.innerHTML = races.map(race => {
+          // Sort riders by position
+          race.riders.sort((a, b) => (a.position || 999) - (b.position || 999));
+
+          const ridersHTML = race.riders.map(rider => {
+            const posClass = rider.position <= 3 ? `position-${rider.position}` : 'position-other';
+            
+            return `
+              <div class="team-rider" onclick="window.location.href='/race-detail/${race.event_id}'">
+                <div class="rider-info">
+                  <div class="position-badge ${posClass}">${rider.position || '-'}</div>
+                  <div class="rider-name">${rider.rider_name}</div>
+                </div>
+                <div class="rider-stats">
+                  <span>⏱️ ${formatTime(rider.time_seconds)}</span>
+                  <span>⚡ ${rider.wkg_avg ? rider.wkg_avg.toFixed(1) : '-'} W/kg</span>
+                  ${rider.velo_change ? `<span style="color: ${rider.velo_change > 0 ? '#10b981' : '#ef4444'}">
+                    ${rider.velo_change > 0 ? '+' : ''}${rider.velo_change}
+                  </span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div class="race-card">
+              <div class="race-header">
+                <div class="race-title">
+                  <h3>${race.event_name}</h3>
+                  <div class="race-date">📅 ${formatDate(race.event_date)}</div>
+                </div>
+                <div class="race-meta">
+                  <div>${race.total_riders} deelnemers</div>
+                  <div style="margin-top: 4px; color: #3b82f6; font-weight: 600;">
+                    ${race.riders.length} team rider${race.riders.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              </div>
+              <div class="team-riders-grid">
+                ${ridersHTML}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading results:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error-message').textContent = error.message;
+      }
+    }
+
+    // Load on page load
+    loadRaceResults();
+  </script>
+</body>
+</html>
