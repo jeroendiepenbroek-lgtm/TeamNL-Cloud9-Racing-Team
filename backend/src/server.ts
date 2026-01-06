@@ -3343,6 +3343,66 @@ app.post('/api/admin/scan-race-results', async (req, res) => {
   }
 });
 
+// Manually trigger cleanup of old race results
+app.post('/api/admin/cleanup-race-results', async (req, res) => {
+  try {
+    console.log('🧹 Manual cleanup triggered');
+    
+    const result = await cleanupOldRaceResults();
+    
+    res.json({
+      success: true,
+      message: `Cleanup complete: ${result.deleted} old results deleted`,
+      deleted: result.deleted
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Update race scan config (lookback days, retention days)
+app.patch('/api/admin/scan-config', async (req, res) => {
+  try {
+    const { fullScanDays, retentionDays } = req.body;
+    
+    // Get current config
+    const { data: currentConfig } = await supabase
+      .from('sync_config')
+      .select('config')
+      .eq('sync_type', 'race_results')
+      .single();
+    
+    // Merge with new values
+    const newConfig = {
+      ...(currentConfig?.config || {}),
+      ...(fullScanDays !== undefined && { fullScanDays }),
+      ...(retentionDays !== undefined && { retentionDays })
+    };
+    
+    // Update config
+    const { error } = await supabase
+      .from('sync_config')
+      .update({ config: newConfig })
+      .eq('sync_type', 'race_results');
+    
+    if (error) throw error;
+    
+    res.json({
+      success: true,
+      config: newConfig,
+      message: 'Config updated'
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Get race scan status
 app.get('/api/admin/scan-status', async (req, res) => {
   try {
@@ -3966,18 +4026,25 @@ const scanRaceResults = async (): Promise<void> => {
     const ridersWithResultsIds = new Set(ridersWithResults?.map(r => r.rider_id) || []);
     const newRiders = myRiders.filter(r => !ridersWithResultsIds.has(r.rider_id));
     
-    // Smart lookback: 90 days if first run OR new riders detected, else incremental
+    // Get configurable lookback settings
+    const { data: scanConfig } = await supabase
+      .from('sync_config')
+      .select('config')
+      .eq('sync_type', 'race_results')
+      .single();
+    
+    const FULL_SCAN_DAYS = scanConfig?.config?.fullScanDays || 7; // Default 7 dagen
     const OVERLAP_HOURS = 6; // 6 hours overlap to catch late uploads
     let lookbackHours;
     const hasNewRiders = newRiders.length > 0;
     
     if (isFirstRun || hasNewRiders) {
-      lookbackHours = 90 * 24; // 90 days
+      lookbackHours = FULL_SCAN_DAYS * 24;
       if (isFirstRun) {
-        console.log('🆕 First run detected - scanning last 90 days');
+        console.log(`🆕 First run detected - scanning last ${FULL_SCAN_DAYS} days`);
       } else {
         console.log(`🆕 Detected ${newRiders.length} new rider(s): ${newRiders.map(r => r.racing_name).slice(0, 5).join(', ')}${newRiders.length > 5 ? ` +${newRiders.length - 5} more` : ''}`);
-        console.log('   → Full 90-day history scan for ALL riders (to capture new rider races)');
+        console.log(`   → Full ${FULL_SCAN_DAYS}-day history scan for ALL riders (to capture new rider races)`);
       }
     } else {
       const hoursSinceLastScan = Math.ceil(
@@ -4018,10 +4085,10 @@ const scanRaceResults = async (): Promise<void> => {
     const estimatedEventsPerHour = 25;
     
     if (isFirstRun || hasNewRiders) {
-      // FULL HISTORY SCAN: Use 90-day lookback
+      // FULL HISTORY SCAN: Use configured lookback
       const maxKnownEventId = recentEvent?.event_id || 5300000;
-      const estimatedTotal90Days = lookbackHours * estimatedEventsPerHour;
-      scanStartEventId = maxKnownEventId - estimatedTotal90Days - 200; // Buffer
+      const estimatedTotalEvents = lookbackHours * estimatedEventsPerHour;
+      scanStartEventId = maxKnownEventId - estimatedTotalEvents - 200; // Buffer
       scanEndEventId = maxKnownEventId + 100; // Include future/pre-registered
       
       console.log(`🆕 Full history scan (${lookbackHours}h = ${Math.floor(lookbackHours/24)} days)`);
@@ -4327,6 +4394,63 @@ const scanRaceResults = async (): Promise<void> => {
         error_message: error.message
       })
       .eq('started_at', new Date(startTime).toISOString());
+  }
+};
+
+// ============================================
+// CLEANUP OLD RACE RESULTS
+// ============================================
+/**
+ * Verwijdert race resultaten ouder dan de configured retention period
+ * Default: 90 dagen
+ */
+const cleanupOldRaceResults = async () => {
+  console.log('\n🧹 Starting race results cleanup...');
+  
+  try {
+    // Get retention config
+    const { data: scanConfig } = await supabase
+      .from('sync_config')
+      .select('config')
+      .eq('sync_type', 'race_results')
+      .single();
+    
+    const RETENTION_DAYS = scanConfig?.config?.retentionDays || 90;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
+    
+    console.log(`🗓️  Retention: ${RETENTION_DAYS} days (deleting before ${cutoffDate.toISOString().split('T')[0]})`);
+    
+    // Count old results
+    const { count: oldCount } = await supabase
+      .from('race_results')
+      .select('*', { count: 'exact', head: true })
+      .lt('event_date', cutoffDate.toISOString());
+    
+    if (!oldCount || oldCount === 0) {
+      console.log('✅ No old results to delete');
+      return { deleted: 0 };
+    }
+    
+    console.log(`🗑️  Found ${oldCount} results older than ${RETENTION_DAYS} days`);
+    
+    // Delete old results
+    const { error: deleteError } = await supabase
+      .from('race_results')
+      .delete()
+      .lt('event_date', cutoffDate.toISOString());
+    
+    if (deleteError) {
+      console.error('❌ Cleanup failed:', deleteError.message);
+      throw deleteError;
+    }
+    
+    console.log(`✅ Deleted ${oldCount} old race results`);
+    return { deleted: oldCount };
+    
+  } catch (error: any) {
+    console.error('❌ Cleanup error:', error.message);
+    throw error;
   }
 };
 
