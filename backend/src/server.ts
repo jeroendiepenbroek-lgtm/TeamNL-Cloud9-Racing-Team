@@ -4076,8 +4076,8 @@ const scanRaceResults = async (): Promise<void> => {
     // 100% API-BASED EVENT SCANNING - NO WEB SCRAPING
     // ============================================================
     // Process events in parallel batches via Results API
-    const EVENT_BATCH_SIZE = 10; // 10 parallel requests (safe rate)
-    const EVENT_BATCH_DELAY = 2000; // 2 seconds between batches (stay under rate limit)
+    const EVENT_BATCH_SIZE = 5; // 5 parallel requests (conservative rate)
+    const EVENT_BATCH_DELAY = 3000; // 3 seconds between batches (stay well under rate limit)
     
     console.log(`🚀 Processing ${eventsToCheck.length} events in parallel (${EVENT_BATCH_SIZE} at a time)...`);
     
