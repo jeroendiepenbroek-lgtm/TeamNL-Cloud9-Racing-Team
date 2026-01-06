@@ -3518,14 +3518,16 @@ app.get('/api/results/my-riders/cached', async (req, res) => {
 // ============================================
 // FRONTEND ROUTES (After static middleware)
 // ============================================
+// SERVE REACT SPA - All non-API routes go to React app
+// ============================================
 
-// Race Results Dashboard - Shows races where team riders participated
-app.get('/results', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'team-results.html'));
-});
-
-// Serve React app for root only
-app.get('/', (req, res) => {
+// Serve React app for ALL routes (SPA routing)
+// This allows React Router to handle /results, /team-builder, etc.
+app.get('*', (req, res) => {
+  // Don't serve index.html for API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
