@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
+import { scanRaceResultsHybrid } from './scan-race-results-hybrid.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
@@ -24,7 +25,18 @@ console.log('🚀 Environment loaded (v5.0 - Smart Sync):', {
     nodeEnv: process.env.NODE_ENV
 });
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-// ============================================// ZWIFT LOGIN (Get Session Cookie)
+// ============================================
+// FRONTEND SERVING (Must be before API routes)
+// ============================================
+// Railway (Dockerfile): frontend at /app/frontend/dist
+// Development: frontend at ../../frontend/dist
+const frontendPath = process.env.RAILWAY_ENVIRONMENT
+    ? '/app/frontend/dist' // Railway/Docker: absolute path
+    : path.join(__dirname, '..', '..', 'frontend', 'dist'); // Dev
+console.log('📂 Frontend path:', frontendPath);
+app.use(express.static(frontendPath));
+// ============================================
+// ZWIFT LOGIN (Get Session Cookie)
 // ============================================
 let zwiftCookie = process.env.ZWIFT_COOKIE || '';
 let cookieExpiry = new Date();
@@ -2223,6 +2235,122 @@ app.get('/api/results/rider/:riderId', async (req, res) => {
         });
     }
 });
+// Scrape and fetch LIVE race history from ZwiftRacing.app (with streaming progress)
+app.get('/api/results/rider/:riderId/scrape-stream', async (req, res) => {
+    const { riderId } = req.params;
+    const limit = parseInt(req.query.limit) || 10;
+    // Set headers for Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    const sendProgress = (data) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+    try {
+        console.log(`🕷️  Streaming scrape for rider ${riderId} (limit: ${limit})...`);
+        sendProgress({ type: 'status', message: 'Fetching HTML from ZwiftRacing.app...' });
+        // Step 1: Fetch HTML and extract Event IDs
+        const htmlResponse = await axios.get(`https://www.zwiftracing.app/riders/${riderId}`);
+        const html = htmlResponse.data;
+        const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s);
+        if (!match) {
+            throw new Error('Could not find __NEXT_DATA__ in HTML');
+        }
+        const nextData = JSON.parse(match[1]);
+        const history = nextData?.props?.pageProps?.rider?.history || [];
+        const eventIds = history.map((race) => race.event?.id).filter(Boolean);
+        sendProgress({
+            type: 'event_ids',
+            total: eventIds.length,
+            message: `Found ${eventIds.length} race events`
+        });
+        if (eventIds.length === 0) {
+            sendProgress({ type: 'complete', races: [], totalEvents: 0 });
+            res.end();
+            return;
+        }
+        // Step 2: Fetch events with progress updates
+        const idsToFetch = eventIds.slice(0, limit);
+        const races = [];
+        for (let i = 0; i < idsToFetch.length; i++) {
+            const eventId = idsToFetch[i];
+            sendProgress({
+                type: 'progress',
+                current: i + 1,
+                total: idsToFetch.length,
+                percentage: Math.round(((i + 1) / idsToFetch.length) * 100),
+                message: `Fetching race ${i + 1} of ${idsToFetch.length}...`
+            });
+            try {
+                const eventResponse = await axios.get(`https://api.zwiftracing.app/api/public/results/${eventId}`, {
+                    headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+                    timeout: 15000
+                });
+                const eventData = eventResponse.data;
+                const riderResult = eventData.results?.find((r) => r.riderId === parseInt(riderId));
+                if (riderResult) {
+                    const race = {
+                        eventId: eventData.eventId,
+                        eventName: eventData.title,
+                        date: new Date(eventData.time * 1000).toISOString(),
+                        eventDate: new Date(eventData.time * 1000).toISOString(),
+                        eventType: eventData.type,
+                        subType: eventData.subType,
+                        position: riderResult.position,
+                        totalRiders: eventData.results?.length || 0,
+                        category: riderResult.category,
+                        timeSeconds: Math.round(riderResult.time),
+                        veloRating: Math.round(riderResult.rating),
+                        rating: Math.round(riderResult.rating),
+                        veloBefore: Math.round(riderResult.ratingBefore),
+                        ratingBefore: Math.round(riderResult.ratingBefore),
+                        veloChange: Math.round(riderResult.ratingDelta),
+                        ratingDelta: Math.round(riderResult.ratingDelta),
+                        distance: eventData.distance,
+                        elevation: eventData.elevation,
+                        route: eventData.routeId,
+                        wkgAvg: riderResult.wkgAvg,
+                        wkg5: riderResult.wkg5,
+                        wkg15: riderResult.wkg15,
+                        wkg30: riderResult.wkg30,
+                        wkg60: riderResult.wkg60,
+                        wkg120: riderResult.wkg120,
+                        wkg300: riderResult.wkg300,
+                        wkg1200: riderResult.wkg1200,
+                        np: riderResult.np,
+                        ftp: riderResult.ftp,
+                        load: riderResult.load,
+                        rp: riderResult.load,
+                        heartRate: riderResult.heartRate,
+                        power: riderResult.power,
+                        zpCat: riderResult.zpCat
+                    };
+                    races.push(race);
+                    sendProgress({ type: 'race', race });
+                }
+                if (i < idsToFetch.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
+            catch (error) {
+                if (error.response?.status === 429) {
+                    sendProgress({ type: 'warning', message: `Rate limited on event ${eventId}, waiting...` });
+                    await new Promise(resolve => setTimeout(resolve, 60000));
+                }
+            }
+        }
+        sendProgress({
+            type: 'complete',
+            races: races.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()),
+            totalEvents: eventIds.length
+        });
+        res.end();
+    }
+    catch (error) {
+        sendProgress({ type: 'error', message: error.message });
+        res.end();
+    }
+});
 // Scrape and fetch LIVE race history from ZwiftRacing.app
 app.get('/api/results/rider/:riderId/scrape', async (req, res) => {
     const { riderId } = req.params;
@@ -2267,17 +2395,40 @@ app.get('/api/results/rider/:riderId/scrape', async (req, res) => {
                     races.push({
                         eventId: eventData.eventId,
                         eventName: eventData.title,
+                        date: new Date(eventData.time * 1000).toISOString(),
                         eventDate: new Date(eventData.time * 1000).toISOString(),
                         eventType: eventData.type,
+                        subType: eventData.subType,
                         position: riderResult.position,
                         totalRiders: eventData.results?.length || 0,
                         category: riderResult.category,
                         timeSeconds: Math.round(riderResult.time),
                         veloRating: Math.round(riderResult.rating),
+                        rating: Math.round(riderResult.rating),
                         veloBefore: Math.round(riderResult.ratingBefore),
+                        ratingBefore: Math.round(riderResult.ratingBefore),
                         veloChange: Math.round(riderResult.ratingDelta),
+                        ratingDelta: Math.round(riderResult.ratingDelta),
                         distance: eventData.distance,
-                        elevation: eventData.elevation
+                        elevation: eventData.elevation,
+                        route: eventData.routeId,
+                        // Power metrics (W/kg intervals)
+                        wkgAvg: riderResult.wkgAvg,
+                        wkg5: riderResult.wkg5,
+                        wkg15: riderResult.wkg15,
+                        wkg30: riderResult.wkg30,
+                        wkg60: riderResult.wkg60,
+                        wkg120: riderResult.wkg120,
+                        wkg300: riderResult.wkg300,
+                        wkg1200: riderResult.wkg1200,
+                        // Additional metrics
+                        np: riderResult.np,
+                        ftp: riderResult.ftp,
+                        load: riderResult.load,
+                        rp: riderResult.load, // Relative Power score
+                        heartRate: riderResult.heartRate,
+                        power: riderResult.power,
+                        zpCat: riderResult.zpCat
                     });
                 }
                 // Rate limit delay
@@ -2311,14 +2462,228 @@ app.get('/api/results/rider/:riderId/scrape', async (req, res) => {
         });
     }
 });
-// Get team results overview
+// Get my riders results overview (with live race scraping)
+app.get('/api/results/my-riders', async (req, res) => {
+    try {
+        const daysLimit = parseInt(req.query.days) || 30;
+        const maxRacesPerRider = parseInt(req.query.limit) || 10;
+        console.log(`📊 Fetching my riders results (last ${daysLimit} days, max ${maxRacesPerRider} races per rider)...`);
+        // Get all my riders from roster
+        const { data: ridersData, error: ridersError } = await supabase
+            .from('v_rider_complete')
+            .select('rider_id, racing_name, full_name, name, category, velo_live, avatar_url')
+            .eq('is_team_member', true);
+        if (ridersError)
+            throw ridersError;
+        if (!ridersData || ridersData.length === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'No riders found in your roster'
+            });
+        }
+        const rosterInfo = {
+            name: 'My Riders',
+            totalRiders: ridersData.length
+        };
+        // Calculate date cutoff
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - daysLimit);
+        const cutoffTimestamp = Math.floor(cutoffDate.getTime() / 1000);
+        // Fetch recent races for each rider
+        const riderResults = [];
+        let totalRaces = 0;
+        let totalPodiums = 0;
+        let totalWins = 0;
+        for (const rider of ridersData) {
+            const riderId = rider.rider_id;
+            const riderName = rider.racing_name || rider.full_name || rider.name;
+            console.log(`  📥 Fetching races for ${riderName} (${riderId})...`);
+            try {
+                // Scrape Event IDs from ZwiftRacing HTML
+                const riderHtmlResponse = await axios.get(`https://www.zwiftracing.app/riders/${riderId}`, {
+                    timeout: 10000
+                });
+                const nextDataMatch = riderHtmlResponse.data.match(/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/);
+                if (!nextDataMatch) {
+                    console.warn(`  ⚠️  No race history found for rider ${riderId}`);
+                    riderResults.push({
+                        riderId,
+                        riderName,
+                        category: rider.category,
+                        currentVelo: rider.velo_live || 0,
+                        avatarUrl: rider.avatar_url,
+                        races: [],
+                        totalRaces: 0,
+                        wins: 0,
+                        podiums: 0,
+                        avgPosition: 0,
+                        bestResult: null
+                    });
+                    continue;
+                }
+                const pageData = JSON.parse(nextDataMatch[1]);
+                const eventIds = pageData.props?.pageProps?.rider?.history || [];
+                console.log(`  ✅ Found ${eventIds.length} total events`);
+                // Fetch recent races
+                const races = [];
+                const idsToFetch = eventIds.slice(0, maxRacesPerRider);
+                for (let i = 0; i < idsToFetch.length; i++) {
+                    const eventId = idsToFetch[i];
+                    try {
+                        const eventResponse = await axios.get(`https://api.zwiftracing.app/api/public/results/${eventId}`, {
+                            headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+                            timeout: 10000
+                        });
+                        const eventData = eventResponse.data;
+                        // Filter by date
+                        if (eventData.time < cutoffTimestamp) {
+                            console.log(`  ⏭️  Event ${eventId} older than ${daysLimit} days, stopping`);
+                            break;
+                        }
+                        // Find rider in results
+                        const riderResult = eventData.results?.find((r) => r.riderId === riderId);
+                        if (riderResult) {
+                            races.push({
+                                eventId,
+                                eventName: eventData.title || 'Unknown Event',
+                                eventDate: new Date(eventData.time * 1000).toISOString(),
+                                position: riderResult.position,
+                                totalRiders: eventData.results?.length || 0,
+                                category: riderResult.category,
+                                veloRating: Math.round(riderResult.rating || 0),
+                                veloBefore: Math.round(riderResult.ratingBefore || 0),
+                                veloChange: Math.round(riderResult.ratingDelta || 0),
+                                timeSeconds: riderResult.time,
+                                wkgAvg: riderResult.wkgAvg,
+                                isPodium: riderResult.position <= 3,
+                                isWin: riderResult.position === 1
+                            });
+                        }
+                        // Rate limit delay
+                        if (i < idsToFetch.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        }
+                    }
+                    catch (error) {
+                        if (error.response?.status === 429) {
+                            console.warn(`  ⏳ Rate limited on event ${eventId}`);
+                            break;
+                        }
+                    }
+                }
+                // Calculate rider statistics
+                const wins = races.filter(r => r.isWin).length;
+                const podiums = races.filter(r => r.isPodium).length;
+                const avgPosition = races.length > 0
+                    ? races.reduce((sum, r) => sum + r.position, 0) / races.length
+                    : 0;
+                const bestRace = races.length > 0
+                    ? races.reduce((best, r) => r.position < best.position ? r : best, races[0])
+                    : null;
+                riderResults.push({
+                    riderId,
+                    riderName,
+                    category: rider.category,
+                    currentVelo: rider.velo_live || 0,
+                    avatarUrl: rider.avatar_url,
+                    races,
+                    totalRaces: races.length,
+                    wins,
+                    podiums,
+                    avgPosition: Math.round(avgPosition * 10) / 10,
+                    avgWkg: races.length > 0
+                        ? races.reduce((sum, r) => sum + (r.wkgAvg || 0), 0) / races.length
+                        : 0,
+                    bestResult: bestRace
+                });
+                totalRaces += races.length;
+                totalPodiums += podiums;
+                totalWins += wins;
+                console.log(`  ✅ ${riderName}: ${races.length} races, ${wins}W/${podiums}P`);
+            }
+            catch (error) {
+                console.error(`  ❌ Error fetching rider ${riderId}:`, error.message);
+                riderResults.push({
+                    riderId,
+                    riderName,
+                    category: rider.category,
+                    currentVelo: rider.velo_live || 0,
+                    avatarUrl: rider.avatar_url,
+                    races: [],
+                    totalRaces: 0,
+                    wins: 0,
+                    podiums: 0,
+                    avgPosition: 0,
+                    bestResult: null
+                });
+            }
+        }
+        // Calculate Rider of the Week (most points in period)
+        // Points system: Win=10, Podium=5, Top5=3, Finish=1
+        const ridersWithPoints = riderResults.map(r => ({
+            ...r,
+            points: r.wins * 10 + r.podiums * 5 + r.races.filter(race => race.position <= 5).length * 3 + r.totalRaces
+        })).sort((a, b) => b.points - a.points);
+        const riderOfTheWeek = ridersWithPoints.length > 0 ? ridersWithPoints[0] : null;
+        console.log(`✅ My riders results complete: ${totalRaces} races, ${totalWins} wins, ${totalPodiums} podiums`);
+        res.json({
+            success: true,
+            roster: rosterInfo,
+            period: {
+                days: daysLimit,
+                startDate: cutoffDate.toISOString(),
+                endDate: new Date().toISOString()
+            },
+            summary: {
+                totalRiders: riderResults.length,
+                totalRaces,
+                totalWins,
+                totalPodiums,
+                podiumRate: totalRaces > 0 ? (totalPodiums / totalRaces * 100).toFixed(1) : 0,
+                winRate: totalRaces > 0 ? (totalWins / totalRaces * 100).toFixed(1) : 0
+            },
+            riderOfTheWeek,
+            riders: riderResults
+        });
+    }
+    catch (error) {
+        console.error('❌ Error fetching my riders results:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Get my rider IDs (for event detail highlighting)
+app.get('/api/results/my-rider-ids', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('v_rider_complete')
+            .select('rider_id')
+            .eq('is_team_member', true);
+        if (error)
+            throw error;
+        res.json({
+            success: true,
+            riderIds: data?.map(r => r.rider_id) || []
+        });
+    }
+    catch (error) {
+        console.error('❌ Error fetching my rider IDs:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Get all teams results overview (lightweight - no race scraping)
 app.get('/api/results/team', async (req, res) => {
     try {
         console.log('📊 Fetching team results overview...');
         // Get all Cloud9 riders from database
         const { data: riders, error } = await supabase
             .from('v_rider_complete')
-            .select('rider_id, racing_name, full_name, category, race_finishes, race_wins, race_podiums, win_rate_pct')
+            .select('rider_id, racing_name, full_name, zwift_official_category, race_finishes, race_wins, race_podiums, win_rate_pct')
             .gt('race_finishes', 0)
             .order('race_wins', { ascending: false });
         if (error) {
@@ -2339,7 +2704,7 @@ app.get('/api/results/team', async (req, res) => {
                 podiumRate: r.race_finishes > 0 ? (r.race_podiums || 0) / r.race_finishes : 0,
                 avgPosition: 0, // TODO: Calculate from history
                 bestPosition: 1, // TODO: Get from history
-                currentVelo: r.category === 'A' ? 1600 : r.category === 'B' ? 1400 : r.category === 'C' ? 1200 : 1000,
+                currentVelo: r.zwift_official_category === 'A' ? 1600 : r.zwift_official_category === 'B' ? 1400 : r.zwift_official_category === 'C' ? 1200 : 1000,
                 avgWkg: 0 // TODO: Get from rider data
             })) || [],
             totalRiders: riders?.length || 0,
@@ -2357,25 +2722,485 @@ app.get('/api/results/team', async (req, res) => {
     }
 });
 // ============================================
-// FRONTEND SERVING
+// RACE RESULTS SCANNER API ENDPOINTS  
 // ============================================
-// In production (Railway/Docker): frontend is at ../frontend/dist
-// In development: frontend is at ../../frontend/dist
-const frontendPath = process.env.NODE_ENV === 'production'
-    ? path.join(__dirname, '..', '..', 'frontend', 'dist')
-    : path.join(__dirname, '..', '..', 'frontend', 'dist');
-console.log('📂 Frontend path:', frontendPath);
-app.use(express.static(frontendPath));
-app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
-        const indexPath = path.join(frontendPath, 'index.html');
-        res.sendFile(indexPath);
+// RACE RESULTS PUBLIC API ENDPOINTS
+// ============================================
+// US1: Get team race results grouped by event
+app.get('/api/results/team-races', async (req, res) => {
+    try {
+        const { data: results, error } = await supabase
+            .from('v_team_race_results')
+            .select('*')
+            .order('event_date', { ascending: false });
+        if (error)
+            throw error;
+        // Calculate stats
+        const totalRaces = new Set(results?.map(r => r.event_id)).size;
+        const totalWins = results?.filter(r => r.position === 1).length || 0;
+        const totalPodiums = results?.filter(r => r.position <= 3).length || 0;
+        const totalTop5 = results?.filter(r => r.position <= 5).length || 0;
+        res.json({
+            success: true,
+            results: results || [],
+            stats: {
+                total_races: totalRaces,
+                total_wins: totalWins,
+                total_podiums: totalPodiums,
+                total_top5: totalTop5
+            }
+        });
     }
-    else {
-        res.status(404).json({ error: 'API endpoint not found' });
+    catch (error) {
+        console.error('Team races error:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
+// US2: Get results summary per rider (90 days)
+app.get('/api/results/riders-summary', async (req, res) => {
+    try {
+        const { data: riders, error } = await supabase
+            .from('v_rider_results_summary')
+            .select('*')
+            .order('total_races', { ascending: false });
+        if (error)
+            throw error;
+        res.json({
+            success: true,
+            riders: riders || []
+        });
+    }
+    catch (error) {
+        console.error('Riders summary error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// US3: Get event details with all riders
+app.get('/api/results/event/:eventId', async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const { data: results, error } = await supabase
+            .from('v_event_results_detail')
+            .select('*')
+            .eq('event_id', eventId)
+            .order('position', { ascending: true });
+        if (error)
+            throw error;
+        if (!results || results.length === 0) {
+            return res.status(404).json({ success: false, error: 'Event not found' });
+        }
+        // Event info from first result
+        const eventInfo = {
+            event_id: results[0].event_id,
+            event_name: results[0].event_name,
+            event_date: results[0].event_date,
+            zwift_event_id: results[0].zwift_event_id,
+            total_riders: results.length,
+            team_riders: results.filter(r => r.is_team_rider).length
+        };
+        res.json({
+            success: true,
+            event: eventInfo,
+            results: results
+        });
+    }
+    catch (error) {
+        console.error('Event details error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// Get individual rider results (90 days)
+app.get('/api/results/rider/:riderId', async (req, res) => {
+    try {
+        const { riderId } = req.params;
+        const { data: results, error } = await supabase
+            .from('v_team_race_results')
+            .select('*')
+            .eq('rider_id', riderId)
+            .order('event_date', { ascending: false });
+        if (error)
+            throw error;
+        res.json({
+            success: true,
+            results: results || []
+        });
+    }
+    catch (error) {
+        console.error('Rider results error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// OLD ENDPOINTS - Keep for backward compatibility but deprecated
+app.get('/api/results/recent', async (req, res) => {
+    // Redirect to new endpoint
+    res.redirect('/api/results/team-races');
+});
+app.get('/api/results/team-riders', async (req, res) => {
+    // Redirect to new endpoint
+    res.redirect('/api/results/riders-summary');
+});
+// Get individual rider results
+app.get('/api/results/rider/:riderId', async (req, res) => {
+    try {
+        const riderId = parseInt(req.params.riderId);
+        const { data: results, error } = await supabase
+            .from('v_race_results_recent')
+            .select('*')
+            .eq('rider_id', riderId)
+            .order('event_date', { ascending: false });
+        if (error)
+            throw error;
+        if (!results || results.length === 0) {
+            return res.status(404).json({ error: 'No results found for this rider' });
+        }
+        // Calculate rider statistics
+        const stats = {
+            total_races: results.length,
+            wins: results.filter(r => r.position === 1).length,
+            podiums: results.filter(r => r.position <= 3).length,
+            top5: results.filter(r => r.position <= 5).length,
+            top10: results.filter(r => r.position <= 10).length,
+            avg_position: Math.round(results.reduce((sum, r) => sum + r.position, 0) / results.length * 10) / 10,
+            best_position: Math.min(...results.map(r => r.position)),
+            avg_velo: Math.round(results.reduce((sum, r) => sum + (r.velo_rating || 0), 0) / results.length),
+            max_velo: Math.max(...results.map(r => r.velo_rating || 0)),
+            avg_wkg: results[0]?.wkg_avg || null,
+            last_race: results[0]?.event_date
+        };
+        // vELO progression for chart
+        const veloProgression = results
+            .slice()
+            .reverse()
+            .map(r => ({
+            date: r.event_date,
+            velo: r.velo_rating,
+            event_name: r.event_name
+        }));
+        res.json({
+            success: true,
+            rider: {
+                rider_id: riderId,
+                racing_name: results[0].racing_name,
+                full_name: results[0].full_name,
+                avatar_url: results[0].avatar_url,
+                country: results[0].country_alpha3
+            },
+            stats,
+            velo_progression: veloProgression,
+            recent_races: results.slice(0, 20),
+            total_results: results.length
+        });
+    }
+    catch (error) {
+        console.error('Individual rider results error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+// Get event details with all team riders
+app.get('/api/results/event/:eventId', async (req, res) => {
+    try {
+        const eventId = req.params.eventId;
+        const { data: results, error } = await supabase
+            .from('race_results')
+            .select('*')
+            .eq('event_id', eventId)
+            .order('position', { ascending: true });
+        if (error)
+            throw error;
+        if (!results || results.length === 0) {
+            return res.status(404).json({ error: 'Event not found' });
+        }
+        // Get rider details
+        const riderIds = results.map(r => r.rider_id);
+        const { data: riders } = await supabase
+            .from('v_rider_complete')
+            .select('rider_id, racing_name, full_name, avatar_url, country_alpha3')
+            .in('rider_id', riderIds);
+        const riderMap = new Map(riders?.map(r => [r.rider_id, r]));
+        // Enrich results with rider info
+        const enrichedResults = results.map(r => ({
+            ...r,
+            rider_info: riderMap.get(r.rider_id)
+        }));
+        // Event statistics
+        const event = {
+            event_id: results[0].event_id,
+            event_name: results[0].event_name,
+            event_date: results[0].event_date,
+            event_type: results[0].event_type,
+            event_subtype: results[0].event_subtype,
+            distance_meters: results[0].distance_meters,
+            elevation_meters: results[0].elevation_meters,
+            total_riders: results[0].total_riders,
+            team_riders_count: results.length
+        };
+        const stats = {
+            best_position: Math.min(...results.map(r => r.position)),
+            avg_position: Math.round(results.reduce((sum, r) => sum + r.position, 0) / results.length * 10) / 10,
+            avg_velo: Math.round(results.reduce((sum, r) => sum + (r.velo_rating || 0), 0) / results.length),
+            avg_wkg: Math.round(results.reduce((sum, r) => sum + (r.wkg_avg || 0), 0) / results.length * 100) / 100
+        };
+        res.json({
+            success: true,
+            event,
+            stats,
+            results: enrichedResults,
+            zwift_racing_link: `https://www.zwiftracing.app/results/${eventId}`
+        });
+    }
+    catch (error) {
+        console.error('Event details error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+// ============================================
+// RACE RESULTS ADMIN API ENDPOINTS
+// ============================================
+// Manually trigger race scan
+app.post('/api/admin/scan-race-results', async (req, res) => {
+    try {
+        console.log('🔄 Manual race scan triggered');
+        // Run scan in background
+        scanRaceResults().catch(err => {
+            console.error('Background scan error:', err);
+        });
+        res.json({
+            success: true,
+            message: 'Race scan started in background'
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Manually trigger cleanup of old race results
+app.post('/api/admin/cleanup-race-results', async (req, res) => {
+    try {
+        console.log('🧹 Manual cleanup triggered');
+        const result = await cleanupOldRaceResults();
+        res.json({
+            success: true,
+            message: `Cleanup complete: ${result.deleted} old results deleted`,
+            deleted: result.deleted
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Update race scan config (lookback days, retention days)
+app.patch('/api/admin/scan-config', async (req, res) => {
+    try {
+        const { fullScanDays, retentionDays } = req.body;
+        // Get current config
+        const { data: currentConfig } = await supabase
+            .from('sync_config')
+            .select('config')
+            .eq('sync_type', 'race_results')
+            .single();
+        // Merge with new values
+        const newConfig = {
+            ...(currentConfig?.config || {}),
+            ...(fullScanDays !== undefined && { fullScanDays }),
+            ...(retentionDays !== undefined && { retentionDays })
+        };
+        // Update config
+        const { error } = await supabase
+            .from('sync_config')
+            .update({ config: newConfig })
+            .eq('sync_type', 'race_results');
+        if (error)
+            throw error;
+        res.json({
+            success: true,
+            config: newConfig,
+            message: 'Config updated'
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Get race scan status
+app.get('/api/admin/scan-status', async (req, res) => {
+    try {
+        const { data: config } = await supabase
+            .from('race_scan_config')
+            .select('*')
+            .single();
+        const { data: recentLogs } = await supabase
+            .from('race_scan_log')
+            .select('*')
+            .order('started_at', { ascending: false })
+            .limit(10);
+        res.json({
+            success: true,
+            config,
+            recentScans: recentLogs
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Update scan config
+app.post('/api/admin/scan-config', async (req, res) => {
+    try {
+        const { enabled, scan_interval_minutes, lookback_hours, max_events_per_scan } = req.body;
+        const { data, error } = await supabase
+            .from('race_scan_config')
+            .update({
+            enabled,
+            scan_interval_minutes,
+            lookback_hours,
+            max_events_per_scan,
+            updated_at: new Date().toISOString()
+        })
+            .eq('id', 1)
+            .select()
+            .single();
+        if (error)
+            throw error;
+        // Restart scheduler with new interval
+        if (enabled) {
+            await startScheduler(SYNC_TYPE_RACE_RESULTS);
+        }
+        else {
+            stopScheduler(SYNC_TYPE_RACE_RESULTS);
+        }
+        res.json({
+            success: true,
+            config: data
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// Get race results from database (cached, fast)
+app.get('/api/results/my-riders/cached', async (req, res) => {
+    try {
+        const daysLimit = parseInt(req.query.days) || 30;
+        console.log(`📊 Fetching cached race results (last ${daysLimit} days)...`);
+        // Get results from database
+        const { data: results, error } = await supabase
+            .from('v_race_results_recent')
+            .select('*')
+            .gte('event_date', new Date(Date.now() - daysLimit * 24 * 60 * 60 * 1000).toISOString())
+            .order('event_date', { ascending: false });
+        if (error)
+            throw error;
+        // Group by rider
+        const riderResults = new Map();
+        for (const result of results || []) {
+            if (!riderResults.has(result.rider_id)) {
+                riderResults.set(result.rider_id, {
+                    riderId: result.rider_id,
+                    riderName: result.racing_name || result.rider_name,
+                    avatarUrl: result.avatar_url,
+                    category: result.category,
+                    currentVelo: result.velo_rating,
+                    races: [],
+                    totalRaces: 0,
+                    wins: 0,
+                    podiums: 0,
+                    avgPosition: 0
+                });
+            }
+            const rider = riderResults.get(result.rider_id);
+            rider.races.push({
+                eventId: result.event_id,
+                eventName: result.event_name,
+                eventDate: result.event_date,
+                position: result.position,
+                totalRiders: result.total_riders,
+                category: result.category,
+                veloRating: result.velo_rating,
+                veloBefore: result.velo_before,
+                veloChange: result.velo_change,
+                timeSeconds: result.time_seconds,
+                wkgAvg: result.wkg_avg,
+                isPodium: result.position <= 3,
+                isWin: result.position === 1
+            });
+            rider.totalRaces = rider.races.length;
+            rider.wins = rider.races.filter((r) => r.isWin).length;
+            rider.podiums = rider.races.filter((r) => r.isPodium).length;
+            rider.avgPosition = rider.races.reduce((sum, r) => sum + r.position, 0) / rider.races.length;
+        }
+        const ridersArray = Array.from(riderResults.values());
+        // Calculate Rider of the Week
+        const ridersWithPoints = ridersArray.map(r => ({
+            ...r,
+            points: r.wins * 10 + r.podiums * 5 + r.races.filter((race) => race.position <= 5).length * 3 + r.totalRaces
+        })).sort((a, b) => b.points - a.points);
+        const riderOfTheWeek = ridersWithPoints[0] || null;
+        const totalRaces = ridersArray.reduce((sum, r) => sum + r.totalRaces, 0);
+        const totalWins = ridersArray.reduce((sum, r) => sum + r.wins, 0);
+        const totalPodiums = ridersArray.reduce((sum, r) => sum + r.podiums, 0);
+        res.json({
+            success: true,
+            source: 'database',
+            roster: {
+                name: 'My Riders',
+                totalRiders: ridersArray.length
+            },
+            period: {
+                days: daysLimit,
+                startDate: new Date(Date.now() - daysLimit * 24 * 60 * 60 * 1000).toISOString(),
+                endDate: new Date().toISOString()
+            },
+            summary: {
+                totalRiders: ridersArray.length,
+                totalRaces,
+                totalWins,
+                totalPodiums,
+                podiumRate: totalRaces > 0 ? ((totalPodiums / totalRaces) * 100).toFixed(1) : 0,
+                winRate: totalRaces > 0 ? ((totalWins / totalRaces) * 100).toFixed(1) : 0
+            },
+            riderOfTheWeek,
+            riders: ridersArray
+        });
+    }
+    catch (error) {
+        console.error('❌ Error fetching cached results:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+// ============================================
+// FRONTEND ROUTES (After static middleware)
+// ============================================
+// SERVE REACT SPA - All non-API routes go to React app
+// ============================================
+// Serve React app for ALL routes (SPA routing)
+// This allows React Router to handle /results, /team-builder, etc.
+app.get('*', (req, res) => {
+    // Don't serve index.html for API routes
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
 const SYNC_TYPE_TEAM_RIDERS = 'team_riders';
+const SYNC_TYPE_RACE_RESULTS = 'race_results';
 let schedulerIntervals = new Map();
 // Load sync config from database
 const loadSyncConfig = async (syncType) => {
@@ -2517,6 +3342,12 @@ const updateSyncLog = async (logId, updates) => {
 // Execute sync with full logging
 const executeSyncJob = async (syncType, triggerType, metadata) => {
     const startTime = Date.now();
+    // Handle race_results sync differently
+    if (syncType === SYNC_TYPE_RACE_RESULTS) {
+        console.log(`\n🔍 [${syncType}] Starting race results scan (${triggerType})`);
+        await scanRaceResults();
+        return { success: true, synced: 0, failed: 0 };
+    }
     // Create log entry
     const logId = await createSyncLog({
         sync_type: syncType,
@@ -2609,30 +3440,68 @@ const startScheduler = async (syncType) => {
         clearInterval(existingTimer);
         schedulerIntervals.delete(syncType);
     }
-    // Load config
-    const config = await loadSyncConfig(syncType);
-    if (!config || !config.enabled || config.interval_minutes <= 0) {
-        console.log(`⚠️  Scheduler disabled for ${syncType}`);
-        return;
+    // Load config - race_results uses separate table
+    let config;
+    let intervalMs;
+    if (syncType === SYNC_TYPE_RACE_RESULTS) {
+        // Use race_scan_config table
+        const { data, error } = await supabase
+            .from('race_scan_config')
+            .select('*')
+            .limit(1)
+            .single();
+        if (error || !data?.enabled) {
+            console.log(`⚠️  Scheduler disabled for ${syncType}: ${error?.message || 'disabled'}`);
+            return;
+        }
+        config = data;
+        intervalMs = data.scan_interval_minutes * 60 * 1000;
+        console.log(`🔄 Scheduler started for ${syncType}: every ${data.scan_interval_minutes} minutes`);
+        // Calculate and save next run in race_scan_config
+        const nextRun = new Date(Date.now() + intervalMs);
+        await supabase
+            .from('race_scan_config')
+            .update({
+            next_scan_at: nextRun.toISOString(),
+            updated_at: new Date().toISOString()
+        })
+            .eq('id', data.id);
+        console.log(`📅 Next ${syncType} sync: ${nextRun.toLocaleString('nl-NL')}`);
     }
-    const intervalMs = config.interval_minutes * 60 * 1000;
-    console.log(`🔄 Scheduler started for ${syncType}: every ${config.interval_minutes} minutes`);
-    // Calculate and save next run
-    const nextRun = new Date(Date.now() + intervalMs);
-    await saveSyncConfig({
-        sync_type: syncType,
-        next_run_at: nextRun.toISOString()
-    });
-    console.log(`📅 Next ${syncType} sync: ${nextRun.toLocaleString('nl-NL')}`);
-    // Schedule recurring sync
-    const interval = setInterval(async () => {
-        await executeSyncJob(syncType, 'auto');
-        // Update next run after execution
+    else {
+        // Use sync_config table for other types
+        config = await loadSyncConfig(syncType);
+        if (!config || !config.enabled || config.interval_minutes <= 0) {
+            console.log(`⚠️  Scheduler disabled for ${syncType}`);
+            return;
+        }
+        intervalMs = config.interval_minutes * 60 * 1000;
+        console.log(`🔄 Scheduler started for ${syncType}: every ${config.interval_minutes} minutes`);
+        // Calculate and save next run
         const nextRun = new Date(Date.now() + intervalMs);
         await saveSyncConfig({
             sync_type: syncType,
             next_run_at: nextRun.toISOString()
         });
+        console.log(`📅 Next ${syncType} sync: ${nextRun.toLocaleString('nl-NL')}`);
+    }
+    // Schedule recurring sync
+    const interval = setInterval(async () => {
+        await executeSyncJob(syncType, 'auto');
+        // Update next run after execution
+        const nextRun = new Date(Date.now() + intervalMs);
+        if (syncType === SYNC_TYPE_RACE_RESULTS) {
+            await supabase
+                .from('race_scan_config')
+                .update({ next_scan_at: nextRun.toISOString() })
+                .eq('id', config.id);
+        }
+        else {
+            await saveSyncConfig({
+                sync_type: syncType,
+                next_run_at: nextRun.toISOString()
+            });
+        }
     }, intervalMs);
     schedulerIntervals.set(syncType, interval);
 };
@@ -2643,6 +3512,86 @@ const stopScheduler = (syncType) => {
         clearInterval(timer);
         schedulerIntervals.delete(syncType);
         console.log(`⏹️  Scheduler stopped for ${syncType}`);
+    }
+};
+// ============================================
+// RACE RESULTS SCANNER
+// ============================================
+// Scan for new race results with my riders
+const scanRaceResults = async () => {
+    const startTime = Date.now();
+    try {
+        console.log('🔍 Starting race results scan (HYBRID)...');
+        // Get scan config
+        const { data: configData } = await supabase
+            .from('race_scan_config')
+            .select('*')
+            .single();
+        if (!configData?.enabled) {
+            console.log('⏸️  Race scanning disabled');
+            return;
+        }
+        // Get lookback days from sync_config
+        const { data: scanConfig } = await supabase
+            .from('sync_config')
+            .select('config')
+            .eq('sync_type', 'race_results')
+            .single();
+        const lookbackDays = scanConfig?.config?.fullScanDays || 7;
+        // Call hybrid scanner
+        const result = await scanRaceResultsHybrid(supabase, lookbackDays);
+        // Update scan config
+        await supabase.from('race_scan_config').update({
+            last_scan_at: new Date().toISOString(),
+            last_scan_events_checked: result.eventsScanned,
+            last_scan_events_saved: result.eventsWithTeamRiders,
+            last_scan_duration_seconds: Math.floor(result.duration / 1000)
+        }).eq('id', configData.id);
+        console.log(`✅ Hybrid scan complete: ${result.method} method used, ${result.resultsAdded} results saved`);
+    }
+    catch (error) {
+        console.error('❌ Race scan error:', error.message);
+        throw error;
+    }
+};
+const cleanupOldRaceResults = async () => {
+    console.log('\n🧹 Starting race results cleanup...');
+    try {
+        // Get retention config
+        const { data: scanConfig } = await supabase
+            .from('sync_config')
+            .select('config')
+            .eq('sync_type', 'race_results')
+            .single();
+        const RETENTION_DAYS = scanConfig?.config?.retentionDays || 90;
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - RETENTION_DAYS);
+        console.log(`🗓️  Retention: ${RETENTION_DAYS} days (deleting before ${cutoffDate.toISOString().split('T')[0]})`);
+        // Count old results
+        const { count: oldCount } = await supabase
+            .from('race_results')
+            .select('*', { count: 'exact', head: true })
+            .lt('event_date', cutoffDate.toISOString());
+        if (!oldCount || oldCount === 0) {
+            console.log('✅ No old results to delete');
+            return { deleted: 0 };
+        }
+        console.log(`🗑️  Found ${oldCount} results older than ${RETENTION_DAYS} days`);
+        // Delete old results
+        const { error: deleteError } = await supabase
+            .from('race_results')
+            .delete()
+            .lt('event_date', cutoffDate.toISOString());
+        if (deleteError) {
+            console.error('❌ Cleanup failed:', deleteError.message);
+            throw deleteError;
+        }
+        console.log(`✅ Deleted ${oldCount} old race results`);
+        return { deleted: oldCount };
+    }
+    catch (error) {
+        console.error('❌ Cleanup error:', error.message);
+        throw error;
     }
 };
 // ============================================
@@ -2659,6 +3608,7 @@ const stopScheduler = (syncType) => {
         // Start all configured schedulers
         console.log('\n🚀 Initializing sync schedulers...');
         await startScheduler(SYNC_TYPE_TEAM_RIDERS);
+        await startScheduler(SYNC_TYPE_RACE_RESULTS);
         console.log('✅ All schedulers started\n');
     });
 })();

@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
+import { scanRaceResultsHybrid } from './scan-race-results-hybrid.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -3977,10 +3978,9 @@ const stopScheduler = (syncType: string) => {
 // Scan for new race results with my riders
 const scanRaceResults = async (): Promise<void> => {
   const startTime = Date.now();
-  const scanLogId = Date.now();
   
   try {
-    console.log('🔍 Starting race results scan...');
+    console.log('🔍 Starting race results scan (HYBRID)...');
     
     // Get scan config
     const { data: configData } = await supabase
@@ -3993,464 +3993,34 @@ const scanRaceResults = async (): Promise<void> => {
       return;
     }
     
-    const maxEvents = configData.max_events_per_scan || 100;
-    const lastScanAt = configData.last_scan_at;
-    const isFirstRun = !lastScanAt;
-    
-    // Log scan start
-    await supabase.from('race_scan_log').insert({
-      started_at: new Date().toISOString(),
-      status: 'running'
-    });
-    
-    // Get my riders
-    const { data: myRiders } = await supabase
-      .from('v_rider_complete')
-      .select('rider_id, racing_name')
-      .eq('is_team_member', true);
-    
-    if (!myRiders || myRiders.length === 0) {
-      console.log('⚠️  No riders in roster');
-      return;
-    }
-    
-    const myRiderIds = myRiders.map(r => r.rider_id);
-    console.log(`📋 Scanning for ${myRiders.length} riders`);
-    
-    // Check for newly added riders (not in race_results yet)
-    const { data: ridersWithResults } = await supabase
-      .from('race_results')
-      .select('rider_id')
-      .in('rider_id', myRiderIds);
-    
-    const ridersWithResultsIds = new Set(ridersWithResults?.map(r => r.rider_id) || []);
-    const newRiders = myRiders.filter(r => !ridersWithResultsIds.has(r.rider_id));
-    
-    // Get configurable lookback settings
+    // Get lookback days from sync_config
     const { data: scanConfig } = await supabase
       .from('sync_config')
       .select('config')
       .eq('sync_type', 'race_results')
       .single();
     
-    const FULL_SCAN_DAYS = scanConfig?.config?.fullScanDays || 7; // Default 7 dagen
-    const OVERLAP_HOURS = 6; // 6 hours overlap to catch late uploads
-    let lookbackHours;
-    const hasNewRiders = newRiders.length > 0;
+    const lookbackDays = scanConfig?.config?.fullScanDays || 7;
     
-    if (isFirstRun || hasNewRiders) {
-      lookbackHours = FULL_SCAN_DAYS * 24;
-      if (isFirstRun) {
-        console.log(`🆕 First run detected - scanning last ${FULL_SCAN_DAYS} days`);
-      } else {
-        console.log(`🆕 Detected ${newRiders.length} new rider(s): ${newRiders.map(r => r.racing_name).slice(0, 5).join(', ')}${newRiders.length > 5 ? ` +${newRiders.length - 5} more` : ''}`);
-        console.log(`   → Full ${FULL_SCAN_DAYS}-day history scan for ALL riders (to capture new rider races)`);
-      }
-    } else {
-      const hoursSinceLastScan = Math.ceil(
-        (Date.now() - new Date(lastScanAt).getTime()) / (1000 * 60 * 60)
-      );
-      // Add overlap buffer to catch late uploads/updates
-      lookbackHours = hoursSinceLastScan + OVERLAP_HOURS;
-      console.log(`♻️  Incremental scan - looking back ${lookbackHours} hours (${hoursSinceLastScan}h since last scan + ${OVERLAP_HOURS}h overlap buffer)`);
-    }
+    // Call hybrid scanner
+    const result = await scanRaceResultsHybrid(supabase, lookbackDays);
     
-    let eventsChecked = 0;
-    let eventsWithMyRiders = 0;
-    let resultsSaved = 0;
-    let resultsUpdated = 0;
+    // Update scan config
+    await supabase.from('race_scan_config').update({
+      last_scan_at: new Date().toISOString(),
+      last_scan_events_checked: result.eventsScanned,
+      last_scan_events_saved: result.eventsWithTeamRiders,
+      last_scan_duration_seconds: Math.floor(result.duration / 1000)
+    }).eq('id', configData.id);
     
-    // Calculate cutoff time
-    const cutoffTime = Math.floor(Date.now() / 1000) - (lookbackHours * 60 * 60);
-    console.log(`📅 Scanning events from ${new Date(cutoffTime * 1000).toISOString()}`);
-    
-    // 100% API-BASED APPROACH: Scan event IDs directly via Results API
-    // Strategy: Intelligently determine event ID range based on scan type
-    //
-    // ZwiftRacing event IDs are sequential integers
-    // Approximate rate: ~600 races/day = 25 races/hour
-    //
-    console.log('🔍 Determining event ID range to scan...');
-    
-    // Get most recent event ID from our database
-    const { data: recentEvent } = await supabase
-      .from('race_results')
-      .select('event_id, event_date')
-      .order('event_id', { ascending: false })
-      .limit(1)
-      .single();
-    
-    let scanStartEventId: number;
-    let scanEndEventId: number;
-    const estimatedEventsPerHour = 25;
-    
-    if (isFirstRun || hasNewRiders) {
-      // FULL HISTORY SCAN: Use configured lookback
-      const maxKnownEventId = recentEvent?.event_id || 5300000;
-      const estimatedTotalEvents = lookbackHours * estimatedEventsPerHour;
-      scanStartEventId = maxKnownEventId - estimatedTotalEvents - 200; // Buffer
-      scanEndEventId = maxKnownEventId + 100; // Include future/pre-registered
-      
-      console.log(`🆕 Full history scan (${lookbackHours}h = ${Math.floor(lookbackHours/24)} days)`);
-    } else {
-      // INCREMENTAL SCAN: Only recent events since last scan
-      // Use actual time since last scan (not the full lookback for new riders)
-      const hoursSinceLastScan = Math.ceil(
-        (Date.now() - new Date(lastScanAt).getTime()) / (1000 * 60 * 60)
-      );
-      const scanHours = hoursSinceLastScan + OVERLAP_HOURS; // Add overlap buffer
-      
-      const maxKnownEventId = recentEvent?.event_id || 5300000;
-      const estimatedNewEvents = scanHours * estimatedEventsPerHour;
-      scanStartEventId = maxKnownEventId - estimatedNewEvents - 50; // Small buffer
-      scanEndEventId = maxKnownEventId + 50; // Small forward buffer
-      
-      console.log(`♻️  Incremental scan (${scanHours}h = ${hoursSinceLastScan}h since last + ${OVERLAP_HOURS}h overlap)`);
-    }
-    
-    const eventIdsToCheck = Array.from(
-      { length: scanEndEventId - scanStartEventId },
-      (_, i) => scanStartEventId + i
-    );
-    
-    console.log(`📊 Will scan event IDs ${scanStartEventId} to ${scanEndEventId} (${eventIdsToCheck.length} events)`);
-    console.log(`🎯 Looking for races with any of ${myRiderIds.length} team riders`);
-    
-    // Check which events are already in database
-    const { data: existingEvents } = await supabase
-      .from('race_results')
-      .select('event_id')
-      .gte('event_id', scanStartEventId)
-      .lte('event_id', scanEndEventId);
-    
-    const existingEventIds = new Set(existingEvents?.map(e => e.event_id) || []);
-    const eventsToCheck = eventIdsToCheck.filter(id => !existingEventIds.has(id));
-    
-    console.log(`✅ ${existingEventIds.size} events already in database (skipping)`);
-    console.log(`🆕 ${eventsToCheck.length} new event IDs to check`);
-    
-    if (eventsToCheck.length === 0) {
-      console.log('✨ No new events to process - database is up to date!');
-      
-      await supabase.from('race_scan_config').update({
-        last_scan_at: new Date().toISOString(),
-        last_scan_events_checked: 0,
-        last_scan_events_saved: 0,
-        last_scan_duration_seconds: Math.floor((Date.now() - startTime) / 1000)
-      }).eq('id', configData.id);
-      
-      return;
-    }
-    
-    // ============================================================
-    // SMART SAMPLING: Test hit rate before committing to full scan
-    // ============================================================
-    console.log('\n🔬 Smart sampling: testing random events for team rider presence...');
-    const SAMPLE_SIZE = Math.min(50, eventsToCheck.length);
-    const sampleIndices = new Set<number>();
-    while (sampleIndices.size < SAMPLE_SIZE) {
-      sampleIndices.add(Math.floor(Math.random() * eventsToCheck.length));
-    }
-    const sampleEvents = Array.from(sampleIndices).map(i => eventsToCheck[i]);
-    
-    let sampleHits = 0;
-    let sampleChecked = 0;
-    
-    for (const eventId of sampleEvents) {
-      try {
-        const response = await axios.get(
-          `https://api.zwiftracing.app/api/public/results/${eventId}`,
-          {
-            headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
-            timeout: 10000
-          }
-        );
-        
-        sampleChecked++;
-        const hasTeamRiders = response.data.results?.some((r: any) => 
-          myRiderIds.includes(r.riderId)
-        );
-        
-        if (hasTeamRiders) {
-          sampleHits++;
-          const eventTitle = response.data.title || `Event ${eventId}`;
-          console.log(`  ✅ ${eventTitle}`);
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (error: any) {
-        if (error.response?.status === 429) {
-          console.log(`  ⏳ Rate limited - backing off`);
-          await new Promise(resolve => setTimeout(resolve, 10000));
-        }
-      }
-    }
-    
-    const hitRate = sampleChecked > 0 ? (sampleHits / sampleChecked) * 100 : 0;
-    console.log(`\n📊 Sample: ${sampleHits}/${sampleChecked} events have team riders (${hitRate.toFixed(1)}% hit rate)`);
-    
-    if (hitRate < 2 && eventsToCheck.length > 1000) {
-      const hoursWasted = (eventsToCheck.length * 2) / 3600;
-      console.log(`⚠️  Hit rate ${hitRate.toFixed(1)}% too low for ${eventsToCheck.length} events!`);
-      console.log(`💡 Would waste ${hoursWasted.toFixed(1)} hours checking mostly empty events`);
-      console.log('🛑 Recommendation: Reduce fullScanDays from 7 to 2-3 days');
-      console.log('✅ Stopping early - adjust config and retry');
-      
-      await supabase.from('race_scan_config').update({
-        last_scan_at: new Date().toISOString(),
-        last_scan_events_checked: sampleChecked,
-        last_scan_events_saved: 0,
-        last_scan_duration_seconds: Math.floor((Date.now() - startTime) / 1000)
-      }).eq('id', configData.id);
-      
-      return;
-    }
-    
-    console.log(`✅ Hit rate OK - proceeding with full scan\n`);
-    
-    // ============================================================
-    // SEQUENTIAL EVENT SCANNING  
-    // ============================================================
-    const SEQUENTIAL_DELAY = 2000; // 2 seconds per event
-    
-    console.log(`🚀 Scanning ${eventsToCheck.length} events sequentially...`);
-    
-    for (let i = 0; i < eventsToCheck.length; i++) {
-      const eventId = eventsToCheck[i];
-                headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
-                timeout: 10000
-              }
-            );
-            
-            const eventData = eventResponse.data;
-            const myRiderResults = eventData.results?.filter((r: any) => 
-              myRiderIds.includes(r.riderId)
-            ) || [];
-            
-            return { eventId, eventData, myRiderResults, success: true };
-          } catch (error: any) {
-            if (error.response?.status === 429) {
-              console.warn(`  ⏳ Rate limited on event ${eventId}`);
-            }
-            return { eventId, success: false, error };
-          }
-        }));
-        
-        // Process results
-        for (const result of results) {
-          eventsChecked++;
-          
-          if (!result.success || result.myRiderResults.length === 0) {
-            continue;
-          }
-          
-          eventsWithMyRiders++;
-          console.log(`  ✅ Event ${result.eventId} "${result.eventData.title}": ${result.myRiderResults.length} rider(s)`);
-          
-          // Build and save results
-          const raceResults = result.myRiderResults.map((r: any) => ({
-            event_id: result.eventId,
-            event_name: result.eventData.title || 'Unknown',
-            event_date: new Date(result.eventData.time * 1000).toISOString(),
-            event_type: result.eventData.type,
-            event_subtype: result.eventData.subType,
-            distance_meters: result.eventData.distance,
-            elevation_meters: result.eventData.elevation,
-            route_id: result.eventData.routeId,
-            rider_id: r.riderId,
-            rider_name: r.name,
-            position: r.position,
-            total_riders: result.eventData.results?.length || 0,
-            category: r.category,
-            time_seconds: r.time,
-            gap_seconds: r.gap,
-            dnf: r.dnf || false,
-            velo_rating: Math.round(r.rating || 0),
-            velo_before: Math.round(r.ratingBefore || 0),
-            velo_change: Math.round(r.ratingDelta || 0),
-            velo_max_30day: r.max30,
-            velo_max_90day: r.max90,
-            wkg_avg: r.wkgAvg,
-            wkg_5s: r.wkg5,
-            wkg_15s: r.wkg15,
-            wkg_30s: r.wkg30,
-            wkg_60s: r.wkg60,
-            wkg_120s: r.wkg120,
-            wkg_300s: r.wkg300,
-            wkg_1200s: r.wkg1200,
-            power_avg: r.power,
-            power_np: r.np,
-            power_ftp: r.ftp,
-            heart_rate_avg: r.heartRate,
-            effort_score: r.load,
-            updated_at: new Date().toISOString()
-          }));
-          
-          const { error: upsertError } = await supabase
-            .from('race_results')
-            .upsert(raceResults, { onConflict: 'event_id,rider_id' });
-          
-          if (!upsertError) {
-            resultsSaved += raceResults.length;
-          }
-        }
-        
-        // Progress every 30 events
-        if ((i + PARALLEL_BATCH_SIZE) % 30 === 0 || (i + PARALLEL_BATCH_SIZE >= eventsToCheck.length)) {
-          const pct = Math.round(((i + PARALLEL_BATCH_SIZE) / eventsToCheck.length) * 100);
-          console.log(`   📊 ${pct}%: ${eventsChecked}/${eventsToCheck.length} checked, ${eventsWithMyRiders} races, ${resultsSaved} results`);
-        }
-        
-        // Rate limit between batches
-        if (i + PARALLEL_BATCH_SIZE < eventsToCheck.length) {
-          await new Promise(resolve => setTimeout(resolve, PARALLEL_BATCH_DELAY));
-        }
-      }
-    } else {
-      // SEQUENTIAL PROCESSING for large first-time scans
-      for (let i = 0; i < newEventIds.length; i++) {
-        const eventId = newEventIds[i];
-        
-        try {
-          eventsChecked++;
-          
-          const eventResponse = await axios.get(
-            `https://api.zwiftracing.app/api/public/results/${eventId}`,
-            {
-              headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
-              timeout: 10000
-            }
-          );
-          
-          const eventData = eventResponse.data;
-          const myRiderResults = eventData.results?.filter((r: any) => 
-            myRiderIds.includes(r.riderId)
-          ) || [];
-          
-          if (myRiderResults.length === 0) {
-            continue;
-          }
-          
-          eventsWithMyRiders++;
-          console.log(`  ✅ Event ${eventId} "${eventData.title}": ${myRiderResults.length} rider(s)`);
-          
-          const raceResults = myRiderResults.map((r: any) => ({
-            event_id: eventId,
-            event_name: eventData.title || 'Unknown',
-            event_date: new Date(eventData.time * 1000).toISOString(),
-            event_type: eventData.type,
-            event_subtype: eventData.subType,
-            distance_meters: eventData.distance,
-            elevation_meters: eventData.elevation,
-            route_id: eventData.routeId,
-            rider_id: r.riderId,
-            rider_name: r.name,
-            position: r.position,
-            total_riders: eventData.results?.length || 0,
-            category: r.category,
-            time_seconds: r.time,
-            gap_seconds: r.gap,
-            dnf: r.dnf || false,
-            velo_rating: Math.round(r.rating || 0),
-            velo_before: Math.round(r.ratingBefore || 0),
-            velo_change: Math.round(r.ratingDelta || 0),
-            velo_max_30day: r.max30,
-            velo_max_90day: r.max90,
-            wkg_avg: r.wkgAvg,
-            wkg_5s: r.wkg5,
-            wkg_15s: r.wkg15,
-            wkg_30s: r.wkg30,
-            wkg_60s: r.wkg60,
-            wkg_120s: r.wkg120,
-            wkg_300s: r.wkg300,
-            wkg_1200s: r.wkg1200,
-            power_avg: r.power,
-            power_np: r.np,
-            power_ftp: r.ftp,
-            heart_rate_avg: r.heartRate,
-            effort_score: r.load,
-            updated_at: new Date().toISOString()
-          }));
-          
-          const { error: upsertError } = await supabase
-            .from('race_results')
-            .upsert(raceResults, { onConflict: 'event_id,rider_id' });
-          
-          if (!upsertError) {
-            resultsSaved += raceResults.length;
-          }
-          
-          // Progress every 100 events
-          if ((i + 1) % 100 === 0 || (i + 1) === newEventIds.length) {
-            const pct = Math.round(((i + 1) / newEventIds.length) * 100);
-            console.log(`   📊 ${pct}%: ${i + 1}/${newEventIds.length} checked, ${eventsWithMyRiders} races, ${resultsSaved} results`);
-          }
-          
-          await new Promise(resolve => setTimeout(resolve, 3000)); // 3s delay
-          
-        } catch (error: any) {
-          if (error.response?.status === 429) {
-            console.warn(`  ⏳ Rate limited - backing off 10s`);
-            await new Promise(resolve => setTimeout(resolve, 10000));
-          }
-        }
-      }
-    }
-    
-    const duration = Math.round((Date.now() - startTime) / 1000);
-    
-    console.log(`\n🎉 Scan completed in ${duration}s!`);
-    console.log(`📊 Final stats: ${eventsChecked} events checked, ${eventsWithMyRiders} with team riders, ${resultsSaved} results saved`);
-    
-    // Update scan log
-    await supabase
-      .from('race_scan_log')
-      .update({
-        completed_at: new Date().toISOString(),
-        status: 'success',
-        events_checked: eventsChecked,
-        events_with_my_riders: eventsWithMyRiders,
-        results_saved: resultsSaved,
-        results_updated: resultsUpdated,
-        duration_seconds: duration
-      })
-      .eq('started_at', new Date(startTime).toISOString());
-    
-    // Update config
-    await supabase
-      .from('race_scan_config')
-      .update({
-        last_scan_at: new Date().toISOString(),
-        last_scan_events_checked: eventsChecked,
-        last_scan_events_saved: eventsWithMyRiders,
-        last_scan_duration_seconds: duration,
-        next_scan_at: new Date(Date.now() + (configData.scan_interval_minutes * 60 * 1000)).toISOString()
-      })
-      .eq('id', configData.id);
-    
-    console.log(`✅ Race scan complete: ${eventsChecked} checked, ${eventsWithMyRiders} with my riders, ${resultsSaved} saved (${duration}s)`);
+    console.log(`✅ Hybrid scan complete: ${result.method} method used, ${result.resultsAdded} results saved`);
     
   } catch (error: any) {
-    console.error('❌ Race scan failed:', error.message);
-    
-    await supabase
-      .from('race_scan_log')
-      .update({
-        completed_at: new Date().toISOString(),
-        status: 'failed',
-        error_message: error.message
-      })
-      .eq('started_at', new Date(startTime).toISOString());
+    console.error('❌ Race scan error:', error.message);
+    throw error;
   }
 };
 
-// ============================================
-// CLEANUP OLD RACE RESULTS
-// ============================================
-/**
- * Verwijdert race resultaten ouder dan de configured retention period
- * Default: 90 dagen
- */
 const cleanupOldRaceResults = async () => {
   console.log('\n🧹 Starting race results cleanup...');
   
