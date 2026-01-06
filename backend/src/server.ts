@@ -4027,12 +4027,18 @@ const scanRaceResults = async (): Promise<void> => {
       console.log(`🆕 Full history scan (${lookbackHours}h = ${Math.floor(lookbackHours/24)} days)`);
     } else {
       // INCREMENTAL SCAN: Only recent events since last scan
+      // Use actual time since last scan (not the full lookback for new riders)
+      const hoursSinceLastScan = Math.ceil(
+        (Date.now() - new Date(lastScanAt).getTime()) / (1000 * 60 * 60)
+      );
+      const scanHours = hoursSinceLastScan + OVERLAP_HOURS; // Add overlap buffer
+      
       const maxKnownEventId = recentEvent?.event_id || 5300000;
-      const estimatedNewEvents = lookbackHours * estimatedEventsPerHour;
+      const estimatedNewEvents = scanHours * estimatedEventsPerHour;
       scanStartEventId = maxKnownEventId - estimatedNewEvents - 50; // Small buffer
       scanEndEventId = maxKnownEventId + 50; // Small forward buffer
       
-      console.log(`♻️  Incremental scan (${lookbackHours}h)`);
+      console.log(`♻️  Incremental scan (${scanHours}h = ${hoursSinceLastScan}h since last + ${OVERLAP_HOURS}h overlap)`);
     }
     
     const eventIdsToCheck = Array.from(
@@ -4073,109 +4079,206 @@ const scanRaceResults = async (): Promise<void> => {
     // ============================================================
     // 100% API-BASED EVENT SCANNING - NO WEB SCRAPING
     // ============================================================
-    // SEQUENTIAL event checking with conservative rate limiting
-    const EVENT_DELAY = 1000; // 1 second between requests (60 req/min max)
+    // Smart batching: Use parallel processing for small batches, sequential for large
+    const SMALL_BATCH_THRESHOLD = 500; // Under 500 events = use parallel
+    const PARALLEL_BATCH_SIZE = 3; // 3 events per 2 seconds = safe rate
+    const PARALLEL_BATCH_DELAY = 2000; // 2 seconds between batches
+    const SEQUENTIAL_DELAY = 1000; // 1 second for large scans
     
-    console.log(`🚀 Scanning ${eventsToCheck.length} events sequentially (1 per second)...`);
+    const useParallel = eventsToCheck.length <= SMALL_BATCH_THRESHOLD;
     
-    // Process events one at a time
-    for (let i = 0; i < eventsToCheck.length; i++) {
-      const eventId = eventsToCheck[i];
-      
-      try {
-        eventsChecked++;
+    if (useParallel) {
+      console.log(`🚀 Small scan: ${eventsToCheck.length} events with parallel processing (${PARALLEL_BATCH_SIZE} at a time)...`);
+    } else {
+      console.log(`🚀 Large scan: ${eventsToCheck.length} events sequentially (1 per second)...`);
+    }
+    
+    if (useParallel) {
+      // PARALLEL PROCESSING for incremental scans
+      for (let i = 0; i < eventsToCheck.length; i += PARALLEL_BATCH_SIZE) {
+        const batch = eventsToCheck.slice(i, i + PARALLEL_BATCH_SIZE);
         
-        // Fetch event results via API
-        const eventResponse = await axios.get(
-          `https://api.zwiftracing.app/api/public/results/${eventId}`,
-          {
-            headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
-            timeout: 10000
+        // Fetch batch in parallel
+        const results = await Promise.all(batch.map(async (eventId) => {
+          try {
+            const eventResponse = await axios.get(
+              `https://api.zwiftracing.app/api/public/results/${eventId}`,
+              {
+                headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+                timeout: 10000
+              }
+            );
+            
+            const eventData = eventResponse.data;
+            const myRiderResults = eventData.results?.filter((r: any) => 
+              myRiderIds.includes(r.riderId)
+            ) || [];
+            
+            return { eventId, eventData, myRiderResults, success: true };
+          } catch (error: any) {
+            if (error.response?.status === 429) {
+              console.warn(`  ⏳ Rate limited on event ${eventId}`);
+            }
+            return { eventId, success: false, error };
           }
-        );
-        
-        const eventData = eventResponse.data;
-        
-        // Check if ANY of my team rider IDs are in the results
-        const myRiderResults = eventData.results?.filter((r: any) => 
-          myRiderIds.includes(r.riderId)
-        ) || [];
-        
-        if (myRiderResults.length === 0) {
-          // No team riders - skip
-          continue;
-        }
-        
-        eventsWithMyRiders++;
-        console.log(`  ✅ Event ${eventId} "${eventData.title}": ${myRiderResults.length} team rider(s)`);
-        
-        // Collect all race results for bulk insert
-        const raceResults = myRiderResults.map((riderResult: any) => ({
-          event_id: eventId,
-          event_name: eventData.title || 'Unknown',
-          event_date: new Date(eventData.time * 1000).toISOString(),
-          event_type: eventData.type,
-          event_subtype: eventData.subType,
-          distance_meters: eventData.distance,
-          elevation_meters: eventData.elevation,
-          route_id: eventData.routeId,
-          rider_id: riderResult.riderId,
-          rider_name: riderResult.name,
-          position: riderResult.position,
-          total_riders: eventData.results?.length || 0,
-          category: riderResult.category,
-          time_seconds: riderResult.time,
-          gap_seconds: riderResult.gap,
-          dnf: riderResult.dnf || false,
-          velo_rating: Math.round(riderResult.rating || 0),
-          velo_before: Math.round(riderResult.ratingBefore || 0),
-          velo_change: Math.round(riderResult.ratingDelta || 0),
-          velo_max_30day: riderResult.max30,
-          velo_max_90day: riderResult.max90,
-          wkg_avg: riderResult.wkgAvg,
-          wkg_5s: riderResult.wkg5,
-          wkg_15s: riderResult.wkg15,
-          wkg_30s: riderResult.wkg30,
-          wkg_60s: riderResult.wkg60,
-          wkg_120s: riderResult.wkg120,
-          wkg_300s: riderResult.wkg300,
-          wkg_1200s: riderResult.wkg1200,
-          power_avg: riderResult.power,
-          power_np: riderResult.np,
-          power_ftp: riderResult.ftp,
-          heart_rate_avg: riderResult.heartRate,
-          effort_score: riderResult.load,
-          updated_at: new Date().toISOString()
         }));
         
-        // Bulk upsert all results for this event
-        const { error: upsertError } = await supabase
-          .from('race_results')
-          .upsert(raceResults, {
-            onConflict: 'event_id,rider_id'
-          });
-        
-        if (upsertError) {
-          console.error(`    ❌ Error saving results: ${upsertError.message}`);
-        } else {
-          resultsSaved += raceResults.length;
+        // Process results
+        for (const result of results) {
+          eventsChecked++;
+          
+          if (!result.success || result.myRiderResults.length === 0) {
+            continue;
+          }
+          
+          eventsWithMyRiders++;
+          console.log(`  ✅ Event ${result.eventId} "${result.eventData.title}": ${result.myRiderResults.length} rider(s)`);
+          
+          // Build and save results
+          const raceResults = result.myRiderResults.map((r: any) => ({
+            event_id: result.eventId,
+            event_name: result.eventData.title || 'Unknown',
+            event_date: new Date(result.eventData.time * 1000).toISOString(),
+            event_type: result.eventData.type,
+            event_subtype: result.eventData.subType,
+            distance_meters: result.eventData.distance,
+            elevation_meters: result.eventData.elevation,
+            route_id: result.eventData.routeId,
+            rider_id: r.riderId,
+            rider_name: r.name,
+            position: r.position,
+            total_riders: result.eventData.results?.length || 0,
+            category: r.category,
+            time_seconds: r.time,
+            gap_seconds: r.gap,
+            dnf: r.dnf || false,
+            velo_rating: Math.round(r.rating || 0),
+            velo_before: Math.round(r.ratingBefore || 0),
+            velo_change: Math.round(r.ratingDelta || 0),
+            velo_max_30day: r.max30,
+            velo_max_90day: r.max90,
+            wkg_avg: r.wkgAvg,
+            wkg_5s: r.wkg5,
+            wkg_15s: r.wkg15,
+            wkg_30s: r.wkg30,
+            wkg_60s: r.wkg60,
+            wkg_120s: r.wkg120,
+            wkg_300s: r.wkg300,
+            wkg_1200s: r.wkg1200,
+            power_avg: r.power,
+            power_np: r.np,
+            power_ftp: r.ftp,
+            heart_rate_avg: r.heartRate,
+            effort_score: r.load,
+            updated_at: new Date().toISOString()
+          }));
+          
+          const { error: upsertError } = await supabase
+            .from('race_results')
+            .upsert(raceResults, { onConflict: 'event_id,rider_id' });
+          
+          if (!upsertError) {
+            resultsSaved += raceResults.length;
+          }
         }
         
-        // Progress logging every 100 events
-        if ((i + 1) % 100 === 0 || (i + 1) === eventsToCheck.length) {
-          const percentDone = Math.round(((i + 1) / eventsToCheck.length) * 100);
-          console.log(`   📊 Progress: ${i + 1}/${eventsToCheck.length} events (${percentDone}%), ${eventsWithMyRiders} with team riders, ${resultsSaved} results saved`);
+        // Progress every 30 events
+        if ((i + PARALLEL_BATCH_SIZE) % 30 === 0 || (i + PARALLEL_BATCH_SIZE >= eventsToCheck.length)) {
+          const pct = Math.round(((i + PARALLEL_BATCH_SIZE) / eventsToCheck.length) * 100);
+          console.log(`   📊 ${pct}%: ${eventsChecked}/${eventsToCheck.length} checked, ${eventsWithMyRiders} races, ${resultsSaved} results`);
         }
         
-        // Rate limit - wait between requests
-        await new Promise(resolve => setTimeout(resolve, EVENT_DELAY));
+        // Rate limit between batches
+        if (i + PARALLEL_BATCH_SIZE < eventsToCheck.length) {
+          await new Promise(resolve => setTimeout(resolve, PARALLEL_BATCH_DELAY));
+        }
+      }
+      // SEQUENTIAL PROCESSING for large first-time scans
+      for (let i = 0; i < eventsToCheck.length; i++) {
+        const eventId = eventsToCheck[i];
         
-      } catch (error: any) {
-        if (error.response?.status === 429) {
-          console.warn(`  ⏳ Rate limited on event ${eventId} - backing off 10s`);
-          await new Promise(resolve => setTimeout(resolve, 10000));
-        } else {
-          console.error(`  ❌ Error fetching event ${eventId}:`, error.message);
+        try {
+          eventsChecked++;
+          
+          const eventResponse = await axios.get(
+            `https://api.zwiftracing.app/api/public/results/${eventId}`,
+            {
+              headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+              timeout: 10000
+            }
+          );
+          
+          const eventData = eventResponse.data;
+          const myRiderResults = eventData.results?.filter((r: any) => 
+            myRiderIds.includes(r.riderId)
+          ) || [];
+          
+          if (myRiderResults.length === 0) {
+            continue;
+          }
+          
+          eventsWithMyRiders++;
+          console.log(`  ✅ Event ${eventId} "${eventData.title}": ${myRiderResults.length} rider(s)`);
+          
+          const raceResults = myRiderResults.map((r: any) => ({
+            event_id: eventId,
+            event_name: eventData.title || 'Unknown',
+            event_date: new Date(eventData.time * 1000).toISOString(),
+            event_type: eventData.type,
+            event_subtype: eventData.subType,
+            distance_meters: eventData.distance,
+            elevation_meters: eventData.elevation,
+            route_id: eventData.routeId,
+            rider_id: r.riderId,
+            rider_name: r.name,
+            position: r.position,
+            total_riders: eventData.results?.length || 0,
+            category: r.category,
+            time_seconds: r.time,
+            gap_seconds: r.gap,
+            dnf: r.dnf || false,
+            velo_rating: Math.round(r.rating || 0),
+            velo_before: Math.round(r.ratingBefore || 0),
+            velo_change: Math.round(r.ratingDelta || 0),
+            velo_max_30day: r.max30,
+            velo_max_90day: r.max90,
+            wkg_avg: r.wkgAvg,
+            wkg_5s: r.wkg5,
+            wkg_15s: r.wkg15,
+            wkg_30s: r.wkg30,
+            wkg_60s: r.wkg60,
+            wkg_120s: r.wkg120,
+            wkg_300s: r.wkg300,
+            wkg_1200s: r.wkg1200,
+            power_avg: r.power,
+            power_np: r.np,
+            power_ftp: r.ftp,
+            heart_rate_avg: r.heartRate,
+            effort_score: r.load,
+            updated_at: new Date().toISOString()
+          }));
+          
+          const { error: upsertError } = await supabase
+            .from('race_results')
+            .upsert(raceResults, { onConflict: 'event_id,rider_id' });
+          
+          if (!upsertError) {
+            resultsSaved += raceResults.length;
+          }
+          
+          // Progress every 100 events
+          if ((i + 1) % 100 === 0 || (i + 1) === eventsToCheck.length) {
+            const pct = Math.round(((i + 1) / eventsToCheck.length) * 100);
+            console.log(`   📊 ${pct}%: ${i + 1}/${eventsToCheck.length} checked, ${eventsWithMyRiders} races, ${resultsSaved} results`);
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, SEQUENTIAL_DELAY));
+          
+        } catch (error: any) {
+          if (error.response?.status === 429) {
+            console.warn(`  ⏳ Rate limited - backing off 10s`);
+            await new Promise(resolve => setTimeout(resolve, 10000));
+          }
         }
       }
     }
