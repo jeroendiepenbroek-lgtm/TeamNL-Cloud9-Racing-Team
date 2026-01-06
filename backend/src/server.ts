@@ -4140,61 +4140,64 @@ const scanRaceResults = async (): Promise<void> => {
         
         eventsWithMyRiders++;
         const riderNames = result.results.map((r: any) => r.name).join(', ');
-        console.log(`  ✅ Event ${result.eventId} "${result.eventData.title}": ${result.results.length} team rider(s) - ${riderNames}`);
+        console.log(`  ✅ Event ${result.eventId} "${result.eventData.title}": ${result.results.length} team rider(s)`);
         
-        // Save/update results for each rider
-        for (const riderResult of result.results) {
-          const raceResult = {
-            event_id: result.eventId,
-            event_name: result.eventData.title || 'Unknown',
-            event_date: new Date(result.eventData.time * 1000).toISOString(),
-            event_type: result.eventData.type,
-            event_subtype: result.eventData.subType,
-            distance_meters: result.eventData.distance,
-            elevation_meters: result.eventData.elevation,
-            route_id: result.eventData.routeId,
-            rider_id: riderResult.riderId,
-            rider_name: riderResult.name,
-            position: riderResult.position,
-            total_riders: result.eventData.results?.length || 0,
-            category: riderResult.category,
-            time_seconds: riderResult.time,
-            gap_seconds: riderResult.gap,
-            dnf: riderResult.dnf || false,
-            velo_rating: Math.round(riderResult.rating || 0),
-            velo_before: Math.round(riderResult.ratingBefore || 0),
-            velo_change: Math.round(riderResult.ratingDelta || 0),
-            velo_max_30day: riderResult.max30,
-            velo_max_90day: riderResult.max90,
-            wkg_avg: riderResult.wkgAvg,
-            wkg_5s: riderResult.wkg5,
-            wkg_15s: riderResult.wkg15,
-            wkg_30s: riderResult.wkg30,
-            wkg_60s: riderResult.wkg60,
-            wkg_120s: riderResult.wkg120,
-            wkg_300s: riderResult.wkg300,
-            wkg_1200s: riderResult.wkg1200,
-            power_avg: riderResult.power,
-            power_np: riderResult.np,
-            power_ftp: riderResult.ftp,
-            heart_rate_avg: riderResult.heartRate,
-            effort_score: riderResult.load,
-            updated_at: new Date().toISOString()
-          };
-          
-          // Upsert (insert or update)
-          const { error: upsertError } = await supabase
-            .from('race_results')
-            .upsert(raceResult, {
-              onConflict: 'event_id,rider_id'
-            });
-          
-          if (upsertError) {
-            console.error(`    ❌ Error saving result: ${upsertError.message}`);
-          } else {
-            resultsSaved++;
-          }
+        // Collect all race results for bulk insert
+        const raceResults = result.results.map((riderResult: any) => ({
+          event_id: result.eventId,
+          event_name: result.eventData.title || 'Unknown',
+          event_date: new Date(result.eventData.time * 1000).toISOString(),
+          event_type: result.eventData.type,
+          event_subtype: result.eventData.subType,
+          distance_meters: result.eventData.distance,
+          elevation_meters: result.eventData.elevation,
+          route_id: result.eventData.routeId,
+          rider_id: riderResult.riderId,
+          rider_name: riderResult.name,
+          position: riderResult.position,
+          total_riders: result.eventData.results?.length || 0,
+          category: riderResult.category,
+          time_seconds: riderResult.time,
+          gap_seconds: riderResult.gap,
+          dnf: riderResult.dnf || false,
+          velo_rating: Math.round(riderResult.rating || 0),
+          velo_before: Math.round(riderResult.ratingBefore || 0),
+          velo_change: Math.round(riderResult.ratingDelta || 0),
+          velo_max_30day: riderResult.max30,
+          velo_max_90day: riderResult.max90,
+          wkg_avg: riderResult.wkgAvg,
+          wkg_5s: riderResult.wkg5,
+          wkg_15s: riderResult.wkg15,
+          wkg_30s: riderResult.wkg30,
+          wkg_60s: riderResult.wkg60,
+          wkg_120s: riderResult.wkg120,
+          wkg_300s: riderResult.wkg300,
+          wkg_1200s: riderResult.wkg1200,
+          power_avg: riderResult.power,
+          power_np: riderResult.np,
+          power_ftp: riderResult.ftp,
+          heart_rate_avg: riderResult.heartRate,
+          effort_score: riderResult.load,
+          updated_at: new Date().toISOString()
+        }));
+        
+        // Bulk upsert all results for this event
+        const { error: upsertError } = await supabase
+          .from('race_results')
+          .upsert(raceResults, {
+            onConflict: 'event_id,rider_id'
+          });
+        
+        if (upsertError) {
+          console.error(`    ❌ Error saving results: ${upsertError.message}`);
+        } else {
+          resultsSaved += raceResults.length;
         }
+      }
+      
+      // Progress logging every 10 batches
+      if ((batchNum % 10 === 0) || (i + EVENT_BATCH_SIZE >= eventsToCheck.length)) {
+        console.log(`   📊 Progress: ${eventsChecked}/${eventsToCheck.length} events checked, ${eventsWithMyRiders} with team riders, ${resultsSaved} results saved`);
       }
       
       // Rate limit between batches (except last batch)
