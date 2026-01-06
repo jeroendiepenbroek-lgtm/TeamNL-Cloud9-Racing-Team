@@ -4204,8 +4204,8 @@ const scanRaceResults = async (): Promise<void> => {
           }
         }
         
-        // Rate limit: 13 seconds between event API calls
-        await new Promise(resolve => setTimeout(resolve, 13000));
+        // Rate limit: 2 seconds between event API calls (API is more forgiving than web scraping)
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
       } catch (error: any) {
         if (error.response?.status === 429) {
