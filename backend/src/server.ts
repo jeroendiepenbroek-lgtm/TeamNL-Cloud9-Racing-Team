@@ -4023,8 +4023,8 @@ const scanRaceResults = async (): Promise<void> => {
     
     console.log('🔎 Extracting event IDs from rider history pages (parallel processing)...');
     
-    // Process riders in parallel batches of 3 (spread over 13s = ~4.3s per request)
-    const BATCH_SIZE = 3;
+    // Process riders in parallel batches of 5 (spread over 13s = ~2.6s per request)
+    const BATCH_SIZE = 5;
     const BATCH_DELAY = 13000; // 13 seconds per batch to stay under 5 req/min
     
     const fetchRiderEvents = async (rider: any) => {
@@ -4140,9 +4140,9 @@ const scanRaceResults = async (): Promise<void> => {
       return;
     }
     
-    // Process events in parallel batches (API can handle more load than web scraping)
-    const EVENT_BATCH_SIZE = 5; // 5 parallel requests
-    const EVENT_BATCH_DELAY = 2000; // 2 seconds between batches
+    // Process events in parallel batches (API can handle much more load than web scraping)
+    const EVENT_BATCH_SIZE = 20; // 20 parallel requests (API is robust)
+    const EVENT_BATCH_DELAY = 1000; // 1 second between batches
     
     console.log(`🚀 Processing ${eventsToCheck.length} events in parallel (${EVENT_BATCH_SIZE} at a time)...`);
     
