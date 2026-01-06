@@ -4129,96 +4129,94 @@ const scanRaceResults = async (): Promise<void> => {
     console.log(`✅ ${existingEventIds.size} events already in database (skipping)`);
     console.log(`🆕 ${eventsToCheck.length} new event IDs to check`);
     
-    // ============================================================
-    // SMARTER APPROACH: Start from RIDERS, not events!
-    // ============================================================
-    // Instead of scanning 4500 event IDs (1-5% hit rate), 
-    // fetch recent races PER RIDER (100% hit rate)
-    //
-    // API: GET /api/public/results/rider/{riderId}?start=0&limit=50
-    // Returns: Last 50 races for that rider
-    //
-    console.log('\n🎯 SMART SCAN: Fetching recent races per rider (100% hit rate)...');
+    if (eventsToCheck.length === 0) {
+      console.log('✨ No new events to process - database is up to date!');
+      
+      await supabase.from('race_scan_config').update({
+        last_scan_at: new Date().toISOString(),
+        last_scan_events_checked: 0,
+        last_scan_events_saved: 0,
+        last_scan_duration_seconds: Math.floor((Date.now() - startTime) / 1000)
+      }).eq('id', configData.id);
+      
+      return;
+    }
     
-    const RIDER_DELAY = 3000; // 3 seconds between rider requests
-    const RACES_PER_RIDER = 50; // Last 50 races per rider
-    const uniqueEventIds = new Set<number>();
-    let ridersProcessed = 0;
+    // ============================================================
+    // SMART SAMPLING: Test hit rate before committing to full scan
+    // ============================================================
+    console.log('\n🔬 Smart sampling: testing random events for team rider presence...');
+    const SAMPLE_SIZE = Math.min(50, eventsToCheck.length);
+    const sampleIndices = new Set<number>();
+    while (sampleIndices.size < SAMPLE_SIZE) {
+      sampleIndices.add(Math.floor(Math.random() * eventsToCheck.length));
+    }
+    const sampleEvents = Array.from(sampleIndices).map(i => eventsToCheck[i]);
     
-    // Step 1: Collect event IDs from all riders (smart approach!)
-    for (const rider of myRiders) {
+    let sampleHits = 0;
+    let sampleChecked = 0;
+    
+    for (const eventId of sampleEvents) {
       try {
-        ridersProcessed++;
-        console.log(`  [${ridersProcessed}/${myRiders.length}] ${rider.racing_name} (${rider.rider_id})...`);
-        
-        const riderResponse = await axios.get(
-          `https://api.zwiftracing.app/api/public/results/rider/${rider.rider_id}`,
+        const response = await axios.get(
+          `https://api.zwiftracing.app/api/public/results/${eventId}`,
           {
-            params: { start: 0, limit: 50 },
             headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
             timeout: 10000
           }
         );
         
-        const races = riderResponse.data?.results || [];
-        const recentEventIds = races
-          .map((r: any) => r.eventId)
-          .filter((id: number) => {
-            const race = races.find((r: any) => r.eventId === id);
-            if (!race) return false;
-            const raceTime = race.time * 1000;
-            return raceTime >= cutoffTime * 1000;
-          });
+        sampleChecked++;
+        const hasTeamRiders = response.data.results?.some((r: any) => 
+          myRiderIds.includes(r.riderId)
+        );
         
-        recentEventIds.forEach((id: number) => uniqueEventIds.add(id));
-        console.log(`    ✅ ${races.length} races, ${recentEventIds.length} within date range`);
-        
-        if (ridersProcessed < myRiders.length) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
+        if (hasTeamRiders) {
+          sampleHits++;
+          const eventTitle = response.data.title || `Event ${eventId}`;
+          console.log(`  ✅ ${eventTitle}`);
         }
         
+        await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error: any) {
         if (error.response?.status === 429) {
-          console.warn(`    ⏳ Rate limited - backing off 10s`);
+          console.log(`  ⏳ Rate limited - backing off`);
           await new Promise(resolve => setTimeout(resolve, 10000));
-        } else {
-          console.error(`    ❌ Error: ${error.message}`);
         }
       }
     }
     
-    console.log(`\n📊 Collected ${uniqueEventIds.size} unique events from ${ridersProcessed} riders`);
+    const hitRate = sampleChecked > 0 ? (sampleHits / sampleChecked) * 100 : 0;
+    console.log(`\n📊 Sample: ${sampleHits}/${sampleChecked} events have team riders (${hitRate.toFixed(1)}% hit rate)`);
     
-    const newEventIds = Array.from(uniqueEventIds).filter(id => !existingEventIds.has(id));
-    console.log(`🆕 ${newEventIds.length} new events to fetch`);
-    
-    if (newEventIds.length === 0) {
-      console.log('✨ All events already in database!');
+    if (hitRate < 2 && eventsToCheck.length > 1000) {
+      const hoursWasted = (eventsToCheck.length * 2) / 3600;
+      console.log(`⚠️  Hit rate ${hitRate.toFixed(1)}% too low for ${eventsToCheck.length} events!`);
+      console.log(`💡 Would waste ${hoursWasted.toFixed(1)} hours checking mostly empty events`);
+      console.log('🛑 Recommendation: Reduce fullScanDays from 7 to 2-3 days');
+      console.log('✅ Stopping early - adjust config and retry');
+      
       await supabase.from('race_scan_config').update({
         last_scan_at: new Date().toISOString(),
-        last_scan_events_checked: uniqueEventIds.size,
+        last_scan_events_checked: sampleChecked,
         last_scan_events_saved: 0,
         last_scan_duration_seconds: Math.floor((Date.now() - startTime) / 1000)
       }).eq('id', configData.id);
+      
       return;
     }
     
-    // Step 2: Fetch full event details
-    console.log(`\n🔍 Fetching ${newEventIds.length} events...`);
+    console.log(`✅ Hit rate OK - proceeding with full scan\n`);
     
-    const useParallel = false; // Always sequential
+    // ============================================================
+    // SEQUENTIAL EVENT SCANNING  
+    // ============================================================
+    const SEQUENTIAL_DELAY = 2000; // 2 seconds per event
     
-    if (useParallel) {
-      // PARALLEL PROCESSING for incremental scans
-      for (let i = 0; i < eventsToCheck.length; i += PARALLEL_BATCH_SIZE) {
-        const batch = eventsToCheck.slice(i, i + PARALLEL_BATCH_SIZE);
-        
-        // Fetch batch in parallel
-        const results = await Promise.all(batch.map(async (eventId) => {
-          try {
-            const eventResponse = await axios.get(
-              `https://api.zwiftracing.app/api/public/results/${eventId}`,
-              {
+    console.log(`🚀 Scanning ${eventsToCheck.length} events sequentially...`);
+    
+    for (let i = 0; i < eventsToCheck.length; i++) {
+      const eventId = eventsToCheck[i];
                 headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
                 timeout: 10000
               }
