@@ -3997,125 +3997,54 @@ const scanRaceResults = async (): Promise<void> => {
     const cutoffTime = Math.floor(Date.now() / 1000) - (lookbackHours * 60 * 60);
     console.log(`📅 Scanning events from ${new Date(cutoffTime * 1000).toISOString()}`);
     
-    // NEW APPROACH: Extract event IDs from rider history pages
-    // ============================================================
-    // NOTE: This extracts __NEXT_DATA__ JSON from ZwiftRacing.app rider pages.
-    // This is NOT traditional HTML scraping - we're reading the official Next.js
-    // data payload that the website itself uses.
+    // 100% API-BASED APPROACH: Scan event IDs directly via Results API
+    // Strategy: Check recent event IDs in parallel and filter for team riders
     //
-    // Why this approach?
-    // - ZwiftRacing API has NO endpoint for rider race history
-    // - ZwiftRacing API has NO reliable Events endpoint  
-    // - This is the ONLY way to discover which events a rider participated in
+    // ZwiftRacing event IDs are sequential integers that increment over time
+    // We can estimate the range based on:
+    // - Recent known event IDs
+    // - Approximate events per day (~500-800 races/day across all categories)
+    // - Then scan that range in parallel batches
     //
-    // The __NEXT_DATA__ structure is stable because:
-    // - It's generated server-side by Next.js (official React framework)
-    // - Breaking changes would break the entire ZwiftRacing.app website
-    // - The data structure matches their internal API responses
-    //
-    // Alternative approaches attempted (all failed):
-    // ❌ /api/events - Returns 0 events or 404
-    // ❌ /api/public/events - 404 Not Found
-    // ❌ /api/public/riders/{id} - No history field in response
-    // ❌ Club results API - Not documented, unreliable
-    // ============================================================
-    const allEventIds = new Set<string>();
+    console.log('🔍 Determining event ID range to scan...');
     
-    console.log('🔎 Extracting event IDs from rider history pages (parallel processing)...');
+    // Get most recent event ID from our database
+    const { data: recentEvent } = await supabase
+      .from('race_results')
+      .select('event_id')
+      .order('event_id', { ascending: false })
+      .limit(1)
+      .single();
     
-    // Process riders in parallel batches of 5 (spread over 13s = ~2.6s per request)
-    const BATCH_SIZE = 5;
-    const BATCH_DELAY = 13000; // 13 seconds per batch to stay under 5 req/min
+    let maxKnownEventId = recentEvent?.event_id || 5300000; // Fallback to recent ID
     
-    const fetchRiderEvents = async (rider: any) => {
-      try {
-        // Fetch rider page HTML
-        const pageResponse = await axios.get(
-          `https://www.zwiftracing.app/riders/${rider.rider_id}`,
-          {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Accept': 'text/html'
-            },
-            timeout: 15000
-          }
-        );
-        
-        // Extract __NEXT_DATA__ JSON from HTML
-        const match = pageResponse.data.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/);
-        if (!match) {
-          console.log(`  ⚠️  Rider ${rider.rider_id} (${rider.racing_name}): No __NEXT_DATA__ found`);
-          return [];
-        }
-        
-        const nextData = JSON.parse(match[1]);
-        const history = nextData?.props?.pageProps?.rider?.history || [];
-        
-        if (history.length === 0) {
-          console.log(`  📭 Rider ${rider.rider_id} (${rider.racing_name}): No race history`);
-          return [];
-        }
-        
-        // Extract event IDs from history (within time range)
-        const eventIds: string[] = [];
-        for (const race of history) {
-          const eventId = race?.event?.id;
-          const eventTime = race?.event?.time;
-          
-          if (eventId && eventTime >= cutoffTime) {
-            eventIds.push(eventId);
-          }
-        }
-        
-        console.log(`  ✅ Rider ${rider.rider_id} (${rider.racing_name}): ${eventIds.length} events found (total ${history.length} races)`);
-        return eventIds;
-        
-      } catch (error: any) {
-        if (error.response?.status === 429) {
-          console.warn(`  ⚠️  Rate limit hit for rider ${rider.rider_id}`);
-        } else {
-          console.error(`  ❌ Error fetching rider ${rider.rider_id}:`, error.message);
-        }
-        return [];
-      }
-    };
+    // Estimate event IDs to scan based on lookback period
+    // Rough estimate: ~600 races/day = 25 races/hour
+    const estimatedEventsPerHour = 25;
+    const estimatedNewEvents = lookbackHours * estimatedEventsPerHour;
+    const scanStartEventId = maxKnownEventId - estimatedNewEvents - 100; // Add buffer
+    const scanEndEventId = maxKnownEventId + 100; // Include future events (pre-registered)
     
-    // Process in batches
-    for (let i = 0; i < myRiders.length; i += BATCH_SIZE) {
-      const batch = myRiders.slice(i, i + BATCH_SIZE);
-      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(myRiders.length / BATCH_SIZE);
-      
-      console.log(`📦 Processing batch ${batchNum}/${totalBatches} (${batch.length} riders)...`);
-      
-      // Process batch in parallel
-      const results = await Promise.all(batch.map(fetchRiderEvents));
-      
-      // Add all event IDs to set
-      results.flat().forEach(eventId => allEventIds.add(eventId));
-      
-      // Rate limit between batches (except last batch)
-      if (i + BATCH_SIZE < myRiders.length) {
-        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
-      }
-    }
+    const eventIdsToCheck = Array.from(
+      { length: scanEndEventId - scanStartEventId },
+      (_, i) => scanStartEventId + i
+    );
     
-    console.log(`📥 Found ${allEventIds.size} unique events from ${myRiders.length} riders`);
+    console.log(`📊 Will scan event IDs ${scanStartEventId} to ${scanEndEventId} (${eventIdsToCheck.length} events)`);
+    console.log(`🎯 Looking for races with any of ${myRiderIds.length} team riders`);
     
     // Check which events are already in database
     const { data: existingEvents } = await supabase
       .from('race_results')
       .select('event_id')
-      .in('event_id', Array.from(allEventIds));
+      .gte('event_id', scanStartEventId)
+      .lte('event_id', scanEndEventId);
     
     const existingEventIds = new Set(existingEvents?.map(e => e.event_id) || []);
-    const eventsToCheck = Array.from(allEventIds)
-      .filter(id => !existingEventIds.has(id))
-      .slice(0, maxEvents);
+    const eventsToCheck = eventIdsToCheck.filter(id => !existingEventIds.has(id));
     
     console.log(`✅ ${existingEventIds.size} events already in database (skipping)`);
-    console.log(`🆕 ${eventsToCheck.length} new events to fetch`);
-    console.log(`🎯 Will filter for ${myRiderIds.length} team rider IDs`);
+    console.log(`🆕 ${eventsToCheck.length} new event IDs to check`);
     
     if (eventsToCheck.length === 0) {
       console.log('✨ No new events to process - database is up to date!');
@@ -4128,25 +4057,21 @@ const scanRaceResults = async (): Promise<void> => {
         last_scan_duration_seconds: Math.floor((Date.now() - startTime) / 1000)
       }).eq('id', configData.id);
       
-      await supabase.from('race_scan_log').update({
-        completed_at: new Date().toISOString(),
-        status: 'success',
-        events_checked: 0,
-        events_with_my_riders: 0,
-        results_saved: 0,
-        duration_seconds: Math.floor((Date.now() - startTime) / 1000)
-      }).eq('started_at', (await supabase.from('race_scan_log').select('started_at').order('started_at', { ascending: false }).limit(1).single()).data?.started_at);
-      
       return;
     }
     
-    // Process events in parallel batches (API can handle much more load than web scraping)
-    const EVENT_BATCH_SIZE = 20; // 20 parallel requests (API is robust)
-    const EVENT_BATCH_DELAY = 1000; // 1 second between batches
+    // ============================================================
+    // 100% API-BASED EVENT SCANNING - NO WEB SCRAPING
+    // ============================================================
+    // 100% API-BASED EVENT SCANNING - NO WEB SCRAPING
+    // ============================================================
+    // Process events in parallel batches via Results API
+    const EVENT_BATCH_SIZE = 50; // 50 parallel requests (API is built for this)
+    const EVENT_BATCH_DELAY = 500; // 0.5 second between batches (100 req/sec sustained)
     
     console.log(`🚀 Processing ${eventsToCheck.length} events in parallel (${EVENT_BATCH_SIZE} at a time)...`);
     
-    const fetchEventResults = async (eventId: string) => {
+    const fetchEventResults = async (eventId: number) => {
       try {
         // Fetch event results via API
         const eventResponse = await axios.get(
