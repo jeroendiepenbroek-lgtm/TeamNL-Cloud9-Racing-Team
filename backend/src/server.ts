@@ -4260,6 +4260,7 @@ const scanRaceResults = async (): Promise<void> => {
           await new Promise(resolve => setTimeout(resolve, PARALLEL_BATCH_DELAY));
         }
       }
+    } else {
       // SEQUENTIAL PROCESSING for large first-time scans
       for (let i = 0; i < eventsToCheck.length; i++) {
         const eventId = eventsToCheck[i];
