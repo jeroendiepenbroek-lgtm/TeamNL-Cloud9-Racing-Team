@@ -4021,9 +4021,13 @@ const scanRaceResults = async (): Promise<void> => {
     // ============================================================
     const allEventIds = new Set<string>();
     
-    console.log('🔎 Extracting event IDs from rider history pages...');
+    console.log('🔎 Extracting event IDs from rider history pages (parallel processing)...');
     
-    for (const rider of myRiders) {
+    // Process riders in parallel batches of 3 (spread over 13s = ~4.3s per request)
+    const BATCH_SIZE = 3;
+    const BATCH_DELAY = 13000; // 13 seconds per batch to stay under 5 req/min
+    
+    const fetchRiderEvents = async (rider: any) => {
       try {
         // Fetch rider page HTML
         const pageResponse = await axios.get(
@@ -4041,7 +4045,7 @@ const scanRaceResults = async (): Promise<void> => {
         const match = pageResponse.data.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/);
         if (!match) {
           console.log(`  ⚠️  Rider ${rider.rider_id} (${rider.racing_name}): No __NEXT_DATA__ found`);
-          continue;
+          return [];
         }
         
         const nextData = JSON.parse(match[1]);
@@ -4049,33 +4053,50 @@ const scanRaceResults = async (): Promise<void> => {
         
         if (history.length === 0) {
           console.log(`  📭 Rider ${rider.rider_id} (${rider.racing_name}): No race history`);
-          continue;
+          return [];
         }
         
         // Extract event IDs from history (within time range)
-        let addedCount = 0;
+        const eventIds: string[] = [];
         for (const race of history) {
           const eventId = race?.event?.id;
           const eventTime = race?.event?.time;
           
           if (eventId && eventTime >= cutoffTime) {
-            allEventIds.add(eventId);
-            addedCount++;
+            eventIds.push(eventId);
           }
         }
         
-        console.log(`  ✅ Rider ${rider.rider_id} (${rider.racing_name}): ${addedCount} events found (total ${history.length} races)`);
-        
-        // Rate limit: 13 seconds between rider pages (to stay under 5 requests/minute)
-        await new Promise(resolve => setTimeout(resolve, 13000));
+        console.log(`  ✅ Rider ${rider.rider_id} (${rider.racing_name}): ${eventIds.length} events found (total ${history.length} races)`);
+        return eventIds;
         
       } catch (error: any) {
         if (error.response?.status === 429) {
-          console.warn(`  ⚠️  Rate limit hit for rider ${rider.rider_id} - waiting 60 seconds...`);
-          await new Promise(resolve => setTimeout(resolve, 60000));
+          console.warn(`  ⚠️  Rate limit hit for rider ${rider.rider_id}`);
         } else {
           console.error(`  ❌ Error fetching rider ${rider.rider_id}:`, error.message);
         }
+        return [];
+      }
+    };
+    
+    // Process in batches
+    for (let i = 0; i < myRiders.length; i += BATCH_SIZE) {
+      const batch = myRiders.slice(i, i + BATCH_SIZE);
+      const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(myRiders.length / BATCH_SIZE);
+      
+      console.log(`📦 Processing batch ${batchNum}/${totalBatches} (${batch.length} riders)...`);
+      
+      // Process batch in parallel
+      const results = await Promise.all(batch.map(fetchRiderEvents));
+      
+      // Add all event IDs to set
+      results.flat().forEach(eventId => allEventIds.add(eventId));
+      
+      // Rate limit between batches (except last batch)
+      if (i + BATCH_SIZE < myRiders.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
       }
     }
     
@@ -4119,11 +4140,14 @@ const scanRaceResults = async (): Promise<void> => {
       return;
     }
     
-    // Check each new event using Results API
-    for (const eventId of eventsToCheck) {
+    // Process events in parallel batches (API can handle more load than web scraping)
+    const EVENT_BATCH_SIZE = 5; // 5 parallel requests
+    const EVENT_BATCH_DELAY = 2000; // 2 seconds between batches
+    
+    console.log(`🚀 Processing ${eventsToCheck.length} events in parallel (${EVENT_BATCH_SIZE} at a time)...`);
+    
+    const fetchEventResults = async (eventId: string) => {
       try {
-        eventsChecked++;
-        
         // Fetch event results via API
         const eventResponse = await axios.get(
           `https://api.zwiftracing.app/api/public/results/${eventId}`,
@@ -4141,52 +4165,82 @@ const scanRaceResults = async (): Promise<void> => {
         ) || [];
         
         if (myRiderResults.length === 0) {
-          // No team members in this event - discard
-          console.log(`  ⏭️  Event ${eventId}: No team riders, discarding`);
+          return { eventId, hasTeam: false, eventData: null, results: [] };
+        }
+        
+        return { eventId, hasTeam: true, eventData, results: myRiderResults };
+        
+      } catch (error: any) {
+        if (error.response?.status === 429) {
+          console.warn(`  ⏳ Rate limited on event ${eventId}`);
+        }
+        return { eventId, hasTeam: false, eventData: null, results: [], error };
+      }
+    };
+    
+    // Process in batches
+    for (let i = 0; i < eventsToCheck.length; i += EVENT_BATCH_SIZE) {
+      const batch = eventsToCheck.slice(i, i + EVENT_BATCH_SIZE);
+      const batchNum = Math.floor(i / EVENT_BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(eventsToCheck.length / EVENT_BATCH_SIZE);
+      
+      console.log(`📦 Event batch ${batchNum}/${totalBatches} (${batch.length} events)...`);
+      
+      // Fetch batch in parallel
+      const batchResults = await Promise.all(batch.map(fetchEventResults));
+      
+      // Process results
+      for (const result of batchResults) {
+        eventsChecked++;
+        
+        if (!result.hasTeam || !result.eventData) {
+          if (!result.error) {
+            console.log(`  ⏭️  Event ${result.eventId}: No team riders`);
+          }
           continue;
         }
         
         eventsWithMyRiders++;
-        const riderNames = myRiderResults.map((r: any) => r.name).join(', ');
-        console.log(`  ✅ Event ${eventId} "${eventData.title}": ${myRiderResults.length} team rider(s) - ${riderNames}`);
+        const riderNames = result.results.map((r: any) => r.name).join(', ');
+        console.log(`  ✅ Event ${result.eventId} "${result.eventData.title}": ${result.results.length} team rider(s) - ${riderNames}`);
         
         // Save/update results for each rider
-        for (const result of myRiderResults) {
+        for (const riderResult of result.results) {
           const raceResult = {
-            event_id: eventId,
-            event_name: eventData.title || 'Unknown',
-            event_date: new Date(eventData.time * 1000).toISOString(),
-            event_type: eventData.type,
-            event_subtype: eventData.subType,
-            distance_meters: eventData.distance,
-            elevation_meters: eventData.elevation,
-            route_id: eventData.routeId,
-            rider_id: result.riderId,
-            rider_name: result.name,
-            position: result.position,
-            total_riders: eventData.results?.length || 0,
-            category: result.category,
-            time_seconds: result.time,
-            gap_seconds: result.gap,
-            dnf: result.dnf || false,
-            velo_rating: Math.round(result.rating || 0),
-            velo_before: Math.round(result.ratingBefore || 0),
-            velo_change: Math.round(result.ratingDelta || 0),
-            velo_max_30day: result.max30,
-            velo_max_90day: result.max90,
-            wkg_avg: result.wkgAvg,
-            wkg_5s: result.wkg5,
-            wkg_15s: result.wkg15,
-            wkg_30s: result.wkg30,
-            wkg_60s: result.wkg60,
-            wkg_120s: result.wkg120,
-            wkg_300s: result.wkg300,
-            wkg_1200s: result.wkg1200,
-            power_avg: result.power,
-            power_np: result.np,
-            power_ftp: result.ftp,
-            heart_rate_avg: result.heartRate,
-            effort_score: result.load,
+            event_id: result.eventId,
+            event_name: result.eventData.title || 'Unknown',
+            event_date: new Date(result.eventData.time * 1000).toISOString(),
+            event_type: result.eventData.type,
+            event_subtype: result.eventData.subType,
+            distance_meters: result.eventData.distance,
+            elevation_meters: result.eventData.elevation,
+            route_id: result.eventData.routeId,
+            rider_id: riderResult.riderId,
+            rider_name: riderResult.name,
+            position: riderResult.position,
+            total_riders: result.eventData.results?.length || 0,
+            category: riderResult.category,
+            time_seconds: riderResult.time,
+            gap_seconds: riderResult.gap,
+            dnf: riderResult.dnf || false,
+            velo_rating: Math.round(riderResult.rating || 0),
+            velo_before: Math.round(riderResult.ratingBefore || 0),
+            velo_change: Math.round(riderResult.ratingDelta || 0),
+            velo_max_30day: riderResult.max30,
+            velo_max_90day: riderResult.max90,
+            wkg_avg: riderResult.wkgAvg,
+            wkg_5s: riderResult.wkg5,
+            wkg_15s: riderResult.wkg15,
+            wkg_30s: riderResult.wkg30,
+            wkg_60s: riderResult.wkg60,
+            wkg_120s: riderResult.wkg120,
+            wkg_300s: riderResult.wkg300,
+            wkg_1200s: riderResult.wkg1200,
+            power_avg: riderResult.power,
+            power_np: riderResult.np,
+            power_ftp: riderResult.ftp,
+            heart_rate_avg: riderResult.heartRate,
+            effort_score: riderResult.load,
             updated_at: new Date().toISOString()
           };
           
@@ -4203,16 +4257,11 @@ const scanRaceResults = async (): Promise<void> => {
             resultsSaved++;
           }
         }
-        
-        // Rate limit: 2 seconds between event API calls (API is more forgiving than web scraping)
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-      } catch (error: any) {
-        if (error.response?.status === 429) {
-          console.warn(`  ⏳ Rate limited, waiting 60 seconds...`);
-          await new Promise(resolve => setTimeout(resolve, 60000));
-        }
-        console.error(`  ❌ Error checking event ${eventId}:`, error.message);
+      }
+      
+      // Rate limit between batches (except last batch)
+      if (i + EVENT_BATCH_SIZE < eventsToCheck.length) {
+        await new Promise(resolve => setTimeout(resolve, EVENT_BATCH_DELAY));
       }
     }
     
