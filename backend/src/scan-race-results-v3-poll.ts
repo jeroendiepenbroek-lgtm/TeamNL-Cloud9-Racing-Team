@@ -88,9 +88,28 @@ export async function pollRidersForNewRaces(supabase: ReturnType<typeof createCl
           console.log(`     Previous: ${new Date(previousState.lastRaceDate! * 1000).toISOString()}`);
           console.log(`     Current:  ${new Date(currentLastRace * 1000).toISOString()}`);
           
-          // Find event ID by checking recent events
-          // We know the race time, so we can query the event directly
-          // For now, just log - we'll need to fetch the event details
+          // Calculate estimated eventId based on race time
+          const nowEpoch = Math.floor(Date.now() / 1000);
+          const hoursAgo = (nowEpoch - currentLastRace) / 3600;
+          const estimatedEventsSince = Math.floor(hoursAgo * 25); // ~25 events/hour
+          
+          // Get recent max eventId from database
+          const { data: maxEvent } = await supabase
+            .from('race_results')
+            .select('event_id')
+            .order('event_id', { ascending: false })
+            .limit(1)
+            .single();
+          
+          const maxKnownEventId = maxEvent?.event_id || 5300000;
+          const estimatedEventId = maxKnownEventId - estimatedEventsSince;
+          
+          console.log(`     🎯 Estimated eventId: ${estimatedEventId} (±25)`);
+          
+          // Store the event ID range to check
+          for (let offset = -25; offset <= 25; offset++) {
+            newEventIds.add(estimatedEventId + offset);
+          }
         }
         
         // Update state
@@ -129,8 +148,107 @@ export async function pollRidersForNewRaces(supabase: ReturnType<typeof createCl
     
     console.log(`\\n✅ Poll complete in ${duration}s`);
     console.log(`📊 Stats: ${ridersChecked} riders, ${newRacesFound} new races detected`);
-    
-    return {
+        // Fetch event details for new races
+    if (newEventIds.size > 0) {
+      console.log(`\n🔍 Fetching ${newEventIds.size} potential event IDs...`);
+      
+      const eventIdsToFetch = Array.from(newEventIds);
+      let eventsFetched = 0;
+      let eventsWithTeam = 0;
+      let resultsSaved = 0;
+      
+      for (const eventId of eventIdsToFetch) {
+        try {
+          const eventResponse = await axios.get(
+            `https://api.zwiftracing.app/api/public/results/${eventId}`,
+            {
+              headers: API_HEADERS,
+              timeout: 10000
+            }
+          );
+          
+          const eventData = eventResponse.data;
+          const teamRiderResults = eventData.results?.filter((r: any) => 
+            myRiders.some(rider => rider.rider_id === r.riderId)
+          ) || [];
+          
+          if (teamRiderResults.length === 0) {
+            continue;
+          }
+          
+          eventsFetched++;
+          eventsWithTeam++;
+          console.log(`  ✅ Event ${eventId} "${eventData.title}": ${teamRiderResults.length} team riders`);
+          
+          // Save to database
+          const raceResults = teamRiderResults.map((r: any) => ({
+            event_id: eventId,
+            event_name: eventData.title || 'Unknown',
+            event_date: new Date(eventData.time * 1000).toISOString(),
+            event_type: eventData.type,
+            event_subtype: eventData.subType,
+            distance_meters: eventData.distance,
+            elevation_meters: eventData.elevation,
+            route_id: eventData.routeId,
+            rider_id: r.riderId,
+            rider_name: r.name,
+            position: r.position,
+            total_riders: eventData.results?.length || 0,
+            category: r.category,
+            time_seconds: r.time,
+            gap_seconds: r.gap,
+            dnf: r.dnf || false,
+            velo_rating: Math.round(r.rating || 0),
+            velo_before: Math.round(r.ratingBefore || 0),
+            velo_change: Math.round(r.ratingDelta || 0),
+            velo_max_30day: r.max30,
+            velo_max_90day: r.max90,
+            wkg_avg: r.wkgAvg,
+            wkg_5s: r.wkg5,
+            wkg_15s: r.wkg15,
+            wkg_30s: r.wkg30,
+            wkg_60s: r.wkg60,
+            wkg_120s: r.wkg120,
+            wkg_300s: r.wkg300,
+            wkg_1200s: r.wkg1200,
+            power_avg: r.power,
+            power_np: r.np,
+            power_ftp: r.ftp,
+            heart_rate_avg: r.heartRate,
+            effort_score: r.load,
+            updated_at: new Date().toISOString()
+          }));
+          
+          const { error: upsertError } = await supabase
+            .from('race_results')
+            .upsert(raceResults, { onConflict: 'event_id,rider_id' });
+          
+          if (!upsertError) {
+            resultsSaved += raceResults.length;
+          }
+          
+          // Progress
+          if (eventsFetched % 5 === 0) {
+            console.log(`   📊 ${eventsFetched} events checked, ${resultsSaved} results saved`);
+          }
+          
+          // Rate limit: 60s per event
+          if (eventsFetched < eventIdsToFetch.length) {
+            await new Promise(resolve => setTimeout(resolve, 60000));
+          }
+          
+        } catch (error: any) {
+          if (error.response?.status === 429) {
+            console.warn(`  ⏳ Rate limited - backing off 2 min`);
+            await new Promise(resolve => setTimeout(resolve, 120000));
+          }
+          // Skip not found events silently
+        }
+      }
+      
+      console.log(`\n🎉 Event fetch complete: ${eventsWithTeam} races, ${resultsSaved} results saved`);
+    }
+        return {
       newRaces: newRacesFound,
       ridersChecked,
       newEventIds: Array.from(newEventIds)
