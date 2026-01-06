@@ -1,4 +1,4 @@
-import SyncManager from '../components/SyncManager';
+import DualSyncManager from '../components/DualSyncManager';
 
 export default function AutoSyncDashboard() {
   return (
@@ -10,12 +10,12 @@ export default function AutoSyncDashboard() {
             🚀 Auto-Sync Management
           </h1>
           <p className="text-gray-300 text-lg">
-            Modern sync configuratie met smart strategy en real-time monitoring
+            Beheer rider sync en race scan schedulers
           </p>
         </div>
 
-        {/* Modern Sync Manager */}
-        <SyncManager />
+        {/* Dual Sync Manager - Shows both schedulers */}
+        <DualSyncManager />
       </div>
     </div>
   );
