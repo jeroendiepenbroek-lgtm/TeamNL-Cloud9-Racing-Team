@@ -4150,7 +4150,7 @@ const scanRaceResults = async (): Promise<void> => {
     const SMALL_BATCH_THRESHOLD = 500; // Under 500 events = use parallel
     const PARALLEL_BATCH_SIZE = 3; // 3 events per 2 seconds = safe rate
     const PARALLEL_BATCH_DELAY = 2000; // 2 seconds between batches
-    const SEQUENTIAL_DELAY = 1000; // 1 second for large scans
+    const SEQUENTIAL_DELAY = 2000; // 2 seconds for large scans (API is zeer strikt!)
     
     const useParallel = eventsToCheck.length <= SMALL_BATCH_THRESHOLD;
     
