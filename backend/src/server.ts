@@ -4073,16 +4073,18 @@ const scanRaceResults = async (): Promise<void> => {
     // ============================================================
     // 100% API-BASED EVENT SCANNING - NO WEB SCRAPING
     // ============================================================
-    // 100% API-BASED EVENT SCANNING - NO WEB SCRAPING
-    // ============================================================
-    // Process events in parallel batches via Results API
-    const EVENT_BATCH_SIZE = 5; // 5 parallel requests (conservative rate)
-    const EVENT_BATCH_DELAY = 3000; // 3 seconds between batches (stay well under rate limit)
+    // SEQUENTIAL event checking with conservative rate limiting
+    const EVENT_DELAY = 1000; // 1 second between requests (60 req/min max)
     
-    console.log(`🚀 Processing ${eventsToCheck.length} events in parallel (${EVENT_BATCH_SIZE} at a time)...`);
+    console.log(`🚀 Scanning ${eventsToCheck.length} events sequentially (1 per second)...`);
     
-    const fetchEventResults = async (eventId: number) => {
+    // Process events one at a time
+    for (let i = 0; i < eventsToCheck.length; i++) {
+      const eventId = eventsToCheck[i];
+      
       try {
+        eventsChecked++;
+        
         // Fetch event results via API
         const eventResponse = await axios.get(
           `https://api.zwiftracing.app/api/public/results/${eventId}`,
@@ -4100,62 +4102,27 @@ const scanRaceResults = async (): Promise<void> => {
         ) || [];
         
         if (myRiderResults.length === 0) {
-          return { eventId, hasTeam: false, eventData: null, results: [] };
-        }
-        
-        return { eventId, hasTeam: true, eventData, results: myRiderResults };
-        
-      } catch (error: any) {
-        if (error.response?.status === 429) {
-          console.warn(`  ⏳ Rate limited on event ${eventId}`);
-        }
-        return { eventId, hasTeam: false, eventData: null, results: [], error };
-      }
-    };
-    
-    // Process in batches
-    for (let i = 0; i < eventsToCheck.length; i += EVENT_BATCH_SIZE) {
-      const batch = eventsToCheck.slice(i, i + EVENT_BATCH_SIZE);
-      const batchNum = Math.floor(i / EVENT_BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(eventsToCheck.length / EVENT_BATCH_SIZE);
-      
-      // Log every 10 batches or first/last
-      if (batchNum === 1 || batchNum === totalBatches || batchNum % 10 === 0) {
-        console.log(`📦 Event batch ${batchNum}/${totalBatches} (${Math.round(batchNum/totalBatches*100)}% done, ${eventsWithMyRiders} races found so far)...`);
-      }
-      
-      // Fetch batch in parallel
-      const batchResults = await Promise.all(batch.map(fetchEventResults));
-      
-      // Process results
-      for (const result of batchResults) {
-        eventsChecked++;
-        
-        if (!result.hasTeam || !result.eventData) {
-          if (!result.error) {
-            console.log(`  ⏭️  Event ${result.eventId}: No team riders`);
-          }
+          // No team riders - skip
           continue;
         }
         
         eventsWithMyRiders++;
-        const riderNames = result.results.map((r: any) => r.name).join(', ');
-        console.log(`  ✅ Event ${result.eventId} "${result.eventData.title}": ${result.results.length} team rider(s)`);
+        console.log(`  ✅ Event ${eventId} "${eventData.title}": ${myRiderResults.length} team rider(s)`);
         
         // Collect all race results for bulk insert
-        const raceResults = result.results.map((riderResult: any) => ({
-          event_id: result.eventId,
-          event_name: result.eventData.title || 'Unknown',
-          event_date: new Date(result.eventData.time * 1000).toISOString(),
-          event_type: result.eventData.type,
-          event_subtype: result.eventData.subType,
-          distance_meters: result.eventData.distance,
-          elevation_meters: result.eventData.elevation,
-          route_id: result.eventData.routeId,
+        const raceResults = myRiderResults.map((riderResult: any) => ({
+          event_id: eventId,
+          event_name: eventData.title || 'Unknown',
+          event_date: new Date(eventData.time * 1000).toISOString(),
+          event_type: eventData.type,
+          event_subtype: eventData.subType,
+          distance_meters: eventData.distance,
+          elevation_meters: eventData.elevation,
+          route_id: eventData.routeId,
           rider_id: riderResult.riderId,
           rider_name: riderResult.name,
           position: riderResult.position,
-          total_riders: result.eventData.results?.length || 0,
+          total_riders: eventData.results?.length || 0,
           category: riderResult.category,
           time_seconds: riderResult.time,
           gap_seconds: riderResult.gap,
@@ -4193,20 +4160,30 @@ const scanRaceResults = async (): Promise<void> => {
         } else {
           resultsSaved += raceResults.length;
         }
-      }
-      
-      // Progress logging every 10 batches
-      if ((batchNum % 10 === 0) || (i + EVENT_BATCH_SIZE >= eventsToCheck.length)) {
-        console.log(`   📊 Progress: ${eventsChecked}/${eventsToCheck.length} events checked, ${eventsWithMyRiders} with team riders, ${resultsSaved} results saved`);
-      }
-      
-      // Rate limit between batches (except last batch)
-      if (i + EVENT_BATCH_SIZE < eventsToCheck.length) {
-        await new Promise(resolve => setTimeout(resolve, EVENT_BATCH_DELAY));
+        
+        // Progress logging every 100 events
+        if ((i + 1) % 100 === 0 || (i + 1) === eventsToCheck.length) {
+          const percentDone = Math.round(((i + 1) / eventsToCheck.length) * 100);
+          console.log(`   📊 Progress: ${i + 1}/${eventsToCheck.length} events (${percentDone}%), ${eventsWithMyRiders} with team riders, ${resultsSaved} results saved`);
+        }
+        
+        // Rate limit - wait between requests
+        await new Promise(resolve => setTimeout(resolve, EVENT_DELAY));
+        
+      } catch (error: any) {
+        if (error.response?.status === 429) {
+          console.warn(`  ⏳ Rate limited on event ${eventId} - backing off 10s`);
+          await new Promise(resolve => setTimeout(resolve, 10000));
+        } else {
+          console.error(`  ❌ Error fetching event ${eventId}:`, error.message);
+        }
       }
     }
     
     const duration = Math.round((Date.now() - startTime) / 1000);
+    
+    console.log(`\n🎉 Scan completed in ${duration}s!`);
+    console.log(`📊 Final stats: ${eventsChecked} events checked, ${eventsWithMyRiders} with team riders, ${resultsSaved} results saved`);
     
     // Update scan log
     await supabase
