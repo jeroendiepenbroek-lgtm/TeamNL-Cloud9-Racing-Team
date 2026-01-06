@@ -3998,32 +3998,42 @@ const scanRaceResults = async (): Promise<void> => {
     console.log(`📅 Scanning events from ${new Date(cutoffTime * 1000).toISOString()}`);
     
     // 100% API-BASED APPROACH: Scan event IDs directly via Results API
-    // Strategy: Check recent event IDs in parallel and filter for team riders
+    // Strategy: Intelligently determine event ID range based on scan type
     //
-    // ZwiftRacing event IDs are sequential integers that increment over time
-    // We can estimate the range based on:
-    // - Recent known event IDs
-    // - Approximate events per day (~500-800 races/day across all categories)
-    // - Then scan that range in parallel batches
+    // ZwiftRacing event IDs are sequential integers
+    // Approximate rate: ~600 races/day = 25 races/hour
     //
     console.log('🔍 Determining event ID range to scan...');
     
     // Get most recent event ID from our database
     const { data: recentEvent } = await supabase
       .from('race_results')
-      .select('event_id')
+      .select('event_id, event_date')
       .order('event_id', { ascending: false })
       .limit(1)
       .single();
     
-    let maxKnownEventId = recentEvent?.event_id || 5300000; // Fallback to recent ID
-    
-    // Estimate event IDs to scan based on lookback period
-    // Rough estimate: ~600 races/day = 25 races/hour
+    let scanStartEventId: number;
+    let scanEndEventId: number;
     const estimatedEventsPerHour = 25;
-    const estimatedNewEvents = lookbackHours * estimatedEventsPerHour;
-    const scanStartEventId = maxKnownEventId - estimatedNewEvents - 100; // Add buffer
-    const scanEndEventId = maxKnownEventId + 100; // Include future events (pre-registered)
+    
+    if (isFirstRun || hasNewRiders) {
+      // FULL HISTORY SCAN: Use 90-day lookback
+      const maxKnownEventId = recentEvent?.event_id || 5300000;
+      const estimatedTotal90Days = lookbackHours * estimatedEventsPerHour;
+      scanStartEventId = maxKnownEventId - estimatedTotal90Days - 200; // Buffer
+      scanEndEventId = maxKnownEventId + 100; // Include future/pre-registered
+      
+      console.log(`🆕 Full history scan (${lookbackHours}h = ${Math.floor(lookbackHours/24)} days)`);
+    } else {
+      // INCREMENTAL SCAN: Only recent events since last scan
+      const maxKnownEventId = recentEvent?.event_id || 5300000;
+      const estimatedNewEvents = lookbackHours * estimatedEventsPerHour;
+      scanStartEventId = maxKnownEventId - estimatedNewEvents - 50; // Small buffer
+      scanEndEventId = maxKnownEventId + 50; // Small forward buffer
+      
+      console.log(`♻️  Incremental scan (${lookbackHours}h)`);
+    }
     
     const eventIdsToCheck = Array.from(
       { length: scanEndEventId - scanStartEventId },
@@ -4109,7 +4119,10 @@ const scanRaceResults = async (): Promise<void> => {
       const batchNum = Math.floor(i / EVENT_BATCH_SIZE) + 1;
       const totalBatches = Math.ceil(eventsToCheck.length / EVENT_BATCH_SIZE);
       
-      console.log(`📦 Event batch ${batchNum}/${totalBatches} (${batch.length} events)...`);
+      // Log every 10 batches or first/last
+      if (batchNum === 1 || batchNum === totalBatches || batchNum % 10 === 0) {
+        console.log(`📦 Event batch ${batchNum}/${totalBatches} (${Math.round(batchNum/totalBatches*100)}% done, ${eventsWithMyRiders} races found so far)...`);
+      }
       
       // Fetch batch in parallel
       const batchResults = await Promise.all(batch.map(fetchEventResults));
