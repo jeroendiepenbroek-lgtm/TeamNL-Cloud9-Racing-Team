@@ -7,7 +7,7 @@ import TeamManager from './pages/TeamManager'
 import TeamBuilder from './pages/TeamBuilder'
 import TeamViewer from './pages/TeamViewer'
 import RiderPassportGallery from './pages/RiderPassportGallery'
-import TeamResultsDashboard from './pages/TeamResultsDashboard'
+import TeamRaceResults from './pages/TeamRaceResults'
 import RiderResultsPage from './pages/RiderResultsPage'
 import EventResultsPage from './pages/EventResultsPage'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -146,7 +146,7 @@ function App() {
               <Route path="/racing-matrix" element={<RacingMatrix />} />
               <Route path="/rider-passports" element={<RiderPassportGallery />} />
               <Route path="/events" element={<EventsDashboard />} />
-              <Route path="/results" element={<TeamResultsDashboard />} />
+              <Route path="/results" element={<TeamRaceResults />} />
               <Route path="/results/rider/:riderId" element={<RiderResultsPage />} />
               <Route path="/results/event/:eventId" element={<EventResultsPage />} />
               <Route path="/team-manager" element={<TeamManager />} />
