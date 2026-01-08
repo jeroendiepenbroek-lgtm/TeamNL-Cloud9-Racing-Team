@@ -1695,6 +1695,83 @@ const frontendPath = process.env.NODE_ENV === 'production'
     ? path.join(__dirname, '..', '..', 'frontend', 'dist')
     : path.join(__dirname, '..', '..', 'frontend', 'dist');
 console.log('📂 Frontend path:', frontendPath);
+// ============================================
+// RACE RESULTS API (server-side RLS bypass)
+// ============================================
+// GET: Race results voor specifieke rider
+app.get('/api/results/rider/:riderId', async (req, res) => {
+    try {
+        const riderId = parseInt(req.params.riderId);
+        const { data, error } = await supabase
+            .from('race_results')
+            .select('*')
+            .eq('rider_id', riderId)
+            .order('event_date', { ascending: false });
+        if (error)
+            throw error;
+        res.json({ success: true, results: data || [] });
+    }
+    catch (error) {
+        console.error('❌ Error fetching race results:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// POST: Bulk import race results (ZwiftPower E2E pipeline)
+app.post('/api/results/bulk', async (req, res) => {
+    try {
+        const { results } = req.body;
+        if (!Array.isArray(results) || results.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'results array is required'
+            });
+        }
+        console.log(`\n📦 BULK RACE RESULTS IMPORT: ${results.length} results`);
+        // Map frontend format to database schema
+        const payload = results.map((r) => ({
+            event_id: parseInt(r.eventId),
+            rider_id: parseInt(r.riderId),
+            position: r.position,
+            category: r.category,
+            avg_power: r.avgPower,
+            avg_wkg: r.avgWkg,
+            time_seconds: r.timeSeconds,
+            power_5s_wkg: r.power5s,
+            power_15s_wkg: r.power15s,
+            power_30s_wkg: r.power30s,
+            power_1m_wkg: r.power1m,
+            power_2m_wkg: r.power2m,
+            power_5m_wkg: r.power5m,
+            power_20m_wkg: r.power20m,
+            rider_name: r.riderName,
+            weight: r.weight,
+            ftp: r.ftp,
+            velo_before: r.veloBefore,
+            velo_after: r.veloAfter,
+            source: r.source || 'zwiftpower'
+        }));
+        // Server-side UPSERT bypasses RLS (service key gebruikt)
+        const { data, error } = await supabase
+            .from('race_results')
+            .upsert(payload, { onConflict: 'event_id,rider_id' })
+            .select();
+        if (error)
+            throw error;
+        console.log(`✅ Bulk import complete: ${data?.length || 0} results saved`);
+        res.json({
+            success: true,
+            saved: data?.length || 0,
+            total: results.length
+        });
+    }
+    catch (error) {
+        console.error('❌ Bulk import failed:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 app.use(express.static(frontendPath));
 app.get('*', (req, res) => {
     if (!req.path.startsWith('/api')) {
@@ -1976,120 +2053,6 @@ const stopScheduler = (syncType) => {
     }
 };
 // ============================================
-// RACE RESULTS ENDPOINTS
-// ============================================
-// POST: Save race result (single)
-app.post('/api/results/save', async (req, res) => {
-    try {
-        const { eventId, riderId, position, category, avgPower, avgWkg, timeSeconds, power5s, power15s, power30s, power1m, power2m, power5m, power20m, riderName, weight, ftp, veloBefore, veloAfter, source } = req.body;
-        // Validate required fields
-        if (!eventId || !riderId) {
-            return res.status(400).json({
-                success: false,
-                error: 'eventId and riderId are required'
-            });
-        }
-        // Map to database schema
-        const payload = {
-            event_id: parseInt(eventId),
-            rider_id: parseInt(riderId),
-            position,
-            category,
-            avg_power: avgPower,
-            avg_wkg: avgWkg,
-            time_seconds: timeSeconds,
-            power_5s_wkg: power5s,
-            power_15s_wkg: power15s,
-            power_30s_wkg: power30s,
-            power_1m_wkg: power1m,
-            power_2m_wkg: power2m,
-            power_5m_wkg: power5m,
-            power_20m_wkg: power20m,
-            rider_name: riderName,
-            weight,
-            ftp,
-            velo_before: veloBefore,
-            velo_after: veloAfter,
-            source: source || 'zwiftpower'
-        };
-        // Remove undefined fields
-        Object.keys(payload).forEach(key => {
-            if (payload[key] === undefined)
-                delete payload[key];
-        });
-        // UPSERT to database
-        const { data, error } = await supabase
-            .from('race_results')
-            .upsert(payload, { onConflict: 'event_id,rider_id' })
-            .select()
-            .single();
-        if (error)
-            throw error;
-        console.log(`✅ Race result saved: Event ${eventId}, Rider ${riderId}`);
-        res.json({
-            success: true,
-            result: data
-        });
-    }
-    catch (error) {
-        console.error('❌ Save race result failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// POST: Bulk save race results
-app.post('/api/results/bulk', async (req, res) => {
-    try {
-        const { results } = req.body;
-        if (!Array.isArray(results) || results.length === 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'results array is required'
-            });
-        }
-        console.log(`\n📦 BULK RACE RESULTS IMPORT: ${results.length} results`);
-        // Map all results to database schema
-        const payload = results.map(r => ({
-            event_id: parseInt(r.eventId),
-            rider_id: parseInt(r.riderId),
-            position: r.position,
-            category: r.category,
-            avg_power: r.avgPower,
-            avg_wkg: r.avgWkg,
-            time_seconds: r.timeSeconds,
-            power_5s_wkg: r.power5s,
-            power_15s_wkg: r.power15s,
-            power_30s_wkg: r.power30s,
-            power_1m_wkg: r.power1m,
-            power_2m_wkg: r.power2m,
-            power_5m_wkg: r.power5m,
-            power_20m_wkg: r.power20m,
-            rider_name: r.riderName,
-            weight: r.weight,
-            ftp: r.ftp,
-            velo_before: r.veloBefore,
-            velo_after: r.veloAfter,
-            source: r.source || 'zwiftpower'
-        }));
-        // Bulk UPSERT
-        const { data, error } = await supabase
-            .from('race_results')
-            .upsert(payload, { onConflict: 'event_id,rider_id' })
-            .select();
-        if (error)
-            throw error;
-        console.log(`✅ Bulk import complete: ${data?.length || 0} results saved`);
-        res.json({
-            success: true,
-            saved: data?.length || 0,
-            results: data
-        });
-    }
-    catch (error) {
-        console.error('❌ Bulk save race results failed:', error);
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-// ============================================
 // INITIALIZE & START SERVER
 // ============================================
 // Initialize and start server with schedulers
@@ -2099,7 +2062,6 @@ app.post('/api/results/bulk', async (req, res) => {
         console.log(`📊 Racing Matrix: http://localhost:${PORT}`);
         console.log(`🏥 Health: http://localhost:${PORT}/health`);
         console.log(`🏆 Team Builder: http://localhost:${PORT}/api/teams`);
-        console.log(`🏁 Race Results: http://localhost:${PORT}/api/results/bulk`);
         // Start all configured schedulers
         console.log('\n🚀 Initializing sync schedulers...');
         await startScheduler(SYNC_TYPE_TEAM_RIDERS);
