@@ -4,6 +4,8 @@ import { Toaster } from 'react-hot-toast'
 import RacingMatrix from './pages/RacingMatrix'
 import EventsDashboard from './pages/EventsDashboard'
 import ResultsDashboard from './pages/ResultsDashboard'
+import RaceResults from './pages/RaceResults'
+import RaceDetails from './pages/RaceDetails'
 import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
 
@@ -49,6 +51,9 @@ function Navigation() {
               <Link to="/results" className="text-white hover:text-orange-400 transition font-semibold">
                 Results
               </Link>
+              <Link to="/race-results" className="text-white hover:text-orange-400 transition font-semibold">
+                Race Results
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}
@@ -73,6 +78,14 @@ function Navigation() {
                 Team Dashboard
               </Link>
               <Link to="/events" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                Events
+              </Link>
+              <Link to="/results" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                Results
+              </Link>
+              <Link to="/race-results" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
+                Race Results
+              </Link>
                 Events
               </Link>
               <Link to="/results" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
@@ -103,6 +116,8 @@ function App() {
                 <Route path="/" element={<RacingMatrix />} />
                 <Route path="/events" element={<EventsDashboard />} />
                 <Route path="/results" element={<ResultsDashboard />} />
+                <Route path="/race-results" element={<RaceResults />} />
+                <Route path="/race/:eventId" element={<RaceDetails />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="*" element={

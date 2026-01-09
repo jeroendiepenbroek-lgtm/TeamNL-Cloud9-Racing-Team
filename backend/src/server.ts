@@ -1906,22 +1906,134 @@ console.log('📂 Frontend path:', frontendPath);
 // RACE RESULTS API (server-side RLS bypass)
 // ============================================
 
-// GET: Race results voor specifieke rider
+// US1: GET Race results voor specifieke rider (90 dagen) from v_dashboard_rider_results
 app.get('/api/results/rider/:riderId', async (req, res) => {
   try {
     const riderId = parseInt(req.params.riderId);
     
+    if (isNaN(riderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid rider ID'
+      });
+    }
+    
+    // Gebruik dashboard view met 90-dagen filter
     const { data, error } = await supabase
-      .from('race_results')
+      .from('v_dashboard_rider_results')
       .select('*')
       .eq('rider_id', riderId)
       .order('event_date', { ascending: false });
     
     if (error) throw error;
     
-    res.json({ success: true, results: data || [] });
+    console.log(`📊 Race results for rider ${riderId}: ${data?.length || 0} races`);
+    
+    res.json({ 
+      success: true, 
+      rider_id: riderId,
+      count: data?.length || 0,
+      results: data || [] 
+    });
   } catch (error: any) {
     console.error('❌ Error fetching race results:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// US2: GET Race event details met alle deelnemers
+app.get('/api/results/event/:eventId', async (req, res) => {
+  try {
+    const eventId = parseInt(req.params.eventId);
+    
+    if (isNaN(eventId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid event ID'
+      });
+    }
+    
+    // Haal event details + alle results op
+    const { data: eventResults, error: resultsError } = await supabase
+      .from('race_results')
+      .select('*')
+      .eq('event_id', eventId)
+      .order('position');
+    
+    if (resultsError) throw resultsError;
+    
+    // Haal event metadata op
+    const { data: eventData, error: eventError } = await supabase
+      .from('race_events')
+      .select('*')
+      .eq('event_id', eventId)
+      .single();
+    
+    console.log(`📊 Event ${eventId}: ${eventResults?.length || 0} results`);
+    
+    res.json({
+      success: true,
+      event: eventData || null,
+      results: eventResults || [],
+      total_participants: eventResults?.length || 0
+    });
+  } catch (error: any) {
+    console.error('❌ Error fetching event results:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET: Stats voor specifieke rider (summary)
+app.get('/api/results/rider/:riderId/stats', async (req, res) => {
+  try {
+    const riderId = parseInt(req.params.riderId);
+    
+    if (isNaN(riderId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid rider ID'
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('v_dashboard_rider_results')
+      .select('*')
+      .eq('rider_id', riderId);
+    
+    if (error) throw error;
+    
+    // Calculate stats
+    const total_races = data?.length || 0;
+    const total_wins = data?.filter(r => r.position === 1).length || 0;
+    const total_podiums = data?.filter(r => r.position <= 3).length || 0;
+    const avg_position = total_races > 0 
+      ? (data?.reduce((sum, r) => sum + (r.position || 0), 0) || 0) / total_races 
+      : 0;
+    
+    // vELO trend
+    const sortedByDate = [...(data || [])].sort((a, b) => 
+      new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    );
+    const velo_start = sortedByDate[0]?.velo_before || null;
+    const velo_end = sortedByDate[sortedByDate.length - 1]?.velo_after || null;
+    const velo_change_total = (velo_end && velo_start) ? velo_end - velo_start : 0;
+    
+    res.json({
+      success: true,
+      rider_id: riderId,
+      stats: {
+        total_races,
+        total_wins,
+        total_podiums,
+        podium_percentage: total_races > 0 ? (total_podiums / total_races * 100).toFixed(1) : 0,
+        avg_position: avg_position.toFixed(1),
+        velo_start,
+        velo_end,
+        velo_change_total
+      }
+    });
+  } catch (error: any) {
+    console.error('❌ Error fetching rider stats:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
