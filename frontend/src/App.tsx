@@ -86,11 +86,6 @@ function Navigation() {
               <Link to="/race-results" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
                 Race Results
               </Link>
-                Events
-              </Link>
-              <Link to="/results" onClick={() => setMobileMenuOpen(false)} className="block text-white hover:text-orange-400 py-2 px-4 rounded transition">
-                Results
-              </Link>
             </div>
           )}
         </div>
