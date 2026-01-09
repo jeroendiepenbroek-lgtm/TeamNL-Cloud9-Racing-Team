@@ -572,12 +572,19 @@ function EventCard({ event }: { event: EventResult }) {
 }
 
 export default function ResultsModern() {
+  const [activeTab, setActiveTab] = useState<'team' | 'rider'>('team');
   const [events, setEvents] = useState<EventResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState(365);
   const [limit, setLimit] = useState(50);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Rider History State
+  const [riderResults, setRiderResults] = useState<any[]>([]);
+  const [riderLoading, setRiderLoading] = useState(false);
+  const [riderError, setRiderError] = useState<string | null>(null);
+  const [selectedRiderId] = useState('150437');
 
   const fetchResults = async () => {
     setLoading(true);
@@ -605,9 +612,39 @@ export default function ResultsModern() {
     }
   };
 
+  const fetchRiderResults = async () => {
+    setRiderLoading(true);
+    setRiderError(null);
+    
+    try {
+      const response = await fetch(`/api/results/rider/${selectedRiderId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch rider results');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setRiderResults(data.results || []);
+      } else {
+        throw new Error('API returned success=false');
+      }
+    } catch (err) {
+      console.error('Error fetching rider results:', err);
+      setRiderError('Fout bij laden van rider results. Probeer opnieuw.');
+    } finally {
+      setRiderLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchResults();
-  }, [days, limit]);
+    if (activeTab === 'team') {
+      fetchResults();
+    } else if (activeTab === 'rider') {
+      fetchRiderResults();
+    }
+  }, [days, limit, activeTab]);
 
   // Filter events based on search
   const filteredEvents = events.filter(event => {
@@ -639,13 +676,40 @@ export default function ResultsModern() {
                 </p>
               </div>
             </div>
+            
+            {/* Tab Navigation */}
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={() => setActiveTab('team')}
+                className={`px-6 py-3 rounded-xl font-bold text-lg transition-all ${
+                  activeTab === 'team'
+                    ? 'bg-white text-indigo-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                <Users className="w-5 h-5 inline-block mr-2" />
+                Team Results
+              </button>
+              <button
+                onClick={() => setActiveTab('rider')}
+                className={`px-6 py-3 rounded-xl font-bold text-lg transition-all ${
+                  activeTab === 'rider'
+                    ? 'bg-white text-indigo-600 shadow-lg'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                }`}
+              >
+                <UserCheck2 className="w-5 h-5 inline-block mr-2" />
+                Rider History (150437)
+              </button>
+            </div>
+            
             <div className="flex flex-wrap items-center gap-4 bg-white/10 backdrop-blur-lg rounded-xl px-5 py-3 border border-white/20 shadow-xl">
               <span className="text-white/80 text-sm font-medium">Showing</span>
-              <span className="text-white font-bold text-2xl">{filteredEvents.length}</span>
+              <span className="text-white font-bold text-2xl">{activeTab === 'team' ? filteredEvents.length : riderResults.length}</span>
               <span className="text-white/80 text-sm font-medium">of</span>
-              <span className="text-white font-bold text-2xl">{events.length}</span>
-              <span className="text-white/80 text-sm font-medium">events</span>
-              {searchTerm && (
+              <span className="text-white font-bold text-2xl">{activeTab === 'team' ? events.length : riderResults.length}</span>
+              <span className="text-white/80 text-sm font-medium">{activeTab === 'team' ? 'events' : 'races'}</span>
+              {searchTerm && activeTab === 'team' && (
                 <>
                   <span className="text-white/60">·</span>
                   <span className="text-cyan-300 font-semibold text-sm">🔍 "{searchTerm}"</span>
@@ -709,46 +773,147 @@ export default function ResultsModern() {
           </div>
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex justify-center items-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Results laden...</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-            <p className="text-red-800 font-medium mb-2">⚠️ {error}</p>
-            <button
-              onClick={fetchResults}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              Opnieuw proberen
-            </button>
-          </div>
-        )}
-
-        {/* Results List */}
-        {!loading && !error && (
-          <div className="space-y-4">
-            {filteredEvents.length === 0 ? (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-12 text-center border border-slate-200">
-                <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-600 text-lg">Geen results gevonden</p>
-                <p className="text-gray-500 text-sm mt-2">
-                  {searchTerm ? 'Probeer een andere zoekterm' : 'Probeer een langere periode te selecteren'}
-                </p>
+        {/* Team Results Tab */}
+        {activeTab === 'team' && (
+          <>
+            {/* Loading State */}
+            {loading && (
+              <div className="flex justify-center items-center py-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Results laden...</p>
+                </div>
               </div>
-            ) : (
-              filteredEvents.map((event) => (
-                <EventCard key={event.event_id} event={event} />
-              ))
             )}
-          </div>
+
+            {/* Error State */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+                <p className="text-red-800 font-medium mb-2">⚠️ {error}</p>
+                <button
+                  onClick={fetchResults}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                >
+                  Opnieuw proberen
+                </button>
+              </div>
+            )}
+
+            {/* Results List */}
+            {!loading && !error && (
+              <div className="space-y-4">
+                {filteredEvents.length === 0 ? (
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-12 text-center border border-slate-200">
+                    <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 text-lg">Geen results gevonden</p>
+                    <p className="text-gray-500 text-sm mt-2">
+                      {searchTerm ? 'Probeer een andere zoekterm' : 'Probeer een langere periode te selecteren'}
+                    </p>
+                  </div>
+                ) : (
+                  filteredEvents.map((event) => (
+                    <EventCard key={event.event_id} event={event} />
+                  ))
+                )}
+              </div>
+            )}
+          </>
+        )}
+        
+        {/* Rider History Tab */}
+        {activeTab === 'rider' && (
+          <>
+            {/* Loading State */}
+            {riderLoading && (
+              <div className="flex justify-center items-center py-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Rider history laden...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {riderError && (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+                <p className="text-red-800 font-medium mb-2">⚠️ {riderError}</p>
+                <button
+                  onClick={fetchRiderResults}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                >
+                  Opnieuw proberen
+                </button>
+              </div>
+            )}
+
+            {/* Rider Results List */}
+            {!riderLoading && !riderError && (
+              <div className="space-y-4">
+                {riderResults.length === 0 ? (
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-12 text-center border border-slate-200">
+                    <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600 text-lg">Geen race history gevonden voor rider 150437</p>
+                    <p className="text-gray-500 text-sm mt-2">De laatste 90 dagen laten geen resultaten zien</p>
+                  </div>
+                ) : (
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-slate-200">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">
+                      Race History - Rider 150437
+                    </h3>
+                    <div className="space-y-3">
+                      {riderResults.map((result: any, idx: number) => (
+                        <div 
+                          key={idx}
+                          className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
+                        >
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-900">
+                              {result.event_name || 'Unknown Event'}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {result.event_date ? new Date(result.event_date).toLocaleDateString('nl-NL') : 'Unknown Date'} · {result.category || 'Unknown Category'}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <div className={`text-lg font-bold ${
+                                result.position === 1 ? 'text-yellow-600' :
+                                result.position === 2 ? 'text-gray-500' :
+                                result.position === 3 ? 'text-orange-600' :
+                                'text-gray-900'
+                              }`}>
+                                P{result.position || '-'}
+                              </div>
+                              {result.velo && (
+                                <div className="text-sm text-gray-600">
+                                  vELO: {Math.round(result.velo)}
+                                  {result.velo_change && (
+                                    <span className={result.velo_change > 0 ? 'text-green-600' : 'text-red-600'}>
+                                      {' '}({result.velo_change > 0 ? '+' : ''}{result.velo_change})
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {result.event_id && (
+                              <a
+                                href={`https://www.zwiftracing.app/events/${result.event_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
+                              >
+                                View Details
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

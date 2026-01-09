@@ -267,11 +267,7 @@ export default function AdminDashboard() {
                 <textarea
                   value={bulkRiderIds}
                   onChange={e => setBulkRiderIds(e.target.value)}
-                  placeholder="Enter rider IDs (comma or newline separated)
-Example:
-150437
-123456
-789012"
+                  placeholder="Enter rider IDs (comma or newline separated)&#10;Example:&#10;150437&#10;123456&#10;789012"
                   className="w-full bg-gray-700 px-4 py-2 rounded h-32 font-mono text-sm"
                 />
               </div>
