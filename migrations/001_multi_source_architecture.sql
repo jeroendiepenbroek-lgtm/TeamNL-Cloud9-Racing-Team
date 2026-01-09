@@ -11,7 +11,7 @@
 
 -- ----------------------------------------------------------------------------
 -- SOURCE TABLE 1: zwift_racing_riders (PRIMARY - 51 fields)
--- API: ZwiftRacing.app (https://api.zwiftracing.app/api)
+-- API: ZwiftRacing.app (https://zwift-ranking.herokuapp.com)
 -- Sync: Every 24 hours
 -- Priority: 1 (highest)
 -- Auth: API Key (650c6d2fc4ef6858d74cbef1)

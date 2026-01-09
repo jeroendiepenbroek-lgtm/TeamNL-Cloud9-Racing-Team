@@ -1,36 +1,128 @@
-name: Deploy to Railway
+name: 🚀 Deploy to Railway
 
 on:
   push:
     branches:
-      - fresh-start-v4
       - main
+      - fresh-start-v4
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Handmatige trigger mogelijk
+
+env:
+  NODE_VERSION: '22'
 
 jobs:
-  deploy:
+  # Job 1: Build & Test (optioneel)
+  test:
+    name: 🧪 Test Build
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install Railway CLI
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Type Check Backend
+        working-directory: ./backend
+        run: npm run type-check
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build
+
+  # Job 2: Deploy naar Railway
+  deploy:
+    name: 🚂 Deploy to Railway
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/fresh-start-v4')
+    needs: [test]
+    # Skip test job als er geen PR is
+    continue-on-error: false
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service backend
-
-      - name: Run Migrations
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: |
-          railway run node execute-migrations.js
-
-      - name: Sync Initial Data
+      - name: 🚀 Deploy to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
-          railway run node fetch-zwiftracing-rider.js 150437
+          echo "🚂 Starting Railway deployment..."
+          railway up --detach
+          echo "✅ Deployment initiated successfully!"
+
+      - name: ⏳ Wait for deployment
+        run: sleep 30
+
+      - name: 🏥 Health Check
+        run: |
+          echo "🔍 Checking deployment health..."
+          max_attempts=10
+          attempt=0
+          
+          while [ $attempt -lt $max_attempts ]; do
+            if curl -f -s "${{ secrets.RAILWAY_APP_URL }}/health" > /dev/null; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+            
+            attempt=$((attempt + 1))
+            echo "⏳ Attempt $attempt/$max_attempts failed, retrying in 10s..."
+            sleep 10
+          done
+          
+          echo "❌ Health check failed after $max_attempts attempts"
+          exit 1
+
+      - name: 📊 Deployment Summary
+        if: success()
+        run: |
+          echo "✨ Deployment successful!"
+          echo "🌐 App URL: ${{ secrets.RAILWAY_APP_URL }}"
+          echo "🕒 Deployed at: $(date)"
+          echo "📝 Commit: ${{ github.sha }}"
+
+  # Job 3: Rollback bij failure (optioneel)
+  rollback:
+    name: 🔄 Rollback on Failure
+    runs-on: ubuntu-latest
+    if: failure() && github.event_name == 'push'
+    needs: [deploy]
+    
+    steps:
+      - name: 📦 Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: 🔄 Rollback deployment
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "⚠️ Deployment failed, attempting rollback..."
+          railway rollback
+          echo "✅ Rollback completed"

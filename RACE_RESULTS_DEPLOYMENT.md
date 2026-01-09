@@ -1,114 +1,411 @@
-# Race Results System - Deployment Instructies
-**Datum:** 4 januari 2026
+# 🚀 Race Results Deployment Guide
 
-## 🚨 Kritieke SQL Fix
+**Versie**: 2.0 - zpdatafetch  
+**Datum**: 7 januari 2026  
+**Status**: ✅ Klaar voor deployment
 
-De `v_race_results_recent` view heeft een bug - probeert `category` kolom te gebruiken die niet bestaat in `v_rider_complete`.
+---
 
-**Voer dit uit in Supabase SQL Editor:**
+## ⚡ Quick Start (5 minuten)
+
+### 1. Installeer Dependencies
+
+```bash
+cd /workspaces/TeamNL-Cloud9-Racing-Team
+
+# Activeer virtual environment (als je die hebt)
+source .venv/bin/activate
+
+# Installeer packages
+pip install zpdatafetch keyring supabase
+```
+
+### 2. Configureer Credentials
+
+```bash
+# Optie A: Via Python (aanbevolen)
+python3 << 'EOF'
+import keyring
+keyring.set_password("zpdatafetch", "username", "jeroen.diepenbroek@gmail.com")
+keyring.set_password("zpdatafetch", "password", "CloudRacer-9")
+keyring.set_password("zrdatafetch", "authorization", "650c6d2fc4ef6858d74cbef1")
+print("✅ Credentials configured!")
+EOF
+
+# Optie B: Via command line
+keyring set zpdatafetch username  # Enter: jeroen.diepenbroek@gmail.com
+keyring set zpdatafetch password  # Enter: CloudRacer-9
+keyring set zrdatafetch authorization  # Enter: 650c6d2fc4ef6858d74cbef1
+```
+
+### 3. Test de Setup
+
+```bash
+python test-quick-race-results.py
+```
+
+Je zou moeten zien:
+```
+✅ Success!
+   Name: JRøne | CloudRacer-9 @YouTube
+   Rating: 1437.64
+   Category: Amethyst
+```
+
+### 4. Database Migration
+
+In **Supabase SQL Editor**:
 
 ```sql
--- Fix v_race_results_recent view
-CREATE OR REPLACE VIEW v_race_results_recent AS
+-- Kopieer en plak de volledige inhoud van:
+-- migrations/015_race_results_zpdatafetch.sql
+```
+
+Of via command line (als je supabase CLI hebt):
+
+```bash
+supabase db push migrations/015_race_results_zpdatafetch.sql
+```
+
+### 5. Run First Sync
+
+```bash
+# Set Supabase credentials
+export SUPABASE_URL="https://your-project.supabase.co"
+export SUPABASE_SERVICE_KEY="your-service-key-here"
+
+# Run sync
+python race-results-db-sync.py
+```
+
+---
+
+## 🔧 Environment Variables
+
+Voor **Railway** / **Vercel** / **Docker**:
+
+```bash
+# ZwiftPower (optional - in keyring)
+ZWIFTPOWER_USERNAME=jeroen.diepenbroek@gmail.com
+ZWIFTPOWER_PASSWORD=CloudRacer-9
+
+# Zwiftracing (optional - in keyring)
+ZWIFTRACING_API_TOKEN=650c6d2fc4ef6858d74cbef1
+
+# Supabase (required for DB sync)
+SUPABASE_URL=https://xxxxx.supabase.co
+SUPABASE_SERVICE_KEY=eyJhbGc...
+
+# TeamNL Club ID (optional - default 2281)
+TEAMNL_CLUB_ID=2281
+```
+
+---
+
+## 📦 Docker Deployment
+
+### Dockerfile
+
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install race results dependencies
+RUN pip install --no-cache-dir zpdatafetch keyring supabase
+
+# Copy application
+COPY . .
+
+# Run sync
+CMD ["python", "race-results-db-sync.py"]
+```
+
+### docker-compose.yml
+
+```yaml
+version: '3.8'
+
+services:
+  race-results-sync:
+    build: .
+    environment:
+      - ZWIFTRACING_API_TOKEN=${ZWIFTRACING_API_TOKEN}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+```
+
+---
+
+## 🤖 Automation
+
+### Cron Job (Linux/Mac)
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add line voor sync elke 6 uur
+0 */6 * * * cd /path/to/project && .venv/bin/python race-results-db-sync.py >> logs/race-sync.log 2>&1
+```
+
+### Systemd Service (Linux)
+
+Create `/etc/systemd/system/race-results-sync.service`:
+
+```ini
+[Unit]
+Description=Race Results Sync Service
+After=network.target
+
+[Service]
+Type=oneshot
+User=your-user
+WorkingDirectory=/path/to/project
+Environment="SUPABASE_URL=https://xxx.supabase.co"
+Environment="SUPABASE_SERVICE_KEY=xxx"
+ExecStart=/path/to/project/.venv/bin/python race-results-db-sync.py
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Create timer `/etc/systemd/system/race-results-sync.timer`:
+
+```ini
+[Unit]
+Description=Race Results Sync Timer
+Requires=race-results-sync.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=6h
+
+[Install]
+WantedBy=timers.target
+```
+
+Enable:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable race-results-sync.timer
+sudo systemctl start race-results-sync.timer
+```
+
+### Railway.app
+
+Create `railway.toml`:
+
+```toml
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "python race-results-db-sync.py"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "race-results-sync"
+cronSchedule = "0 */6 * * *"
+```
+
+Set environment variables in Railway dashboard.
+
+---
+
+## 🔍 Verificatie
+
+### Check Database
+
+```sql
+-- Recent results
+SELECT * FROM v_recent_race_results 
+ORDER BY fetched_at DESC 
+LIMIT 10;
+
+-- TeamNL results
+SELECT * FROM v_teamnl_race_results 
+WHERE event_date >= NOW() - INTERVAL '7 days'
+ORDER BY event_date DESC;
+
+-- Sync log
+SELECT * FROM race_results_sync_log 
+ORDER BY started_at DESC 
+LIMIT 5;
+
+-- Statistics
 SELECT 
-  rr.*,
-  rc.racing_name,
-  rc.full_name,
-  rc.avatar_url,
-  rc.country_alpha3,
-  RANK() OVER (PARTITION BY rr.rider_id ORDER BY rr.event_date DESC) AS race_rank
-FROM race_results rr
-LEFT JOIN v_rider_complete rc ON rr.rider_id = rc.rider_id
-WHERE rr.event_date >= NOW() - INTERVAL '90 days'
-ORDER BY rr.event_date DESC;
+  COUNT(*) as total_results,
+  COUNT(DISTINCT event_id) as events,
+  COUNT(DISTINCT rider_id) as riders,
+  MAX(fetched_at) as last_sync
+FROM race_results;
 ```
 
-## 📁 Nieuwe Frontend Pages
+### Check Logs
 
-4 nieuwe pagina's toegevoegd aan `/frontend/dist/`:
-
-1. **race-results-index.html** - Hoofdpagina met navigatie en status dashboard
-2. **team-riders-results.html** - Team overview met alle riders en stats
-3. **individual-rider-results.html** - Gedetailleerde rider resultaten met vELO grafiek
-4. **race-details.html** - Complete race event details met alle teamleden
-
-## 🔗 Toegang
-
-### Productie URL's:
-- **Dashboard:** `https://yourdomain.com/race-results-index.html`
-- **Team Overview:** `https://yourdomain.com/team-riders-results.html`
-
-### Integratie met bestaande app:
-Voeg een link toe aan je hoofdmenu of dashboard:
-```html
-<a href="/race-results-index.html">Race Results 🏁</a>
-```
-
-## 🔄 Scanner Configuratie
-
-De race scanner draait automatisch elke 2 uur (120 minuten).
-
-**Handmatig triggeren via API:**
 ```bash
-curl -X POST https://yourdomain.com/api/admin/scan-race-results
+# If using file logging
+tail -f logs/race-sync.log
+
+# If using systemd
+journalctl -u race-results-sync.service -f
+
+# If using Docker
+docker logs -f race-results-sync
 ```
 
-**Status checken:**
+---
+
+## ⚠️ Troubleshooting
+
+### "No module named 'zpdatafetch'"
+
 ```bash
-curl https://yourdomain.com/api/admin/scan-status
+pip install zpdatafetch keyring
 ```
 
-## ⚙️ Backend API Endpoints
+### "No credentials found in keyring"
 
-### Public Endpoints (geen auth vereist):
-- `GET /api/results/team-riders` - Team overview
-- `GET /api/results/rider/:riderId` - Individual rider results  
-- `GET /api/results/event/:eventId` - Race event details
+```bash
+# Run credentials setup again
+python3 << 'EOF'
+import keyring
+keyring.set_password("zpdatafetch", "username", "jeroen.diepenbroek@gmail.com")
+keyring.set_password("zpdatafetch", "password", "CloudRacer-9")
+keyring.set_password("zrdatafetch", "authorization", "650c6d2fc4ef6858d74cbef1")
+EOF
+```
 
-### Admin Endpoints:
-- `POST /api/admin/scan-race-results` - Trigger scan
-- `GET /api/admin/scan-status` - Scanner status + logs
-- `POST /api/admin/scan-config` - Update scanner settings
+### "Database connection failed"
 
-## 📊 Database Tables
+```bash
+# Check environment variables
+echo $SUPABASE_URL
+echo $SUPABASE_SERVICE_KEY
 
-Reeds aangemaakt via Migration 013:
-- `race_results` - Race resultaten opslag
-- `race_scan_config` - Scanner instellingen
-- `race_scan_log` - Audit trail
+# Test connection
+python3 << 'EOF'
+from supabase import create_client
+import os
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_SERVICE_KEY")
+client = create_client(url, key)
+print("✅ Connection successful!")
+EOF
+```
+
+### "Rate limit exceeded (429)"
+
+De API heeft rate limits:
+- **Standard**: 5 GET/min, 1 POST/15min
+- **Premium**: 10 GET/min, 10 POST/15min
+
+**Oplossing**: 
+- Wacht 15 minuten
+- Gebruik batch endpoints waar mogelijk
+- Overweeg premium tier voor hogere limits
+
+### Keyring Backend Issues (Docker/Headless)
+
+Als je draait zonder GUI:
+
+```python
+# In je Python script, voeg toe:
+import keyring
+from keyring.backends.fail import Keyring as FailKeyring
+
+# Gebruik environment variables als fallback
+import os
+if not os.environ.get('DISPLAY'):
+    # Headless mode - gebruik env vars
+    os.environ['ZWIFTPOWER_USERNAME'] = 'jeroen.diepenbroek@gmail.com'
+    os.environ['ZWIFTPOWER_PASSWORD'] = 'CloudRacer-9'
+```
+
+---
+
+## 📊 Monitoring
+
+### Simple Health Check
+
+```bash
+#!/bin/bash
+# health-check.sh
+
+LAST_SYNC=$(psql $DATABASE_URL -t -c "SELECT MAX(fetched_at) FROM race_results;")
+NOW=$(date +%s)
+LAST=$(date -d "$LAST_SYNC" +%s)
+DIFF=$((NOW - LAST))
+
+# Alert if no sync in last 12 hours
+if [ $DIFF -gt 43200 ]; then
+    echo "⚠️  WARNING: No sync in last 12 hours!"
+    # Send alert (email, Slack, etc.)
+fi
+```
+
+### Grafana Dashboard
+
+Query voor metrics:
+
+```sql
+-- Sync success rate
+SELECT 
+  DATE_TRUNC('day', started_at) as date,
+  COUNT(*) as total_syncs,
+  COUNT(*) FILTER (WHERE success = true) as successful,
+  ROUND(COUNT(*) FILTER (WHERE success = true)::numeric / COUNT(*) * 100, 2) as success_rate
+FROM race_results_sync_log
+WHERE started_at >= NOW() - INTERVAL '30 days'
+GROUP BY date
+ORDER BY date DESC;
+
+-- Results per day
+SELECT 
+  DATE_TRUNC('day', fetched_at) as date,
+  COUNT(*) as results_count,
+  COUNT(DISTINCT event_id) as events_count
+FROM race_results
+WHERE fetched_at >= NOW() - INTERVAL '30 days'
+GROUP BY date
+ORDER BY date DESC;
+```
+
+---
 
 ## ✅ Deployment Checklist
 
-- [ ] SQL fix uitvoeren in Supabase (v_race_results_recent view)
-- [ ] Nieuwe HTML files deployen naar productie
-- [ ] Server herstarten (nieuwe endpoints activeren)
-- [ ] Test race-results-index.html in browser
-- [ ] Verificeer dat data inlaadt (kan 10-15 min duren voor eerste scan)
-- [ ] Voeg link toe aan hoofdmenu voor gebruikers
+- [ ] Dependencies geïnstalleerd (`pip install zpdatafetch keyring supabase`)
+- [ ] Credentials geconfigureerd in keyring
+- [ ] Test passed (`python test-quick-race-results.py`)
+- [ ] Database migration uitgevoerd
+- [ ] Environment variables ingesteld
+- [ ] Eerste sync succesvol (`python race-results-db-sync.py`)
+- [ ] Automation opgezet (cron/systemd/Railway)
+- [ ] Monitoring geconfigureerd
+- [ ] Documentatie gelezen
+- [ ] Backup strategie bepaald
 
-## 🐛 Troubleshooting
+---
 
-**Geen data zichtbaar:**
-- Check scan status: `/api/admin/scan-status`
-- Eerste scan duurt 15-20 minuten (76 riders × 13s rate limit)
-- Check logs in Supabase: `SELECT * FROM race_scan_log ORDER BY started_at DESC LIMIT 5`
+## 🆘 Support
 
-**SQL Error "category does not exist":**
-- Voer de SQL fix hierboven uit in Supabase
+Bij problemen:
+1. Check logs: `tail -f logs/race-sync.log`
+2. Run test: `python test-quick-race-results.py`
+3. Check database: `SELECT * FROM race_results_sync_log ORDER BY started_at DESC LIMIT 1;`
+4. Check credentials: `keyring get zpdatafetch username`
 
-**429 Rate Limit Errors:**
-- Normaal tijdens grote scans - systeem wacht automatisch 60s en retry't
+---
 
-## 📈 Performance
-
-- **Rate limiting:** 13 seconden tussen calls (ZwiftRacing API limit: 5/min)
-- **First scan:** 90 dagen history voor alle riders (~15-20 min)
-- **Incremental scans:** Alleen nieuwe events sinds laatste scan + 6h overlap
-- **Event deduplication:** Skip events die al in database staan
-
-## 🔐 Geen Aparte Admin Pagina Nodig
-
-De admin endpoints zijn toegankelijk via API calls. Als je een UI wilt:
-- Voeg buttons toe aan de race-results-index.html
-- Of integreer in bestaande admin dashboard
-- Beveilig met je huidige auth systeem indien nodig
+**Happy Racing! 🚴‍♂️💨**

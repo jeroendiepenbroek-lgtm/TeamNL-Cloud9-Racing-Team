@@ -1,262 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { DndContext, DragEndEvent, DragStartEvent, closestCenter, DragOverlay, useDroppable, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
+import RiderPassportSidebar from '../components/RiderPassportSidebar.tsx'
 import TeamLineupModal from '../components/TeamLineupModal.tsx'
+import TeamBuilderCard from '../components/TeamCard.tsx'
 import { TeamCreationModal } from '../components/TeamCreationModal.tsx'
-import { getRiderCategory } from '../utils/categoryHelper'
-
-const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
-
-// Category colors for rider badges
-const CATEGORY_COLORS_MAP: {[key: string]: string} = {
-  'A+': '#FF0000',
-  'A': '#FF0000',
-  'B': '#4CAF50',
-  'C': '#0000FF',
-  'D': '#FF1493',
-  'E': '#808080'
-}
-
-// vELO Tiers for sidebar
-const VELO_TIERS_SIDEBAR = [
-  { rank: 1, name: 'Diamond', min: 2200, color: '#22D3EE' },
-  { rank: 2, name: 'Ruby', min: 1900, max: 2200, color: '#EF4444' },
-  { rank: 3, name: 'Emerald', min: 1650, max: 1900, color: '#10B981' },
-  { rank: 4, name: 'Sapphire', min: 1450, max: 1650, color: '#3B82F6' },
-  { rank: 5, name: 'Amethyst', min: 1300, max: 1450, color: '#A855F7' },
-  { rank: 6, name: 'Platinum', min: 1150, max: 1300, color: '#94A3B8' },
-  { rank: 7, name: 'Gold', min: 1000, max: 1150, color: '#EAB308' },
-  { rank: 8, name: 'Silver', min: 850, max: 1000, color: '#71717A' },
-  { rank: 9, name: 'Bronze', min: 650, max: 850, color: '#F97316' },
-  { rank: 10, name: 'Copper', min: 0, max: 650, color: '#DC2626' },
-]
-
-const getVeloTierSidebar = (rating: number | null) => {
-  if (!rating) return null
-  return VELO_TIERS_SIDEBAR.find(tier => 
-    rating >= tier.min && (!tier.max || rating < tier.max)
-  )
-}
-
-// Team Expanded Sidebar Component
-function TeamExpandedSidebar({ team, onClose, isDragging, onRemoveRider }: { 
-  team: Team; 
-  onClose: () => void;
-  isDragging: boolean;
-  onRemoveRider?: (teamId: number, riderId: number) => void;
-}) {
-  const { data: lineupData } = useQuery({
-    queryKey: ['team', team.team_id],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/teams/${team.team_id}`)
-      if (!res.ok) throw new Error('Failed to fetch team')
-      const data = await res.json()
-      // Backend returns { success, team, lineup }
-      return data
-    }
-  })
-
-  const lineup = lineupData?.lineup || []
-  const canAddMore = team.current_riders < team.max_riders
-
-  // Use @dnd-kit droppable for touch support
-  const { setNodeRef, isOver } = useDroppable({
-    id: `sidebar-team-${team.team_id}`,
-    data: { teamId: team.team_id, type: 'team-sidebar' }
-  })
-
-  return (
-    <>
-      {/* Mobile Overlay */}
-      <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] lg:hidden"
-        onClick={onClose}
-      />
-      
-      <div 
-        ref={setNodeRef}
-        className={`
-          fixed z-[100000] bg-slate-900/98 backdrop-blur-lg shadow-2xl transition-all duration-300
-          
-          // Mobile: Bottom sheet met rounded top en safe-area support
-          lg:hidden
-          bottom-0 left-0 right-0
-          max-h-[85vh] rounded-t-3xl
-          pb-safe
-          ${isOver && canAddMore ? 'border-t-4 border-green-500 shadow-green-500/50' : 
-            isOver && !canAddMore ? 'border-t-4 border-red-500 shadow-red-500/50' :
-            'border-t-4 border-orange-500'}
-            
-          // Desktop: Right sidebar - Breder voor betere overzicht
-          lg:block lg:right-0 lg:top-0 lg:bottom-0 lg:left-auto
-          lg:w-[550px] xl:w-[600px] lg:rounded-none lg:border-t-0 lg:border-l-4
-          ${isOver && canAddMore ? 'lg:border-green-500 lg:shadow-green-500/50' : 
-            isOver && !canAddMore ? 'lg:border-red-500 lg:shadow-red-500/50' :
-            'lg:border-orange-500'}
-        `}
-        data-sidebar-team={team.team_id}
-      >
-        {/* Mobile: Drag handle */}
-        <div className="lg:hidden flex justify-center pt-2 pb-1">
-          <div className="w-12 h-1.5 bg-slate-600 rounded-full"></div>
-        </div>
-
-        {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-orange-600 to-red-600 p-3 sm:p-4 flex items-center justify-between shadow-lg z-10 lg:rounded-none rounded-t-3xl">
-          <div className="flex-1 min-w-0 mr-2">
-            <h3 className="text-base sm:text-lg lg:text-xl font-bold text-white truncate">{team.team_name}</h3>
-            <p className="text-xs text-orange-100 mt-0.5">
-              {team.current_riders}/{team.max_riders} riders
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
-          >
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-      {/* Drag & Drop Indicator */}
-      {isOver && (
-        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
-          canAddMore 
-            ? 'bg-green-500/20 backdrop-blur-sm' 
-            : 'bg-red-500/20 backdrop-blur-sm'
-        }`}>
-          <div className="text-center p-8 rounded-xl bg-slate-900/80 border-2 border-dashed backdrop-blur-md">
-            <p className={`text-3xl font-bold mb-2 ${canAddMore ? 'text-green-300' : 'text-red-300'}`}>
-              {canAddMore ? '✓ Drop hier' : '✗ Team vol'}
-            </p>
-            {canAddMore ? (
-              <p className="text-white text-lg">
-                Nog {team.max_riders - team.current_riders} plek{team.max_riders - team.current_riders !== 1 ? 'ken' : ''} vrij
-              </p>
-            ) : (
-              <p className="text-white text-lg">
-                Maximum van {team.max_riders} riders bereikt
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Mobile: Touch indicator when dragging - no button needed with @dnd-kit */}
-      {isDragging && canAddMore && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-900 via-slate-900/90 to-transparent z-[100001] pointer-events-none">
-          <div className="w-full bg-green-600/90 text-white px-6 py-4 rounded-xl text-xl font-bold shadow-2xl border-2 border-green-400 animate-pulse text-center">
-            ⬇️ Sleep hier om toe te voegen
-          </div>
-        </div>
-      )}
-
-      {/* Content - Scrollable area */}
-      <div className="overflow-y-auto max-h-[calc(85vh-80px)] lg:max-h-none lg:h-[calc(100vh-80px)] p-4 pb-8">
-        {/* Drop Zone Hint when dragging */}
-        {isDragging && canAddMore && (
-          <div className="mb-4 p-3 sm:p-4 border-2 border-dashed border-green-500 bg-green-500/10 rounded-lg animate-pulse">
-            <p className="text-green-400 text-center font-semibold text-sm sm:text-base">
-              ⬇️ Sleep rider hierheen om toe te voegen
-            </p>
-          </div>
-        )}
-        
-        {lineup.length === 0 ? (
-          <div className={`h-48 flex items-center justify-center border-2 border-dashed rounded-lg transition-all ${
-            isDragging && canAddMore 
-              ? 'border-green-500 bg-green-500/10' 
-              : 'border-slate-600'
-          }`}>
-            <div className="text-center">
-              <p className="text-slate-400 text-sm">
-                {isDragging && canAddMore ? '⬇️ Drop hier om toe te voegen' : 'Geen riders'}
-              </p>
-              <p className="text-slate-500 text-xs mt-1">Minimaal {team.min_riders} riders</p>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {lineup.map((rider: any) => {
-              const tier = getVeloTierSidebar(rider.velo_live || rider.current_velo_rank)
-              const category = rider.category
-              const categoryColor = category ? (CATEGORY_COLORS_MAP[category] || '#666666') : '#666666'
-              const ftpWkg = rider.racing_ftp && rider.weight_kg 
-                ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
-                : '-'
-
-              return (
-                <div
-                  key={rider.rider_id}
-                  className="p-3 rounded-xl border-2 bg-slate-800/80 border-slate-700 active:bg-slate-700/80 transition-all group touch-manipulation"
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Avatar - Larger on mobile */}
-                    <div className="w-12 h-12 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full overflow-hidden bg-slate-700 flex-shrink-0 ring-2 ring-slate-600">
-                      {rider.avatar_url ? (
-                        <img src={rider.avatar_url} alt={rider.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl">👤</div>
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm sm:text-xs lg:text-sm font-bold text-white truncate">{rider.name}</p>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        {category && (
-                          <span 
-                            className="text-[11px] px-2 py-1 text-white rounded-md font-bold shadow-sm"
-                            style={{ backgroundColor: categoryColor }}
-                          >
-                            {category}
-                          </span>
-                        )}
-                        {tier && (
-                          <span 
-                            className="text-[11px] px-2 py-1 rounded-md font-bold text-white shadow-sm"
-                            style={{ backgroundColor: tier.color }}
-                            title={`${tier.name} Tier`}
-                          >
-                            vELO {tier.rank}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-300">
-                        <span className="font-medium">{rider.racing_ftp || rider.ftp_watts || '-'}W</span>
-                        <span>•</span>
-                        <span className="font-medium">{ftpWkg} W/kg</span>
-                      </div>
-                    </div>
-
-                    {/* Delete Button - Only show in Team Builder mode */}
-                    {onRemoveRider && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onRemoveRider(team.team_id, rider.rider_id)
-                        }}
-                        className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-3 rounded-xl bg-red-500/20 active:bg-red-500/40 border-2 border-red-500/50 active:border-red-500 text-red-400 active:text-red-300 transition-all flex-shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center touch-manipulation"
-                        title="Verwijder rider"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-      </div>
-    </>
-  )
-}
 
 // Category colors (aangepast voor donkere achtergrond - zichtbare kleuren)
 const CATEGORY_COLORS = {
@@ -346,34 +94,20 @@ interface TeamViewerProps {
 }
 
 export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
+  const [showTeamBuilder, setShowTeamBuilder] = useState(false)
   const [showTeamCreationModal, setShowTeamCreationModal] = useState(false)
+  const [selectedTeamForFiltering, setSelectedTeamForFiltering] = useState<number | null>(null)
   const [favoriteTeams, setFavoriteTeams] = useState<Set<number>>(() => {
     // Load favorites from localStorage
     const stored = localStorage.getItem('favoriteTeams')
     return stored ? new Set(JSON.parse(stored)) : new Set()
   })
   const [sortBy, setSortBy] = useState<'name' | 'riders' | 'status'>('name')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null)
   const [draggedRider, setDraggedRider] = useState<any>(null)
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null)
   const queryClient = useQueryClient()
-
-  // Optimized sensors for touch-first approach (iPhone/iPad + desktop)
-  const sensors = useSensors(
-    // PointerSensor for desktop (mouse) - very responsive
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5, // Minimal distance before drag activates
-      },
-    }),
-    // TouchSensor for mobile/tablet - balanced responsiveness
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 100, // Shorter delay (100ms) for faster response
-        tolerance: 10, // Higher tolerance to prevent accidental drags during scrolling
-      },
-    })
-  )
 
   // Save favorites to localStorage whenever they change
   useEffect(() => {
@@ -423,6 +157,17 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     })
   }
 
+  // Fetch all riders voor team builder
+  const { data: ridersData, isLoading: ridersLoading } = useQuery({
+    queryKey: ['riders'],
+    queryFn: async () => {
+      const res = await fetch('/api/riders')
+      if (!res.ok) throw new Error('Failed to fetch riders')
+      return res.json()
+    },
+    enabled: showTeamBuilder
+  })
+
   // Add rider to team mutation
   const addRiderMutation = useMutation({
     mutationFn: async ({ teamId, riderId }: { teamId: number; riderId: number }) => {
@@ -439,9 +184,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     },
     onSuccess: (_, { teamId }) => {
       queryClient.invalidateQueries({ queryKey: ['teams'] })
-      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
       queryClient.invalidateQueries({ queryKey: ['team-lineup', teamId] })
-      queryClient.invalidateQueries({ queryKey: ['riders'] })
       toast.success('Rider toegevoegd aan team!')
     },
     onError: (error: Error) => {
@@ -449,67 +192,61 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
     }
   })
 
-  // @dnd-kit handlers for touch support
-  const handleDndDragStart = useCallback((event: DragStartEvent) => {
-    // Note: draggedRider wordt nu alleen gebruikt voor visual feedback in DragOverlay
-    // De echte rider data wordt opgehaald wanneer nodig
-    setDraggedRider(event.active.data.current || null)
-  }, [])
-
-  const handleDndDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event
-    console.log('handleDndDragEnd called', { active: active.id, over: over?.id, draggedRider })
-    
-    // 🎯 US3: Verbeterde cancel functionaliteit - als geen drop target, vriendelijk bericht
-    if (!over) {
-      if (draggedRider) {
-        toast.success(`${draggedRider.racing_name || draggedRider.full_name} - drag geannuleerd`, {
-          duration: 2000,
-          icon: '✋'
-        })
+  // Delete team mutation
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (teamId: number) => {
+      const res = await fetch(`/api/teams/${teamId}`, {
+        method: 'DELETE'
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Failed to delete team')
       }
-      setDraggedRider(null)
-      return
+      return res.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      toast.success('Team verwijderd!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message)
     }
-    
-    if (!draggedRider) {
-      setDraggedRider(null)
-      return
-    }
+  })
 
-    // Extract team ID from droppable ID
-    let targetTeamId: number | null = null
-    
-    if (typeof over.id === 'string') {
-      if (over.id.startsWith('team-')) {
-        targetTeamId = Number(over.id.replace('team-', ''))
-      } else if (over.id.startsWith('sidebar-team-')) {
-        targetTeamId = Number(over.id.replace('sidebar-team-', ''))
-      }
-    } else {
-      targetTeamId = Number(over.id)
+  const handleDeleteTeam = (teamId: number, teamName: string) => {
+    if (confirm(`Weet je zeker dat je team "${teamName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+      deleteTeamMutation.mutate(teamId)
     }
+  }
 
-    if (targetTeamId) {
-      console.log('Adding rider to team', { teamId: targetTeamId, riderId: draggedRider.rider_id })
-      addRiderMutation.mutate({ teamId: targetTeamId, riderId: draggedRider.rider_id })
+  // Riders kan array zijn OF object met riders property
+  const riders = Array.isArray(ridersData) ? ridersData : (ridersData?.riders || [])
+
+  const handleDragStart = (rider: any) => {
+    setDraggedRider(rider)
+  }
+
+  const handleDrop = (teamId: number) => {
+    if (draggedRider) {
+      addRiderMutation.mutate({ teamId, riderId: draggedRider.rider_id })
+      setDraggedRider(null)
     }
-    
-    setDraggedRider(null)
-  }, [draggedRider, addRiderMutation])
+  }
+
+  const handleOpenTeamDetail = (teamId: number) => {
+    setSelectedTeamId(teamId)
+  }
+
+  const handleCloseTeamDetail = () => {
+    setSelectedTeamId(null)
+  }
   
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDndDragStart}
-      onDragEnd={handleDndDragEnd}
-    >
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950">
       {/* Header */}
       {!hideHeader && (
       <div className="relative overflow-hidden mb-4 sm:mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-600 via-blue-600 to-orange-500 opacity-95"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-red-900 via-green-900 to-red-900 opacity-95"></div>
         <div className="relative px-3 py-4 sm:px-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between gap-4">
@@ -544,13 +281,28 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
                     <option value="status" className="bg-gray-900">Status</option>
                   </select>
                 </div>
+                
+                {/* Team Builder Toggle */}
+                <button
+                  onClick={() => setShowTeamBuilder(!showTeamBuilder)}
+                  className={`flex items-center gap-2 px-4 py-2 backdrop-blur-lg rounded-lg border font-bold text-sm transition-all shadow-lg hover:shadow-xl ${
+                    showTeamBuilder
+                      ? 'bg-orange-500 border-orange-400 text-white'
+                      : 'bg-orange-500/20 border-orange-400/30 text-white hover:bg-orange-500/30'
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  <span className="hidden sm:inline">{showTeamBuilder ? 'Sluiten' : 'Team Builder'}</span>
+                  <span className="sm:hidden">{showTeamBuilder ? '✖' : '🏗️'}</span>
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </div>      )}
-      
-      <div className="max-w-7xl mx-auto p-3 sm:p-4 lg:p-6 transition-all duration-300">
+      </div>      )}      
+      <div className="max-w-7xl mx-auto p-4 sm:p-6">
         {teamsLoading ? (
           <div className="text-center text-gray-600 py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -568,6 +320,117 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           </div>
         ) : (
           <>
+            {/* Team Builder Integration - Volledig Geïntegreerd */}
+            {showTeamBuilder && (
+              <div className="mb-8 bg-slate-800/50 backdrop-blur-xl rounded-2xl border-2 border-orange-500/50 shadow-2xl overflow-hidden">
+                {/* Sticky Header */}
+                <div className="sticky top-0 z-30 bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-4 flex items-center justify-between shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">🏆 Team Builder</h3>
+                      <p className="text-orange-100 text-sm">Sleep riders naar je teams</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowTeamCreationModal(true)}
+                      className="px-4 py-2 bg-white hover:bg-white/90 text-orange-600 rounded-lg font-bold border border-white shadow-lg transition-all text-sm flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Nieuw Team
+                    </button>
+                    <button
+                      onClick={() => setSidebarOpen(!sidebarOpen)}
+                      className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-lg font-semibold border border-white/20 transition-all text-sm"
+                    >
+                      {sidebarOpen ? '← Verberg Sidebar' : '→ Toon Sidebar'}
+                    </button>
+                    <button
+                      onClick={() => setShowTeamBuilder(false)}
+                      className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm flex items-center justify-center transition-all hover:rotate-90 duration-300"
+                      title="Sluiten"
+                    >
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex">
+                  {ridersLoading ? (
+                    <div className="flex-1 text-center text-white py-20">
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mb-4"></div>
+                      <p>Riders laden...</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Sidebar met Riders */}
+                      <RiderPassportSidebar
+                        riders={riders}
+                        isOpen={sidebarOpen}
+                        onDragStart={handleDragStart}
+                        selectedTeam={selectedTeamForFiltering ? teams.find(t => t.team_id === selectedTeamForFiltering) : null}
+                        onClearTeamFilter={() => setSelectedTeamForFiltering(null)}
+                      />
+
+                      {/* Team Cards Grid */}
+                      <div className={`flex-1 p-6 transition-all duration-300`}>
+                        {teams.length === 0 ? (
+                          <div className="text-center text-white py-20">
+                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-500/20 border-2 border-blue-500/50 mb-4">
+                              <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            </div>
+                            <p className="text-xl font-bold mb-2">Geen teams gevonden</p>
+                            <p className="text-slate-400 mb-6">Klik op 'Nieuw Team' om te beginnen</p>
+                            <button
+                              onClick={() => setShowTeamCreationModal(true)}
+                              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transition-all"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              Nieuw Team Aanmaken
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+                            {teams.map(team => (
+                              <TeamBuilderCard
+                                key={team.team_id}
+                                team={team}
+                                onDrop={handleDrop}
+                                onOpenDetail={handleOpenTeamDetail}
+                                onDelete={() => handleDeleteTeam(team.team_id, team.team_name)}
+                                onSelectForFiltering={(teamId) => {
+                                  setSelectedTeamForFiltering(teamId === selectedTeamForFiltering ? null : teamId)
+                                }}
+                                isSelectedForFiltering={team.team_id === selectedTeamForFiltering}
+                                isDragging={draggedRider !== null}
+                                isExpanded={team.team_id === expandedTeamId}
+                                onToggleExpand={(teamId) => {
+                                  setExpandedTeamId(expandedTeamId === teamId ? null : teamId)
+                                }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {/* Team Cards List */}
             <div className="space-y-6">
               {teams.map(team => (
@@ -587,23 +450,12 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
         )}
       </div>
 
-      {/* Fixed Right Sidebar for Expanded Team */}
-      {expandedTeamId && teams.find(t => t.team_id === expandedTeamId) && (
-        <TeamExpandedSidebar
-          team={teams.find(t => t.team_id === expandedTeamId)!}
-          onClose={() => setExpandedTeamId(null)}
-          isDragging={draggedRider !== null}
-        />
-      )}
-
-      {/* Team Lineup Detail Modal - Fixed Right Sidebar */}
+      {/* Team Lineup Detail Modal */}
       {selectedTeamId && (
-        <div className="fixed right-0 top-0 bottom-0 z-[100]">
-          <TeamLineupModal
-            teamId={selectedTeamId}
-            onClose={() => setSelectedTeamId(null)}
-          />
-        </div>
+        <TeamLineupModal
+          teamId={selectedTeamId}
+          onClose={handleCloseTeamDetail}
+        />
       )}
 
       {/* Team Creation Modal */}
@@ -615,20 +467,7 @@ export default function TeamViewer({ hideHeader = false }: TeamViewerProps) {
           setShowTeamCreationModal(false)
         }}
       />
-
-      {/* DragOverlay for visual feedback */}
-      <DragOverlay>
-        {draggedRider ? (
-          <div className="bg-blue-600 text-white px-4 py-3 rounded-lg shadow-2xl border-2 border-blue-400 opacity-90">
-            <div className="font-bold">{draggedRider.racing_name || draggedRider.full_name}</div>
-            <div className="text-sm">
-              {getRiderCategory(draggedRider.zwift_official_category, draggedRider.zwiftracing_category)} • vELO {draggedRider.velo_live}
-            </div>
-          </div>
-        ) : null}
-      </DragOverlay>
     </div>
-    </DndContext>
   )
 }
 
@@ -667,11 +506,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
     enabled: isExpanded // Only fetch when expanded
   })
   
-  // Fix missing lineup_position by assigning sequential numbers
-  const lineup: LineupRider[] = (lineupData?.lineup || []).map((rider: any, index: number) => ({
-    ...rider,
-    lineup_position: rider.lineup_position || index + 1
-  }))
+  const lineup: LineupRider[] = lineupData?.lineup || []
   
   const statusColor = {
     'ready': 'bg-green-500/20 text-green-300 border-green-500/50',
@@ -681,60 +516,52 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
   }[team.team_status]
   
   return (
-    <div className={`bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl shadow-xl transition-all duration-300 overflow-hidden ${
-      isExpanded 
-        ? 'border-2 border-orange-400 shadow-orange-500/30 shadow-2xl ring-2 ring-orange-500/20' 
-        : 'border border-orange-500/30 hover:border-orange-400/50 hover:shadow-2xl'
-    }`}>
+    <div className="bg-gradient-to-br from-blue-900/80 to-indigo-950/80 backdrop-blur rounded-xl border border-orange-500/30 shadow-xl hover:shadow-2xl hover:border-orange-400/50 transition-all duration-300 overflow-hidden group">
       {/* Team Header - Clickable */}
-      <div className="p-3 sm:p-4 lg:p-6 relative">
+      <div className="p-6 relative">
         <button
           onClick={() => onToggleExpand?.()}
-          className={`w-full flex items-center justify-between rounded-lg p-2 sm:p-3 -m-2 sm:-m-3 transition-all duration-200 ${
-            isExpanded ? 'bg-orange-500/10' : 'hover:bg-white/5'
-          }`}
+          className="w-full flex items-center justify-between hover:bg-white/5 transition-colors rounded-lg p-2 -m-2"
         >
-          <div className="text-left flex-1 min-w-0">
-            <div className="flex items-center gap-2 sm:gap-3 mb-1">
+          <div className="text-left flex-1">
+            <div className="flex items-center gap-3 mb-1">
               {/* Favorite Star Button - Links van teamnaam */}
               <button
                 onClick={(e) => { e.stopPropagation(); toggleFavorite(team.team_id) }}
-                className="flex-shrink-0 w-8 h-8 sm:w-8 sm:h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all hover:scale-110 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+                className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 transition-all hover:scale-110"
                 title={isFavorite ? 'Verwijder van favorieten' : 'Toevoegen aan favorieten'}
               >
-                <span className={`text-lg sm:text-xl transition-transform ${isFavorite ? 'scale-110' : ''}`}>
+                <span className={`text-xl transition-transform ${isFavorite ? 'scale-110' : ''}`}>
                   {isFavorite ? '⭐' : '☆'}
                 </span>
               </button>
-              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-white truncate flex-1">{team.team_name}</h2>
-              <span className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-bold border ${statusColor} whitespace-nowrap flex-shrink-0`}>
-                {team.current_riders}
+              <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
+              <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${statusColor}`}>
+                {team.current_riders} riders
               </span>
             </div>
-            <p className="text-gray-400 text-xs sm:text-sm truncate">{team.competition_name}</p>
-            <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-2">
-              <span className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase">
-                {team.competition_type === 'velo' ? '🎯 vELO' : '📊 Cat'}
+            <p className="text-gray-400 text-sm">{team.competition_name}</p>
+            <div className="flex items-center gap-3 mt-2">
+              <span className="text-xs font-semibold text-gray-500 uppercase">
+                {team.competition_type === 'velo' ? '🎯 vELO-based' : '📊 Category-based'}
               </span>
             </div>
           </div>
           
-          {/* Expand/Collapse Icon with Animation */}
-          <div className={`text-white text-xl sm:text-2xl flex-shrink-0 ml-2 sm:ml-4 transition-all duration-300 ${
-            isExpanded ? 'rotate-90 text-orange-400' : 'text-gray-400 group-hover:text-white'
-          }`}>
-            ▶
+          {/* Expand/Collapse Icon */}
+          <div className="text-white text-2xl flex-shrink-0 ml-4">
+            {isExpanded ? '▼' : '▶'}
           </div>
         </button>
 
         {/* View Toggles - Only visible when expanded */}
         {isExpanded && (
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-700">
+          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-700">
             {/* View Mode Toggle */}
             <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode('matrix') }}
-                className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                   viewMode === 'matrix'
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -744,7 +571,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); setViewMode('passports') }}
-                className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                   viewMode === 'passports'
                     ? 'bg-orange-500 text-white shadow-md'
                     : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -759,7 +586,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
               <div className="flex items-center gap-1 bg-white/10 backdrop-blur-lg rounded-lg p-1 border border-white/20">
                 <button
                   onClick={(e) => { e.stopPropagation(); setPassportSize('compact') }}
-                  className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                     passportSize === 'compact'
                       ? 'bg-blue-500 text-white shadow-md'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -769,7 +596,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setPassportSize('full') }}
-                  className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 sm:py-1.5 rounded-md text-[10px] sm:text-xs font-semibold transition-all min-h-[44px] sm:min-h-0 flex items-center justify-center ${
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
                     passportSize === 'full'
                       ? 'bg-blue-500 text-white shadow-md'
                       : 'text-white/70 hover:text-white hover:bg-white/5'
@@ -783,18 +610,11 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
         )}
       </div>
       
-      {/* Riders Table - Collapsible with smooth animation */}
-      <div 
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${
-          isExpanded ? 'max-h-[5000px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
-      >
-        <div className="px-6 pb-6 pt-2 border-t border-orange-500/20">
+      {/* Riders Table - Collapsible */}
+      {isExpanded && (
+        <div className="px-6 pb-6 pt-2 border-t border-gray-700">
           {isLoading ? (
-            <div className="text-center text-gray-400 py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500"></div>
-              <p className="mt-3">Riders laden...</p>
-            </div>
+            <div className="text-center text-gray-400 py-8">Riders laden...</div>
           ) : !lineup || !Array.isArray(lineup) || lineup.length === 0 ? (
             <div className="text-center text-gray-400 py-8">
               <p>Nog geen riders toegevoegd</p>
@@ -809,7 +629,7 @@ function TeamCard({ team, isFavorite, toggleFavorite, isExpanded, onToggleExpand
             <RidersTable lineup={lineup} />
           )}
         </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -1048,7 +868,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
               >
                 {/* VOORKANT */}
                 <div 
-                  className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-orange-400 shadow-xl p-2"
+                  className="absolute inset-0 rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-2"
                   style={{ backfaceVisibility: 'hidden' }}
                 >
                 {/* Header with tier badge and category */}
@@ -1089,7 +909,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
                 <img
                   src={rider.avatar_url || 'https://via.placeholder.com/100?text=No+Avatar'}
                   alt={rider.name}
-                  className="absolute top-12 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-orange-400 object-cover bg-gray-700 shadow-xl"
+                  className="absolute top-12 left-1/2 -translate-x-1/2 w-20 h-20 rounded-full border-3 border-yellow-400 object-cover bg-gray-700 shadow-xl"
                   onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/100?text=No+Avatar' }}
                 />
 
@@ -1173,7 +993,7 @@ function RidersPassportsFull({ lineup }: { lineup: LineupRider[] }) {
 
               {/* BACK */}
               <div
-                className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-orange-400 shadow-xl p-3 flex flex-col"
+                className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-gray-900 to-blue-900 border-4 border-yellow-400 shadow-xl p-3 flex flex-col"
                 style={{
                   backfaceVisibility: 'hidden',
                   transform: 'rotateY(180deg)'
@@ -1269,7 +1089,7 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
           return (
             <div
               key={rider.rider_id}
-              className="flex-shrink-0 w-[220px] bg-gradient-to-br from-gray-900 to-blue-900 border-2 border-orange-400 rounded-lg shadow-lg overflow-hidden relative"
+              className="flex-shrink-0 w-[220px] bg-gradient-to-br from-gray-900 to-blue-900 border-2 border-yellow-400 rounded-lg shadow-lg overflow-hidden relative"
             >
               {/* Header with tier and category */}
               <div
@@ -1307,7 +1127,7 @@ function RidersPassportsCompact({ lineup }: { lineup: LineupRider[] }) {
               <img
                 src={rider.avatar_url || 'https://via.placeholder.com/60?text=No+Avatar'}
                 alt={rider.name}
-                className="absolute top-9 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-2 border-orange-400 object-cover bg-gray-700 shadow-xl z-10"
+                className="absolute top-9 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full border-2 border-yellow-400 object-cover bg-gray-700 shadow-xl z-10"
                 onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/60?text=No+Avatar' }}
               />
 
@@ -1385,9 +1205,8 @@ function RidersTable({ lineup }: { lineup: LineupRider[] }) {
       const bVal = b.velo_live || b.current_velo_rank || 0
       comparison = bVal - aVal
     } else if (sortKey === 'velo30day') {
-      // Apply same fallback as in display: velo_30day || veloLive
-      const aVal = a.velo_30day || a.velo_live || a.current_velo_rank || 0
-      const bVal = b.velo_30day || b.velo_live || b.current_velo_rank || 0
+      const aVal = a.velo_30day || 0
+      const bVal = b.velo_30day || 0
       comparison = bVal - aVal
     } else if (sortKey === 'ftp') {
       const aVal = a.racing_ftp || a.ftp_watts || 0
@@ -1500,16 +1319,12 @@ function RiderRow({ rider }: { rider: LineupRider }) {
           </div>
           {/* Score + Progressbar */}
           <div className="flex flex-col gap-0.5">
-            <span className={`font-bold text-sm leading-none ${veloLiveTier?.textColor || 'text-white'}`}>{veloLive ? Math.floor(veloLive) : 'N/A'}</span>
-            {veloLiveTier && veloLive && (
+            <span className={`font-bold text-sm leading-none ${veloLiveTier?.textColor || 'text-white'}`}>{veloLive?.toFixed(0) || 'N/A'}</span>
+            {veloLiveTier && veloLiveTier.max && veloLive && (
               <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-white/60 rounded-full transition-all"
-                  style={{ 
-                    width: veloLiveTier.max 
-                      ? `${Math.min(100, ((veloLive - veloLiveTier.min) / (veloLiveTier.max - veloLiveTier.min)) * 100)}%`
-                      : `${Math.min(100, ((veloLive - veloLiveTier.min) / (3000 - veloLiveTier.min)) * 100)}%`
-                  }}
+                  style={{ width: `${Math.min(100, ((veloLive - veloLiveTier.min) / (veloLiveTier.max - veloLiveTier.min)) * 100)}%` }}
                 />
               </div>
             )}
@@ -1526,16 +1341,12 @@ function RiderRow({ rider }: { rider: LineupRider }) {
           </div>
           {/* Score + Progressbar */}
           <div className="flex flex-col gap-0.5">
-            <span className={`font-bold text-sm leading-none ${velo30dayTier?.textColor || 'text-white'}`}>{velo30day ? Math.floor(velo30day) : 'N/A'}</span>
-            {velo30dayTier && velo30day && (
+            <span className={`font-bold text-sm leading-none ${velo30dayTier?.textColor || 'text-white'}`}>{velo30day?.toFixed(0) || 'N/A'}</span>
+            {velo30dayTier && velo30dayTier.max && velo30day && (
               <div className="w-12 h-1 bg-black/20 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-white/60 rounded-full transition-all"
-                  style={{ 
-                    width: velo30dayTier.max 
-                      ? `${Math.min(100, ((velo30day - velo30dayTier.min) / (velo30dayTier.max - velo30dayTier.min)) * 100)}%`
-                      : `${Math.min(100, ((velo30day - velo30dayTier.min) / (3000 - velo30dayTier.min)) * 100)}%`
-                  }}
+                  style={{ width: `${Math.min(100, ((velo30day - velo30dayTier.min) / (velo30dayTier.max - velo30dayTier.min)) * 100)}%` }}
                 />
               </div>
             )}

@@ -13,7 +13,7 @@ DROP TABLE IF EXISTS api_zwiftracing_public_clubs CASCADE;
 -- ============================================================================
 -- ZwiftRacing Riders Table (Direct Endpoint)
 -- ============================================================================
--- API: GET https://api.zwiftracing.app/api/public/riders/{riderId}
+-- API: GET https://zwift-ranking.herokuapp.com/public/riders/{riderId}
 -- Auth: Authorization header required
 -- Rate: 5 calls per minute
 -- ============================================================================

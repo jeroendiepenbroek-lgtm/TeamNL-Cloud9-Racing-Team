@@ -15,16 +15,8 @@ RUN npm ci
 # Copy frontend source
 COPY frontend/ ./
 
-# Backup standalone HTML files before Vite build (emptyOutDir will delete them)
-RUN mkdir -p /tmp/html-backup && \
-    cp dist/*.html /tmp/html-backup/ 2>/dev/null || true && \
-    cp dist/*.png /tmp/html-backup/ 2>/dev/null || true
-
-# Build frontend (React app) - this empties dist folder
+# Build frontend
 RUN npm run build
-
-# Restore standalone HTML files after build
-RUN cp /tmp/html-backup/* ./dist/ 2>/dev/null || true
 
 # ------------------------------------------
 # STAGE 2: Setup Backend

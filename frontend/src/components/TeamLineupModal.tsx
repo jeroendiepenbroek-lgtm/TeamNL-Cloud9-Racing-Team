@@ -1,13 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { useDroppable } from '@dnd-kit/core'
 
 const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
 
 interface TeamLineupModalProps {
   teamId: number
   onClose: () => void
-  isDragging?: boolean
 }
 
 interface LineupRider {
@@ -60,7 +58,7 @@ const getVeloTier = (rating: number | null) => {
   )
 }
 
-export default function TeamLineupModal({ teamId, onClose, isDragging = false }: TeamLineupModalProps) {
+export default function TeamLineupModal({ teamId, onClose }: TeamLineupModalProps) {
   const queryClient = useQueryClient()
 
   const { data: teamData, isLoading } = useQuery({
@@ -68,19 +66,8 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/api/teams/${teamId}`)
       if (!res.ok) throw new Error('Failed to fetch team')
-      const data = await res.json()
-      // Backend returns { success, team, lineup }, transform to TeamDetail
-      return {
-        ...data.team,
-        lineup: data.lineup || []
-      } as TeamDetail
+      return res.json() as Promise<TeamDetail>
     }
-  })
-
-  // Maak sidebar droppable voor betere UX
-  const { setNodeRef, isOver } = useDroppable({
-    id: `lineup-sidebar-${teamId}`,
-    data: { teamId, type: 'lineup-sidebar' }
   })
 
   const removeRiderMutation = useMutation({
@@ -91,13 +78,9 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
       if (!res.ok) throw new Error('Failed to remove rider')
       return res.json()
     },
-    onSuccess: async () => {
-      // Refetch maar behoud cache/scroll positie
-      await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['teams'], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['team', teamId], type: 'active' }),
-        queryClient.refetchQueries({ queryKey: ['riders'], type: 'active' })
-      ])
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] })
+      queryClient.invalidateQueries({ queryKey: ['team', teamId] })
       toast.success('Rider verwijderd uit team')
     },
     onError: () => {
@@ -107,85 +90,47 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
 
   if (isLoading || !teamData) {
     return (
-      <>
-        {/* Mobile Overlay */}
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] lg:hidden"
-          onClick={onClose}
-        />
-        <aside ref={setNodeRef} className="relative lg:sticky lg:top-0 w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l border-slate-700/50 shadow-2xl shadow-black/50 flex items-center justify-center z-[100]">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="bg-slate-800 rounded-xl p-8">
           <div className="text-white text-xl">Loading...</div>
-        </aside>
-      </>
+        </div>
+      </div>
     )
   }
 
   const team = teamData
-  const canAddMore = team.lineup.length < team.max_riders
-  const showDropIndicator = isOver && isDragging
 
   return (
-    <>
-      {/* Mobile Overlay - Close on tap outside */}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99] lg:hidden"
-        onClick={onClose}
-      />
-      
-      <aside 
-        ref={setNodeRef}
-        className={`relative lg:sticky lg:top-0 w-full sm:w-96 lg:w-[550px] xl:w-[600px] h-screen bg-slate-800/95 backdrop-blur-xl border-l-4 shadow-2xl shadow-black/50 flex flex-col transition-all duration-300 z-[100] ${
-          showDropIndicator && canAddMore ? 'border-green-500 shadow-green-500/50' :
-          showDropIndicator && !canAddMore ? 'border-red-500 shadow-red-500/50' :
-          'border-slate-700/50'
-        }`}>
-      {/* Drop Indicator Overlay */}
-      {showDropIndicator && (
-        <div className={`absolute inset-0 flex items-center justify-center pointer-events-none z-50 ${
-          canAddMore ? 'bg-green-500/20 backdrop-blur-sm' : 'bg-red-500/20 backdrop-blur-sm'
-        }`}>
-          <div className={`text-center p-6 rounded-xl bg-slate-900/90 border-2 border-dashed ${
-            canAddMore ? 'border-green-400' : 'border-red-400'
-          }`}>
-            <p className={`text-2xl font-bold mb-2 ${
-              canAddMore ? 'text-green-300' : 'text-red-300'
-            }`}>
-              {canAddMore ? '✓ Drop hier' : '✗ Team vol'}
-            </p>
-            {canAddMore && (
-              <p className="text-white text-sm">
-                {team.max_riders - team.lineup.length} plekken vrij
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-      <div className="flex flex-col h-full overflow-hidden">
+        className="bg-slate-800 rounded-xl shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-slate-700 bg-slate-900/50">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl sm:text-2xl font-bold text-white truncate">{team.team_name}</h2>
-              <p className="text-slate-400 mt-1 text-sm sm:text-base truncate">{team.competition_name}</p>
-              <div className="flex items-center gap-2 sm:gap-3 mt-2 text-xs sm:text-sm flex-wrap">
+        <div className="p-6 border-b border-slate-700 bg-slate-900/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white">{team.team_name}</h2>
+              <p className="text-slate-400 mt-1">{team.competition_name}</p>
+              <div className="flex items-center gap-3 mt-2 text-sm">
                 {team.competition_type === 'velo' && (
                   <>
-                    <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-blue-600/30 text-blue-300 rounded whitespace-nowrap">
+                    <span className="px-2 py-1 bg-blue-600/30 text-blue-300 rounded">
                       vELO: {team.velo_min_rank}-{team.velo_max_rank}
                     </span>
-                    <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-purple-600/30 text-purple-300 rounded whitespace-nowrap">
+                    <span className="px-2 py-1 bg-purple-600/30 text-purple-300 rounded">
                       Spread: max {team.velo_max_spread}
                     </span>
                   </>
                 )}
-                <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 bg-slate-600/50 text-slate-300 rounded">
+                <span className="px-2 py-1 bg-slate-600/50 text-slate-300 rounded">
                   {team.lineup.length}/{team.max_riders} riders
                 </span>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white text-3xl leading-none flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-800 transition-colors"
+              className="text-slate-400 hover:text-white text-3xl leading-none"
             >
               ×
             </button>
@@ -193,47 +138,14 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* Prominente Drop Zone - Altijd zichtbaar wanneer ruimte beschikbaar */}
-          {team.lineup.length < team.max_riders && !isDragging && (
-            <div className="mb-4 p-6 border-2 border-dashed border-blue-500/50 rounded-xl bg-blue-500/10 text-center">
-              <div className="text-4xl mb-2">📥</div>
-              <p className="text-blue-300 font-semibold text-sm">Sleep riders hierheen</p>
-              <p className="text-slate-400 text-xs mt-1">
-                {team.max_riders - team.lineup.length} {team.max_riders - team.lineup.length === 1 ? 'plek' : 'plekken'} beschikbaar
-              </p>
-            </div>
-          )}
-
-          {/* Enhanced Drop Zone tijdens drag */}
-          {team.lineup.length < team.max_riders && isDragging && (
-            <div className="mb-4 p-8 border-2 border-dashed border-green-400 rounded-xl bg-green-500/20 text-center animate-pulse">
-              <div className="text-5xl mb-3">✨</div>
-              <p className="text-green-300 font-bold text-lg">Drop hier om toe te voegen!</p>
-              <p className="text-green-200 text-sm mt-2">
-                {team.max_riders - team.lineup.length} {team.max_riders - team.lineup.length === 1 ? 'plek' : 'plekken'} over
-              </p>
-            </div>
-          )}
-
-          {/* Team vol indicator tijdens drag */}
-          {team.lineup.length >= team.max_riders && isDragging && (
-            <div className="mb-4 p-8 border-2 border-dashed border-red-400 rounded-xl bg-red-500/20 text-center">
-              <div className="text-5xl mb-3">🚫</div>
-              <p className="text-red-300 font-bold text-lg">Team is vol!</p>
-              <p className="text-red-200 text-sm mt-2">
-                Maximum {team.max_riders} riders bereikt
-              </p>
-            </div>
-          )}
-
+        <div className="flex-1 overflow-y-auto p-6">
           {team.lineup.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <p className="text-lg">Nog geen riders in dit team</p>
-              <p className="mt-2 text-sm">Gebruik [+ Add] knop of drag & drop</p>
+            <div className="text-center py-20 text-slate-400">
+              <p className="text-xl">Nog geen riders in dit team</p>
+              <p className="mt-2">Drag & drop riders vanuit de sidebar</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {team.lineup.map(rider => {
                 const tier = getVeloTier(rider.current_velo_rank || null)
                 const ftpWkg = rider.ftp_wkg || (rider.racing_ftp && rider.weight_kg 
@@ -244,15 +156,14 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
                   <div
                     key={rider.rider_id}
                     className={`
-                      relative bg-slate-900/50 rounded-lg p-3 sm:p-3 border-l-4
-                      ${rider.is_valid ? 'border-l-green-600' : 'border-l-orange-600'}
-                      hover:bg-slate-900/70 transition-colors
+                      relative bg-slate-900/50 rounded-xl overflow-hidden border-2 
+                      ${rider.is_valid ? 'border-green-600/50' : 'border-orange-600/50'}
                     `}
                   >
-                    {/* Compact Rider Card */}
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Passport Card */}
+                    <div className="aspect-[3/4] relative">
                       {/* Avatar */}
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-slate-900 flex-shrink-0">
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
                         {rider.avatar_url ? (
                           <img 
                             src={rider.avatar_url} 
@@ -260,53 +171,81 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xl sm:text-2xl">👤</div>
+                          <span className="text-8xl opacity-20">👤</span>
                         )}
                       </div>
+
+                      {/* Info Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                       
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-white truncate text-xs sm:text-sm">{rider.full_name}</p>
-                        <div className="flex items-center gap-1 sm:gap-1.5 mt-1 flex-wrap">
-                          <span className="px-1.5 py-0.5 bg-blue-600 rounded text-[10px] sm:text-xs font-bold text-white">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                        <p className="font-bold text-lg truncate">{rider.full_name}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="px-2 py-1 bg-blue-600 rounded text-sm font-bold">
                             {rider.category}
                           </span>
                           {rider.current_velo_rank && tier && (
                             <span 
-                              className="px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-bold text-white"
-                              style={{ backgroundColor: tier.color }}
+                              className="px-2 py-1 rounded text-sm font-bold"
+                              style={{
+                                backgroundColor: tier.color,
+                                color: '#fff'
+                              }}
                               title={`${tier.name} Tier`}
                             >
-                              T{tier.rank}
+                              {tier.rank}
                             </span>
                           )}
                           {rider.current_velo_rank && (
-                            <span className="text-[10px] sm:text-xs text-cyan-400 font-bold">
+                            <span className="text-sm text-cyan-400 font-bold">
                               {Math.floor(rider.current_velo_rank)}
                             </span>
                           )}
+                        </div>
+
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
                           {rider.racing_ftp && (
-                            <span className="text-[10px] sm:text-xs text-slate-400 hidden sm:inline">
-                              {rider.racing_ftp}W {ftpWkg && `• ${ftpWkg} W/kg`}
-                            </span>
+                            <div className="bg-black/50 rounded px-2 py-1">
+                              <span className="text-slate-400">FTP:</span>
+                              <span className="ml-1 font-bold">{rider.racing_ftp}W</span>
+                            </div>
+                          )}
+                          {ftpWkg && (
+                            <div className="bg-black/50 rounded px-2 py-1">
+                              <span className="text-slate-400">W/kg:</span>
+                              <span className="ml-1 font-bold">{ftpWkg}</span>
+                            </div>
+                          )}
+                          {rider.zwift_official_racing_score && (
+                            <div className="bg-black/50 rounded px-2 py-1">
+                              <span className="text-slate-400">ZRS:</span>
+                              <span className="ml-1 font-bold">{Math.round(rider.zwift_official_racing_score)}</span>
+                            </div>
+                          )}
+                          {rider.phenotype && (
+                            <div className="bg-black/50 rounded px-2 py-1 truncate">
+                              <span className="font-bold">{rider.phenotype}</span>
+                            </div>
                           )}
                         </div>
-                        
-                        {/* Validation Warning */}
-                        {!rider.is_valid && rider.validation_warning && (
-                          <div className="text-[10px] sm:text-xs text-orange-400 mt-1">
-                            ⚠️ {rider.validation_warning}
-                          </div>
-                        )}
                       </div>
 
-                      {/* Remove Button */}
+                      {/* Validation Warning */}
+                      {!rider.is_valid && rider.validation_warning && (
+                        <div className="absolute top-2 left-2 right-2 bg-orange-600/90 text-white text-xs p-2 rounded">
+                          ⚠️ {rider.validation_warning}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Remove Button */}
+                    <div className="p-2 bg-slate-900/80">
                       <button
                         onClick={() => removeRiderMutation.mutate(rider.rider_id)}
-                        className="px-2 sm:px-3 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-xs sm:text-sm rounded transition-colors flex-shrink-0 min-h-[44px] sm:min-h-0 flex items-center justify-center"
-                        title="Verwijder uit team"
+                        className="w-full px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
                       >
-                        🗑️
+                        🗑️ Verwijder
                       </button>
                     </div>
                   </div>
@@ -316,7 +255,6 @@ export default function TeamLineupModal({ teamId, onClose, isDragging = false }:
           )}
         </div>
       </div>
-    </aside>
-    </>
+    </div>
   )
 }

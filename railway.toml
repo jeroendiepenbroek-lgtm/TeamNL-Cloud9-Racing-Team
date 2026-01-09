@@ -1,11 +1,30 @@
+# Railway Deployment Configuration
+# Documentatie: https://docs.railway.app/deploy/config-as-code
+
 [build]
 builder = "dockerfile"
 dockerfilePath = "Dockerfile"
+watchPatterns = ["frontend/**", "backend/**", "Dockerfile", "nixpacks.toml"]
 
 [deploy]
 startCommand = "npm start"
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
 
+# Health check configuratie
 [[deploy.healthcheck]]
 path = "/health"
 interval = 30
 timeout = 10
+
+# Environment variabelen hints (zet deze in Railway dashboard)
+# NODE_ENV=production
+# PORT=8080
+# SUPABASE_URL=
+# SUPABASE_SERVICE_KEY=
+# SUPABASE_ANON_KEY=
+# ZWIFT_USERNAME=
+# ZWIFT_PASSWORD=
+# ZWIFTRACING_API_KEY=
+# VITE_SUPABASE_URL=
+# VITE_SUPABASE_ANON_KEY=
