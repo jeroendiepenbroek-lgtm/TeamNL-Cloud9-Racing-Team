@@ -186,6 +186,7 @@ export default function IntegratedTeamBuilder() {
         <RiderPassportSidebar
           riders={riders}
           isOpen={sidebarOpen}
+          onDragStart={() => {}}
         />
 
         {/* Main: Team Cards Grid */}
@@ -202,6 +203,7 @@ export default function IntegratedTeamBuilder() {
                   key={team.team_id}
                   team={team}
                   onOpenDetail={handleOpenTeamDetail}
+                  onDrop={() => {}}
                   isDragging={draggedRider !== null}
                   refetchTeams={refetchTeams}
                 />

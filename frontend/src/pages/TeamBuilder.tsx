@@ -265,24 +265,6 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
     }
   })
   
-  const deleteTeamMutation = useMutation({
-    mutationFn: async (teamId: number) => {
-      const res = await fetch(`/api/teams/${teamId}`, {
-        method: 'DELETE'
-      })
-      if (!res.ok) throw new Error('Failed to delete team')
-      return res.json()
-    },
-    onSuccess: () => {
-      toast.success('Team deleted')
-      queryClient.invalidateQueries({ queryKey: ['teams'] })
-      setSelectedTeam(null)
-    },
-    onError: (error: any) => {
-      toast.error(error.message)
-    }
-  })
-  
   const reorderRidersMutation = useMutation({
     mutationFn: async ({ teamId, riderIds }: { teamId: number, riderIds: number[] }) => {
       const res = await fetch(`/api/teams/${teamId}/lineup/reorder`, {
@@ -351,12 +333,6 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
       teamId: editingTeam.team_id,
       updates
     })
-  }
-  
-  const handleDeleteTeam = (teamId: number) => {
-    if (confirm('Weet je zeker dat je dit team wilt verwijderen? Alle lineup data wordt ook verwijderd.')) {
-      deleteTeamMutation.mutate(teamId)
-    }
   }
   
   const handleAddRider = (teamId: number, riderId: number) => {
@@ -583,11 +559,8 @@ export default function TeamBuilder({ hideHeader = false }: TeamBuilderProps) {
                           isDragging={activeRider !== null}
                           isExpanded={isExpanded}
                           onToggleExpand={handleToggleExpand}
-                          onEdit={() => {
-                            setEditingTeam(team)
-                            setShowEditModal(true)
-                          }}
-                          onDelete={() => handleDeleteTeam(team.team_id)}
+                          onDrop={() => {}}
+                          onOpenDetail={() => {}}
                         />
                         
                         {/* Expanded Section: Integrated Lineup + Rider Selector */}

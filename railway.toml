@@ -8,8 +8,6 @@ watchPatterns = ["frontend/**", "backend/**", "Dockerfile", "nixpacks.toml"]
 
 [deploy]
 startCommand = "npm start"
-restartPolicyType = "on-failure"
-restartPolicyMaxRetries = 3
 
 # Health check configuratie
 [[deploy.healthcheck]]
