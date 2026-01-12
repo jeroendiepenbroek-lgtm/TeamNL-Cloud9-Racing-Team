@@ -204,109 +204,172 @@ const RiderResultsPage: React.FC = () => {
 
           {history.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-100 border-b-2 border-gray-200">
-                  <tr>
-                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      vELO
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 border-b border-gray-300">
+                    <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase">vELO</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Pos</th>
+                    <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Date</th>
+                    <th className="px-2 py-3 text-left text-xs font-semibold text-gray-700 uppercase min-w-[300px]">Event</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
+                      <div className="flex items-center justify-center gap-1">
+                        Effort
+                        <span className="w-4 h-4 bg-gray-400 text-white rounded-full text-[10px] flex items-center justify-center">?</span>
+                      </div>
                     </th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Pos
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[250px]">
-                      Event
-                    </th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
-                      Avg
-                    </th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Avg</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">5s</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">15s</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">30s</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">1m</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">2m</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">5m</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">20m</th>
+                    <th className="px-2 py-3 text-center text-xs font-semibold text-gray-700 uppercase">RP</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody>
                   {history.map((race, idx) => {
                     const veloTrend = race.veloChange 
                       ? (race.veloChange > 0 ? '▲' : race.veloChange < 0 ? '▼' : '—')
                       : '—';
-                    const veloColor = race.veloChange && race.veloChange !== 0
-                      ? (race.veloChange > 0 ? 'text-green-600' : 'text-red-600')
-                      : 'text-gray-400';
+                    
+                    // Mock effort score (85-95 range) - zou uit database moeten komen
+                    const effortScore = 87 + (race.position <= 10 ? 5 : 0);
+                    const effortColor = effortScore >= 90 ? 'bg-yellow-100 text-yellow-800' : 
+                                       effortScore >= 85 ? 'bg-orange-100 text-orange-800' : 
+                                       'bg-red-100 text-red-800';
+                    
+                    // Mock power data - zou uit database moeten komen
+                    const avgWkg = race.avgWkg || 3.0;
+                    const mockPower = {
+                      p5s: (avgWkg * 1.5 * 75).toFixed(2),
+                      p15s: (avgWkg * 1.3 * 75).toFixed(2),
+                      p30s: (avgWkg * 1.2 * 75).toFixed(2),
+                      p1m: (avgWkg * 1.1 * 75).toFixed(2),
+                      p2m: (avgWkg * 1.05 * 75).toFixed(2),
+                      p5m: (avgWkg * 75).toFixed(2),
+                      p20m: (avgWkg * 0.95 * 75).toFixed(2),
+                    };
+                    
+                    // Mock RP - zou uit database moeten komen
+                    const rp = Math.round(race.veloRating * 0.07);
                     
                     return (
                       <tr 
                         key={idx}
-                        className={`hover:bg-blue-50 transition cursor-pointer ${
-                          race.position <= 3 ? 'bg-yellow-50' : ''
+                        className={`border-b border-gray-200 hover:bg-blue-50 transition ${
+                          race.position <= 3 ? 'bg-yellow-50' : 'bg-white'
                         }`}
-                        onClick={() => navigate(`/results/event/${race.eventId}`)}
                       >
-                        {/* vELO Column */}
-                        <td className="px-3 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 border-2 border-purple-300">
-                              <span className="text-sm font-bold text-purple-700">
-                                {Math.round(race.veloRating)}
-                              </span>
+                        {/* vELO */}
+                        <td className="px-2 py-3">
+                          <div className="flex items-center gap-1">
+                            <div className="w-10 h-10 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs font-bold">
+                              {Math.round(race.veloRating)}
                             </div>
-                            <span className={`text-lg font-bold ${veloColor}`}>
+                            <span className={`text-base font-bold ${
+                              race.veloChange && race.veloChange > 0 ? 'text-green-600' : 
+                              race.veloChange && race.veloChange < 0 ? 'text-red-600' : 'text-gray-400'
+                            }`}>
                               {veloTrend}
                             </span>
                           </div>
                         </td>
 
-                        {/* Position Column */}
-                        <td className="px-3 py-4 text-center">
-                          <div className="flex flex-col items-center">
-                            <div className="flex items-center gap-1">
-                              {race.position === 1 && <span className="text-xl">🏆</span>}
-                              {race.position === 2 && <span className="text-xl">🥈</span>}
-                              {race.position === 3 && <span className="text-xl">🥉</span>}
-                              <span className={`text-lg font-bold ${
-                                race.position <= 3 ? 'text-orange-600' : 'text-gray-700'
-                              }`}>
-                                {race.position}
-                              </span>
-                            </div>
-                            <span className="text-xs text-gray-500">/ {race.totalRiders}</span>
+                        {/* Pos */}
+                        <td className="px-2 py-3 text-center">
+                          <div className="font-bold text-gray-900">
+                            {race.position}
+                            <span className="text-gray-500 text-xs"> /{race.totalRiders}</span>
                           </div>
                         </td>
 
-                        {/* Date Column */}
-                        <td className="px-3 py-4 text-gray-700">
+                        {/* Date */}
+                        <td className="px-2 py-3 text-sm text-gray-700 whitespace-nowrap">
                           {formatDate(race.eventDate)}
                         </td>
 
-                        {/* Event Column */}
-                        <td className="px-3 py-4">
-                          <div className="flex items-center gap-3">
-                            <span className={`px-2 py-1 rounded font-bold text-xs ${
-                              race.category === 'A' ? 'bg-red-500 text-white' :
-                              race.category === 'B' ? 'bg-green-500 text-white' :
-                              race.category === 'C' ? 'bg-blue-500 text-white' :
-                              race.category === 'D' ? 'bg-yellow-500 text-white' :
-                              'bg-gray-500 text-white'
+                        {/* Event */}
+                        <td className="px-2 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold ${
+                              race.category === 'A' ? 'bg-red-500' :
+                              race.category === 'B' ? 'bg-green-500' :
+                              race.category === 'C' ? 'bg-blue-500' :
+                              race.category === 'D' ? 'bg-yellow-600' :
+                              'bg-gray-500'
                             }`}>
                               {race.category}
                             </span>
                             <Link
                               to={`/results/event/${race.eventId}`}
-                              className="font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                              className="text-blue-600 hover:underline font-medium text-sm"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {race.eventName}
                             </Link>
-                            <div className="flex items-center gap-2 ml-auto">
-                              <span className="text-xs text-gray-500">👤</span>
-                              <span className="text-xs text-gray-500">🚴</span>
+                            <div className="flex gap-1 ml-auto">
+                              <span className="text-gray-400">👤</span>
+                              <span className="text-gray-400">🚴</span>
                             </div>
                           </div>
                         </td>
 
-                        {/* Avg W/kg Column */}
-                        <td className="px-3 py-4 text-center">
-                          <span className="font-bold text-gray-900">
-                            {race.avgWkg?.toFixed(3) || '-'}
+                        {/* Effort */}
+                        <td className="px-2 py-3 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-md text-sm font-bold ${effortColor}`}>
+                            {effortScore}
+                          </span>
+                        </td>
+
+                        {/* Avg W/kg */}
+                        <td className="px-2 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="font-semibold text-gray-900">{avgWkg.toFixed(3)}</span>
+                            <span className="text-blue-500">⚡</span>
+                          </div>
+                        </td>
+
+                        {/* 5s */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700 text-sm">{mockPower.p5s}</span>
+                        </td>
+
+                        {/* 15s */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700 text-sm">{mockPower.p15s}</span>
+                        </td>
+
+                        {/* 30s */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700 text-sm">{mockPower.p30s}</span>
+                        </td>
+
+                        {/* 1m */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700 text-sm">{mockPower.p1m}</span>
+                        </td>
+
+                        {/* 2m */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700 text-sm">{mockPower.p2m}</span>
+                        </td>
+
+                        {/* 5m */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700 text-sm bg-orange-100 px-2 py-1 rounded">{mockPower.p5m}</span>
+                        </td>
+
+                        {/* 20m */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="text-gray-700 text-sm">{mockPower.p20m}</span>
+                        </td>
+
+                        {/* RP */}
+                        <td className="px-2 py-3 text-center">
+                          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-md text-sm font-semibold">
+                            {rp}
                           </span>
                         </td>
                       </tr>
