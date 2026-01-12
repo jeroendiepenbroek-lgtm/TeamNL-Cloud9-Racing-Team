@@ -189,13 +189,13 @@ const RiderResultsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Events Grid */}
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="bg-white rounded-xl shadow-xl overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b-2 border-gray-200">
+      {/* Results Table - ZwiftRacing.app Style */}
+      <div className="max-w-full mx-auto px-4">
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-black text-gray-900 flex items-center gap-2">
               <Calendar className="w-5 h-5" />
-              Events
+              Race Results
               <span className="text-sm font-normal text-gray-500 ml-2">
                 ({history.length} races in last 90 days)
               </span>
@@ -203,91 +203,117 @@ const RiderResultsPage: React.FC = () => {
           </div>
 
           {history.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-              {history.map((race, idx) => {
-                const positionIcon = race.position === 1 ? '🥇' : race.position === 2 ? '🥈' : race.position === 3 ? '🥉' : null;
-                const positionColor = race.position <= 3 ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 bg-white';
-                
-                return (
-                  <div
-                    key={idx}
-                    onClick={() => navigate(`/results/event/${race.eventId}`)}
-                    className={`border-2 ${positionColor} rounded-lg p-5 hover:shadow-xl transition-all cursor-pointer hover:scale-[1.02]`}
-                  >
-                    {/* Event Header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-900 text-sm line-clamp-2 mb-1">
-                          {race.eventName}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {formatDate(race.eventDate)}
-                        </p>
-                      </div>
-                      {positionIcon && (
-                        <span className="text-3xl ml-2">{positionIcon}</span>
-                      )}
-                    </div>
-
-                    {/* Position Badge */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
-                        race.position <= 3 
-                          ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white' 
-                          : 'bg-gray-100 text-gray-900'
-                      }`}>
-                        <span className="text-2xl font-black">{race.position}</span>
-                        <span className="text-sm font-medium">/ {race.totalRiders}</span>
-                      </div>
-                      
-                      <span className={`px-3 py-1 rounded-lg font-bold text-sm ${
-                        race.category === 'A' ? 'bg-red-100 text-red-700' :
-                        race.category === 'B' ? 'bg-green-100 text-green-700' :
-                        race.category === 'C' ? 'bg-blue-100 text-blue-700' :
-                        race.category === 'D' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        Cat {race.category}
-                      </span>
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-200">
-                      <div>
-                        <div className="text-xs text-gray-500">Time</div>
-                        <div className="font-mono font-bold text-gray-900">{formatTime(race.timeSeconds)}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">W/kg</div>
-                        <div className="font-bold text-gray-900">{race.avgWkg?.toFixed(2) || '-'}</div>
-                      </div>
-                      {race.veloRating > 0 && (
-                        <>
-                          <div>
-                            <div className="text-xs text-gray-500">vELO</div>
-                            <div className="font-bold text-gray-900">{Math.round(race.veloRating)}</div>
-                          </div>
-                          {race.veloChange !== 0 && (
-                            <div>
-                              <div className="text-xs text-gray-500">Change</div>
-                              <div className={`font-bold ${race.veloChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {race.veloChange > 0 ? '+' : ''}{race.veloChange}
-                              </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-100 border-b-2 border-gray-200">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      vELO
+                    </th>
+                    <th className="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Pos
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider min-w-[250px]">
+                      Event
+                    </th>
+                    <th className="px-3 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Avg
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {history.map((race, idx) => {
+                    const veloTrend = race.veloChange 
+                      ? (race.veloChange > 0 ? '▲' : race.veloChange < 0 ? '▼' : '—')
+                      : '—';
+                    const veloColor = race.veloChange && race.veloChange !== 0
+                      ? (race.veloChange > 0 ? 'text-green-600' : 'text-red-600')
+                      : 'text-gray-400';
+                    
+                    return (
+                      <tr 
+                        key={idx}
+                        className={`hover:bg-blue-50 transition cursor-pointer ${
+                          race.position <= 3 ? 'bg-yellow-50' : ''
+                        }`}
+                        onClick={() => navigate(`/results/event/${race.eventId}`)}
+                      >
+                        {/* vELO Column */}
+                        <td className="px-3 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 border-2 border-purple-300">
+                              <span className="text-sm font-bold text-purple-700">
+                                {Math.round(race.veloRating)}
+                              </span>
                             </div>
-                          )}
-                        </>
-                      )}
-                    </div>
+                            <span className={`text-lg font-bold ${veloColor}`}>
+                              {veloTrend}
+                            </span>
+                          </div>
+                        </td>
 
-                    {/* Click Indicator */}
-                    <div className="mt-3 pt-3 border-t border-gray-200 text-center">
-                      <span className="text-xs text-blue-600 font-semibold">
-                        View Full Results →
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                        {/* Position Column */}
+                        <td className="px-3 py-4 text-center">
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center gap-1">
+                              {race.position === 1 && <span className="text-xl">🏆</span>}
+                              {race.position === 2 && <span className="text-xl">🥈</span>}
+                              {race.position === 3 && <span className="text-xl">🥉</span>}
+                              <span className={`text-lg font-bold ${
+                                race.position <= 3 ? 'text-orange-600' : 'text-gray-700'
+                              }`}>
+                                {race.position}
+                              </span>
+                            </div>
+                            <span className="text-xs text-gray-500">/ {race.totalRiders}</span>
+                          </div>
+                        </td>
+
+                        {/* Date Column */}
+                        <td className="px-3 py-4 text-gray-700">
+                          {formatDate(race.eventDate)}
+                        </td>
+
+                        {/* Event Column */}
+                        <td className="px-3 py-4">
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2 py-1 rounded font-bold text-xs ${
+                              race.category === 'A' ? 'bg-red-500 text-white' :
+                              race.category === 'B' ? 'bg-green-500 text-white' :
+                              race.category === 'C' ? 'bg-blue-500 text-white' :
+                              race.category === 'D' ? 'bg-yellow-500 text-white' :
+                              'bg-gray-500 text-white'
+                            }`}>
+                              {race.category}
+                            </span>
+                            <Link
+                              to={`/results/event/${race.eventId}`}
+                              className="font-semibold text-blue-600 hover:text-blue-800 hover:underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {race.eventName}
+                            </Link>
+                            <div className="flex items-center gap-2 ml-auto">
+                              <span className="text-xs text-gray-500">👤</span>
+                              <span className="text-xs text-gray-500">🚴</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Avg W/kg Column */}
+                        <td className="px-3 py-4 text-center">
+                          <span className="font-bold text-gray-900">
+                            {race.avgWkg?.toFixed(3) || '-'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           ) : (
             <div className="p-12 text-center">
