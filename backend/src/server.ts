@@ -118,7 +118,7 @@ async function bulkFetchZwiftRacingRiders(riderIds: number[]): Promise<Map<numbe
     console.log(`📦 Bulk fetching ${riderIds.length} riders from ZwiftRacing API...`);
     
     const response = await axios.post(
-      'https://zwift-ranking.herokuapp.com/public/riders',
+      'https://api.zwiftracing.app/api/public/riders',
       riderIds,
       {
         headers: { 
@@ -170,14 +170,19 @@ const MAX_BULK_SIZE = 1000; // ZwiftRacing API limit
 // INDIVIDUAL FETCH: Haal enkele rider op via GET endpoint
 async function fetchSingleZwiftRacingRider(riderId: number): Promise<any | null> {
   try {
-    const response = await axios.get(
-      `https://zwift-ranking.herokuapp.com/public/riders/${riderId}`,
+    const response = await axios.post(
+      'https://api.zwiftracing.app/api/public/riders',
+      [riderId],
       {
-        headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+        headers: { 
+          'Authorization': ZWIFTRACING_API_TOKEN,
+          'Content-Type': 'application/json'
+        },
         timeout: 10000
       }
     );
-    return response.data;
+    // Response is array, return first item
+    return Array.isArray(response.data) && response.data.length > 0 ? response.data[0] : null;
   } catch (error: any) {
     if (error.response?.status === 404) {
       console.warn(`⚠️  Rider ${riderId} not found on ZwiftRacing (404) - skipping`);
@@ -509,8 +514,11 @@ async function syncRiderFromAPIs(riderId: number, skipDelay = false): Promise<{ 
 
     // Parallel fetch from both APIs
     const [racingResult, profileResult] = await Promise.allSettled([
-      axios.get(`https://zwift-ranking.herokuapp.com/public/riders/${riderId}`, {
-        headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+      axios.post('https://api.zwiftracing.app/api/public/riders', [riderId], {
+        headers: { 
+          'Authorization': ZWIFTRACING_API_TOKEN,
+          'Content-Type': 'application/json'
+        },
         timeout: 10000
       }),
       axios.get(`https://us-or-rly101.zwift.com/api/profiles/${riderId}`, {
@@ -528,7 +536,9 @@ async function syncRiderFromAPIs(riderId: number, skipDelay = false): Promise<{ 
     // Process ZwiftRacing data
     if (racingResult.status === 'fulfilled') {
       console.log(`  ℹ️  ZwiftRacing API responded for ${riderId}`);
-      const data = racingResult.value.data;
+      // POST returns array, get first item
+      const responseData = racingResult.value.data;
+      const data = Array.isArray(responseData) ? responseData[0] : responseData;
       const riderData = {
         id: riderId,
         rider_id: riderId,
@@ -1929,11 +1939,68 @@ app.get('/api/results/rider/:riderId', async (req, res) => {
     
     console.log(`📊 Race results for rider ${riderId}: ${data?.length || 0} races`);
     
+    // Calculate stats voor RiderResultsPage component
+    const total_races = data?.length || 0;
+    const total_wins = data?.filter(r => r.position === 1).length || 0;
+    const total_podiums = data?.filter(r => r.position <= 3).length || 0;
+    const avg_position = total_races > 0 
+      ? (data?.reduce((sum, r) => sum + (r.position || 0), 0) || 0) / total_races 
+      : 0;
+    const best_position = total_races > 0
+      ? Math.min(...data!.map(r => r.position || 999))
+      : 0;
+    
+    // vELO calculations
+    const sortedByDate = [...(data || [])].sort((a, b) => 
+      new Date(a.event_date).getTime() - new Date(b.event_date).getTime()
+    );
+    const current_velo = sortedByDate[sortedByDate.length - 1]?.velo_after || 0;
+    const velo_30d_ago = sortedByDate.length > 3 
+      ? sortedByDate[sortedByDate.length - 4]?.velo_after 
+      : sortedByDate[0]?.velo_before;
+    const velo_change_30d = (current_velo && velo_30d_ago) ? current_velo - velo_30d_ago : 0;
+    
+    // Average w/kg
+    const avg_wkg = total_races > 0
+      ? (data?.reduce((sum, r) => sum + (r.avg_wkg || 0), 0) || 0) / total_races
+      : 0;
+    
+    // Get rider name from first result
+    const riderName = `Rider ${riderId}`; // We don't have rider name in results yet
+    
+    // Format history for frontend
+    const history = data?.map(r => ({
+      eventId: r.event_id.toString(),
+      eventName: r.event_name,
+      eventDate: r.event_date,
+      position: r.position,
+      totalRiders: r.total_participants || 0,
+      category: r.category || '',
+      timeSeconds: r.time_seconds || 0,
+      avgWkg: r.avg_wkg || 0,
+      veloRating: r.velo_after || 0,
+      veloChange: r.velo_change || 0,
+      dnf: false
+    })) || [];
+    
     res.json({ 
       success: true, 
-      rider_id: riderId,
-      count: data?.length || 0,
-      results: data || [] 
+      stats: {
+        riderId,
+        riderName,
+        totalRaces: total_races,
+        totalWins: total_wins,
+        totalPodiums: total_podiums,
+        winRate: total_races > 0 ? (total_wins / total_races * 100) : 0,
+        podiumRate: total_races > 0 ? (total_podiums / total_races * 100) : 0,
+        avgPosition: parseFloat(avg_position.toFixed(1)),
+        bestPosition: best_position,
+        currentVelo: current_velo,
+        veloChange30d: velo_change_30d,
+        avgWkg: parseFloat(avg_wkg.toFixed(2))
+      },
+      history,
+      results: data || [] // Keep for backward compatibility
     });
   } catch (error: any) {
     console.error('❌ Error fetching race results:', error);
@@ -1971,11 +2038,44 @@ app.get('/api/results/event/:eventId', async (req, res) => {
     
     console.log(`📊 Event ${eventId}: ${eventResults?.length || 0} results`);
     
+    // Format voor EventResultsPage component
+    const formattedResults = eventResults?.map((r, index) => {
+      // Calculate delta from winner
+      const winnerTime = eventResults[0]?.time_seconds || 0;
+      const deltaWinnerSeconds = r.time_seconds && winnerTime 
+        ? r.time_seconds - winnerTime 
+        : undefined;
+      
+      return {
+        position: r.position || (index + 1),
+        riderId: r.rider_id,
+        riderName: `Rider ${r.rider_id}`, // TODO: Get actual rider name
+        teamName: r.team_name,
+        category: r.category || '',
+        pen: r.category || 'B', // Use category as pen
+        timeSeconds: r.time_seconds || 0,
+        deltaWinnerSeconds,
+        avgWkg: r.avg_wkg || 0,
+        avgPowerWatts: r.avg_power,
+        veloRating: r.velo_after,
+        veloChange: r.velo_change,
+        dnf: false,
+        positionInCategory: r.category_position
+      };
+    }) || [];
+    
     res.json({
       success: true,
-      event: eventData || null,
-      results: eventResults || [],
-      total_participants: eventResults?.length || 0
+      event: {
+        eventId: eventId.toString(),
+        eventName: eventData?.event_name || 'Unknown Event',
+        eventDate: eventData?.event_date || new Date().toISOString(),
+        routeName: eventData?.route,
+        routeWorld: eventData?.world,
+        distanceKm: eventData?.distance_km,
+        totalRiders: eventResults?.length || 0,
+        results: formattedResults
+      }
     });
   } catch (error: any) {
     console.error('❌ Error fetching event results:', error);

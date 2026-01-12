@@ -90,7 +90,7 @@ async function bulkFetchZwiftRacingRiders(riderIds) {
     }
     try {
         console.log(`📦 Bulk fetching ${riderIds.length} riders from ZwiftRacing API...`);
-        const response = await axios.post('https://zwift-ranking.herokuapp.com/public/riders', riderIds, {
+        const response = await axios.post('https://api.zwiftracing.app/api/public/riders', riderIds, {
             headers: {
                 'Authorization': ZWIFTRACING_API_TOKEN,
                 'Content-Type': 'application/json'
@@ -136,11 +136,15 @@ const MAX_BULK_SIZE = 1000; // ZwiftRacing API limit
 // INDIVIDUAL FETCH: Haal enkele rider op via GET endpoint
 async function fetchSingleZwiftRacingRider(riderId) {
     try {
-        const response = await axios.get(`https://zwift-ranking.herokuapp.com/public/riders/${riderId}`, {
-            headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+        const response = await axios.post('https://api.zwiftracing.app/api/public/riders', [riderId], {
+            headers: {
+                'Authorization': ZWIFTRACING_API_TOKEN,
+                'Content-Type': 'application/json'
+            },
             timeout: 10000
         });
-        return response.data;
+        // Response is array, return first item
+        return Array.isArray(response.data) && response.data.length > 0 ? response.data[0] : null;
     }
     catch (error) {
         if (error.response?.status === 404) {
@@ -436,8 +440,11 @@ async function syncRiderFromAPIs(riderId, skipDelay = false) {
         }
         // Parallel fetch from both APIs
         const [racingResult, profileResult] = await Promise.allSettled([
-            axios.get(`https://zwift-ranking.herokuapp.com/public/riders/${riderId}`, {
-                headers: { 'Authorization': ZWIFTRACING_API_TOKEN },
+            axios.post('https://api.zwiftracing.app/api/public/riders', [riderId], {
+                headers: {
+                    'Authorization': ZWIFTRACING_API_TOKEN,
+                    'Content-Type': 'application/json'
+                },
                 timeout: 10000
             }),
             axios.get(`https://us-or-rly101.zwift.com/api/profiles/${riderId}`, {
@@ -453,7 +460,9 @@ async function syncRiderFromAPIs(riderId, skipDelay = false) {
         // Process ZwiftRacing data
         if (racingResult.status === 'fulfilled') {
             console.log(`  ℹ️  ZwiftRacing API responded for ${riderId}`);
-            const data = racingResult.value.data;
+            // POST returns array, get first item
+            const responseData = racingResult.value.data;
+            const data = Array.isArray(responseData) ? responseData[0] : responseData;
             const riderData = {
                 id: riderId,
                 rider_id: riderId,
@@ -1698,21 +1707,200 @@ console.log('📂 Frontend path:', frontendPath);
 // ============================================
 // RACE RESULTS API (server-side RLS bypass)
 // ============================================
-// GET: Race results voor specifieke rider
+// US1: GET Race results voor specifieke rider (90 dagen) from v_dashboard_rider_results
 app.get('/api/results/rider/:riderId', async (req, res) => {
     try {
         const riderId = parseInt(req.params.riderId);
+        if (isNaN(riderId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid rider ID'
+            });
+        }
+        // Gebruik dashboard view met 90-dagen filter
         const { data, error } = await supabase
-            .from('race_results')
+            .from('v_dashboard_rider_results')
             .select('*')
             .eq('rider_id', riderId)
             .order('event_date', { ascending: false });
         if (error)
             throw error;
-        res.json({ success: true, results: data || [] });
+        console.log(`📊 Race results for rider ${riderId}: ${data?.length || 0} races`);
+        // Calculate stats voor RiderResultsPage component
+        const total_races = data?.length || 0;
+        const total_wins = data?.filter(r => r.position === 1).length || 0;
+        const total_podiums = data?.filter(r => r.position <= 3).length || 0;
+        const avg_position = total_races > 0
+            ? (data?.reduce((sum, r) => sum + (r.position || 0), 0) || 0) / total_races
+            : 0;
+        const best_position = total_races > 0
+            ? Math.min(...data.map(r => r.position || 999))
+            : 0;
+        // vELO calculations
+        const sortedByDate = [...(data || [])].sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+        const current_velo = sortedByDate[sortedByDate.length - 1]?.velo_after || 0;
+        const velo_30d_ago = sortedByDate.length > 3
+            ? sortedByDate[sortedByDate.length - 4]?.velo_after
+            : sortedByDate[0]?.velo_before;
+        const velo_change_30d = (current_velo && velo_30d_ago) ? current_velo - velo_30d_ago : 0;
+        // Average w/kg
+        const avg_wkg = total_races > 0
+            ? (data?.reduce((sum, r) => sum + (r.avg_wkg || 0), 0) || 0) / total_races
+            : 0;
+        // Get rider name from first result
+        const riderName = `Rider ${riderId}`; // We don't have rider name in results yet
+        // Format history for frontend
+        const history = data?.map(r => ({
+            eventId: r.event_id.toString(),
+            eventName: r.event_name,
+            eventDate: r.event_date,
+            position: r.position,
+            totalRiders: r.total_participants || 0,
+            category: r.category || '',
+            timeSeconds: r.time_seconds || 0,
+            avgWkg: r.avg_wkg || 0,
+            veloRating: r.velo_after || 0,
+            veloChange: r.velo_change || 0,
+            dnf: false
+        })) || [];
+        res.json({
+            success: true,
+            stats: {
+                riderId,
+                riderName,
+                totalRaces: total_races,
+                totalWins: total_wins,
+                totalPodiums: total_podiums,
+                winRate: total_races > 0 ? (total_wins / total_races * 100) : 0,
+                podiumRate: total_races > 0 ? (total_podiums / total_races * 100) : 0,
+                avgPosition: parseFloat(avg_position.toFixed(1)),
+                bestPosition: best_position,
+                currentVelo: current_velo,
+                veloChange30d: velo_change_30d,
+                avgWkg: parseFloat(avg_wkg.toFixed(2))
+            },
+            history,
+            results: data || [] // Keep for backward compatibility
+        });
     }
     catch (error) {
         console.error('❌ Error fetching race results:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// US2: GET Race event details met alle deelnemers
+app.get('/api/results/event/:eventId', async (req, res) => {
+    try {
+        const eventId = parseInt(req.params.eventId);
+        if (isNaN(eventId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid event ID'
+            });
+        }
+        // Haal event details + alle results op
+        const { data: eventResults, error: resultsError } = await supabase
+            .from('race_results')
+            .select('*')
+            .eq('event_id', eventId)
+            .order('position');
+        if (resultsError)
+            throw resultsError;
+        // Haal event metadata op
+        const { data: eventData, error: eventError } = await supabase
+            .from('race_events')
+            .select('*')
+            .eq('event_id', eventId)
+            .single();
+        console.log(`📊 Event ${eventId}: ${eventResults?.length || 0} results`);
+        // Format voor EventResultsPage component
+        const formattedResults = eventResults?.map((r, index) => {
+            // Calculate delta from winner
+            const winnerTime = eventResults[0]?.time_seconds || 0;
+            const deltaWinnerSeconds = r.time_seconds && winnerTime
+                ? r.time_seconds - winnerTime
+                : undefined;
+            return {
+                position: r.position || (index + 1),
+                riderId: r.rider_id,
+                riderName: `Rider ${r.rider_id}`, // TODO: Get actual rider name
+                teamName: r.team_name,
+                category: r.category || '',
+                pen: r.category || 'B', // Use category as pen
+                timeSeconds: r.time_seconds || 0,
+                deltaWinnerSeconds,
+                avgWkg: r.avg_wkg || 0,
+                avgPowerWatts: r.avg_power,
+                veloRating: r.velo_after,
+                veloChange: r.velo_change,
+                dnf: false,
+                positionInCategory: r.category_position
+            };
+        }) || [];
+        res.json({
+            success: true,
+            event: {
+                eventId: eventId.toString(),
+                eventName: eventData?.event_name || 'Unknown Event',
+                eventDate: eventData?.event_date || new Date().toISOString(),
+                routeName: eventData?.route,
+                routeWorld: eventData?.world,
+                distanceKm: eventData?.distance_km,
+                totalRiders: eventResults?.length || 0,
+                results: formattedResults
+            }
+        });
+    }
+    catch (error) {
+        console.error('❌ Error fetching event results:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+// GET: Stats voor specifieke rider (summary)
+app.get('/api/results/rider/:riderId/stats', async (req, res) => {
+    try {
+        const riderId = parseInt(req.params.riderId);
+        if (isNaN(riderId)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid rider ID'
+            });
+        }
+        const { data, error } = await supabase
+            .from('v_dashboard_rider_results')
+            .select('*')
+            .eq('rider_id', riderId);
+        if (error)
+            throw error;
+        // Calculate stats
+        const total_races = data?.length || 0;
+        const total_wins = data?.filter(r => r.position === 1).length || 0;
+        const total_podiums = data?.filter(r => r.position <= 3).length || 0;
+        const avg_position = total_races > 0
+            ? (data?.reduce((sum, r) => sum + (r.position || 0), 0) || 0) / total_races
+            : 0;
+        // vELO trend
+        const sortedByDate = [...(data || [])].sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+        const velo_start = sortedByDate[0]?.velo_before || null;
+        const velo_end = sortedByDate[sortedByDate.length - 1]?.velo_after || null;
+        const velo_change_total = (velo_end && velo_start) ? velo_end - velo_start : 0;
+        res.json({
+            success: true,
+            rider_id: riderId,
+            stats: {
+                total_races,
+                total_wins,
+                total_podiums,
+                podium_percentage: total_races > 0 ? (total_podiums / total_races * 100).toFixed(1) : 0,
+                avg_position: avg_position.toFixed(1),
+                velo_start,
+                velo_end,
+                velo_change_total
+            }
+        });
+    }
+    catch (error) {
+        console.error('❌ Error fetching rider stats:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });

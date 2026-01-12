@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useFavorites } from '../hooks/useFavorites'
 import toast from 'react-hot-toast'
-import { getRiderCategory } from '../utils/categoryHelper'
 
 interface Rider {
   rider_id: number
@@ -188,23 +186,10 @@ function MultiSelectDropdown<T extends string | number>({
 }
 
 export default function RiderPassportGallery() {
-  // ✅ SYNC: Gebruik React Query met gedeelde ['riders'] cache (v_rider_complete)
-  const { data: ridersResponse, isLoading: loading, error: queryError } = useQuery({
-    queryKey: ['riders'],
-    queryFn: async () => {
-      const response = await fetch(`${API_BASE}/api/riders`)
-      if (!response.ok) throw new Error('Failed to fetch riders')
-      return response.json()
-    },
-    refetchOnMount: 'always',
-    staleTime: 0,
-    refetchInterval: 30000,
-  })
-
-  const riders = ridersResponse?.riders || []
-  const error = queryError ? 'Fout bij laden van riders' : ''
-  
+  const [riders, setRiders] = useState<Rider[]>([])
   const [filteredRiders, setFilteredRiders] = useState<Rider[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategories, setFilterCategories] = useState<string[]>([])
   const [filterVeloLiveRanks, setFilterVeloLiveRanks] = useState<number[]>([])
@@ -220,6 +205,7 @@ export default function RiderPassportGallery() {
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false)
 
   useEffect(() => {
+    loadRiders()
     loadTeams()
   }, [])
 
@@ -231,11 +217,16 @@ export default function RiderPassportGallery() {
     loadTeamLineups()
   }, [filterTeams])
 
-  // Calculate tier max values when riders change
-  useEffect(() => {
-    if (riders.length > 0) {
+  const loadRiders = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/riders`)
+      const data = await response.json()
+      const loadedRiders = data.riders || []
+      setRiders(loadedRiders)
+      
+      // Calculate tier max values for spider chart normalization
       const tierMaxes: {[tier: number]: {[key: string]: number}} = {}
-      riders.forEach((r: Rider) => {
+      loadedRiders.forEach((r: Rider) => {
         const tier = getVeloTier(r.velo_live).tier
         if (!tierMaxes[tier]) {
           tierMaxes[tier] = {
@@ -252,8 +243,13 @@ export default function RiderPassportGallery() {
         tierMaxes[tier].power_1200s = Math.max(tierMaxes[tier].power_1200s, r.power_1200s || 0)
       })
       setTierMaxValues(tierMaxes)
+      
+      setLoading(false)
+    } catch (err) {
+      setError('Fout bij laden van riders')
+      setLoading(false)
     }
-  }, [riders])
+  }
 
   const loadTeams = async () => {
     try {
@@ -288,11 +284,11 @@ export default function RiderPassportGallery() {
   }
 
   const applyFilters = () => {
-    let filtered: Rider[] = riders
+    let filtered = riders
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter((r: Rider) => 
+      filtered = filtered.filter(r => 
         r.racing_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         r.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -300,20 +296,20 @@ export default function RiderPassportGallery() {
 
     // Favorites filter
     if (showOnlyFavorites && favorites.length > 0) {
-      filtered = filtered.filter((r: Rider) => favorites.includes(r.rider_id))
+      filtered = filtered.filter(r => favorites.includes(r.rider_id))
     }
 
-    // Category filter - multiselect (use zwift_official_category with A+ upgrade detection)
+    // Category filter - multiselect (use zwiftracing_category for A+ support)
     if (filterCategories.length > 0) {
-      filtered = filtered.filter((r: Rider) => {
-        const category = getRiderCategory(r.zwift_official_category, r.zwiftracing_category)
+      filtered = filtered.filter(r => {
+        const category = r.zwiftracing_category || r.zwift_official_category || 'D'
         return filterCategories.includes(category)
       })
     }
 
     // vELO Live filter - multiselect
     if (filterVeloLiveRanks.length > 0) {
-      filtered = filtered.filter((r: Rider) => {
+      filtered = filtered.filter(r => {
         const tierData = getVeloTier(r.velo_live)
         return tierData && filterVeloLiveRanks.includes(tierData.tier)
       })
@@ -321,7 +317,7 @@ export default function RiderPassportGallery() {
 
     // vELO 30-day filter - multiselect
     if (filterVelo30dayRanks.length > 0) {
-      filtered = filtered.filter((r: Rider) => {
+      filtered = filtered.filter(r => {
         const tierData = getVeloTier(r.velo_30day)
         return tierData && filterVelo30dayRanks.includes(tierData.tier)
       })
@@ -329,7 +325,7 @@ export default function RiderPassportGallery() {
 
     // Team filter - multiselect (gebruik actual team lineups zoals Racing Matrix)
     if (filterTeams.length > 0 && teamLineups.length > 0) {
-      filtered = filtered.filter((r: Rider) => teamLineups.includes(r.rider_id))
+      filtered = filtered.filter(r => teamLineups.includes(r.rider_id))
     }
 
     setFilteredRiders(filtered)
@@ -402,7 +398,7 @@ export default function RiderPassportGallery() {
   ) => (
     <div
       key={rider.rider_id}
-      className="perspective-1000 cursor-pointer snap-center flex-shrink-0 flex-shrink-0 snap-center relative z-10"
+      className="perspective-1000 cursor-pointer snap-center flex-shrink-0 flex-shrink-0 snap-center"
       onClick={() => toggleFlip(rider.rider_id)}
       style={{ perspective: '1000px', width: '300px' }}
     >
@@ -903,7 +899,7 @@ export default function RiderPassportGallery() {
             <div className="md:hidden overflow-x-auto overflow-y-hidden scrollbar-thin scrollbar-thumb-yellow-400 scrollbar-track-gray-800 pb-4">
               <div className="flex gap-4 snap-x snap-mandatory px-4 justify-center" style={{ minWidth: 'min-content' }}>
                 {filteredRiders.map(rider => {
-                  const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
+                  const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                   const flagUrl = getFlagUrl(rider.country_alpha3)
                   const categoryColor = getCategoryColor(category)
                   const veloLive = Math.floor(rider.velo_live || 0)
@@ -929,7 +925,7 @@ export default function RiderPassportGallery() {
               >
                 <div className="flex gap-6 px-4 justify-center" style={{ minWidth: 'min-content' }}>
                   {filteredRiders.map((rider) => {
-                    const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
+                    const category = rider.zwift_official_category || rider.zwiftracing_category || 'D'
                     const flagUrl = getFlagUrl(rider.country_alpha3)
                     const categoryColor = getCategoryColor(category)
                     const veloLive = Math.floor(rider.velo_live || 0)

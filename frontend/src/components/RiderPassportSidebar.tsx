@@ -1,22 +1,20 @@
 import { useState, useMemo } from 'react'
-import { useDraggable } from '@dnd-kit/core'
-import toast from 'react-hot-toast'
-import { getRiderCategory } from '../utils/categoryHelper'
 
 interface Rider {
   rider_id: number
-  racing_name: string | null
+  racing_name: string
   full_name: string
   zwift_official_category: string | null
   zwiftracing_category: string | null
   country_alpha3: string
   velo_live: number
-  velo_30day: number | null
-  racing_ftp: number | null
-  weight_kg: number | null
+  velo_30day: number
+  racing_ftp: number
+  weight_kg: number
   avatar_url: string
   phenotype: string | null
-  teams?: Array<{ team_id: number; team_name: string }> // US2: Multiple teams
+  team_id?: number | null
+  team_name?: string | null
 }
 
 interface Team {
@@ -32,9 +30,9 @@ interface Team {
 interface RiderPassportSidebarProps {
   riders: Rider[]
   isOpen: boolean
+  onDragStart: (rider: Rider) => void
   selectedTeam?: Team | null
   onClearTeamFilter?: () => void
-  onAddRider?: (riderId: number) => void // US3: Add button callback
 }
 
 const VELO_TIERS = [
@@ -66,35 +64,9 @@ const getVeloTier = (rating: number | null) => {
   )
 }
 
-export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onClearTeamFilter, onAddRider }: RiderPassportSidebarProps) {
+export default function RiderPassportSidebar({ riders, isOpen, onDragStart, selectedTeam, onClearTeamFilter }: RiderPassportSidebarProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
-
-  // US2: Helper functie om te checken of rider aan team criteria voldoet
-  const riderMeetsTeamCriteria = (rider: Rider, team: Team | null | undefined): boolean => {
-    if (!team) return true // Geen team geselecteerd = alles tonen
-    
-    const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
-    const veloRating = rider.velo_live
-    const riderTier = getVeloTier(veloRating)
-    
-    if (team.competition_type === 'velo' || team.competition_type === 'velo-based') {
-      // Check vELO tier range
-      if (!riderTier) return false
-      const minTier = team.velo_min_rank || 1
-      const maxTier = team.velo_max_rank || 10
-      return riderTier.rank >= minTier && riderTier.rank <= maxTier
-    }
-    
-    if (team.competition_type === 'category' || team.competition_type === 'category-based') {
-      // Check category
-      if (!category) return false
-      const allowed = team.allowed_categories || []
-      return allowed.includes(category)
-    }
-    
-    return true
-  }
   const [selectedTier, setSelectedTier] = useState<string>('')
   const [hideAssigned, setHideAssigned] = useState(false)
 
@@ -107,7 +79,7 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       
       // Category filter
       if (selectedCategory) {
-        const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
+        const category = rider.zwiftracing_category || rider.zwift_official_category
         if (category !== selectedCategory) return false
       }
       
@@ -117,23 +89,12 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
         if (!tier || tier.name !== selectedTier) return false
       }
       
-      // Auto-hide assigned riders when a team is expanded (selected)
-      // Manual hide can override this when no team is selected
-      const shouldHideAssigned = selectedTeam ? true : hideAssigned
-      if (shouldHideAssigned && rider.teams && rider.teams.length > 0) {
-        // When a team is selected, hide riders already in that specific team
-        if (selectedTeam && rider.teams.some(t => t.team_id === selectedTeam.team_id)) {
-          return false
-        }
-        // When no team selected but hideAssigned is true, hide all assigned
-        if (!selectedTeam && hideAssigned) {
-          return false
-        }
-      }
+      // Hide assigned riders
+      if (hideAssigned && rider.team_id) return false
       
       // Team-based filtering (US4)
       if (selectedTeam) {
-        const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
+        const category = rider.zwiftracing_category || rider.zwift_official_category
         const veloRank = getVeloTier(rider.velo_live)?.rank
         
         if (selectedTeam.competition_type === 'velo' || selectedTeam.competition_type === 'velo-based') {
@@ -152,24 +113,15 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
     })
   }, [riders, searchQuery, selectedCategory, selectedTier, hideAssigned, selectedTeam])
 
+  const handleDragStart = (e: React.DragEvent, rider: Rider) => {
+    e.dataTransfer.effectAllowed = 'copy'
+    onDragStart(rider)
+  }
+
   if (!isOpen) return null
 
   return (
-    <aside className={`
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      md:translate-x-0
-      fixed md:sticky 
-      left-0 top-0 md:top-[73px]
-      w-full sm:w-72 lg:w-80
-      h-screen md:h-[calc(100vh-73px)]
-      border-r border-slate-700/50 
-      bg-slate-800/95
-      backdrop-blur-xl
-      z-40
-      transition-transform duration-300
-      flex flex-col
-      shadow-2xl shadow-black/50
-    `}>
+    <aside className="w-80 border-r border-slate-700/50 bg-slate-800/30 h-[calc(100vh-73px)] sticky top-[73px] flex flex-col">
       {/* Sticky Filter Section */}
       <div className="sticky top-0 z-20 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50">
         <div className="p-2 space-y-1.5">
@@ -191,12 +143,6 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
                   ? `vELO Tier ${selectedTeam.velo_min_rank}-${selectedTeam.velo_max_rank}` 
                   : `Categorieën: ${selectedTeam.allowed_categories?.join(', ')}`
                 }
-              </div>
-              <div className="text-xs text-green-300 mt-2 flex items-center gap-1">
-                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                </svg>
-                <span>Riders in dit team verborgen</span>
               </div>
             </div>
           )}
@@ -241,14 +187,12 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
             </select>
 
             {/* Verberg toegewezen riders */}
-            <label className={`flex items-center gap-1 text-xs text-white cursor-pointer whitespace-nowrap ${selectedTeam ? 'opacity-50' : ''}`}>
+            <label className="flex items-center gap-1 text-xs text-white cursor-pointer whitespace-nowrap">
               <input
                 type="checkbox"
-                checked={selectedTeam ? true : hideAssigned}
+                checked={hideAssigned}
                 onChange={(e) => setHideAssigned(e.target.checked)}
-                disabled={!!selectedTeam}
-                className="w-3 h-3 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-0 disabled:opacity-50"
-                title={selectedTeam ? "Automatisch actief bij team selectie" : "Verberg riders die al aan een team zijn toegewezen"}
+                className="w-3 h-3 rounded border-slate-600 bg-slate-900/50 text-blue-600 focus:ring-0"
               />
               <span className="text-[10px]">Verberg toegewezen</span>
             </label>
@@ -265,162 +209,82 @@ export default function RiderPassportSidebar({ riders, isOpen, selectedTeam, onC
       <div className="flex-1 overflow-y-auto p-3">
         <div className="space-y-1.5">
           {filteredRiders.map(rider => {
-            const meetsTeamCriteria = riderMeetsTeamCriteria(rider, selectedTeam)
-            const isDisabled = !selectedTeam || !meetsTeamCriteria
-            
+            const tier = getVeloTier(rider.velo_live)
+            const category = rider.zwiftracing_category || rider.zwift_official_category
+            const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
+            const ftpWkg = rider.racing_ftp && rider.weight_kg 
+              ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
+              : '-'
+
             return (
-              <DraggableRiderCard 
-                key={rider.rider_id} 
-                rider={rider}
-                onAdd={onAddRider ? () => {
-                  console.log('➕ Add button clicked:', rider.full_name, 'Team:', selectedTeam?.team_name)
-                  if (!selectedTeam) {
-                    toast.error('Selecteer eerst een team')
-                    return
+              <div
+                key={rider.rider_id}
+                draggable
+                onDragStart={(e) => handleDragStart(e, rider)}
+                className={`
+                  p-2 rounded-lg border cursor-move transition-all
+                  ${rider.team_id 
+                    ? 'bg-slate-900/30 border-slate-600/50 opacity-60' 
+                    : 'bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20'
                   }
-                  if (!meetsTeamCriteria) {
-                    toast.error('Rider voldoet niet aan team criteria')
-                    return
-                  }
-                  onAddRider(rider.rider_id)
-                } : undefined}
-                showAddButton={true}
-                isDisabled={isDisabled}
-              />
+                `}
+              >
+                <div className="flex items-center gap-2">
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
+                    {rider.avatar_url ? (
+                      <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-white truncate">{rider.full_name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {category && (
+                        <span 
+                          className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
+                          style={{ backgroundColor: categoryColor }}
+                        >
+                          {category}
+                        </span>
+                      )}
+                      {tier && (
+                        <span 
+                          className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
+                          style={{ 
+                            backgroundColor: tier.color,
+                          }}
+                          title={`${tier.name} Tier`}
+                        >
+                          {tier.rank}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
+                      <span>FTP: {rider.racing_ftp || '-'}W</span>
+                      <span>•</span>
+                      <span>{ftpWkg} W/kg</span>
+                    </div>
+                    {rider.team_id && (
+                      <div className="mt-1 text-xs text-green-400">
+                        ✓ {rider.team_name}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Drag Handle */}
+                  <div className="text-slate-500 text-xl">
+                    ⋮⋮
+                  </div>
+                </div>
+              </div>
             )
           })}
         </div>
       </div>
     </aside>
-  )
-}
-
-// Draggable Rider Card Component with @dnd-kit
-function DraggableRiderCard({ rider, onAdd, showAddButton, isDisabled }: { rider: Rider; onAdd?: () => void; showAddButton?: boolean; isDisabled?: boolean }) {
-  const tier = getVeloTier(rider.velo_live)
-  const category = getRiderCategory(rider.zwift_official_category, rider.zwiftracing_category)
-  const categoryColor = category ? (CATEGORY_COLORS[category] || '#666666') : '#666666'
-  const ftpWkg = rider.racing_ftp && rider.weight_kg 
-    ? (rider.racing_ftp / rider.weight_kg).toFixed(2) 
-    : '-'
-
-  // US1: Always allow dragging (multiple teams)
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: rider.rider_id,
-    disabled: false, // US1: Always enabled for multiple team assignments
-    data: { rider, type: 'rider' }
-  })
-
-  const style = {
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    opacity: isDragging ? 0.85 : 1,
-    transition: isDragging ? 'none' : 'all 0.2s ease-out',
-    cursor: 'grab', // US1: Always draggable
-    // Force GPU acceleration for smoother touch dragging
-    willChange: isDragging ? 'transform' : 'auto',
-    // Touch-action to prevent conflicts
-    touchAction: 'none',
-  }
-
-  const hasTeams = rider.teams && rider.teams.length > 0
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`
-        p-2 rounded-lg border transition-all relative
-        bg-slate-900/50 border-slate-600 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 cursor-grab active:cursor-grabbing
-        ${isDragging ? 'ring-4 ring-blue-500 shadow-2xl z-50' : ''}
-        ${hasTeams ? 'border-l-4 border-l-green-500' : ''}
-      `}
-    >
-      <div className="flex items-center gap-2">
-        {/* Drag Handle Section */}
-        <div className="flex items-center gap-2 flex-1 min-w-0" {...attributes} {...listeners}>
-          {/* Avatar */}
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 flex-shrink-0">
-            {rider.avatar_url ? (
-              <img src={rider.avatar_url} alt={rider.full_name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-xl">👤</div>
-            )}
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold text-white truncate">{rider.full_name}</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {category && (
-                <span 
-                  className="text-[10px] px-1.5 py-0.5 text-white rounded font-bold"
-                  style={{ backgroundColor: categoryColor }}
-                >
-                  {category}
-                </span>
-              )}
-              {tier && (
-                <span 
-                  className="text-[10px] px-1.5 py-0.5 rounded font-bold text-white"
-                  style={{ 
-                    backgroundColor: tier.color,
-                  }}
-                  title={`${tier.name} Tier`}
-                >
-                  {tier.rank}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
-              <span>FTP: {rider.racing_ftp || '-'}W</span>
-              <span>•</span>
-              <span>{ftpWkg} W/kg</span>
-            </div>
-            {/* US2: Show teams rider is assigned to */}
-            {hasTeams && (
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {rider.teams!.map((team, idx) => (
-                  <span
-                    key={`${team.team_id}-${idx}`}
-                    className="text-[9px] px-1.5 py-0.5 bg-green-600/20 text-green-400 rounded border border-green-600/30"
-                    title={team.team_name}
-                  >
-                    {team.team_name.length > 15 ? team.team_name.substring(0, 15) + '...' : team.team_name}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Drag Handle - US1: Always visible */}
-          <div className="text-slate-500 text-xl">
-            ⋮⋮
-          </div>
-        </div>
-
-        {/* US3: Add Button - altijd zichtbaar, disabled als geen team */}
-        {showAddButton && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              if (!isDisabled && onAdd) {
-                onAdd()
-              }
-            }}
-            disabled={isDisabled}
-            className={`flex-shrink-0 px-2 py-1.5 rounded text-xs font-semibold shadow-sm transition-all whitespace-nowrap ${
-              isDisabled 
-                ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-md cursor-pointer'
-            }`}
-            title={isDisabled ? "Selecteer eerst een team" : "Voeg rider toe aan team"}
-          >
-            <span className="hidden sm:inline">+ Add</span>
-            <span className="sm:hidden">+</span>
-          </button>
-        )}
-      </div>
-    </div>
   )
 }
