@@ -55,7 +55,9 @@ const formatTime = (seconds: number): string => {
 };
 
 const RiderResultsPage: React.FC = () => {
-  const { riderId } = useParams<{ riderId: string }>();
+  const params = useParams<{ riderId: string }>();
+  // Default to rider 150437 if no riderId in URL
+  const riderId = params.riderId || '150437';
   const navigate = useNavigate();
   const [stats, setStats] = useState<RiderStats | null>(null);
   const [history, setHistory] = useState<RaceHistory[]>([]);
