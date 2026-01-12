@@ -1,0 +1,17 @@
+{
+  "test_date": "2026-01-10T17:22:21.296367",
+  "rider_id": 150437,
+  "rider_name": "JR\u00f8ne | CloudRacer-9",
+  "zwiftpower": {
+    "success": false,
+    "error": "Cyclist.__init__() takes 1 positional argument but 2 were given"
+  },
+  "zwiftracing": {
+    "success": false,
+    "error": "'ZRRider' object has no attribute 'load'"
+  },
+  "database": {
+    "success": false,
+    "reason": "No database credentials"
+  }
+}

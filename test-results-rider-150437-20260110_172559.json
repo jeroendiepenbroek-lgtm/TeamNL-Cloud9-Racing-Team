@@ -1,0 +1,17 @@
+{
+  "test_date": "2026-01-10T17:25:52.399648",
+  "rider_id": 150437,
+  "rider_name": "JR\u00f8ne | CloudRacer-9",
+  "zwiftpower": {
+    "success": false,
+    "error": "'Cyclist' object has no attribute 'name'"
+  },
+  "zwiftracing": {
+    "success": false,
+    "error": "HTTP error: Client error '404 Not Found' for url 'https://zwift-ranking.herokuapp.com/public/riders/150437'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404"
+  },
+  "database": {
+    "success": false,
+    "reason": "No database credentials"
+  }
+}
