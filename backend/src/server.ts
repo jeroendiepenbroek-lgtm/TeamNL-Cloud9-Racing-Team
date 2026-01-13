@@ -2705,6 +2705,7 @@ const stopScheduler = (syncType: string) => {
 // INITIALIZE & START SERVER
 // ============================================
 
+const PORT = process.env.PORT || 8081;
 // Initialize and start server with schedulers
 (async () => {
   app.listen(PORT, async () => {
