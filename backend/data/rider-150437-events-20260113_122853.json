@@ -1,0 +1,9208 @@
+{
+  "rider_id": 150437,
+  "rider_name": "JR\u00f8ne | CloudRacer-9",
+  "fetch_date": "2026-01-13T12:28:53.834627",
+  "total_races": 438,
+  "event_ids": [
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281",
+    "2281"
+  ],
+  "races": [
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 31,
+      "finishers": null,
+      "avg_power": [
+        160,
+        0
+      ],
+      "avg_hr": [
+        145,
+        0
+      ],
+      "time": [
+        3424.545,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        146,
+        0
+      ],
+      "avg_hr": [
+        147,
+        0
+      ],
+      "time": [
+        3237.72,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 410,
+      "finishers": null,
+      "avg_power": [
+        192,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        3600.034,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 246,
+      "finishers": null,
+      "avg_power": [
+        204,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        6240.956,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 609,
+      "finishers": null,
+      "avg_power": [
+        219,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        3634.007,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 170,
+      "finishers": null,
+      "avg_power": [
+        204,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        4868.67,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 17,
+      "finishers": null,
+      "avg_power": [
+        158,
+        0
+      ],
+      "avg_hr": [
+        139,
+        0
+      ],
+      "time": [
+        3239.158,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 115,
+      "finishers": null,
+      "avg_power": [
+        204,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3410.082,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 1,
+      "finishers": null,
+      "avg_power": [
+        256,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        3074.009,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        1887.741,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        248,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2302.933,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 2,
+      "finishers": null,
+      "avg_power": [
+        232,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2380.874,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        231,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        2203.043,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        255,
+        0
+      ],
+      "avg_hr": [
+        173,
+        1
+      ],
+      "time": [
+        2186.561,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        228,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        1858.5,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 35,
+      "finishers": null,
+      "avg_power": [
+        170,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        3659.261,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 110,
+      "finishers": null,
+      "avg_power": [
+        213,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2193.437,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        165,
+        0
+      ],
+      "avg_hr": [
+        145,
+        0
+      ],
+      "time": [
+        1800,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 35,
+      "finishers": null,
+      "avg_power": [
+        184,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        1890.177,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "F",
+      "position": 76,
+      "finishers": null,
+      "avg_power": [
+        215,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3177.099,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 58,
+      "finishers": null,
+      "avg_power": [
+        205,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        4837.743,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 79,
+      "finishers": null,
+      "avg_power": [
+        163,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        7116.328,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 29,
+      "finishers": null,
+      "avg_power": [
+        179,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        7040.934,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 53,
+      "finishers": null,
+      "avg_power": [
+        174,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        10298.327,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        137,
+        0
+      ],
+      "avg_hr": [
+        127,
+        0
+      ],
+      "time": [
+        3301.357,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 75,
+      "finishers": null,
+      "avg_power": [
+        177,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        4727.08,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 75,
+      "finishers": null,
+      "avg_power": [
+        235,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        2315.072,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 97,
+      "finishers": null,
+      "avg_power": [
+        201,
+        0
+      ],
+      "avg_hr": [
+        173,
+        1
+      ],
+      "time": [
+        3385.654,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 19,
+      "finishers": null,
+      "avg_power": [
+        260,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1226.333,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        309,
+        1
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        275.393,
+        1
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 32,
+      "finishers": null,
+      "avg_power": [
+        204,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        3107.462,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 98,
+      "finishers": null,
+      "avg_power": [
+        240,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1387.192,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 55,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        2012.397,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 51,
+      "finishers": null,
+      "avg_power": [
+        207,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        4942.666,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "F",
+      "position": 86,
+      "finishers": null,
+      "avg_power": [
+        214,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        3008.235,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 113,
+      "finishers": null,
+      "avg_power": [
+        250,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2288.595,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 97,
+      "finishers": null,
+      "avg_power": [
+        220,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3425.551,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 50,
+      "finishers": null,
+      "avg_power": [
+        209,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        3456.355,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 145,
+      "finishers": null,
+      "avg_power": [
+        220,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2766.704,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        250,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        1497.662,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 27,
+      "finishers": null,
+      "avg_power": [
+        265,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1447.878,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 303,
+      "finishers": null,
+      "avg_power": [
+        188,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3060.081,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 58,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        1343.206,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 217,
+      "finishers": null,
+      "avg_power": [
+        169,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        5931.238,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 14,
+      "finishers": null,
+      "avg_power": [
+        148,
+        0
+      ],
+      "avg_hr": [
+        131,
+        0
+      ],
+      "time": [
+        3954.595,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 36,
+      "finishers": null,
+      "avg_power": [
+        152,
+        0
+      ],
+      "avg_hr": [
+        129,
+        0
+      ],
+      "time": [
+        3600.042,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 1,
+      "finishers": null,
+      "avg_power": [
+        142,
+        0
+      ],
+      "avg_hr": [
+        131,
+        0
+      ],
+      "time": [
+        3600,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 543,
+      "finishers": null,
+      "avg_power": [
+        231,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        5512.505,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        210,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        1621.112,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 2,
+      "finishers": null,
+      "avg_power": [
+        240,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        2578.999,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 110,
+      "finishers": null,
+      "avg_power": [
+        201,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        4212.783,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 58,
+      "finishers": null,
+      "avg_power": [
+        230,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2867.676,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        205,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        2700.02,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 20,
+      "finishers": null,
+      "avg_power": [
+        219,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        4149.585,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 199,
+      "finishers": null,
+      "avg_power": [
+        177,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        6293.969,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 48,
+      "finishers": null,
+      "avg_power": [
+        186,
+        0
+      ],
+      "avg_hr": [
+        145,
+        0
+      ],
+      "time": [
+        3600.031,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 55,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2702.336,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 137,
+      "finishers": null,
+      "avg_power": [
+        204,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        6842.096,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 60,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3513.968,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 128,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        3143.765,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 43,
+      "finishers": null,
+      "avg_power": [
+        208,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        3286.088,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 165,
+      "finishers": null,
+      "avg_power": [
+        290,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        606.29,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 15,
+      "finishers": null,
+      "avg_power": [
+        272,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        1685.196,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 192,
+      "finishers": null,
+      "avg_power": [
+        203,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        3320.517,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 79,
+      "finishers": null,
+      "avg_power": [
+        218,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2941.169,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 111,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        1488.626,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 92,
+      "finishers": null,
+      "avg_power": [
+        169,
+        0
+      ],
+      "avg_hr": [
+        148,
+        0
+      ],
+      "time": [
+        3600.028,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 276,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        1236.316,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 32,
+      "finishers": null,
+      "avg_power": [
+        205,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3350.322,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 123,
+      "finishers": null,
+      "avg_power": [
+        219,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        3600.031,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 105,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3190.794,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 63,
+      "finishers": null,
+      "avg_power": [
+        222,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        4367.957,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 117,
+      "finishers": null,
+      "avg_power": [
+        198,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        6011.696,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 155,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        173,
+        1
+      ],
+      "time": [
+        828.968,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 114,
+      "finishers": null,
+      "avg_power": [
+        224,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3415.93,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "F",
+      "position": 102,
+      "finishers": null,
+      "avg_power": [
+        240,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        3660.195,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        167,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        3360,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 318,
+      "finishers": null,
+      "avg_power": [
+        176,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        4983.229,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 180,
+      "finishers": null,
+      "avg_power": [
+        232,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        1830.457,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 79,
+      "finishers": null,
+      "avg_power": [
+        230,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1362.843,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 159,
+      "finishers": null,
+      "avg_power": [
+        223,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2247.553,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 721,
+      "finishers": null,
+      "avg_power": [
+        193,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        4090.302,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 38,
+      "finishers": null,
+      "avg_power": [
+        248,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        1358.981,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 66,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        1694.827,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 88,
+      "finishers": null,
+      "avg_power": [
+        213,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        3835.209,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 33,
+      "finishers": null,
+      "avg_power": [
+        208,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        4040.189,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 342,
+      "finishers": null,
+      "avg_power": [
+        191,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3397.648,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 22,
+      "finishers": null,
+      "avg_power": [
+        215,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        6185.441,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 44,
+      "finishers": null,
+      "avg_power": [
+        230,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        3116.029,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 230,
+      "finishers": null,
+      "avg_power": [
+        187,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        5106.153,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 61,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        4887.996,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 39,
+      "finishers": null,
+      "avg_power": [
+        228,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3647.097,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 143,
+      "finishers": null,
+      "avg_power": [
+        194,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        5856.087,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 178,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2730.57,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 72,
+      "finishers": null,
+      "avg_power": [
+        206,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        5770.897,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 154,
+      "finishers": null,
+      "avg_power": [
+        227,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        3680.202,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 20,
+      "finishers": null,
+      "avg_power": [
+        190,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        2700.004,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 536,
+      "finishers": null,
+      "avg_power": [
+        214,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2272.16,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 160,
+      "finishers": null,
+      "avg_power": [
+        164,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        5382.63,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 59,
+      "finishers": null,
+      "avg_power": [
+        244,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2556.326,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 21,
+      "finishers": null,
+      "avg_power": [
+        194,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        5967.105,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 615,
+      "finishers": null,
+      "avg_power": [
+        215,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        2318.207,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 124,
+      "finishers": null,
+      "avg_power": [
+        186,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        5082.268,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 110,
+      "finishers": null,
+      "avg_power": [
+        178,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        4519.425,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 381,
+      "finishers": null,
+      "avg_power": [
+        186,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        4552.306,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 1490,
+      "finishers": null,
+      "avg_power": [
+        203,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2260.564,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 858,
+      "finishers": null,
+      "avg_power": [
+        217,
+        0
+      ],
+      "avg_hr": [
+        127,
+        0
+      ],
+      "time": [
+        2539.794,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 94,
+      "finishers": null,
+      "avg_power": [
+        225,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2940.809,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 66,
+      "finishers": null,
+      "avg_power": [
+        175,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        3239.07,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 46,
+      "finishers": null,
+      "avg_power": [
+        263,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        1215.253,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 105,
+      "finishers": null,
+      "avg_power": [
+        195,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        8185.273,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 322,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2268.479,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 100,
+      "finishers": null,
+      "avg_power": [
+        193,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        4814.079,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 85,
+      "finishers": null,
+      "avg_power": [
+        224,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        4874.032,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 35,
+      "finishers": null,
+      "avg_power": [
+        181,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        4200.016,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 1688,
+      "finishers": null,
+      "avg_power": [
+        203,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        6215.738,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 55,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1882.545,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 89,
+      "finishers": null,
+      "avg_power": [
+        203,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        5400.02,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 348,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        4238.276,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 349,
+      "finishers": null,
+      "avg_power": [
+        209,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        5815.225,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 645,
+      "finishers": null,
+      "avg_power": [
+        228,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3794.606,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 468,
+      "finishers": null,
+      "avg_power": [
+        247,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        2861.952,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 122,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        4325.001,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 105,
+      "finishers": null,
+      "avg_power": [
+        248,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        2414.801,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 83,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3299.896,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 54,
+      "finishers": null,
+      "avg_power": [
+        210,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        3963.855,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 75,
+      "finishers": null,
+      "avg_power": [
+        235,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3128.681,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 158,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2836.754,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 72,
+      "finishers": null,
+      "avg_power": [
+        187,
+        0
+      ],
+      "avg_hr": [
+        154,
+        0
+      ],
+      "time": [
+        4269.381,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 541,
+      "finishers": null,
+      "avg_power": [
+        264,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        1818.173,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        301,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        288.033,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 149,
+      "finishers": null,
+      "avg_power": [
+        192,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        4297.091,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 148,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        516.381,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 65,
+      "finishers": null,
+      "avg_power": [
+        199,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3333.942,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 360,
+      "finishers": null,
+      "avg_power": [
+        208,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2845.41,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 134,
+      "finishers": null,
+      "avg_power": [
+        191,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        5269.594,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 49,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        1428.828,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 17,
+      "finishers": null,
+      "avg_power": [
+        272,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        1642.938,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 253,
+      "finishers": null,
+      "avg_power": [
+        212,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3845.065,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 138,
+      "finishers": null,
+      "avg_power": [
+        222,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        5742.274,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 249,
+      "finishers": null,
+      "avg_power": [
+        172,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        5411.642,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 202,
+      "finishers": null,
+      "avg_power": [
+        183,
+        0
+      ],
+      "avg_hr": [
+        139,
+        0
+      ],
+      "time": [
+        3659.339,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 56,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2663.048,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 477,
+      "finishers": null,
+      "avg_power": [
+        219,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        4353.001,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 378,
+      "finishers": null,
+      "avg_power": [
+        178,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3259.54,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 224,
+      "finishers": null,
+      "avg_power": [
+        160,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        4362.985,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 238,
+      "finishers": null,
+      "avg_power": [
+        193,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        3000.052,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 88,
+      "finishers": null,
+      "avg_power": [
+        196,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        3542.336,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 189,
+      "finishers": null,
+      "avg_power": [
+        210,
+        0
+      ],
+      "avg_hr": [
+        173,
+        1
+      ],
+      "time": [
+        4004.191,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 159,
+      "finishers": null,
+      "avg_power": [
+        275,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        537.947,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 2,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        2528.096,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 502,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2574.208,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 5,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2095.862,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E2",
+      "position": 7,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2260.894,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        2221.082,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 139,
+      "finishers": null,
+      "avg_power": [
+        225,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        3354.885,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2569.649,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 357,
+      "finishers": null,
+      "avg_power": [
+        223,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        1961.465,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 321,
+      "finishers": null,
+      "avg_power": [
+        230,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        3039.857,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 75,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2757.467,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 5,
+      "finishers": null,
+      "avg_power": [
+        235,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2306.454,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        219,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        2465.845,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 12,
+      "finishers": null,
+      "avg_power": [
+        202,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        1799.874,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 5,
+      "finishers": null,
+      "avg_power": [
+        247,
+        0
+      ],
+      "avg_hr": [
+        149,
+        0
+      ],
+      "time": [
+        1825.039,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        258,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2843.334,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        1697.182,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 2,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2291.853,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2182.292,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 19,
+      "finishers": null,
+      "avg_power": [
+        256,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        1561.736,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2225.081,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 31,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        2128.696,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 21,
+      "finishers": null,
+      "avg_power": [
+        234,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3028.273,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 198,
+      "finishers": null,
+      "avg_power": [
+        213,
+        0
+      ],
+      "avg_hr": [
+        173,
+        1
+      ],
+      "time": [
+        3636.076,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        2364.867,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 63,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        5124.004,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 2,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2159.012,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 7,
+      "finishers": null,
+      "avg_power": [
+        224,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        2180.486,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 17,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        6,
+        0
+      ],
+      "time": [
+        4206.277,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 189,
+      "finishers": null,
+      "avg_power": [
+        275,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        494.848,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 28,
+      "finishers": null,
+      "avg_power": [
+        214,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3037.207,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        249,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2588.885,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 25,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        5058.61,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        2287.92,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 67,
+      "finishers": null,
+      "avg_power": [
+        257,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2086.039,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 108,
+      "finishers": null,
+      "avg_power": [
+        212,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        3426.239,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 151,
+      "finishers": null,
+      "avg_power": [
+        206,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        9247.208,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        249,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1764.214,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 146,
+      "finishers": null,
+      "avg_power": [
+        265,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        713.163,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 64,
+      "finishers": null,
+      "avg_power": [
+        212,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        3779.495,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2237.058,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 475,
+      "finishers": null,
+      "avg_power": [
+        223,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        3553.408,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        213,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3039.977,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "F",
+      "position": 156,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2130.962,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 5,
+      "finishers": null,
+      "avg_power": [
+        241,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        1755.775,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 30,
+      "finishers": null,
+      "avg_power": [
+        250,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        1560.81,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        235,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2282.028,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 32,
+      "finishers": null,
+      "avg_power": [
+        256,
+        0
+      ],
+      "avg_hr": [
+        171,
+        0
+      ],
+      "time": [
+        3280.604,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        226,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        2352.064,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 174,
+      "finishers": null,
+      "avg_power": [
+        232,
+        0
+      ],
+      "avg_hr": [
+        154,
+        0
+      ],
+      "time": [
+        2677.099,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        248,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2146.207,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        2243.571,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 49,
+      "finishers": null,
+      "avg_power": [
+        240,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        1756.902,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 88,
+      "finishers": null,
+      "avg_power": [
+        231,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        646.69,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 85,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        637.166,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 82,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        658.646,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 15,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3545.664,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 411,
+      "finishers": null,
+      "avg_power": [
+        196,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1737.63,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        2802.349,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 83,
+      "finishers": null,
+      "avg_power": [
+        189,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        5276.874,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 478,
+      "finishers": null,
+      "avg_power": [
+        223,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2996.298,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 44,
+      "finishers": null,
+      "avg_power": [
+        257,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        608.789,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 63,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2227.172,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 2,
+      "finishers": null,
+      "avg_power": [
+        244,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        2141.394,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        208,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        2895.095,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 149,
+      "finishers": null,
+      "avg_power": [
+        226,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        4163.472,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 229,
+      "finishers": null,
+      "avg_power": [
+        266,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        1197.941,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 27,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2003.516,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 11,
+      "finishers": null,
+      "avg_power": [
+        257,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2209.742,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 109,
+      "finishers": null,
+      "avg_power": [
+        259,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        780.261,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 23,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2580.024,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 68,
+      "finishers": null,
+      "avg_power": [
+        273,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        1649.944,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 12,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        2353.957,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 17,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2025.782,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 28,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        2028.56,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 475,
+      "finishers": null,
+      "avg_power": [
+        235,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        2801.562,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 19,
+      "finishers": null,
+      "avg_power": [
+        240,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        3712.918,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 28,
+      "finishers": null,
+      "avg_power": [
+        248,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2100.221,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 140,
+      "finishers": null,
+      "avg_power": [
+        215,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3768.192,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 25,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        2318.485,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 7,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2655.253,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 681,
+      "finishers": null,
+      "avg_power": [
+        213,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2759.06,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 450,
+      "finishers": null,
+      "avg_power": [
+        180,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        5111.605,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 143,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        1805.004,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 260,
+      "finishers": null,
+      "avg_power": [
+        212,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        8092.139,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 191,
+      "finishers": null,
+      "avg_power": [
+        218,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        3600.007,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 249,
+      "finishers": null,
+      "avg_power": [
+        220,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        3684.013,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 150,
+      "finishers": null,
+      "avg_power": [
+        219,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2511.066,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 22,
+      "finishers": null,
+      "avg_power": [
+        234,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2256.307,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 35,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2242.841,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 36,
+      "finishers": null,
+      "avg_power": [
+        222,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        4783.059,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 18,
+      "finishers": null,
+      "avg_power": [
+        258,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        1959.921,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        244,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        1906.553,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 104,
+      "finishers": null,
+      "avg_power": [
+        257,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        1795.135,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2819.381,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        256,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        2210.023,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2421.833,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 52,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        3659.222,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 130,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        3874.168,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 609,
+      "finishers": null,
+      "avg_power": [
+        228,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2513.653,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 23,
+      "finishers": null,
+      "avg_power": [
+        244,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        1659.346,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        246,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2205.139,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 1854,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1046.197,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        255,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2088.411,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 162,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        2685.391,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 14,
+      "finishers": null,
+      "avg_power": [
+        258,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        1683.963,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 179,
+      "finishers": null,
+      "avg_power": [
+        192,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        6198.258,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 61,
+      "finishers": null,
+      "avg_power": [
+        250,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2644.441,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 43,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2580.851,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 90,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2341.183,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 89,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2045.733,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 93,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        3767.598,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 110,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        3553.84,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 49,
+      "finishers": null,
+      "avg_power": [
+        282,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        446.263,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 46,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        556.902,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 44,
+      "finishers": null,
+      "avg_power": [
+        260,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        506.83,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 188,
+      "finishers": null,
+      "avg_power": [
+        202,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        3944.555,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 346,
+      "finishers": null,
+      "avg_power": [
+        202,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        3224.582,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        241,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2156.263,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 21,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3017.59,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 125,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2579.343,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 184,
+      "finishers": null,
+      "avg_power": [
+        223,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2809.981,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 21,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        2204.352,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 53,
+      "finishers": null,
+      "avg_power": [
+        232,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        4797.283,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 217,
+      "finishers": null,
+      "avg_power": [
+        225,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2878.657,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2293.934,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 19,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        3794.919,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 248,
+      "finishers": null,
+      "avg_power": [
+        225,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3288.198,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        249,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        1747.203,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 84,
+      "finishers": null,
+      "avg_power": [
+        217,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3683.332,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 518,
+      "finishers": null,
+      "avg_power": [
+        215,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        4216.918,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 170,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        172,
+        0
+      ],
+      "time": [
+        828.906,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 301,
+      "finishers": null,
+      "avg_power": [
+        190,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        3449.201,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 338,
+      "finishers": null,
+      "avg_power": [
+        187,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        4371.816,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 599,
+      "finishers": null,
+      "avg_power": [
+        189,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        3879.752,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 43,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        4083.659,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 12,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2180.85,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 28,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        3665.058,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 20,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2939.573,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 22,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        2926.199,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 26,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        1657.114,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 18,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        1735.235,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 89,
+      "finishers": null,
+      "avg_power": [
+        281,
+        0
+      ],
+      "avg_hr": [
+        149,
+        0
+      ],
+      "time": [
+        709.96,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 137,
+      "finishers": null,
+      "avg_power": [
+        262,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        487.199,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 85,
+      "finishers": null,
+      "avg_power": [
+        256,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        695.569,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 34,
+      "finishers": null,
+      "avg_power": [
+        259,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        1933.984,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        2329.139,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 37,
+      "finishers": null,
+      "avg_power": [
+        252,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        1543.205,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 23,
+      "finishers": null,
+      "avg_power": [
+        248,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        2997.963,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E2",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2462.013,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 23,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2250.976,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 37,
+      "finishers": null,
+      "avg_power": [
+        247,
+        0
+      ],
+      "avg_hr": [
+        73,
+        0
+      ],
+      "time": [
+        3689.998,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2159.181,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 41,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        3071.358,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        258,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        1997.103,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 74,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2279.984,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 26,
+      "finishers": null,
+      "avg_power": [
+        282,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        1166.681,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 24,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        169,
+        0
+      ],
+      "time": [
+        2941.091,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        260,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2030.49,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 113,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        3913.15,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 122,
+      "finishers": null,
+      "avg_power": [
+        241,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        3044.729,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 83,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2767.559,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 99,
+      "finishers": null,
+      "avg_power": [
+        255,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        3428.111,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        225,
+        0
+      ],
+      "avg_hr": [
+        154,
+        0
+      ],
+      "time": [
+        2349.065,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2106.005,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 5,
+      "finishers": null,
+      "avg_power": [
+        241,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2109.31,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 49,
+      "finishers": null,
+      "avg_power": [
+        260,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2100.084,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        262,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        1644.655,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 135,
+      "finishers": null,
+      "avg_power": [
+        280,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        542.354,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 94,
+      "finishers": null,
+      "avg_power": [
+        276,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        779.104,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 91,
+      "finishers": null,
+      "avg_power": [
+        249,
+        0
+      ],
+      "avg_hr": [
+        170,
+        0
+      ],
+      "time": [
+        620.106,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 69,
+      "finishers": null,
+      "avg_power": [
+        248,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        587.153,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 75,
+      "finishers": null,
+      "avg_power": [
+        298,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        530.082,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 89,
+      "finishers": null,
+      "avg_power": [
+        272,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        611.546,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 61,
+      "finishers": null,
+      "avg_power": [
+        267,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        631.009,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 63,
+      "finishers": null,
+      "avg_power": [
+        264,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        616.712,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 54,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2987.333,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "F",
+      "position": 54,
+      "finishers": null,
+      "avg_power": [
+        249,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        2621.668,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 30,
+      "finishers": null,
+      "avg_power": [
+        258,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2096.682,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 35,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        2041.607,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 7,
+      "finishers": null,
+      "avg_power": [
+        250,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        2013.836,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 43,
+      "finishers": null,
+      "avg_power": [
+        241,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        3471.543,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 11,
+      "finishers": null,
+      "avg_power": [
+        245,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2253.544,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 45,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2887.706,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "F",
+      "position": 79,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2237.774,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 21,
+      "finishers": null,
+      "avg_power": [
+        259,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        1751.291,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 118,
+      "finishers": null,
+      "avg_power": [
+        258,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        1767.328,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        1695.886,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 155,
+      "finishers": null,
+      "avg_power": [
+        256,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2379.498,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 388,
+      "finishers": null,
+      "avg_power": [
+        189,
+        0
+      ],
+      "avg_hr": [
+        142,
+        0
+      ],
+      "time": [
+        1986.209,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 138,
+      "finishers": null,
+      "avg_power": [
+        230,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        3476.472,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 336,
+      "finishers": null,
+      "avg_power": [
+        10,
+        0
+      ],
+      "avg_hr": [
+        0,
+        0
+      ],
+      "time": [
+        2196.997,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 50,
+      "finishers": null,
+      "avg_power": [
+        0,
+        0
+      ],
+      "avg_hr": [
+        0,
+        0
+      ],
+      "time": [
+        1687.308,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 44,
+      "finishers": null,
+      "avg_power": [
+        0,
+        0
+      ],
+      "avg_hr": [
+        0,
+        0
+      ],
+      "time": [
+        1765.131,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 92,
+      "finishers": null,
+      "avg_power": [
+        69,
+        0
+      ],
+      "avg_hr": [
+        0,
+        0
+      ],
+      "time": [
+        2018.7,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 18,
+      "finishers": null,
+      "avg_power": [
+        227,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        5437.101,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 132,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2644.553,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 135,
+      "finishers": null,
+      "avg_power": [
+        257,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        3241.165,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 128,
+      "finishers": null,
+      "avg_power": [
+        60,
+        0
+      ],
+      "avg_hr": [
+        0,
+        0
+      ],
+      "time": [
+        1813.996,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        249,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3400.547,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 45,
+      "finishers": null,
+      "avg_power": [
+        227,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        4061.182,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 11,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        3010.511,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "F",
+      "position": 52,
+      "finishers": null,
+      "avg_power": [
+        247,
+        0
+      ],
+      "avg_hr": [
+        152,
+        0
+      ],
+      "time": [
+        3074.494,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 30,
+      "finishers": null,
+      "avg_power": [
+        253,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        1971.318,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 40,
+      "finishers": null,
+      "avg_power": [
+        262,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        1952.935,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 51,
+      "finishers": null,
+      "avg_power": [
+        242,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2905.732,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "D",
+      "position": 18,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2922.877,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 31,
+      "finishers": null,
+      "avg_power": [
+        241,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2026.233,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 25,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2177.296,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 34,
+      "finishers": null,
+      "avg_power": [
+        251,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2001.273,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "L",
+      "position": 102,
+      "finishers": null,
+      "avg_power": [
+        240,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2191.629,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 47,
+      "finishers": null,
+      "avg_power": [
+        247,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        2879.853,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 27,
+      "finishers": null,
+      "avg_power": [
+        228,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        2049.025,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 12,
+      "finishers": null,
+      "avg_power": [
+        226,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        3350.358,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 131,
+      "finishers": null,
+      "avg_power": [
+        285,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        662.571,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 140,
+      "finishers": null,
+      "avg_power": [
+        273,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        734.871,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 119,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        629.216,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 130,
+      "finishers": null,
+      "avg_power": [
+        255,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        591.579,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 32,
+      "finishers": null,
+      "avg_power": [
+        235,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        3751.554,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 28,
+      "finishers": null,
+      "avg_power": [
+        227,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3760.019,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        1998.695,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 28,
+      "finishers": null,
+      "avg_power": [
+        226,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2368.284,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 46,
+      "finishers": null,
+      "avg_power": [
+        220,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        3325.547,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 15,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        1651.82,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        224,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2001.957,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        1940.316,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 17,
+      "finishers": null,
+      "avg_power": [
+        232,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        1961.154,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 7,
+      "finishers": null,
+      "avg_power": [
+        211,
+        0
+      ],
+      "avg_hr": [
+        152,
+        0
+      ],
+      "time": [
+        2106.645,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 136,
+      "finishers": null,
+      "avg_power": [
+        218,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        4394.298,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 13,
+      "finishers": null,
+      "avg_power": [
+        241,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2949.392,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 11,
+      "finishers": null,
+      "avg_power": [
+        234,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2375.879,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 29,
+      "finishers": null,
+      "avg_power": [
+        220,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        2350.783,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 26,
+      "finishers": null,
+      "avg_power": [
+        216,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2271.652,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 30,
+      "finishers": null,
+      "avg_power": [
+        254,
+        0
+      ],
+      "avg_hr": [
+        165,
+        0
+      ],
+      "time": [
+        1107.238,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3106.368,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 17,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        1923.74,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 33,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        1381.975,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 48,
+      "finishers": null,
+      "avg_power": [
+        227,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        2144.784,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 22,
+      "finishers": null,
+      "avg_power": [
+        227,
+        0
+      ],
+      "avg_hr": [
+        167,
+        0
+      ],
+      "time": [
+        1793.232,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 67,
+      "finishers": null,
+      "avg_power": [
+        235,
+        0
+      ],
+      "avg_hr": [
+        139,
+        0
+      ],
+      "time": [
+        2634.271,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "E",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        231,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        2350.389,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        1609.488,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 36,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        166,
+        0
+      ],
+      "time": [
+        3084.802,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        238,
+        0
+      ],
+      "avg_hr": [
+        148,
+        0
+      ],
+      "time": [
+        1811.325,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 137,
+      "finishers": null,
+      "avg_power": [
+        215,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        4688.636,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        152,
+        0
+      ],
+      "time": [
+        1782.346,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 26,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        1867.344,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "C",
+      "position": 16,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2306.163,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 84,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        4464.469,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 64,
+      "finishers": null,
+      "avg_power": [
+        231,
+        0
+      ],
+      "avg_hr": [
+        154,
+        0
+      ],
+      "time": [
+        2502.172,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        3175.767,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 15,
+      "finishers": null,
+      "avg_power": [
+        237,
+        0
+      ],
+      "avg_hr": [
+        130,
+        0
+      ],
+      "time": [
+        1601.995,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 14,
+      "finishers": null,
+      "avg_power": [
+        247,
+        0
+      ],
+      "avg_hr": [
+        157,
+        0
+      ],
+      "time": [
+        1835.714,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 39,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        3647.949,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 53,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        3000.14,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "A",
+      "position": 19,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2451.663,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "B",
+      "position": 33,
+      "finishers": null,
+      "avg_power": [
+        226,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        2186.152,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "UPG",
+      "position": 78,
+      "finishers": null,
+      "avg_power": [
+        205,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        3421.285,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "N/A",
+      "position": 34,
+      "finishers": null,
+      "avg_power": [
+        148,
+        0
+      ],
+      "avg_hr": [
+        122,
+        0
+      ],
+      "time": [
+        3446.922,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        2599.183,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        257,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2323.394,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        255,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2009.071,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        247,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2380.217,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        231,
+        0
+      ],
+      "avg_hr": [
+        153,
+        0
+      ],
+      "time": [
+        2300.44,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        243,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        2231.197,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        234,
+        0
+      ],
+      "avg_hr": [
+        154,
+        0
+      ],
+      "time": [
+        2356.119,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        267,
+        0
+      ],
+      "avg_hr": [
+        164,
+        0
+      ],
+      "time": [
+        1683.455,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2523.072,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        204,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        2502.888,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        223,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2214.416,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        156,
+        0
+      ],
+      "avg_hr": [
+        130,
+        0
+      ],
+      "time": [
+        4177.884,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 5,
+      "finishers": null,
+      "avg_power": [
+        218,
+        0
+      ],
+      "avg_hr": [
+        155,
+        0
+      ],
+      "time": [
+        2618.449,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        224,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2852.231,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        211,
+        0
+      ],
+      "avg_hr": [
+        159,
+        0
+      ],
+      "time": [
+        2580.672,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 1,
+      "finishers": null,
+      "avg_power": [
+        221,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2510.876,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 4,
+      "finishers": null,
+      "avg_power": [
+        230,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2260.998,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        218,
+        0
+      ],
+      "avg_hr": [
+        150,
+        0
+      ],
+      "time": [
+        2327.054,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        232,
+        0
+      ],
+      "avg_hr": [
+        154,
+        0
+      ],
+      "time": [
+        2254.613,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 5,
+      "finishers": null,
+      "avg_power": [
+        211,
+        0
+      ],
+      "avg_hr": [
+        24,
+        0
+      ],
+      "time": [
+        2389.968,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        220,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2706.277,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 7,
+      "finishers": null,
+      "avg_power": [
+        224,
+        0
+      ],
+      "avg_hr": [
+        163,
+        0
+      ],
+      "time": [
+        2344.198,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 6,
+      "finishers": null,
+      "avg_power": [
+        231,
+        0
+      ],
+      "avg_hr": [
+        168,
+        0
+      ],
+      "time": [
+        2241.269,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        214,
+        0
+      ],
+      "avg_hr": [
+        160,
+        0
+      ],
+      "time": [
+        2667.638,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 3,
+      "finishers": null,
+      "avg_power": [
+        229,
+        0
+      ],
+      "avg_hr": [
+        158,
+        0
+      ],
+      "time": [
+        2007.752,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        233,
+        0
+      ],
+      "avg_hr": [
+        162,
+        0
+      ],
+      "time": [
+        1695.614,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 10,
+      "finishers": null,
+      "avg_power": [
+        236,
+        0
+      ],
+      "avg_hr": [
+        152,
+        0
+      ],
+      "time": [
+        1947.278,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 9,
+      "finishers": null,
+      "avg_power": [
+        228,
+        0
+      ],
+      "avg_hr": [
+        156,
+        0
+      ],
+      "time": [
+        2038.829,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 8,
+      "finishers": null,
+      "avg_power": [
+        239,
+        0
+      ],
+      "avg_hr": [
+        161,
+        0
+      ],
+      "time": [
+        2577.817,
+        0
+      ]
+    },
+    {
+      "event_id": "2281",
+      "name": "JR&oslash;ne | CloudRacer-9 @YouTube",
+      "date": "None",
+      "category": "SEE LADDER SITE",
+      "position": 7,
+      "finishers": null,
+      "avg_power": [
+        219,
+        0
+      ],
+      "avg_hr": [
+        151,
+        0
+      ],
+      "time": [
+        2185.595,
+        0
+      ]
+    }
+  ]
+}
