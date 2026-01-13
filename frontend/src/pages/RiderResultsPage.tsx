@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { User, Trophy, TrendingUp, Calendar, Zap, Award, Target } from 'lucide-react';
+import { useQuery, useQueries } from '@tanstack/react-query';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -54,6 +55,18 @@ const formatTime = (seconds: number): string => {
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
 };
 
+// Helper to fetch event details from ZwiftRacing.app API
+const fetchZwiftRacingEvent = async (eventId: string) => {
+  const url = `https://api.zwiftracing.app/api/public/results/${eventId}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch event details');
+  const data = await res.json();
+  // Try to get event name from response
+  if (data && data.event && data.event.name) return data.event.name;
+  if (data && data.name) return data.name;
+  return null;
+};
+
 const RiderResultsPage: React.FC = () => {
   const params = useParams<{ riderId: string }>();
   // Default to rider 150437 if no riderId in URL
@@ -90,6 +103,24 @@ const RiderResultsPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Fetch ZwiftRacing event names for all eventIds in history
+  const eventIds = history.map(r => r.eventId);
+  const eventNameQueries = useQueries({
+    queries: eventIds.map(eventId => ({
+      queryKey: ['zwiftracing-event', eventId],
+      queryFn: () => fetchZwiftRacingEvent(eventId),
+      staleTime: 1000 * 60 * 60 * 24, // 24h
+      enabled: !!eventId
+    }))
+  });
+
+  // Map eventId -> eventName
+  const eventNameMap: Record<string, string> = {};
+  eventIds.forEach((id, idx) => {
+    const q = eventNameQueries[idx];
+    if (q && q.data) eventNameMap[id] = q.data;
+  });
 
   if (loading) {
     return (
@@ -307,7 +338,7 @@ const RiderResultsPage: React.FC = () => {
                               className="text-blue-600 hover:underline font-medium text-sm"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {race.eventName}
+                              {eventNameMap[race.eventId] || race.eventName}
                             </Link>
                             <div className="flex gap-1 ml-auto">
                               <span className="text-gray-400">👤</span>
