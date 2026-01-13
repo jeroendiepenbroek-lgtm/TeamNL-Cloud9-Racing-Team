@@ -2301,8 +2301,8 @@ import * as glob from 'glob';
 
 app.get('/api/zwiftracing/results/rider/:riderId', async (req, res) => {
   const riderId = req.params.riderId;
-  // Zoek het nieuwste rider-150437-events-*.json bestand
-  const files = glob.sync(path.join(__dirname, '../../rider-150437-events-*.json'));
+  // Zoek het nieuwste rider-150437-events-*.json bestand in /backend/data
+  const files = glob.sync(path.join(__dirname, 'data/rider-150437-events-*.json'));
   if (!files.length) {
     return res.json({ success: false, error: 'Geen rider-150437-events-*.json bestand gevonden' });
   }
