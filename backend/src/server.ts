@@ -1,26 +1,50 @@
-// ULTRA CLEAN SERVER - ALLEEN RACING MATRIX DATA
-// Geen sync, geen teammanager, geen gedoe
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { createClient } from '@supabase/supabase-js';
-import axios from 'axios';
-
+// ...existing code...
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
+const ZWIFTRACING_API_TOKEN = process.env.ZWIFTRACING_API_TOKEN || '';
+
+// ...existing code...
+
 
 const app = express();
-const PORT = process.env.PORT || 8080;
-
 app.use(cors());
 app.use(express.json());
 
-// Railway environment variables (direct access)
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://bktbeefdmrpxhsyyalvc.supabase.co';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
-const ZWIFTRACING_API_TOKEN = process.env.ZWIFTRACING_API_TOKEN || '650c6d2fc4ef6858d74cbef1';
+// Health endpoint voor monitoring
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// API endpoint: Race Results sync voor rider
+app.post('/api/zwiftracing/sync/rider/:riderId', async (req, res) => {
+  const riderId = req.params.riderId;
+  const ts = new Date().toISOString();
+  console.log(`[${ts}] [SYNC] Sync request ontvangen voor riderId=${riderId}`);
+  if (riderId !== '150437') {
+    console.warn(`[${ts}] [SYNC] RiderId niet ondersteund: ${riderId}`);
+    return res.status(400).json({ success: false, error: 'Alleen rider 150437 wordt ondersteund.' });
+  }
+  exec('node sync-race-results-150437.js', { cwd: __dirname }, (error, stdout, stderr) => {
+    const logTs = new Date().toISOString();
+    if (error) {
+      console.error(`[${logTs}] [SYNC] Sync error:`, stderr);
+      return res.status(500).json({ success: false, error: 'Sync mislukt.', details: stderr });
+    }
+    console.log(`[${logTs}] [SYNC] Sync output:`, stdout);
+    res.json({ success: true, timestamp: logTs, output: stdout });
+  });
+});
 
 console.log('🚀 Environment loaded (v5.0 - Smart Sync):', {
   hasSupabaseUrl: !!SUPABASE_URL,
@@ -2198,6 +2222,143 @@ app.post('/api/results/bulk', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// Helper: fetch ZwiftPower events for rider (public endpoint)
+async function fetchZwiftPowerEvents(riderId: string): Promise<any[]> {
+  // ZwiftPower public profile events page
+  const url = `https://zwiftpower.com/profile.php?z=${riderId}`;
+  const axios = (await import('axios')).default;
+  const cheerio = (await import('cheerio')).default;
+  try {
+    const res = await axios.get(url);
+    const $ = cheerio.load(res.data);
+    const events: any[] = [];
+    // Parse event rows (table with class 'table')
+    $('table.table tbody tr').each((i, el) => {
+      const tds = $(el).find('td');
+      if (tds.length < 6) return;
+      // EventID is in the event link
+      const eventLink = $(tds[2]).find('a').attr('href') || '';
+      const match = eventLink.match(/eventid=(\d+)/);
+      const eventId = match ? match[1] : null;
+      // Date is in tds[0]
+      const dateStr = $(tds[0]).text().trim();
+      // Only add if eventId exists
+      if (eventId) {
+        events.push({ eventId, date: dateStr });
+      }
+    });
+    return events;
+  } catch (err) {
+    console.error('ZwiftPower fetch error:', err);
+    return [];
+  }
+}
+
+// Helper: fetch ZwiftRacing.app results for eventId
+async function fetchZwiftRacingResults(eventId: string): Promise<any> {
+  const axios = (await import('axios')).default;
+  const apiKey = ZWIFTRACING_API_TOKEN;
+  // Probeer eerst de hoofdendpoint, dan fallback
+  const urls = [
+    `https://api.zwiftracing.app/api/public/results/${eventId}`,
+    `https://api.zwiftracing.app/api/public/zp/${eventId}/results`
+  ];
+  for (const url of urls) {
+    try {
+      const res = await axios.get(url, {
+        headers: { 'Authorization': apiKey },
+        timeout: 15000
+      });
+      if (res.data && res.data.results && Array.isArray(res.data.results) && res.data.results.length > 0) {
+        return res.data;
+      }
+    } catch (err: any) {
+      // 429 = rate limit, even wachten
+      if (err.response && err.response.status === 429) {
+        const retry = parseInt(err.response.headers['retry-after'] || '2', 10);
+        console.warn(`ZwiftRacing rate limited, wachten ${retry}s...`);
+        await new Promise(r => setTimeout(r, retry * 1000));
+      } else if (err.response && err.response.status === 404) {
+        // Probeer fallback
+        continue;
+      } else {
+        console.error('ZwiftRacing.app fetch error:', err.message || err);
+      }
+    }
+    // Kleine delay tussen requests om rate limiting te voorkomen
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return null;
+}
+
+// API endpoint: ZwiftRacing replica results for rider
+
+import fs from 'fs';
+import * as glob from 'glob';
+
+
+app.get('/api/zwiftracing/results/rider/:riderId', async (req, res) => {
+  const riderId = req.params.riderId;
+  // Zoek het nieuwste rider-150437-events-*.json bestand
+  const files = glob.sync(path.join(__dirname, '../../rider-150437-events-*.json'));
+  if (!files.length) {
+    return res.json({ success: false, error: 'Geen rider-150437-events-*.json bestand gevonden' });
+  }
+  files.sort();
+  const latestFile = files[files.length - 1];
+  let eventData;
+  try {
+    const raw = JSON.parse(fs.readFileSync(latestFile, 'utf-8'));
+    eventData = raw.races || raw.events || raw.data || [];
+  } catch (e) {
+    return res.json({ success: false, error: 'Kan eventIDs niet laden uit rider-150437-events-*.json' });
+  }
+  // Filter op laatste 90 dagen
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const filtered = eventData.filter((e: any) => {
+    // Probeer verschillende datavelden
+    const dateStr = e.date || e.event_date;
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return d >= cutoff;
+  });
+  // Haal ZwiftRacing resultaten op voor elk eventID
+  const results = [];
+  for (const e of filtered) {
+    const eventId = e.event_id || e.tid || e.id;
+    if (!eventId) continue;
+    // Respecteer rate limiting: kleine delay tussen requests
+    await new Promise(r => setTimeout(r, 400));
+    const zr = await fetchZwiftRacingResults(eventId);
+    if (!zr || !zr.results) continue;
+    const myResult = zr.results.find((r: any) => String(r.zwid || r.rider_id) === String(riderId));
+    if (!myResult) continue;
+    results.push({
+      eventId,
+      eventName: zr.event?.name || zr.name || e.name || 'Unknown',
+      eventDate: zr.event?.date || zr.event?.event_date || e.date,
+      position: myResult.position,
+      totalRiders: zr.results.length,
+      category: myResult.category,
+      timeSeconds: myResult.time_seconds || myResult.time?.[0],
+      avgWkg: myResult.avg_wkg,
+      veloRating: myResult.velo_after,
+      veloChange: myResult.velo_change,
+      effortScore: myResult.effort || myResult.effort_score,
+      power_5s: myResult.power_5s,
+      power_15s: myResult.power_15s,
+      power_30s: myResult.power_30s,
+      power_1m: myResult.power_1m,
+      power_2m: myResult.power_2m,
+      power_5m: myResult.power_5m,
+      power_20m: myResult.power_20m,
+      racingScore: myResult.racing_score || myResult.rp
+    });
+  }
+  res.json({ success: true, riderId, results });
 });
 
 app.use(express.static(frontendPath));
