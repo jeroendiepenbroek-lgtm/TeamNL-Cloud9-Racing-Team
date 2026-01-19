@@ -2162,6 +2162,161 @@ app.get('/api/results/rider/:riderId/stats', async (req, res) => {
   }
 });
 
+// US3: GET Team recent race results (laatste X dagen, max Y events)
+app.get('/api/results/team/recent', async (req, res) => {
+  try {
+    // Query parameters
+    const days = parseInt(req.query.days as string) || 30;
+    const limit = parseInt(req.query.limit as string) || 50;
+    
+    console.log(`📊 Team recent results: ${days} days, limit ${limit} events`);
+    
+    // Stap 1: Haal actieve teamleden op
+    const { data: teamRiders, error: teamError } = await supabase
+      .from('team_roster')
+      .select('rider_id')
+      .eq('is_active', true);
+    
+    if (teamError) throw teamError;
+    
+    if (!teamRiders || teamRiders.length === 0) {
+      return res.json({
+        success: true,
+        count: 0,
+        events_count: 0,
+        limit,
+        days,
+        events: []
+      });
+    }
+    
+    const riderIds = teamRiders.map(r => r.rider_id);
+    console.log(`   Team riders: ${riderIds.join(', ')}`);
+    
+    // Stap 2: Haal race results voor alle teamleden op
+    const { data: raceResults, error: resultsError } = await supabase
+      .from('v_dashboard_rider_results')
+      .select('*')
+      .in('rider_id', riderIds)
+      .gte('event_date', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString())
+      .order('event_date', { ascending: false })
+      .order('position', { ascending: true });
+    
+    if (resultsError) throw resultsError;
+    
+    console.log(`   Found ${raceResults?.length || 0} race results`);
+    
+    // Stap 3: Groepeer per event en bouw event objects
+    const eventsMap = new Map<number, any>();
+    
+    for (const result of raceResults || []) {
+      const eventId = result.event_id;
+      
+      if (!eventsMap.has(eventId)) {
+        // Nieuw event - haal event details op
+        const { data: eventData, error: eventError } = await supabase
+          .from('race_events')
+          .select('*')
+          .eq('event_id', eventId)
+          .single();
+        
+        if (eventError) {
+          console.warn(`⚠️  Event ${eventId} not found, skipping`);
+          continue;
+        }
+        
+        eventsMap.set(eventId, {
+          event_id: eventId,
+          event_name: eventData.event_name || `Event ${eventId}`,
+          event_date: eventData.event_date,
+          pen: null, // Wordt bepaald door category
+          total_riders: result.total_participants || 0,
+          event_type: eventData.event_type,
+          sub_type: eventData.sub_type,
+          route_world: eventData.world,
+          route_name: eventData.route,
+          route_profile: null,
+          distance_km: eventData.distance_km,
+          elevation_m: null,
+          laps: eventData.laps,
+          results: []
+        });
+      }
+      
+      // Voeg rider result toe aan event
+      const event = eventsMap.get(eventId);
+      const raceResult = {
+        rider_id: result.rider_id,
+        rider_name: `Rider ${result.rider_id}`, // TODO: Get actual name from v_rider_complete
+        rank: result.position,
+        position: result.position,
+        position_in_category: result.category_position,
+        total_riders: result.total_participants,
+        pen_total: null, // TODO: Calculate per category
+        time_seconds: result.time_seconds,
+        avg_wkg: result.avg_wkg,
+        pen: result.category,
+        velo_rating: result.velo_after,
+        velo_previous: result.velo_before,
+        velo_change: result.velo_change,
+        power_5s: null,
+        power_15s: null,
+        power_30s: null,
+        power_1m: null,
+        power_2m: null,
+        power_5m: null,
+        power_20m: null,
+        effort_score: null,
+        race_points: null,
+        delta_winner_seconds: null,
+        heartrate_avg: null,
+        heartrate_max: null,
+        dnf: false
+      };
+      
+      event.results.push(raceResult);
+    }
+    
+    // Stap 4: Converteer naar array en sorteer op datum (nieuwste eerst)
+    const events = Array.from(eventsMap.values())
+      .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime())
+      .slice(0, limit); // Beperk tot limit
+    
+    // Stap 5: Bereken delta_winner_seconds voor elk event
+    for (const event of events) {
+      if (event.results.length > 0) {
+        // Vind de winnaar (laagste positie)
+        const winner = event.results.reduce((min: any, r: any) => 
+          (r.position || 999) < (min.position || 999) ? r : min
+        );
+        const winnerTime = winner.time_seconds;
+        
+        // Bereken delta voor elke rider
+        for (const result of event.results) {
+          if (result.time_seconds && winnerTime) {
+            result.delta_winner_seconds = result.time_seconds - winnerTime;
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ Team results: ${events.length} events, ${raceResults?.length || 0} total results`);
+    
+    res.json({
+      success: true,
+      count: raceResults?.length || 0,
+      events_count: events.length,
+      limit,
+      days,
+      events
+    });
+    
+  } catch (error: any) {
+    console.error('❌ Error fetching team recent results:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // POST: Bulk import race results (ZwiftPower E2E pipeline)
 app.post('/api/results/bulk', async (req, res) => {
   try {
