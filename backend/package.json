@@ -28,6 +28,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
+    "glob": "^10.3.10",
     "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
