@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
-const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8080'
+const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8081'
 
 // Default rider ID (150437 - JRøne)
 const DEFAULT_RIDER_ID = 150437
@@ -42,13 +42,56 @@ export default function RaceResults() {
 
   const [results, setResults] = useState<RaceResult[]>([])
   const [stats, setStats] = useState<RiderStats | null>(null)
+  const [latestResult, setLatestResult] = useState<RaceResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadRaceResults()
     loadRiderStats()
+    loadLatestResult()
   }, [riderId])
+
+  const loadLatestResult = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/results/rider/${riderId}/latest`)
+      if (!res.ok) throw new Error('Failed to load latest result')
+      const data = await res.json()
+      setLatestResult(data.latest || null)
+    } catch (err: any) {
+      console.error('Error loading latest result:', err)
+    }
+  }
+
+  // Modal / details for a single event participant
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalParticipant, setModalParticipant] = useState<any>(null)
+  const [modalEvent, setModalEvent] = useState<any>(null)
+
+  const openEventModal = async (eventId: number, riderIdParam: number) => {
+    try {
+      setModalOpen(true)
+      setModalParticipant(null)
+      setModalEvent(null)
+      const res = await fetch(`${API_BASE}/api/results/event/${eventId}`)
+      if (!res.ok) throw new Error('Failed to load event')
+      const data = await res.json()
+      setModalEvent(data.event || null)
+      if (data.event && data.event.results) {
+        const p = data.event.results.find((r: any) => r.riderId === riderIdParam || r.rider_id === riderIdParam)
+        setModalParticipant(p || null)
+      }
+    } catch (err: any) {
+      console.error('Error loading event details:', err)
+      setModalOpen(false)
+    }
+  }
+
+  const closeModal = () => {
+    setModalOpen(false)
+    setModalParticipant(null)
+    setModalEvent(null)
+  }
 
   const loadRaceResults = async () => {
     try {
@@ -186,6 +229,31 @@ export default function RaceResults() {
       </div>
 
       {/* Results Table */}
+      {latestResult && (
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="bg-white/5 p-4 rounded-md text-white">
+            <h3 className="text-lg font-semibold">Latest result</h3>
+            <div className="mt-2 flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-400">{formatDate(latestResult.event_date)}</div>
+                <div className="text-xl font-bold">{latestResult.event_name || `Event ${latestResult.event_id}`}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold">{latestResult.position || '-'}</div>
+                <div className="text-sm text-gray-400">Position</div>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold">{latestResult.avg_wkg || '-'}</div>
+                <div className="text-sm text-gray-400">W/kg</div>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold">{formatTime(latestResult.time_seconds || 0)}</div>
+                <div className="text-sm text-gray-400">Time</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {results.length === 0 ? (
           <div className="text-center text-gray-400 py-20">
@@ -253,7 +321,7 @@ export default function RaceResults() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => navigate(`/race/${result.event_id}`)}
+                        onClick={() => openEventModal(result.event_id, riderId)}
                         className="text-blue-400 hover:text-blue-300 text-sm font-medium"
                       >
                         Details →
@@ -266,6 +334,40 @@ export default function RaceResults() {
           </div>
         )}
       </div>
+    {modalOpen && (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6">
+          <div className="flex items-start justify-between">
+            <h3 className="text-xl font-semibold">Event details</h3>
+            <button onClick={closeModal} className="text-gray-500">✕</button>
+          </div>
+          <div className="mt-4">
+            {modalEvent ? (
+              <div>
+                <div className="text-sm text-gray-500">{formatDate(modalEvent.eventDate)}</div>
+                <div className="text-lg font-bold mb-2">{modalEvent.eventName || `Event ${modalEvent.eventId}`}</div>
+                {modalParticipant ? (
+                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-800">
+                    <div><strong>Position</strong><div>{modalParticipant.position ?? '—'}</div></div>
+                    <div><strong>Category</strong><div>{modalParticipant.category}</div></div>
+                    <div><strong>Time</strong><div>{formatTime(modalParticipant.timeSeconds || modalParticipant.time_seconds || 0)}</div></div>
+                    <div><strong>Δ Winner (s)</strong><div>{modalParticipant.deltaWinnerSeconds ?? modalParticipant.delta_winner_seconds ?? modalParticipant.deltaWinnerSeconds ?? '—'}</div></div>
+                    <div><strong>Avg W/kg</strong><div>{modalParticipant.avgWkg ?? modalParticipant.avg_wkg ?? '—'}</div></div>
+                    <div><strong>Avg Power</strong><div>{modalParticipant.avgPowerWatts ?? modalParticipant.avg_power ?? '—'}</div></div>
+                    <div><strong>vELO</strong><div>{modalParticipant.veloRating ?? modalParticipant.velo_rating ?? '—'}</div></div>
+                    <div><strong>DNF</strong><div>{modalParticipant.dnf ? 'Yes' : 'No'}</div></div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">Participant not found in event results.</div>
+                )}
+              </div>
+            ) : (
+              <div className="text-sm text-gray-500">Loading event...</div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   )
 }

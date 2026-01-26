@@ -1,0 +1,22 @@
+name: Scheduled Rider Results Sync
+
+on:
+  schedule:
+    - cron: '0 * * * *' # every hour at minute 0
+  workflow_dispatch: {}
+
+jobs:
+  sync-rider-results:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Call production sync endpoint'
+        env:
+          BACKEND_API_URL: ${{ secrets.BACKEND_API_URL }}
+          SYNC_TOKEN: ${{ secrets.PRODUCTION_SYNC_TOKEN }}
+        run: |
+          if [ -z "$BACKEND_API_URL" ]; then
+            echo "BACKEND_API_URL is not set. Abort."; exit 1;
+          fi
+          echo "Triggering rider results sync at $BACKEND_API_URL/api/admin/sync-rider-results"
+          curl -s -S -X POST "$BACKEND_API_URL/api/admin/sync-rider-results" -H "x-sync-token: $SYNC_TOKEN" -H "Accept: application/json" -o /tmp/sync-result.json || true
+          echo "Response:"; jq -r '.' /tmp/sync-result.json || cat /tmp/sync-result.json
