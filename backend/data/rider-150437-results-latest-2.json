@@ -1,0 +1,56 @@
+{
+  "riderId": 150437,
+  "stats": {
+    "totalRaces": 3,
+    "wins": 0,
+    "podiums": 2,
+    "avgWkg": 0,
+    "avgPosition": 2.7
+  },
+  "history": [
+    {
+      "event_id": 5365290,
+      "event_name": null,
+      "event_date": "2026-01-22T19:00:00+00:00",
+      "world": null,
+      "route": null,
+      "distance_km": null,
+      "rider_id": 150437,
+      "position": 8,
+      "category": "SEE LADDER SITE",
+      "category_position": null,
+      "avg_power": null,
+      "avg_wkg": null,
+      "time_seconds": 1576,
+      "velo_before": null,
+      "velo_after": null,
+      "velo_change": null,
+      "team_name": null,
+      "source": "zwiftracing",
+      "time_formatted": "26:16",
+      "total_participants": 9
+    },
+    {
+      "event_id": 5366895,
+      "event_name": null,
+      "event_date": "2026-01-20T19:34:00+00:00",
+      "world": null,
+      "route": null,
+      "distance_km": null,
+      "rider_id": 150437,
+      "position": null,
+      "category": "B",
+      "category_position": null,
+      "avg_power": null,
+      "avg_wkg": null,
+      "time_seconds": 4927,
+      "velo_before": null,
+      "velo_after": null,
+      "velo_change": null,
+      "team_name": null,
+      "source": "zwiftracing",
+      "time_formatted": "82:07",
+      "total_participants": 147
+    }
+  ]
+}

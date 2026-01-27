@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5331604,
+    "event_name": "Darren Shiels",
+    "event_date": "2026-01-12T15:04:54.460235+00:00",
+    "event_type": "race",
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": [],
+    "source": "zwiftpower",
+    "fetched_at": "2026-01-07T16:06:02.153161+00:00",
+    "updated_at": "2026-01-07T16:06:02.153161+00:00"
+  }
+]

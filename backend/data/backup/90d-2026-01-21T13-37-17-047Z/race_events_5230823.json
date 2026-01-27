@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5230823,
+    "event_name": "Tom Smith",
+    "event_date": "2026-01-12T15:05:44.797513+00:00",
+    "event_type": "race",
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": [],
+    "source": "zwiftpower",
+    "fetched_at": "2026-01-07T16:06:17.310695+00:00",
+    "updated_at": "2026-01-07T16:06:17.310695+00:00"
+  }
+]

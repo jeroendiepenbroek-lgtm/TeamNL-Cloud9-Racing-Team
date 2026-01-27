@@ -1207,6 +1207,30 @@ app.post('/api/admin/sync-all', async (req, res) => {
         });
     }
 });
+// MANUAL SYNC RIDER RESULTS - Sync rider results from ZwiftRacing API
+app.post('/api/admin/sync-rider-results', async (req, res) => {
+    try {
+        console.log('🔄 Manual rider results sync triggered');
+        // Execute sync with full logging
+        const result = await executeSyncJob(SYNC_TYPE_RIDER_RESULTS, 'manual', {
+            triggered_by: 'admin_dashboard'
+        });
+        res.json({
+            success: result.success,
+            synced: result.synced,
+            failed: result.failed,
+            logId: result.logId,
+            error: result.error
+        });
+    }
+    catch (error) {
+        console.error('❌ Manual rider results sync failed:', error.message);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
 // GET sync config for frontend
 app.get('/api/admin/sync-config/:syncType?', async (req, res) => {
     try {
@@ -2193,6 +2217,10 @@ import fs from 'fs';
 import * as glob from 'glob';
 app.get('/api/zwiftracing/results/rider/:riderId', async (req, res) => {
     const riderId = req.params.riderId;
+    // Alleen voor rider 150437 ondersteunen we nu deze endpoint
+    if (riderId !== '150437') {
+        return res.json({ success: false, error: 'Deze endpoint is alleen beschikbaar voor rider 150437' });
+    }
     // Zoek het nieuwste rider-150437-events-*.json bestand in /backend/data
     const files = glob.sync(path.join(__dirname, 'data/rider-150437-events-*.json'));
     if (!files.length) {
@@ -2200,62 +2228,74 @@ app.get('/api/zwiftracing/results/rider/:riderId', async (req, res) => {
     }
     files.sort();
     const latestFile = files[files.length - 1];
-    let eventData;
+    let raw;
     try {
-        const raw = JSON.parse(fs.readFileSync(latestFile, 'utf-8'));
-        eventData = raw.races || raw.events || raw.data || [];
+        raw = JSON.parse(fs.readFileSync(latestFile, 'utf-8'));
     }
     catch (e) {
-        return res.json({ success: false, error: 'Kan eventIDs niet laden uit rider-150437-events-*.json' });
+        return res.json({ success: false, error: 'Kan JSON bestand niet parseren' });
     }
-    // Filter op laatste 90 dagen
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 90);
-    const filtered = eventData.filter((e) => {
-        // Probeer verschillende datavelden
-        const dateStr = e.date || e.event_date;
-        if (!dateStr)
-            return false;
-        const d = new Date(dateStr);
-        return d >= cutoff;
-    });
-    // Haal ZwiftRacing resultaten op voor elk eventID
+    // Het bestand heeft event_ids als array
+    const eventIds = raw.event_ids || [];
+    if (!Array.isArray(eventIds) || eventIds.length === 0) {
+        return res.json({ success: false, error: 'Geen event IDs gevonden in bestand' });
+    }
+    console.log(`📊 ZwiftRacing results voor rider ${riderId}: ${eventIds.length} events`);
+    // Haal ZwiftRacing resultaten op voor elk eventID (met rate limiting)
     const results = [];
-    for (const e of filtered) {
-        const eventId = e.event_id || e.tid || e.id;
+    const maxEvents = Math.min(eventIds.length, 20); // Beperk tot 20 events om rate limiting te voorkomen
+    for (let i = 0; i < maxEvents; i++) {
+        const eventId = eventIds[i];
         if (!eventId)
             continue;
-        // Respecteer rate limiting: kleine delay tussen requests
-        await new Promise(r => setTimeout(r, 400));
-        const zr = await fetchZwiftRacingResults(eventId);
-        if (!zr || !zr.results)
+        try {
+            // Respecteer rate limiting: 400ms delay tussen requests
+            if (i > 0) {
+                await new Promise(r => setTimeout(r, 400));
+            }
+            const zr = await fetchZwiftRacingResults(eventId.toString());
+            if (!zr || !zr.results)
+                continue;
+            const myResult = zr.results.find((r) => String(r.zwid || r.rider_id) === String(riderId));
+            if (!myResult)
+                continue;
+            results.push({
+                eventId: eventId.toString(),
+                eventName: zr.event?.name || zr.name || `Event ${eventId}`,
+                eventDate: zr.event?.date || zr.event?.event_date || new Date().toISOString(),
+                position: myResult.position,
+                totalRiders: zr.results.length,
+                category: myResult.category,
+                timeSeconds: myResult.time_seconds || myResult.time?.[0],
+                avgWkg: myResult.avg_wkg,
+                veloRating: myResult.velo_after,
+                veloChange: myResult.velo_change,
+                effortScore: myResult.effort || myResult.effort_score,
+                power_5s: myResult.power_5s,
+                power_15s: myResult.power_15s,
+                power_30s: myResult.power_30s,
+                power_1m: myResult.power_1m,
+                power_2m: myResult.power_2m,
+                power_5m: myResult.power_5m,
+                power_20m: myResult.power_20m,
+                racingScore: myResult.racing_score || myResult.rp
+            });
+            console.log(`  ✅ Event ${eventId}: positie ${myResult.position} van ${zr.results.length}`);
+        }
+        catch (error) {
+            console.warn(`⚠️  Fout bij ophalen event ${eventId}:`, error.message);
             continue;
-        const myResult = zr.results.find((r) => String(r.zwid || r.rider_id) === String(riderId));
-        if (!myResult)
-            continue;
-        results.push({
-            eventId,
-            eventName: zr.event?.name || zr.name || e.name || 'Unknown',
-            eventDate: zr.event?.date || zr.event?.event_date || e.date,
-            position: myResult.position,
-            totalRiders: zr.results.length,
-            category: myResult.category,
-            timeSeconds: myResult.time_seconds || myResult.time?.[0],
-            avgWkg: myResult.avg_wkg,
-            veloRating: myResult.velo_after,
-            veloChange: myResult.velo_change,
-            effortScore: myResult.effort || myResult.effort_score,
-            power_5s: myResult.power_5s,
-            power_15s: myResult.power_15s,
-            power_30s: myResult.power_30s,
-            power_1m: myResult.power_1m,
-            power_2m: myResult.power_2m,
-            power_5m: myResult.power_5m,
-            power_20m: myResult.power_20m,
-            racingScore: myResult.racing_score || myResult.rp
-        });
+        }
     }
-    res.json({ success: true, riderId, results });
+    // Sorteer op datum (nieuwste eerst)
+    results.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+    res.json({
+        success: true,
+        riderId,
+        totalEvents: eventIds.length,
+        fetchedEvents: results.length,
+        results
+    });
 });
 app.use(express.static(frontendPath));
 app.get('*', (req, res) => {
@@ -2268,6 +2308,7 @@ app.get('*', (req, res) => {
     }
 });
 const SYNC_TYPE_TEAM_RIDERS = 'team_riders';
+const SYNC_TYPE_RIDER_RESULTS = 'rider_results';
 let schedulerIntervals = new Map();
 // Load sync config from database
 const loadSyncConfig = async (syncType) => {
@@ -2406,6 +2447,164 @@ const updateSyncLog = async (logId, updates) => {
         return false;
     }
 };
+// Sync rider results from ZwiftRacing API
+const syncRiderResults = async (logId, startTime, triggerType, metadata) => {
+    console.log(`📊 Starting rider results sync for rider 150437`);
+    const riderId = '150437'; // Hardcoded voor nu, kan later uitgebreid worden
+    try {
+        // Stap 1: Haal meest recente event IDs op via ZPdataFetch
+        console.log(`🔄 Fetching latest event IDs for rider ${riderId}...`);
+        const eventIds = await fetchLatestRiderEventIds(riderId);
+        if (!eventIds || eventIds.length === 0) {
+            console.log(`⚠️  No event IDs found for rider ${riderId}`);
+            if (logId) {
+                await updateSyncLog(logId, {
+                    status: 'success',
+                    completed_at: new Date().toISOString(),
+                    duration_ms: Date.now() - startTime,
+                    total_items: 0,
+                    success_count: 0,
+                    failed_count: 0,
+                    metadata: { ...metadata, rider_id: riderId }
+                });
+            }
+            return { success: true, synced: 0, failed: 0, skipped: 0, logId };
+        }
+        console.log(`📋 Found ${eventIds.length} event IDs: ${eventIds.slice(0, 10).join(', ')}${eventIds.length > 10 ? '...' : ''}`);
+        // Stap 2: Haal results op voor elk event (met rate limiting)
+        const results = [];
+        const maxEvents = Math.min(eventIds.length, 50); // Beperk tot 50 events per sync om rate limiting te voorkomen
+        for (let i = 0; i < maxEvents; i++) {
+            const eventId = eventIds[i];
+            try {
+                // Rate limiting: 500ms tussen requests
+                if (i > 0) {
+                    await new Promise(r => setTimeout(r, 500));
+                }
+                console.log(`  [${i + 1}/${maxEvents}] Fetching results for event ${eventId}...`);
+                const eventResults = await fetchZwiftRacingResults(eventId.toString());
+                if (!eventResults || !eventResults.results) {
+                    console.warn(`    ⚠️  No results for event ${eventId}`);
+                    continue;
+                }
+                // Vind onze rider in de results
+                const riderResult = eventResults.results.find((r) => String(r.zwid || r.rider_id) === String(riderId));
+                if (!riderResult) {
+                    console.warn(`    ⚠️  Rider ${riderId} not found in event ${eventId} results`);
+                    continue;
+                }
+                // Sla result op in database
+                const resultData = {
+                    event_id: parseInt(eventId),
+                    rider_id: parseInt(riderId),
+                    position: riderResult.position,
+                    category: riderResult.category,
+                    avg_power: riderResult.avg_wkg ? riderResult.avg_wkg * 75 : null, // Schatting
+                    avg_wkg: riderResult.avg_wkg,
+                    time_seconds: riderResult.time_seconds || riderResult.time?.[0],
+                    power_5s_wkg: riderResult.power_5s,
+                    power_15s_wkg: riderResult.power_15s,
+                    power_30s_wkg: riderResult.power_30s,
+                    power_1m_wkg: riderResult.power_1m,
+                    power_2m_wkg: riderResult.power_2m,
+                    power_5m_wkg: riderResult.power_5m,
+                    power_20m_wkg: riderResult.power_20m,
+                    rider_name: eventResults.event?.name || `Rider ${riderId}`,
+                    weight: riderResult.weight,
+                    ftp: riderResult.ftp,
+                    velo_before: riderResult.velo_before,
+                    velo_after: riderResult.velo_after,
+                    source: 'zwiftracing_api'
+                };
+                const { error: insertError } = await supabase
+                    .from('race_results')
+                    .upsert(resultData, { onConflict: 'event_id,rider_id' });
+                if (insertError) {
+                    console.error(`    ❌ DB error for event ${eventId}:`, insertError.message);
+                    continue;
+                }
+                results.push(resultData);
+                console.log(`    ✅ Saved result: position ${riderResult.position} in ${eventResults.results.length} riders`);
+            }
+            catch (error) {
+                console.error(`    ❌ Error fetching event ${eventId}:`, error.message);
+                continue;
+            }
+        }
+        const duration = Date.now() - startTime;
+        const status = results.length > 0 ? 'success' : 'partial';
+        console.log(`✅ Rider results sync complete: ${results.length} results saved (${duration}ms)`);
+        // Update log entry
+        if (logId) {
+            await updateSyncLog(logId, {
+                status,
+                completed_at: new Date().toISOString(),
+                duration_ms: duration,
+                total_items: maxEvents,
+                success_count: results.length,
+                failed_count: maxEvents - results.length,
+                metadata: {
+                    ...metadata,
+                    rider_id: riderId,
+                    total_event_ids: eventIds.length,
+                    processed_events: maxEvents
+                }
+            });
+        }
+        // Update config last_run
+        await saveSyncConfig({
+            sync_type: SYNC_TYPE_RIDER_RESULTS,
+            last_run_at: new Date().toISOString()
+        });
+        return { success: true, synced: results.length, failed: maxEvents - results.length, skipped: 0, logId };
+    }
+    catch (error) {
+        console.error(`❌ Rider results sync failed:`, error.message);
+        const duration = Date.now() - startTime;
+        if (logId) {
+            await updateSyncLog(logId, {
+                status: 'failed',
+                completed_at: new Date().toISOString(),
+                duration_ms: duration,
+                error_message: error.message,
+                metadata: { ...metadata, rider_id: riderId }
+            });
+        }
+        return { success: false, synced: 0, failed: 1, skipped: 0, logId, error: error.message };
+    }
+};
+// Helper: Fetch latest event IDs for a rider
+const fetchLatestRiderEventIds = async (riderId) => {
+    try {
+        // Voor nu gebruiken we een hardcoded lijst of fetchen we van ZwiftPower
+        // Later kan dit uitgebreid worden met een echte API call
+        // Check of we een recent bestand hebben
+        const files = glob.sync(path.join(__dirname, 'data/rider-150437-events-*.json'));
+        if (files.length > 0) {
+            files.sort();
+            const latestFile = files[files.length - 1];
+            try {
+                const raw = JSON.parse(fs.readFileSync(latestFile, 'utf-8'));
+                if (raw.event_ids && Array.isArray(raw.event_ids)) {
+                    // Filter op recente events (laatste 90 dagen)
+                    // Voor nu retourneren we gewoon alle event_ids
+                    return raw.event_ids.slice(0, 100); // Max 100 events
+                }
+            }
+            catch (e) {
+                console.warn('Kon event IDs niet laden uit bestand:', e.message);
+            }
+        }
+        // Fallback: Gebruik ZwiftPower API om events op te halen
+        console.log('📡 Fetching events from ZwiftPower API...');
+        const events = await fetchZwiftPowerEvents(riderId);
+        return events.map((e) => e.eventId).filter((id) => id);
+    }
+    catch (error) {
+        console.error('❌ Error fetching rider event IDs:', error.message);
+        return [];
+    }
+};
 // Execute sync with full logging
 const executeSyncJob = async (syncType, triggerType, metadata) => {
     const startTime = Date.now();
@@ -2419,6 +2618,11 @@ const executeSyncJob = async (syncType, triggerType, metadata) => {
     });
     console.log(`\n🚀 [${syncType}] Sync started (${triggerType}) - Log ID: ${logId}`);
     try {
+        if (syncType === SYNC_TYPE_RIDER_RESULTS) {
+            // Special handling for rider results sync
+            return await syncRiderResults(logId, startTime, triggerType, metadata);
+        }
+        // Original team riders sync logic
         // Fetch team riders
         const { data: riders, error } = await supabase
             .from('v_rider_complete')
@@ -2439,7 +2643,7 @@ const executeSyncJob = async (syncType, triggerType, metadata) => {
                     failed_count: 0
                 });
             }
-            return { success: true, synced: 0, failed: 0 };
+            return { success: true, synced: 0, failed: 0, skipped: 0, logId };
         }
         const riderIds = riders.map(r => r.rider_id);
         console.log(`📊 Starting smart sync for ${riderIds.length} riders: ${riderIds.join(', ')}`);
@@ -2551,6 +2755,7 @@ const PORT = process.env.PORT || 8081;
         // Start all configured schedulers
         console.log('\n🚀 Initializing sync schedulers...');
         await startScheduler(SYNC_TYPE_TEAM_RIDERS);
+        await startScheduler(SYNC_TYPE_RIDER_RESULTS);
         console.log('✅ All schedulers started\n');
     });
 })();

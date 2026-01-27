@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5229579,
+    "event_name": "Team DRAFT Sunday Race",
+    "event_date": "2025-11-30T14:30:00+00:00",
+    "event_type": "race",
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": [],
+    "source": "zwiftpower",
+    "fetched_at": "2026-01-07T16:38:52.906804+00:00",
+    "updated_at": "2026-01-07T16:38:52.906804+00:00"
+  }
+]

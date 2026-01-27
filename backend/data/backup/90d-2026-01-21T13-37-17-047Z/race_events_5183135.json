@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5183135,
+    "event_name": "Zwift Racing League: City Showdown - Open Aqua Dev League Division 1",
+    "event_date": "2025-11-04T19:00:00+00:00",
+    "event_type": "race",
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": [],
+    "source": "zwiftpower",
+    "fetched_at": "2026-01-07T16:40:31.939119+00:00",
+    "updated_at": "2026-01-07T16:40:31.939119+00:00"
+  }
+]

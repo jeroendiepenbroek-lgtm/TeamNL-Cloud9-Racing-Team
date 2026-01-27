@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5331604,
+    "event_name": null,
+    "event_date": "2026-01-06T19:30:00+00:00",
+    "event_type": null,
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": null,
+    "source": "zwiftracing",
+    "fetched_at": "2026-01-22T10:11:51.915452+00:00",
+    "updated_at": "2026-01-22T10:11:51.915452+00:00"
+  }
+]

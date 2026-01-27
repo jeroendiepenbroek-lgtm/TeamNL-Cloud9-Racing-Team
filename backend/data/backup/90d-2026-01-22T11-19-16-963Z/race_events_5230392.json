@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5230392,
+    "event_name": null,
+    "event_date": "2025-12-20T12:10:00+00:00",
+    "event_type": null,
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": null,
+    "source": "zwiftracing",
+    "fetched_at": "2026-01-22T10:16:55.58514+00:00",
+    "updated_at": "2026-01-22T10:16:55.58514+00:00"
+  }
+]

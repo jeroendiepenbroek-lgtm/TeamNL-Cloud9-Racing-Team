@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5178019,
+    "event_name": "Zwift Crit Racing Club - Toefield Tornado",
+    "event_date": "2025-11-24T10:40:00+00:00",
+    "event_type": "race",
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": [],
+    "source": "zwiftpower",
+    "fetched_at": "2026-01-07T16:39:22.123028+00:00",
+    "updated_at": "2026-01-07T16:39:22.123028+00:00"
+  }
+]

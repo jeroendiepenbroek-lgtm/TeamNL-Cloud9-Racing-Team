@@ -1,0 +1,16 @@
+[
+  {
+    "event_id": 5132015,
+    "event_name": "FRR Tour Britannia - Stage 5",
+    "event_date": "2025-11-13T10:30:00+00:00",
+    "event_type": "race",
+    "world": null,
+    "route": null,
+    "distance_km": null,
+    "elevation_m": null,
+    "categories": [],
+    "source": "zwiftpower",
+    "fetched_at": "2026-01-07T16:40:03.940635+00:00",
+    "updated_at": "2026-01-07T16:40:03.940635+00:00"
+  }
+]

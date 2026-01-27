@@ -1,0 +1,137 @@
+{
+  "rider_id": 150437,
+  "fetch_date": "2026-01-21T10:32:48.762Z",
+  "total": 26,
+  "events": [
+    {
+      "event_id": "5129365",
+      "date": "2025-10-23T13:10:00.000Z",
+      "name": "Stage 3 - Zwift Unlocked - Race"
+    },
+    {
+      "event_id": "5163788",
+      "date": "2025-10-29T19:00:00.000Z",
+      "name": "ZwiftNL Racing League - Race 2"
+    },
+    {
+      "event_id": "5144148",
+      "date": "2025-11-01T13:10:00.000Z",
+      "name": "Stage 4 - Zwift Unlocked - Race"
+    },
+    {
+      "event_id": "5183135",
+      "date": "2025-11-04T19:00:00.000Z",
+      "name": "Zwift Racing League: City Showdown - Open Aqua Dev League Division 1"
+    },
+    {
+      "event_id": "5176821",
+      "date": "2025-11-06T19:15:00.000Z",
+      "name": "Looping Crazy"
+    },
+    {
+      "event_id": "5144308",
+      "date": "2025-11-10T12:10:00.000Z",
+      "name": "Stage 5 - Zwift Unlocked - Race"
+    },
+    {
+      "event_id": "5132015",
+      "date": "2025-11-13T10:30:00.000Z",
+      "name": "FRR Tour Britannia - Stage 5"
+    },
+    {
+      "event_id": "5144434",
+      "date": "2025-11-17T12:10:00.000Z",
+      "name": "Stage 2 - Zwift Unlocked - Race"
+    },
+    {
+      "event_id": "5208495",
+      "date": "2025-11-18T19:00:00.000Z",
+      "name": "Zwift Racing League: City Showdown - Open Aqua Dev League Division 1"
+    },
+    {
+      "event_id": "5178019",
+      "date": "2025-11-24T10:40:00.000Z",
+      "name": "Zwift Crit Racing Club - Toefield Tornado"
+    },
+    {
+      "event_id": "5206710",
+      "date": "2025-11-27T19:10:00.000Z",
+      "name": "Stage 2: NYC Showdown: Prospect Park Loop"
+    },
+    {
+      "event_id": "5229579",
+      "date": "2025-11-30T14:30:00.000Z",
+      "name": "Team DRAFT Sunday Race"
+    },
+    {
+      "event_id": "5236640",
+      "date": "2025-12-06T15:00:00.000Z",
+      "name": "Zwift Epic Race - Snowman"
+    },
+    {
+      "event_id": "5254822",
+      "date": "2025-12-09T19:00:00.000Z",
+      "name": "Zwift Racing League: City Showdown - Open Aqua Dev League Division 1"
+    },
+    {
+      "event_id": "5257600",
+      "date": "2025-12-11T19:30:00.000Z",
+      "name": "EVO CC Sprint Race Series "
+    },
+    {
+      "event_id": "5230363",
+      "date": "2025-12-15T12:10:00.000Z",
+      "name": "Stage 2: Fresh Outta 25: Scotland Smash"
+    },
+    {
+      "event_id": "5230392",
+      "date": "2025-12-20T12:10:00.000Z",
+      "name": "Stage 3: Fresh Outta 25: Hell of the North"
+    },
+    {
+      "event_id": "5233969",
+      "date": "2025-12-27T15:00:00.000Z",
+      "name": "HISP WINTER TOUR 2025 STAGE 2"
+    },
+    {
+      "event_id": "5230823",
+      "date": "2026-01-03T15:10:00.000Z",
+      "name": "Stage 5: Fresh Outta 25: Gentil 8"
+    },
+    {
+      "event_id": "5331604",
+      "date": "2026-01-06T19:30:00.000Z",
+      "name": "Zwift Racing League: Redline Rally - Open Navy Dev League Group 1"
+    },
+    {
+      "event_id": "5291869",
+      "date": "2026-01-10T09:10:00.000Z",
+      "name": " Stage 1 - Race - Tour de Zwift"
+    },
+    {
+      "event_id": "5348759",
+      "date": "2026-01-13T19:34:00.000Z",
+      "name": "Zwift Racing League: Redline Rally - Open Navy Dev League Division1"
+    },
+    {
+      "event_id": "5213922",
+      "date": "2025-11-20T19:00:00.000Z",
+      "name": "Club Ladder // TeamNL Cloud9 Spark v Team Not Pogi Vuelta"
+    },
+    {
+      "event_id": "5275729",
+      "date": "2025-12-16T19:00:00.000Z",
+      "name": "Club Ladder // Smarties Germany v TeamNL Cloud9 Spark"
+    },
+    {
+      "event_id": "5290955",
+      "date": "2025-12-22T19:00:00.000Z",
+      "name": "Club Ladder // GTR Krakens v TeamNL Cloud9 Spark"
+    },
+    {
+      "event_id": "5308652",
+      "date": "2025-12-29T19:00:00.000Z",
+      "name": "Club Ladder // Herd of Honey Badgers v TeamNL Cloud9 Spark"
+    }
+  ]
+}

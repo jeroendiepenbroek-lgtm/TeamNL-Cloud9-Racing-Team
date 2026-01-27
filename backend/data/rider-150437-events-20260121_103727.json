@@ -1,0 +1,3969 @@
+{
+  "rider_id": 150437,
+  "fetch_date": "2026-01-21T10:37:27.176581",
+  "total_races": 440,
+  "event_ids": [
+    "27077",
+    "27161",
+    "151281",
+    "140097",
+    "123105",
+    "134187",
+    "147524",
+    "3843355",
+    "4257478",
+    "4257510",
+    "4270672",
+    "4285611",
+    "4285655",
+    "4285943",
+    "4297927",
+    "247593",
+    "3894099",
+    "33758",
+    "51134",
+    "3871602",
+    "223206",
+    "51584",
+    "55170",
+    "51634",
+    "226038",
+    "51613",
+    "2025686",
+    "177541",
+    "1088650",
+    "3939452",
+    "24853",
+    "2564480",
+    "3955689",
+    "184422",
+    "3853904",
+    "4001329",
+    "3862218",
+    "974462",
+    "177948",
+    "3867492",
+    "4044995",
+    "51566",
+    "189180",
+    "355684",
+    "24288",
+    "25816",
+    "29428",
+    "734735",
+    "3788050",
+    "3867562",
+    "355816",
+    "2025262",
+    "2443158",
+    "2054720",
+    "355696",
+    "364141",
+    "4077257",
+    "1789048",
+    "3941946",
+    "3932925",
+    "256909",
+    "4049703",
+    "4138313",
+    "2896923",
+    "2737306",
+    "454624",
+    "350991",
+    "2208180",
+    "2811705",
+    "1284856",
+    "4021165",
+    "1276365",
+    "184691",
+    "2450458",
+    "3975856",
+    "4002039",
+    "34885",
+    "107761",
+    "184514",
+    "408639",
+    "2450541",
+    "121262",
+    "3894629",
+    "3894863",
+    "2897006",
+    "2834157",
+    "337936",
+    "1879470",
+    "223153",
+    "337985",
+    "2836199",
+    "2897049",
+    "3359165",
+    "2556833",
+    "2207991",
+    "3910825",
+    "2782720",
+    "3576169",
+    "107743",
+    "712995",
+    "223175",
+    "2674608",
+    "301573",
+    "339371",
+    "120509",
+    "1913521",
+    "1913390",
+    "1673446",
+    "177894",
+    "3908633",
+    "1084971",
+    "2897035",
+    "352966",
+    "1913572",
+    "3827407",
+    "420629",
+    "3894481",
+    "2048029",
+    "1505263",
+    "121998",
+    "2556977",
+    "1992259",
+    "734415",
+    "3958463",
+    "1588248",
+    "1588336",
+    "712414",
+    "4127403",
+    "733429",
+    "1975303",
+    "3939417",
+    "355571",
+    "1305149",
+    "3848336",
+    "175559",
+    "355549",
+    "3927231",
+    "3939897",
+    "121784",
+    "2001938",
+    "51490",
+    "184556",
+    "4058223",
+    "123076",
+    "51514",
+    "97658",
+    "3191",
+    "1263175",
+    "1505199",
+    "4049713",
+    "4351321",
+    "1913516",
+    "4334156",
+    "4339107",
+    "4371786",
+    "2450647",
+    "4371784",
+    "1975309",
+    "1434513",
+    "4040153",
+    "4381953",
+    "4381029",
+    "3851924",
+    "4388008",
+    "4138417",
+    "4391171",
+    "4394434",
+    "4395262",
+    "4361964",
+    "4404183",
+    "3955750",
+    "4411906",
+    "3359794",
+    "4410971",
+    "1992284",
+    "4417164",
+    "4418289",
+    "4423070",
+    "4049710",
+    "3489959",
+    "4438964",
+    "4355591",
+    "4446433",
+    "4285505",
+    "1731147",
+    "1794954",
+    "4470651",
+    "4049716",
+    "2208072",
+    "4475260",
+    "1434495",
+    "4480516",
+    "3964012",
+    "4457346",
+    "4459444",
+    "4486953",
+    "4101391",
+    "4340716",
+    "4315086",
+    "4493261",
+    "4497868",
+    "4491183",
+    "4503691",
+    "4503696",
+    "4503699",
+    "4510992",
+    "315940",
+    "4509642",
+    "3639815",
+    "2556902",
+    "4080635",
+    "4152506",
+    "4430793",
+    "4516656",
+    "1673157",
+    "3902533",
+    "4504563",
+    "4525113",
+    "4503677",
+    "4503125",
+    "4494224",
+    "4491253",
+    "4489908",
+    "4152735",
+    "2556639",
+    "4537173",
+    "4044854",
+    "3847736",
+    "4233653",
+    "4537923",
+    "3359324",
+    "3359080",
+    "3902506",
+    "1789232",
+    "2842691",
+    "3848144",
+    "2207914",
+    "4491206",
+    "4525536",
+    "4035538",
+    "4546471",
+    "4311237",
+    "4123258",
+    "4315402",
+    "4526530",
+    "4525681",
+    "4285482",
+    "1975308",
+    "3895444",
+    "4152845",
+    "4557536",
+    "2556687",
+    "4565766",
+    "4152138",
+    "4526356",
+    "3359601",
+    "4555745",
+    "4324181",
+    "4189239",
+    "4163420",
+    "4226542",
+    "4151025",
+    "4073373",
+    "4073384",
+    "4073394",
+    "3576173",
+    "3609346",
+    "4525852",
+    "4545951",
+    "4232956",
+    "3487572",
+    "4525778",
+    "4037213",
+    "3847810",
+    "4579052",
+    "4324213",
+    "3847892",
+    "4526377",
+    "3490152",
+    "2556581",
+    "2450586",
+    "3552526",
+    "3552870",
+    "120750",
+    "4499974",
+    "4525616",
+    "4285502",
+    "4596118",
+    "4554755",
+    "4525723",
+    "4526156",
+    "4608326",
+    "4608336",
+    "4608340",
+    "4615907",
+    "4628854",
+    "4616259",
+    "4639189",
+    "4647814",
+    "4616432",
+    "4656780",
+    "4669180",
+    "4675053",
+    "4616472",
+    "4616662",
+    "4665445",
+    "4665479",
+    "4715453",
+    "4665515",
+    "4665530",
+    "4665537",
+    "4665556",
+    "4692705",
+    "4692960",
+    "4693126",
+    "4770226",
+    "4693352",
+    "4405251",
+    "4405265",
+    "4405269",
+    "4405272",
+    "4699510",
+    "4699523",
+    "4699530",
+    "4699533",
+    "4782943",
+    "4765810",
+    "4804718",
+    "4805377",
+    "4786055",
+    "4820302",
+    "4786273",
+    "4838251",
+    "4839665",
+    "4786468",
+    "4822736",
+    "4786384",
+    "4822762",
+    "4864204",
+    "4822772",
+    "4864250",
+    "4864251",
+    "4864290",
+    "4864168",
+    "4857657",
+    "4863450",
+    "4863466",
+    "4864162",
+    "4922085",
+    "4918816",
+    "4938721",
+    "4936632",
+    "4912687",
+    "4948511",
+    "4918836",
+    "4956925",
+    "4966542",
+    "4970551",
+    "4966840",
+    "4990156",
+    "4981188",
+    "4967323",
+    "4997487",
+    "5007608",
+    "5007620",
+    "5007623",
+    "5007626",
+    "5013421",
+    "5022268",
+    "4998717",
+    "5020780",
+    "5038374",
+    "5061376",
+    "5061341",
+    "5061575",
+    "5088190",
+    "5088031",
+    "5119161",
+    "5117347",
+    "5093213",
+    "5088741",
+    "5088865",
+    "5128997",
+    "5127680",
+    "5129235",
+    "5129365",
+    "5163788",
+    "5144148",
+    "5183135",
+    "5176821",
+    "5144308",
+    "5132015",
+    "5144434",
+    "5208495",
+    "5178019",
+    "5206710",
+    "5229579",
+    "5236640",
+    "5254822",
+    "5257600",
+    "5230363",
+    "5230392",
+    "5233969",
+    "5230823",
+    "5331604",
+    "5291869",
+    "5348759",
+    "5366895",
+    "261713",
+    "639087",
+    "4750277",
+    "4787101",
+    "4874348",
+    "4889489",
+    "4904415",
+    "4914015",
+    "4928773",
+    "4950674",
+    "4974910",
+    "4983457",
+    "5004381",
+    "5025419",
+    "5033599",
+    "5034539",
+    "5041227",
+    "5042132",
+    "5046365",
+    "5067681",
+    "5068550",
+    "5078075",
+    "5079819",
+    "5084205",
+    "5087516",
+    "5095904",
+    "5102784",
+    "5149471",
+    "5213922",
+    "5275729",
+    "5290955",
+    "5308652"
+  ],
+  "races": [
+    {
+      "event_id": "27077",
+      "name": "Group Workout: GC Coachings Ham Sandwich",
+      "date": "1509886800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "27161",
+      "name": "Zwift Group Workout: Race Climb Simulation",
+      "date": "1510315250",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "151281",
+      "name": "ASSOS Speed Club Warm Up Rides",
+      "date": "1551119700",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "140097",
+      "name": "Tour de Zwift - Stage 7",
+      "date": "1548270000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "123105",
+      "name": "Tour de Zwift - Stage 9",
+      "date": "1548788400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "134187",
+      "name": "Tour de Zwift - Stage 5",
+      "date": "1547665200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "147524",
+      "name": "Poggio Simulation",
+      "date": "1549636200",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3843355",
+      "name": "WTRL Team Time Trial - Zone 15",
+      "date": "1695922200",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4257478",
+      "name": "Club Ladder // Foudre Camembert v Cloud9",
+      "date": "1709666100",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4257510",
+      "name": "Club Ladder // Cloud9 v ART Quartz",
+      "date": "1709752500",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4270672",
+      "name": "Club Ladder // Cloud9 v Herd of Pinfish",
+      "date": "1710442800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4285611",
+      "name": "Club Ladder // Cloud9 v WCC Falcons",
+      "date": "1710788400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4285655",
+      "name": "Club Ladder // Cloud9 v Vikings Fimbulvetr",
+      "date": "1710875700",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4285943",
+      "name": "Club Ladder // Cloud9 v SRT Platinum Plonkers",
+      "date": "1711047600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4297927",
+      "name": "Club Ladder // ART Quartz v TeamNL Cloud9",
+      "date": "1711480500",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "247593",
+      "name": "ZA Tri 2020 Workout #2: Short Distance Triathlon Power",
+      "date": "1573842600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3894099",
+      "name": "WTRL Team Time Trial - Zone 20",
+      "date": "1698950700",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "33758",
+      "name": "Zwift Group Workout: 30 Minute Short Mix",
+      "date": "1513926043",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "51134",
+      "name": "WBR 1 Lap UCI Hilly Race (16.2km/10.1mi)",
+      "date": "1522073721",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3871602",
+      "name": "WTRL Team Time Trial - Zone 17",
+      "date": "1697738400",
+      "category": "F",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "223206",
+      "name": "Yorkshire World Championships Week - Road Event #3",
+      "date": "1569672600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "51584",
+      "name": "Tour of Watopia - Stage 5",
+      "date": "1523682056",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "55170",
+      "name": "Tour of Watopia - Stage 3",
+      "date": "1524892858",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "51634",
+      "name": "Tour of Watopia - Stage 7",
+      "date": "1524373207",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "226038",
+      "name": "World Social Riders",
+      "date": "1572177600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "51613",
+      "name": "Tour of Watopia - Stage 6",
+      "date": "1524229202",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2025686",
+      "name": "TOW Stage 2: Group Ride",
+      "date": "1619274600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "177541",
+      "name": "Tour of Watopia: Stage 2 - In Hot Pursuit",
+      "date": "1555088400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1088650",
+      "name": "Zwift Time Trial Tuesday: Bologna",
+      "date": "1601373600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3939452",
+      "name": "Zwift TT Club Racing - Glasgow Crit Circuit",
+      "date": "1700742000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "24853",
+      "name": " PRS Project Race Series (ZOG) (18 mi / 29 km)",
+      "date": "1508605246",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2564480",
+      "name": "Crit City Race",
+      "date": "1640784900",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3955689",
+      "name": "Stage 1: Best Of - Sand and Sequoias",
+      "date": "1702048200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "184422",
+      "name": "Zipp High Desert Speed Challenge",
+      "date": "1557043200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3853904",
+      "name": "WTRL Team Time Trial - Zone 16",
+      "date": "1696527900",
+      "category": "F",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4001329",
+      "name": "Zwift Racing League - Open EMEAW Central 1",
+      "date": "1702408500",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3862218",
+      "name": "WTRL Team Time Trial - Zone 17",
+      "date": "1697133600",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "974462",
+      "name": "3R Volcano Circuit Flat Race - 8 Laps (35.2km/21.9mi 160m)",
+      "date": "1595935800",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "177948",
+      "name": "Tour of Watopia: Stage 4 - LEVEL OUT, LEVEL UP",
+      "date": "1556438400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3867492",
+      "name": "Zwift TT Club Racing - Loch Loop",
+      "date": "1699194000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4044995",
+      "name": "Stage 5: Flat is Fast - Greater London Flat",
+      "date": "1706533800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "51566",
+      "name": "Tour of Watopia - Stage 4",
+      "date": "1523552422",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "189180",
+      "name": "Giro dItalia TT Challenge ",
+      "date": "1557646200",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "355684",
+      "name": "Stage 3 Group Ride - Tour of Watopia 2020",
+      "date": "1584469800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "24288",
+      "name": "ZZRC SUB 2.0 Ride (23.3 mi / 37.5 km)",
+      "date": "1508175600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "25816",
+      "name": "ZZRC SUB 2.0 Ride",
+      "date": "1509388800",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "29428",
+      "name": "ZZRC SUB 2.0 Ride",
+      "date": "1511808000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "734735",
+      "name": "Tour for All 2020: Stage 5 Group Ride",
+      "date": "1590220800",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3788050",
+      "name": "Zwift TT Club Racing Series / Rainbows! / Week Three",
+      "date": "1692775200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3867562",
+      "name": "Zwift TT Club Racing - Watopias Waistband",
+      "date": "1699777200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "355816",
+      "name": "Stage 5 Group Ride - Tour of Watopia 2020",
+      "date": "1585396800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2025262",
+      "name": "TOW Stage 1: Group Ride",
+      "date": "1619705700",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2443158",
+      "name": "Dutch Diesel Cycling Weekender",
+      "date": "1637936100",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2054720",
+      "name": "European Lunch Ride",
+      "date": "1620383400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "355696",
+      "name": "Stage 4 Group Ride - Tour of Watopia 2020",
+      "date": "1584777600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "364141",
+      "name": "Flanders Monday Blues Ride",
+      "date": "1584383400",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4077257",
+      "name": "Zwift NL Racing League | Race 3",
+      "date": "1704913200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1789048",
+      "name": "Haute Route Watopia 2021 Stage 1",
+      "date": "1614326400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3941946",
+      "name": "Zwift NL Racing League",
+      "date": "1700679600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3932925",
+      "name": "Zwift Racing League - Open EMEAW Central 1",
+      "date": "1699989300",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "256909",
+      "name": "Fun in the Sun(day) Race",
+      "date": "1574598600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4049703",
+      "name": "Zwift Insider Tiny Race (1 of 4)",
+      "date": "1703948400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4138313",
+      "name": "Zwift TT Club Racing - Tick Tock",
+      "date": "1708024800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2896923",
+      "name": "ToW Stage 2: Flat Stacks",
+      "date": "1648717200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2737306",
+      "name": "TdZ Stage 7: Escalator",
+      "date": "1644260400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "454624",
+      "name": "Yorkshire Grand Prix Race",
+      "date": "1586367000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "350991",
+      "name": "Flanders Monday Blues Ride",
+      "date": "1583173800",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2208180",
+      "name": "Off the MAAP: Stage 4",
+      "date": "1629223200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2811705",
+      "name": "DIRT Pacific Sprintapalooza",
+      "date": "1645795500",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1284856",
+      "name": "Garmin Never Stop Cycling Tour with Jakob Fuglsang &  Garmin Asia",
+      "date": "1607846400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4021165",
+      "name": "Zwift Racing League - Open EMEAW Central 1",
+      "date": "1703013300",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1276365",
+      "name": "3R Watopia Road To Sky - 1 Lap",
+      "date": "1606641000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "184691",
+      "name": "Tour of Watopia Stage 7 - Grand Finale",
+      "date": "1558634400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2450458",
+      "name": "Neokyo Badge Hunt - Stage 3",
+      "date": "1638990000",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3975856",
+      "name": "Zwift Racing League - Open EMEAW Central 1",
+      "date": "1701803700",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4002039",
+      "name": "WTRL Team Time Trial - Zone 20",
+      "date": "1702579500",
+      "category": "F",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "34885",
+      "name": "Zwift Group Workout: The Original VO2",
+      "date": "1514808900",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "107761",
+      "name": "Tour of London - Stage 2",
+      "date": "1544878800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "184514",
+      "name": "Tour of Watopia: Stage 5 - Tempus Fugit",
+      "date": "1557334800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "408639",
+      "name": "Zwift Time Trial Tuesday: Bologna",
+      "date": "1585648800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2450541",
+      "name": "Neokyo Badge Hunt - Stage 2",
+      "date": "1638630000",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "121262",
+      "name": "Tour de Zwift - Stage 3",
+      "date": "1547056800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3894629",
+      "name": "Stage 3: Neokyo Nights - Railways & Rooftops",
+      "date": "1700478600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3894863",
+      "name": "Stage 1: Neokyo Nights - Sleepless City",
+      "date": "1699272600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2897006",
+      "name": "ToW Stage 4: Dirt Drippin",
+      "date": "1648663200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2834157",
+      "name": "Zwift NL Race Day",
+      "date": "1646247600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "337936",
+      "name": "Tour of Innsbruck // Stage 2",
+      "date": "1582381800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1879470",
+      "name": "ZZRC Sunday Club Ride ",
+      "date": "1615713900",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "223153",
+      "name": "Yorkshire World Championships Week - ITT #1",
+      "date": "1569262500",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "337985",
+      "name": "Tour of Innsbruck // Stage 3",
+      "date": "1582480800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2836199",
+      "name": "ToW Stage 5: High Life ",
+      "date": "1648461600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2897049",
+      "name": "ToW Stage 1: Iconic Routes",
+      "date": "1648965600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3359165",
+      "name": "Tour de Zwift 2023 | Stage 3 | Ride",
+      "date": "1673964000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2556833",
+      "name": "TdZ Stage 4: Lets Get Dirty ",
+      "date": "1642752000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2207991",
+      "name": "Off the MAAP: Stage 2",
+      "date": "1628406000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3910825",
+      "name": "WTRL Team Time Trial - Zone 19",
+      "date": "1699554600",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2782720",
+      "name": "Dutch Diesel Cycling Weekender",
+      "date": "1645193700",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3576169",
+      "name": "Tour of Watopia 2023 | Stage 3",
+      "date": "1679821200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "107743",
+      "name": "Tour of London - Stage 1",
+      "date": "1544727600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "712995",
+      "name": "Tour for All 2020: Stage 2 Group Ride",
+      "date": "1589218200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "223175",
+      "name": "Yorkshire World Championships Week - ITT #3",
+      "date": "1569435300",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2674608",
+      "name": "TdZ Stage 8: Big City Champs ",
+      "date": "1643983200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "301573",
+      "name": "Tour de Zwift: Stage 1 Group Ride",
+      "date": "1578940200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "339371",
+      "name": "Flanders Classics Ride",
+      "date": "1582137300",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "120509",
+      "name": "Tour de Zwift - Stage 1",
+      "date": "1546624800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1913521",
+      "name": "TOW Stage 1: Group Ride",
+      "date": "1617040800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1913390",
+      "name": "TOW Stage 2: Group Ride",
+      "date": "1617462000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1673446",
+      "name": "TDZ Stage 8: Group Ride",
+      "date": "1613044800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "177894",
+      "name": "Tour of Watopia: Stage 3 - GROUP WORKOUT GONE WILD",
+      "date": "1555743600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3908633",
+      "name": "Zwift NL Racing League",
+      "date": "1699470000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1084971",
+      "name": "LEQP Provence Badge Hunter Series",
+      "date": "1601188200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2897035",
+      "name": "ToW Stage 3: The Queen",
+      "date": "1648576800",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "352966",
+      "name": "Flanders Classics Ride",
+      "date": "1583346900",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1913572",
+      "name": "TOW Stage 2: Group Ride",
+      "date": "1617786000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3827407",
+      "name": "Team CLS High n Low",
+      "date": "1694713800",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "420629",
+      "name": " Haute Route Watopia Stage 2",
+      "date": "1585983600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3894481",
+      "name": "Stage 2: Neokyo Nights - Twilight Harbor",
+      "date": "1700140200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2048029",
+      "name": "DIRT Rolling Thunder Ride",
+      "date": "1620126000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1505263",
+      "name": "TDZ Stage 3: Group Ride",
+      "date": "1610884800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "121998",
+      "name": "Tour de Zwift - Stage 6",
+      "date": "1547985600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2556977",
+      "name": "TdZ Stage 6: Go Long",
+      "date": "1643554800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1992259",
+      "name": "TOW Stage 4: Group Ride",
+      "date": "1618509600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "734415",
+      "name": "Tour for All 2020: Stage 4 Group Ride",
+      "date": "1589720400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3958463",
+      "name": "Zwift Racing League - Open EMEAW Central 1",
+      "date": "1701198900",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1588248",
+      "name": "TDZ Stage 6: Group Ride",
+      "date": "1612274400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1588336",
+      "name": "TDZ Stage 5: Group Ride",
+      "date": "1611903600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "712414",
+      "name": "Tour for All 2020: Stage 1 Group Ride",
+      "date": "1588701600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4127403",
+      "name": "WTRL Team Time Trial - Zone 19",
+      "date": "1706207400",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "733429",
+      "name": "Tour for All 2020: Stage 3 Group Ride",
+      "date": "1589540400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1975303",
+      "name": "TOW Stage 3: Group Ride",
+      "date": "1618250400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3939417",
+      "name": "Zwift TT Club Racing - Glasgow Crit Circuit",
+      "date": "1700475600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "355571",
+      "name": "Stage 2 Group Ride - Tour of Watopia 2020",
+      "date": "1584172800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1305149",
+      "name": "The BMTR Fundo",
+      "date": "1607260200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3848336",
+      "name": "Tour of Watopia Ride 2023 | Stage 4",
+      "date": "1698386400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "175559",
+      "name": "Tour of Watopia: Stage 1 - Glow In The Night",
+      "date": "1554400800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "355549",
+      "name": "Stage 1 Group Ride - Tour of Watopia 2020",
+      "date": "1583865000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3927231",
+      "name": "Talent:frei Sprint Race",
+      "date": "1700162100",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3939897",
+      "name": "Zwift TT Club Racing - Going Coastal",
+      "date": "1703341200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "121784",
+      "name": "Tour de Zwift - Stage 4",
+      "date": "1547280000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2001938",
+      "name": "TOW Stage 5: Group Ride",
+      "date": "1619024400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "51490",
+      "name": "Tour of Watopia - Stage 1",
+      "date": "1522688458",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "184556",
+      "name": "Tour of Watopia Stage 6 - Against the Clock",
+      "date": "1557939600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4058223",
+      "name": "Zwift NL Racing League | Race 2",
+      "date": "1704308400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "123076",
+      "name": "Tour de Zwift - Stage 8",
+      "date": "1548507600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "51514",
+      "name": "Tour of Watopia - Stage 2",
+      "date": "1522861259",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "97658",
+      "name": "Tour of New York - Stage 3",
+      "date": "1540713600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3191",
+      "name": "WBR Ride: Jens Voigt",
+      "date": "1480773619",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1263175",
+      "name": "Roll with Castelli",
+      "date": "1606392000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1505199",
+      "name": "TDZ Stage 4: Group Ride",
+      "date": "1611406800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4049713",
+      "name": "Zwift Insider Tiny Race (3 of 4)",
+      "date": "1703950200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4351321",
+      "name": "Club Ladder // TeamNL Cloud9 v ART Quartz",
+      "date": "1714068900",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1913516",
+      "name": "TOW Stage 1: Group Ride",
+      "date": "1617037200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4334156",
+      "name": "Club Ladder // Herd of Tasmanian Devils v TeamNL Cloud9",
+      "date": "1712772000",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4339107",
+      "name": "Club Ladder // TeamNL Cloud9 v Valhalla Garmr",
+      "date": "1713204900",
+      "category": "E2",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4371786",
+      "name": "Club Ladder // TeamNL Cloud9 v ZWB Zwiftladies",
+      "date": "1715192100",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2450647",
+      "name": "Neokyo Badge Hunt - Stage 4",
+      "date": "1639306800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4371784",
+      "name": "Club Ladder // TeamNL Cloud9 v DIRTy Vertigos",
+      "date": "1715020200",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1975309",
+      "name": "TOW Stage 3: Group Ride",
+      "date": "1617951600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1434513",
+      "name": "TDZ Stage 2: Group Ride",
+      "date": "1610179200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4040153",
+      "name": "Zwift NL Racing League | Race 1",
+      "date": "1703703600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4381953",
+      "name": "Club Ladder // TeamNL Cloud9 v Foudre Beaufort",
+      "date": "1715623200",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4381029",
+      "name": "Club Ladder // ZWB Zwiftladies v TeamNL Cloud9",
+      "date": "1715797800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3851924",
+      "name": "Tour of Watopia Welcome Ride 2023",
+      "date": "1696168800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4388008",
+      "name": "Club Ladder // Down n DiRTY Falcons v TeamNL Cloud9",
+      "date": "1716228000",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4138417",
+      "name": "Zwift TT Club Racing - Big Flat 8",
+      "date": "1708856400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4391171",
+      "name": "Club Ladder // TT1 Gold Glucose Rush v TeamNL Cloud9",
+      "date": "1716400800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4394434",
+      "name": "Club Ladder // Swedish Zwift Racers P1 v TeamNL Cloud9",
+      "date": "1716832800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4395262",
+      "name": "Club Ladder // ZWB Zwiftladies v TeamNL Cloud9",
+      "date": "1717005600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4361964",
+      "name": "Stage 3: Bag That Badge - London Classique Reverse",
+      "date": "1716541800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4404183",
+      "name": "Club Ladder // TeamNL Cloud9 v COALITION S-Wings",
+      "date": "1717438546",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3955750",
+      "name": "Stage 2: Best Of - Castle to Castle",
+      "date": "1702818600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4411906",
+      "name": "Zwift Racing League Summer Showdown",
+      "date": "1718128860",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3359794",
+      "name": "Tour de Zwift 2023 | Stage 7 | Ride",
+      "date": "1675364400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4410971",
+      "name": "Club Ladder // TeamNL Cloud9 v LEVEL Cyclones",
+      "date": "1718301600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1992284",
+      "name": "TOW Stage 4: Group Ride",
+      "date": "1618567200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4417164",
+      "name": "Club Ladder // TeamNL Cloud9 v Down n DiRTY Falcons",
+      "date": "1718647200",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4418289",
+      "name": "Club Ladder // TeamNL Cloud9 v SZ Loki",
+      "date": "1718906400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4423070",
+      "name": "Zwift Racing League Summer Showdown",
+      "date": "1719338460",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4049710",
+      "name": "Zwift Insider Tiny Race (2 of 4)",
+      "date": "1703949300",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3489959",
+      "name": "Tour de Zwift 2023 | Stage 1 | Ride",
+      "date": "1676014200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4438964",
+      "name": "Club Ladder // TeamNL Cloud9 v ZSUNR Tornadoes",
+      "date": "1720462500",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4355591",
+      "name": "Zwift Epic Race - Zwift Bambino Fondo 2022",
+      "date": "1714892400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4446433",
+      "name": "Club Ladder // TeamNL Cloud9 v COALITION S-Wings",
+      "date": "1721067341",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4285505",
+      "name": "2024 SISU Racing Tour - Stage 3",
+      "date": "1720270800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1731147",
+      "name": "AHDR Bacon Rolls with Caffeine ",
+      "date": "1613501400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1794954",
+      "name": "LEquipe Provence Badge Hunters - Volcano Circuit (25 laps)",
+      "date": "1615102200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4470651",
+      "name": "Club Ladder // TeamNL Cloud9 v Herd Of MAMILs",
+      "date": "1722967200",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4049716",
+      "name": "Zwift Insider Tiny Race (4 of 4)",
+      "date": "1703951100",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2208072",
+      "name": "Off the MAAP: Stage 3",
+      "date": "1628686800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4475260",
+      "name": "Club Ladder // TeamNL Cloud9 v ART Isotopes",
+      "date": "1723744800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1434495",
+      "name": "TDZ Stage 1: Group Ride",
+      "date": "1609848000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4480516",
+      "name": "Club Ladder // ART ATTACK v TeamNL Cloud9",
+      "date": "1724349600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3964012",
+      "name": "WTRL Team Time Trial - Zone 18",
+      "date": "1701368100",
+      "category": "F",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4457346",
+      "name": "Stage 2: Punchy Power - Watopia Hilly Reverse",
+      "date": "1723360200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4459444",
+      "name": "Stage 4: Punchy Power - London Loop | Using Racing Score",
+      "date": "1724065800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4486953",
+      "name": "Club Ladder // TeamNL Cloud9 v ZSUNR Tornadoes",
+      "date": "1724696100",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4101391",
+      "name": "Team NL Time Trial club kampioenschappen",
+      "date": "1705604400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4340716",
+      "name": "Club Ladder // TeamNL Cloud9 v BAKPDL Platinum",
+      "date": "1713463200",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4315086",
+      "name": "WTRL TTT World Cup - Zone 21",
+      "date": "1712254500",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4493261",
+      "name": "TeamNL Cloud9 TTT B/C challenge",
+      "date": "1725387314",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4497868",
+      "name": "Club Ladder // TeamNL Cloud9 v SRT Surstr\u00f6mming",
+      "date": "1725560147",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4491183",
+      "name": "Stage 2: Pinarello Powered - Park Perimeter Loop || Using Racing Score",
+      "date": "1725880200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4503691",
+      "name": "Zwift Insider Tiny Race (2 of 4) || Using Racing Score",
+      "date": "1726305300",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4503696",
+      "name": "Zwift Insider Tiny Race (3 of 4) || Using Racing Score",
+      "date": "1726306200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4503699",
+      "name": "Zwift Insider Tiny Race (4 of 4) || Using Racing Score",
+      "date": "1726307100",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4510992",
+      "name": "Zwift Racing League - Open EMEA-W Central (West) Division 2",
+      "date": "1726597080",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "315940",
+      "name": "Tour de Zwift: Stage 6 Group Ride",
+      "date": "1580637600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4509642",
+      "name": "Club Ladder // LEQP ZinZins v TeamNL Cloud9",
+      "date": "1726769700",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3639815",
+      "name": "Tour of Watopia 2023 | Stage 5",
+      "date": "1681115400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2556902",
+      "name": "TdZ Stage 5: Urban Delight ",
+      "date": "1643137200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4080635",
+      "name": "Team NL club kampioenschappen.",
+      "date": "1705434300",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4152506",
+      "name": "Stage 3: Race Like A Champ - The Muckle Yin",
+      "date": "1708542600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4430793",
+      "name": "Stage 3: Vive La France - Douce France || LOW END || Using Racing Score",
+      "date": "1721581800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4516656",
+      "name": "Club Ladder // KLUB Raiders v TeamNL Cloud9",
+      "date": "1727373600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1673157",
+      "name": "TDZ Stage 7: Group Ride",
+      "date": "1612623600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3902533",
+      "name": "Race #1 | Rolling Highlands | ZA 2023",
+      "date": "1700989200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4504563",
+      "name": "Zwift Racing League - Open EMEA-W Central Division 2",
+      "date": "1725992160",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4525113",
+      "name": "Zwift Racing League - Open EMEA-W Central (West) Division 2",
+      "date": "1727806680",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4503677",
+      "name": "Zwift Insider Tiny Race (1 of 4) || Using Racing Score",
+      "date": "1726304400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4503125",
+      "name": "Stage 5: Pinarello Powered - Mayan 8 || HIGH END || Using Racing Score",
+      "date": "1727979000",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4494224",
+      "name": "FRR Tour France - Stage 1 - Prologue - ITT",
+      "date": "1728034200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4491253",
+      "name": "Stage 4: Pinarello Powered - Loop de Loop || Using Racing Score",
+      "date": "1727597400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4489908",
+      "name": "Stage 1: Pinarello Powered - Rolling Highlands",
+      "date": "1725693000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4152735",
+      "name": "Stage 1: Race Like A Champ - Rolling Highlands",
+      "date": "1707401400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2556639",
+      "name": "TdZ Stage 2: Mountain Madness ",
+      "date": "1642168800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4537173",
+      "name": "Zwift Racing League - Open EMEA-W Central (West) Division 2",
+      "date": "1728411480",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4044854",
+      "name": "Stage 3: Flat is Fast - Volcano Flat",
+      "date": "1705849800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3847736",
+      "name": "Tour of Watopia Ride 2023 | Stage 1",
+      "date": "1696442400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4233653",
+      "name": "Stage 1 | Loop de Loop - Sprint Race 1 |Zwift Games",
+      "date": "1711368000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4537923",
+      "name": "Club Ladder // KLUB Raiders v TeamNL Cloud9",
+      "date": "1728584100",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3359324",
+      "name": "Tour de Zwift 2023 | Stage 4 | Ride",
+      "date": "1674399600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3359080",
+      "name": "Tour de Zwift 2023 | Stage 2 | Ride",
+      "date": "1673704800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3902506",
+      "name": "Race #2 | Cobbled Climbs | ZA 2023",
+      "date": "1702220400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1789232",
+      "name": "Haute Route Watopia 2021 Stage 3",
+      "date": "1614499200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2842691",
+      "name": "Global Solidarity Ride For Ukraine",
+      "date": "1645974000",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3848144",
+      "name": "Tour of Watopia Ride 2023 | Stage 3",
+      "date": "1697565600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2207914",
+      "name": "Off the MAAP: Stage 1",
+      "date": "1628262000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4491206",
+      "name": "Stage 3: Pinarello Powered - Turf N Surf || Using Racing Score",
+      "date": "1726485000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4525536",
+      "name": "Community Racing Festival || Chasing Tour || Downtown Titans",
+      "date": "1728897000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4035538",
+      "name": "Stage 2 | Epic Race | Tour de Zwift 2024 ",
+      "date": "1705217400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4546471",
+      "name": "Zwift Racing League - Open EMEA-W Central (West) Division 2",
+      "date": "1729016280",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4311237",
+      "name": "Stage 4: Lap It Up - Bridges and Boardwalks",
+      "date": "1714288200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4123258",
+      "name": "Zwift Racing League - Open EMEAW Eastern 1",
+      "date": "1706035500",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4315402",
+      "name": "DIRT Racing Series - Rionda - Metals - Stage 2",
+      "date": "1712081700",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4526530",
+      "name": "Community Racing Festival || Zwift NL || The Muckle Yin",
+      "date": "1729149000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4525681",
+      "name": "Community Racing Festival || DBR || Innsbruckring",
+      "date": "1728288600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4285482",
+      "name": "2024 SISU Racing Tour - Stage 1",
+      "date": "1719734400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "1975308",
+      "name": "TOW Stage 3: Group Ride",
+      "date": "1618149600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3895444",
+      "name": "Tour of Watopia Ride 2023 | Stage 5",
+      "date": "1698692400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4152845",
+      "name": "Stage 2: Race Like A Champ - Richmond Rollercoaster",
+      "date": "1708269000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4557536",
+      "name": "Club Ladder // SRT Platinum Plonkers v TeamNL Cloud9",
+      "date": "1729792800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2556687",
+      "name": "TdZ Stage 3: Round and Round ",
+      "date": "1642446000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4565766",
+      "name": "Club Ladder // TeamNL Cloud9 v ATGNI Titanium",
+      "date": "1730142900",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4152138",
+      "name": "WTRL Team Time Trial - Zone 20",
+      "date": "1706813100",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4526356",
+      "name": "Community Racing Festival || USMeS || Cobbled Climbs Reverse",
+      "date": "1730376600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3359601",
+      "name": "Tour de Zwift 2023 | Stage 6 | Ride",
+      "date": "1674824400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4555745",
+      "name": "Zwift NL Racing League",
+      "date": "1729706400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4324181",
+      "name": "DIRT Racing Series - Rionda - Metals - Stage 3",
+      "date": "1712686500",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4189239",
+      "name": "Zwift Racing League - Open EMEAW Southern 1 (East)",
+      "date": "1707851040",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4163420",
+      "name": "Zwift Racing League - Open EMEAW Southern 1 (East)",
+      "date": "1707246240",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4226542",
+      "name": "Zwift Racing League - Open EMEAW Southern 1 (East)",
+      "date": "1709060640",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4151025",
+      "name": "Zwift Racing League - Open EMEAW Southern 1 (East)",
+      "date": "1706641440",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4073373",
+      "name": "Team NL club kampioenschappen.",
+      "date": "1705431600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4073384",
+      "name": "Team NL club kampioenschappen.",
+      "date": "1705432500",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4073394",
+      "name": "Team NL club kampioenschappen.",
+      "date": "1705433400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3576173",
+      "name": "Tour of Watopia 2023 | Stage 3",
+      "date": "1679670000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3609346",
+      "name": "Tour of Watopia 2023 | Stage 4",
+      "date": "1680271200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4525852",
+      "name": "Community Racing Festival || Galaxy || R.G.V.",
+      "date": "1729408200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4545951",
+      "name": "Zwift World Series Race 3 - Community",
+      "date": "1730032200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4232956",
+      "name": "WTRL Team Time Trial - Zone 20",
+      "date": "1709232300",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3487572",
+      "name": "Tour de Zwift 2023 | Stage 8 | Ride",
+      "date": "1675609200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4525778",
+      "name": "Community Racing Festival || EVO || Turf N Surf",
+      "date": "1729505400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4037213",
+      "name": "Stage 8 | Ride | Tour de Zwift 2024 ",
+      "date": "1707642000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3847810",
+      "name": "Tour of Watopia Ride 2023 | Stage 1",
+      "date": "1696752000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4579052",
+      "name": "Club Ladder // TeamNL Cloud9 v Vikings Yggdrasil",
+      "date": "1730834100",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4324213",
+      "name": "DIRT Racing Series - Rionda - Metals - Stage 5",
+      "date": "1713896100",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3847892",
+      "name": "Tour of Watopia Ride 2023 | Stage 2",
+      "date": "1697360400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4526377",
+      "name": "Community Racing Festival || USMeS || Cobbled Climbs Reverse",
+      "date": "1730625000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3490152",
+      "name": "Tour de Zwift 2023 | Stage 5 | Ride",
+      "date": "1675796400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2556581",
+      "name": "TdZ Stage 1: Flat is Fast",
+      "date": "1641841200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "2450586",
+      "name": "Neokyo Badge Hunt - Stage 1",
+      "date": "1638298800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3552526",
+      "name": "Tour of Watopia 2023 | Stage 1",
+      "date": "1678471200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "3552870",
+      "name": "Tour of Watopia 2023 | Stage 2",
+      "date": "1679234400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "120750",
+      "name": "Tour de Zwift - Stage 2",
+      "date": "1546783200",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4499974",
+      "name": "JOIN Training Race",
+      "date": "1731006600",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4525616",
+      "name": "Community Racing Festival || Coalition || Neokyo All-Nighter",
+      "date": "1731226200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4285502",
+      "name": "2024 SISU Racing Tour - Stage 2",
+      "date": "1720027800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4596118",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1731439020",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4554755",
+      "name": "Ribble Winter Race Series",
+      "date": "1731611400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4525723",
+      "name": "Community Racing Festival || Drafting Dinos || Jurassic Coast",
+      "date": "1731928200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4526156",
+      "name": "Community Racing Festival || SRT || Ocean Lava Cliffside Loop",
+      "date": "1732187400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4608326",
+      "name": "Zwift Insider Tiny Race (1 of 4)",
+      "date": "1732374000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4608336",
+      "name": "Zwift Insider Tiny Race (2 of 4)",
+      "date": "1732374900",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4608340",
+      "name": "Zwift Insider Tiny Race (3 of 4)",
+      "date": "1732375800",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4615907",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1732648620",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4628854",
+      "name": "Club Ladder // TeamNL Cloud9 v Down n DIRTy Falcons",
+      "date": "1732820400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4616259",
+      "name": "Stage 2: Fresh Outta 24 - Going Coastal",
+      "date": "1733141400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4639189",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1733253420",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4647814",
+      "name": "Club Ladder // Swedish Zwift Racers P1 v TeamNL Cloud9",
+      "date": "1733509800",
+      "category": "E2",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4616432",
+      "name": "Stage 3: Fresh Outta 24 - Loop de Loop",
+      "date": "1733746200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4656780",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1733858220",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4669180",
+      "name": "Club Ladder // TeamNL Cloud9 v TFC Hulk",
+      "date": "1734030900",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4675053",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1734463020",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4616472",
+      "name": "Stage 4: Fresh Outta 24 - BRAEk-fast Crits and Grits",
+      "date": "1734855000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4616662",
+      "name": "Stage 5: Fresh Outta 24 - Coastal Crown Loop",
+      "date": "1735031400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4665445",
+      "name": "FRR Tour Watopia - Stage 1 - Classification Part 1",
+      "date": "1735563600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4665479",
+      "name": "FRR Tour Watopia - Stage 2 - Classification Part 2",
+      "date": "1735565700",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4715453",
+      "name": "Club Ladder // SRT Surstr\u00f6mming v TeamNL Cloud9 Thunder",
+      "date": "1735845300",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4665515",
+      "name": "FRR Tour Watopia - Stage 3",
+      "date": "1736159400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4665530",
+      "name": "FRR Tour Watopia - Stage 4",
+      "date": "1736278200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4665537",
+      "name": "FRR Tour Watopia - Stage 5",
+      "date": "1736341200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4665556",
+      "name": "FRR Tour Watopia - Stage 6 - iTT",
+      "date": "1736505000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4692705",
+      "name": "Stage 2: Flat Is Fast - Beach Island Loop",
+      "date": "1736665800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4692960",
+      "name": "Stage 3: Flat Is Fast - London Flat",
+      "date": "1736766600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4693126",
+      "name": "Stage 4: Flat Is Fast - Douce France",
+      "date": "1737375000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4770226",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1737487020",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4693352",
+      "name": "Stage 5: Flat Is Fast - The Fan Flats",
+      "date": "1737979800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4405251",
+      "name": "Zwift Insider Tiny Race (1 of 4)",
+      "date": "1717837200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4405265",
+      "name": "Zwift Insider Tiny Race (2 of 4)",
+      "date": "1717838100",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4405269",
+      "name": "Zwift Insider Tiny Race (3 of 4)",
+      "date": "1717839000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4405272",
+      "name": "Zwift Insider Tiny Race (4 of 4)",
+      "date": "1717839900",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4699510",
+      "name": "Tiny Race (1 of 4) by Zwift Insider",
+      "date": "1735376400",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4699523",
+      "name": "Tiny Race (2 of 4) by Zwift Insider",
+      "date": "1735377300",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4699530",
+      "name": "Tiny Race (3 of 4) by Zwift Insider",
+      "date": "1735378200",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4699533",
+      "name": "Tiny Race (4 of 4) by Zwift Insider",
+      "date": "1735379100",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4782943",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1738091820",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4765810",
+      "name": "WTRL Team Time Trial - Zone 22",
+      "date": "1737659700",
+      "category": "F",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4804718",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1738696620",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4805377",
+      "name": "WTRL Team Time Trial - Zone 22",
+      "date": "1738869300",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4786055",
+      "name": "STAGE 2: Shimano Find Your Fast: Outer Scotland",
+      "date": "1739189400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4820302",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1739301420",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4786273",
+      "name": "STAGE 3: Shimano Find your Fast: Loop de Loop",
+      "date": "1739797800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4838251",
+      "name": "Zwift Racing League - Open EMEA-W Central (East) Division 1",
+      "date": "1739906220",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4839665",
+      "name": "WTRL Team Time Trial - Zone 22",
+      "date": "1740078900",
+      "category": "F",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4786468",
+      "name": "STAGE 4: Shimano Find Your Fast:  Jurassic Coast",
+      "date": "1740399000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4822736",
+      "name": "DIRT Racing Series X - Froome - Gemstones - Prologue",
+      "date": "1740598200",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4786384",
+      "name": "STAGE 4: Shimano Find Your Fast:  Jurassic Coast",
+      "date": "1740755400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4822762",
+      "name": "DIRT Racing Series X - Froome - Gemstones - Race 1",
+      "date": "1741203000",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4864204",
+      "name": "Stage 2 | The Zwift Big Spin 2025",
+      "date": "1741721400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4822772",
+      "name": "DIRT Racing Series X - Froome - Gemstones - Race 2",
+      "date": "1741807800",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4864250",
+      "name": "Stage 2 | The Zwift Big Spin 2025",
+      "date": "1741951800",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4864251",
+      "name": "Stage 2 | The Zwift Big Spin 2025",
+      "date": "1741977000",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4864290",
+      "name": "Stage 2 | The Zwift Big Spin 2025",
+      "date": "1741991400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4864168",
+      "name": "Stage 2 | The Zwift Big Spin 2025",
+      "date": "1742196600",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4857657",
+      "name": "Stage 5 | Zwift Games | ZG25 Queen | Range 2",
+      "date": "1742209800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4863450",
+      "name": "DIRT Racing Series X - Froome - Gemstones - Race 3",
+      "date": "1742412600",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4863466",
+      "name": "DIRT Racing Series X - Froome - Gemstones - Race 4",
+      "date": "1743017400",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4864162",
+      "name": "Stage 2 | The Zwift Big Spin 2025",
+      "date": "1742045400",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4922085",
+      "name": "HEXAGONE Race Series",
+      "date": "1743530700",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4918816",
+      "name": "ECRO World Tour | Chasing Vlaanderen",
+      "date": "1743940800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4938721",
+      "name": "ZRL Finals 2024/25 - Open EMEAW Division 1 Plate Semi-Final - Pool 2",
+      "date": "1744136220",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4936632",
+      "name": "WTRL Team Time Trial 6TH BIRTHDAY - Zone 22",
+      "date": "1744307100",
+      "category": "F",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4912687",
+      "name": "Stage 3: After Party: LaGuardia After Party",
+      "date": "1744625400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4948511",
+      "name": "ZRL Finals 2024/25 - Open EMEAW Semi Final 2",
+      "date": "1744740900",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4918836",
+      "name": "ECRO World Tour | Chasing Wallonne",
+      "date": "1745400600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4956925",
+      "name": "WTRL Team Time Trial - Zone 23",
+      "date": "1745518500",
+      "category": "D",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4966542",
+      "name": "Stage 1: Makuri May: Bridges and Boardwalks",
+      "date": "1746641400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4970551",
+      "name": "Stage 2: Makuri May: Turf N Surf",
+      "date": "1747404600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4966840",
+      "name": "Stage 3: Makuri May: Castle to Castle",
+      "date": "1747678200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4990156",
+      "name": "WTRL Team Time Trial - Zone 23",
+      "date": "1747937700",
+      "category": "L",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4981188",
+      "name": "ECRO World Tour | Chasing Pink - Stage 12",
+      "date": "1748165400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4967323",
+      "name": "Stage 4: Makuri May: Three Village Loop",
+      "date": "1748254200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4997487",
+      "name": "DBR Thursday Race",
+      "date": "1748541000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5007608",
+      "name": "Tiny Race (1 of 4) by Zwift Insider",
+      "date": "1749286800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5007620",
+      "name": "Tiny Race (2 of 4) by Zwift Insider",
+      "date": "1749287700",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5007623",
+      "name": "Tiny Race (3 of 4) by Zwift Insider",
+      "date": "1749288600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5007626",
+      "name": "Tiny Race (4 of 4) by Zwift Insider",
+      "date": "1749289500",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5013421",
+      "name": "Zwift Racing League Showdown 2025 -  Open EMEAW Northern Division 2",
+      "date": "1749580260",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5022268",
+      "name": "Zwift Racing League Showdown 2025 -  Open EMEAW Northern Division 2",
+      "date": "1750185060",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4998717",
+      "name": "Stage 4: Cityscapes: London 8",
+      "date": "1750961400",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5020780",
+      "name": "Stage 2: Allez Allez Allez!: Gentil 8",
+      "date": "1751883000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5038374",
+      "name": "ECRO World Tour | Chasing Yellow - Stage 10",
+      "date": "1752485400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5061376",
+      "name": "Stage 2: Kick N Sprint: Glasgow Crit Circuit",
+      "date": "1755454200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5061341",
+      "name": "Stage 3: Kick N Sprint: Sand and Sequoias",
+      "date": "1755947400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5061575",
+      "name": "Stage 4: Kick N Sprint: Rolling Highlands",
+      "date": "1756725000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5088190",
+      "name": "Stage 1: Rolling With ENVE: Two Bridges Loop",
+      "date": "1756890600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5088031",
+      "name": "Stage 1: Rolling With ENVE: Two Bridges Loop",
+      "date": "1757329800",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5119161",
+      "name": "Zwift Racing League: Coast Clash -  Open Aqua Division 2",
+      "date": "1758651540",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5117347",
+      "name": "UK Armed Forces Cycling Community Race Night",
+      "date": "1758825000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5093213",
+      "name": "TFC Mad Monday (Middle End)",
+      "date": "1759170000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5088741",
+      "name": "Stage 5: Rolling With ENVE: Triple Twist",
+      "date": "1759428600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5088865",
+      "name": "Stage 5: Rolling With ENVE: Triple Twist",
+      "date": "1759648200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5128997",
+      "name": "Stage 1 - Zwift Unlocked - Race",
+      "date": "1759932600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5127680",
+      "name": "Rebelz RL R1-5 | Fall into the Draft",
+      "date": "1760254500",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5129235",
+      "name": "Stage 2 - Zwift Unlocked - Race",
+      "date": "1760965800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5129365",
+      "name": "Stage 3 - Zwift Unlocked - Race",
+      "date": "1761225000",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5163788",
+      "name": "ZwiftNL Racing League - Race 2",
+      "date": "1761764400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5144148",
+      "name": "Stage 4 - Zwift Unlocked - Race",
+      "date": "1762002600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5183135",
+      "name": "Zwift Racing League: City Showdown - Open Aqua Dev League Division 1",
+      "date": "1762282800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5176821",
+      "name": "Looping Crazy",
+      "date": "1762456500",
+      "category": "E",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5144308",
+      "name": "Stage 5 - Zwift Unlocked - Race",
+      "date": "1762776600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5132015",
+      "name": "FRR Tour Britannia - Stage 5",
+      "date": "1763029800",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5144434",
+      "name": "Stage 2 - Zwift Unlocked - Race",
+      "date": "1763381400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5208495",
+      "name": "Zwift Racing League: City Showdown - Open Aqua Dev League Division 1",
+      "date": "1763492400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5178019",
+      "name": "Zwift Crit Racing Club - Toefield Tornado",
+      "date": "1763980800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5206710",
+      "name": "Stage 2: NYC Showdown: Prospect Park Loop",
+      "date": "1764270600",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5229579",
+      "name": "Team DRAFT Sunday Race",
+      "date": "1764513000",
+      "category": "C",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5236640",
+      "name": "Zwift Epic Race - Snowman",
+      "date": "1765033200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5254822",
+      "name": "Zwift Racing League: City Showdown - Open Aqua Dev League Division 1",
+      "date": "1765306800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5257600",
+      "name": "EVO CC Sprint Race Series ",
+      "date": "1765481400",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5230363",
+      "name": "Stage 2: Fresh Outta 25: Scotland Smash",
+      "date": "1765800600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5230392",
+      "name": "Stage 3: Fresh Outta 25: Hell of the North",
+      "date": "1766232600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5233969",
+      "name": "HISP WINTER TOUR 2025 STAGE 2",
+      "date": "1766847600",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5230823",
+      "name": "Stage 5: Fresh Outta 25: Gentil 8",
+      "date": "1767453000",
+      "category": "A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5331604",
+      "name": "Zwift Racing League: Redline Rally - Open Navy Dev League Group 1",
+      "date": "1767727800",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5291869",
+      "name": " Stage 1 - Race - Tour de Zwift",
+      "date": "1768036200",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5348759",
+      "name": "Zwift Racing League: Redline Rally - Open Navy Dev League Division1",
+      "date": "1768332840",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5366895",
+      "name": "Zwift Racing League: Redline Rally - Open Navy Dev League Division1",
+      "date": "1768937640",
+      "category": "B",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "261713",
+      "name": "3R Tick Tock Flat Race - 2 Lap (36km/22.4mi 100m)",
+      "date": "1575112500",
+      "category": "UPG",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "639087",
+      "name": "PACK SUB2 Ride - Greater London Flat",
+      "date": "1588096740",
+      "category": "N/A",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4750277",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v SZ Loki",
+      "date": "1737054900",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4787101",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v ZSUNR Phantoms",
+      "date": "1738264500",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4874348",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v Vikings Yggdrasil",
+      "date": "1741029300",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4889489",
+      "name": "Club Ladder // Team CLS Cyclones v TeamNL Cloud9 Thunder",
+      "date": "1741719600",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4904415",
+      "name": "Club Ladder // ART Isotopes v TeamNL Cloud9 Thunder",
+      "date": "1742498100",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4914015",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v ZSUNR Phantoms",
+      "date": "1742843700",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4928773",
+      "name": "Club Ladder // ZSUNR Phantoms v TeamNL Cloud9 Thunder",
+      "date": "1743704100",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4950674",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v Herd Of MAMILs",
+      "date": "1744827300",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4974910",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v Vikings Yme",
+      "date": "1746468900",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "4983457",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v Vikings Yme",
+      "date": "1747246500",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5004381",
+      "name": "Club Ladder // ZSUNR Tornadoes v TeamNL Cloud9 Thunder",
+      "date": "1748888100",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5025419",
+      "name": "Club Ladder // TeamNL Cloud9 Thunder v ZSUNR Tornadoes",
+      "date": "1750702500",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5033599",
+      "name": "Club Ladder // Coalition Taraxyl v TeamNL Cloud9 Lightning",
+      "date": "1751306400",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5034539",
+      "name": "Club Ladder // Herd of Speedy Squirrels v TeamNL Cloud9 Lightning",
+      "date": "1751479200",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5041227",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v Herd of Tasmanian Devils",
+      "date": "1751998500",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5042132",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v DIRTy Vertigos",
+      "date": "1752172200",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5046365",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v Dangerous Rhinos",
+      "date": "1752603300",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5067681",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v DIRTy Vertigos",
+      "date": "1754330400",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5068550",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v HISP Edetano",
+      "date": "1754588700",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5078075",
+      "name": "Club Ladder // Valhalla Garmr v TeamNL Cloud9 Lightning",
+      "date": "1755195300",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5079819",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v ART Cuatro Bolas",
+      "date": "1755713700",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5084205",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v Swedish Zwift Racers G1",
+      "date": "1756145700",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5087516",
+      "name": "Club Ladder // TeamNL Cloud9 Lightning v Valhalla Garmr",
+      "date": "1756404900",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5095904",
+      "name": "Club Ladder // Chocolate Teapots v TeamNL Cloud9 Lightning",
+      "date": "1757009700",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5102784",
+      "name": "Club Ladder // Valhalla Garmr v TeamNL Cloud9 Lightning",
+      "date": "1757614500",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5149471",
+      "name": "Club Ladder // Swedish Zwift Racers P1 v TeamNL Cloud9 Lightning",
+      "date": "1760638500",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5213922",
+      "name": "Club Ladder // TeamNL Cloud9 Spark v Team Not Pogi Vuelta",
+      "date": "1763665200",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5275729",
+      "name": "Club Ladder // Smarties Germany v TeamNL Cloud9 Spark",
+      "date": "1765911600",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5290955",
+      "name": "Club Ladder // GTR Krakens v TeamNL Cloud9 Spark",
+      "date": "1766430000",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    },
+    {
+      "event_id": "5308652",
+      "name": "Club Ladder // Herd of Honey Badgers v TeamNL Cloud9 Spark",
+      "date": "1767034800",
+      "category": "SEE LADDER SITE",
+      "position": null,
+      "finishers": null
+    }
+  ]
+}
